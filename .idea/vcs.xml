@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Usd8-fi-usd8-cover-score" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/usd8-periphery" vcs="Git" />
   </component>
 </project>

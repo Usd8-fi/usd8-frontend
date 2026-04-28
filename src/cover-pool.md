@@ -1,7 +1,7 @@
 # Cover Pool <span class="coming-soon-pill">Building</span>
 <br/><img src="/assets/coverPool.png" width="700px" /><br/><br/>
 
-The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; however, withdrawals are subject to a 14-day cooldown period.
+The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; however, withdrawals are subject to a 14-day cooldown period(while still accrue yield).
 
 Assets in the Cover Pool are not protected by USD8 and might be deployed to cover losses from protected Defi protocols. 
 
@@ -115,9 +115,25 @@ After a claim, the protected LP tokens forfeited by claimers becomes the propert
 
 Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.
 
-Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
+Cover Socre is computed off-chain with an open sourced algorithm based on [Shapley value](https://en.wikipedia.org/wiki/Shapley_value), signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
 
 Cover scores reset after a successful claim. 
+
+#### Cover Score Algorithm
+
+```
+ωᵢ = Σ_token weight_token × ∫₀ᵀ balance_token(t)
+   
+dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
+```
+
+Each holder's weight `ωᵢ` is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower. Your share `φᵢ` is proportional to your weighted total.
+
+This is the unique fair allocation in [cooperative game theory](https://en.wikipedia.org/wiki/Cooperative_game_theory) — the only rule that satisfies all four Shapley axioms simultaneously (efficiency, symmetry, null-player, additivity). Pro-rata, time-weighted, and tier-based alternatives each violate at least one.
+
+The algorithm is [open-source](https://github.com/Usd8-fi/Usd8-fi-usd8-cover-score) and deterministic. Anyone can run it locally and reproduce any holder's score against the chain.
+
+
 <br/><br/><br/><br/>
 # Passing the Walkaway Test
 

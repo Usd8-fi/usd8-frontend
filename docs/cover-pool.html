@@ -153,7 +153,7 @@
                     <main>
                         <h1 id="cover-pool-building"><a class="header" href="#cover-pool-building">Cover Pool <span class="coming-soon-pill">Building</span></a></h1>
 <p><br/><img src="/assets/coverPool.png" width="700px" /><br/><br/></p>
-<p>The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; however, withdrawals are subject to a 14-day cooldown period.</p>
+<p>The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; however, withdrawals are subject to a 14-day cooldown period(while still accrue yield).</p>
 <p>Assets in the Cover Pool are not protected by USD8 and might be deployed to cover losses from protected Defi protocols.</p>
 <p>Depositors should be aware of the risk associated before depositing.
 <br/><br/><br/><br/></p>
@@ -257,9 +257,17 @@
 <br/><br/><br/><br/></p>
 <h1 id="cover-score"><a class="header" href="#cover-score">Cover Score</a></h1>
 <p>Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.</p>
-<p>Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
-<p>Cover scores reset after a successful claim.
-<br/><br/><br/><br/></p>
+<p>Cover Socre is computed off-chain with an open sourced algorithm based on <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
+<p>Cover scores reset after a successful claim.</p>
+<h4 id="cover-score-algorithm"><a class="header" href="#cover-score-algorithm">Cover Score Algorithm</a></h4>
+<pre><code>ωᵢ = Σ_token weight_token × ∫₀ᵀ balance_token(t)
+   
+dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
+</code></pre>
+<p>Each holder's weight <code>ωᵢ</code> is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower. Your share <code>φᵢ</code> is proportional to your weighted total.</p>
+<p>This is the unique fair allocation in <a href="https://en.wikipedia.org/wiki/Cooperative_game_theory">cooperative game theory</a> — the only rule that satisfies all four Shapley axioms simultaneously (efficiency, symmetry, null-player, additivity). Pro-rata, time-weighted, and tier-based alternatives each violate at least one.</p>
+<p>The algorithm is <a href="https://github.com/Usd8-fi/Usd8-fi-usd8-cover-score">open-source</a> and deterministic. Anyone can run it locally and reproduce any holder's score against the chain.</p>
+<p><br/><br/><br/><br/></p>
 <h1 id="passing-the-walkaway-test"><a class="header" href="#passing-the-walkaway-test">Passing the Walkaway Test</a></h1>
 <p>Computing Cover Scores is critical for Usd8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">Walkaway Test</a>.</p>
 <p>We are partnering with Brevis and using their ZK Coprocessor to independently compute Cover Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their Cover Score based on their Usd8 history. This proof can then be submitted directly to the Usd8 payout contract onchain, which verifies it and processes the claim automatically.</p>
