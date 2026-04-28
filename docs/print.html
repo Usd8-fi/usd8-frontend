@@ -343,9 +343,10 @@
 <br/><br/><br/><br/></p>
 <h1 id="cover-score"><a class="header" href="#cover-score">Cover Score</a></h1>
 <p>Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.</p>
-<p>Cover Socre is computed off-chain with an open sourced algorithm based on <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
+<p>Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
 <p>Cover scores reset after a successful claim.</p>
-<h4 id="cover-score-algorithm"><a class="header" href="#cover-score-algorithm">Cover Score Algorithm</a></h4>
+<h2 id="algorithm-details"><a class="header" href="#algorithm-details">Algorithm Details</a></h2>
+<p>Your Cover Score is your share of the cover pool, computed as a <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>:</p>
 <pre><code>ωᵢ = Σ_token weight_token × ∫₀ᵀ balance_token(t)
    
 dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ

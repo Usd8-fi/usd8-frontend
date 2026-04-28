@@ -115,11 +115,13 @@ After a claim, the protected LP tokens forfeited by claimers becomes the propert
 
 Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.
 
-Cover Socre is computed off-chain with an open sourced algorithm based on [Shapley value](https://en.wikipedia.org/wiki/Shapley_value), signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
+Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
 
 Cover scores reset after a successful claim. 
 
-#### Cover Score Algorithm
+## Algorithm Details
+
+Your Cover Score is your share of the cover pool, computed as a [Shapley value](https://en.wikipedia.org/wiki/Shapley_value):
 
 ```
 ωᵢ = Σ_token weight_token × ∫₀ᵀ balance_token(t)
