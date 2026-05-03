@@ -12,7 +12,7 @@ Booter contract Eth mainnet [0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f12d](https:/
 Boosters are not for sale. They are distributed only to users who help USD8 grow. To get Boosters, you can 
 
 - post on social media about Usd8 (do not spam)
-- follow our [X](https://x.com/usd8_fi) and [Telegram](https://t.me/+e84i2oYk1ao1MTk1) channel for occasional drops
+- follow our [X](https://x.com/usd8_fi) and [Telegram](https://t.me/+e84i2oYk1ao1MTk1) and engage in meaningful discussions
 
 Our team monitors social channels will reach out to offer Boosters. If your posts has lots of impact, you will get multiple Boosters. 
 
