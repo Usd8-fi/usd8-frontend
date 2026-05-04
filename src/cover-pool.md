@@ -75,7 +75,7 @@ Planned coverage (Eth mainnet)
         <td>0.7 Eth</td>
     </tr>
     <tr>
-        <td><img src="https://pbs.twimg.com/profile_images/1828469202753122304/i8YRkB4A_400x400.jpg" width="40px" /></td>
+        <td><img src="https://assets.coingecko.com/coins/images/39925/large/sky.jpg" width="40px" /></td>
         <td>Sky Savings sUSDS</td>
         <td>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br/> impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</td>
         <td>0.7 USDS</td>
@@ -111,11 +111,11 @@ Planned coverage (Eth mainnet)
 
 After a claim, the protected LP tokens forfeited by claimers becomes the property of Usd8 protocol.
 <br/><br/><br/><br/>
-# Cover Score 
+# Cover Score
 
 Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.
 
-Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
+Cover Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
 
 Cover scores reset after a successful claim. 
 
@@ -135,6 +135,75 @@ This is the unique fair allocation in [cooperative game theory](https://en.wikip
 
 The algorithm is [open-source](https://github.com/Usd8-fi/Usd8-fi-usd8-cover-score) and deterministic. Anyone can run it locally and reproduce any holder's score against the chain.
 
+
+<br/><br/><br/><br/>
+# Cover Pool Size Projection
+
+We’re modeling pool size as a function of 
+- supply growth
+- reserve yield at est 6.5%
+- budget locked at 2.1% of reserve yield
+
+<table class="cover-table">
+    <tr>
+        <td><b>Year</b></td>
+        <td><b>Y1</b></td>
+        <td><b>Y2</b></td>
+        <td><b>Y3</b></td>
+        <td><b>Y4</b></td>
+        <td><b>Y5</b></td>
+    </tr>
+    <tr>
+        <td>USD8 Supply</td>
+        <td>$5M</td>
+        <td>$50M</td>
+        <td>$500M</td>
+        <td>$5B</td>
+        <td>$37B</td>
+    </tr>
+    <tr>
+        <td>% of USDT supply</td>
+        <td>0.003%</td>
+        <td>0.027%</td>
+        <td>0.27%</td>
+        <td>2.67%</td>
+        <td>19.79%</td>
+    </tr>
+    <tr>
+        <td>Collateral Yield (est. 6.5%)</td>
+        <td>$325K</td>
+        <td>$3.25M</td>
+        <td>$32.5M</td>
+        <td>$325M</td>
+        <td>$2.41B</td>
+    </tr>
+    <tr>
+        <td>Cover Pool Yield Budget (2.1%)</td>
+        <td>$105K</td>
+        <td>$1.05M</td>
+        <td>$10.5M</td>
+        <td>$105M</td>
+        <td>$777M</td>
+    </tr>
+    <tr style="color: #16a34a;">
+        <td>Cover Pool size @ 15% APY</td>
+        <td>$700K</td>
+        <td>$7M</td> 
+        <td>$70M</td>
+        <td>$700M</td>
+        <td>$5.18B</td>
+    </tr>
+    <tr style="color: #16a34a;">
+        <td>Cover Pool size @ 30% APY</td>
+        <td>$350K</td>
+        <td>$3.5M</td>
+        <td>$35M</td>
+        <td>$350M</td>
+        <td>$2.59B</td>
+    </tr>
+</table>
+
+As shown in the estimation at Y5 if we achieve 20% Tether supply, we could unlock a cover pool size from 2.5-5 Billion per year for Defi, which will be significant enough as an insurance primitive for the whote industry.
 
 <br/><br/><br/><br/>
 # Passing the Walkaway Test

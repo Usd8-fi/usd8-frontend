@@ -6,6 +6,7 @@ Hi I am the core dev behind Usd8, during the day I work as a Security Researcher
 
 - telegram [https://t.me/+e84i2oYk1ao1MTk1](https://t.me/+e84i2oYk1ao1MTk1)
 - X [@usd8_fi](https://x.com/usd8_fi) or [@codephobic](https://x.com/codephobic)
+- GitHub Discussions [https://github.com/orgs/Usd8-fi/discussions](https://github.com/orgs/Usd8-fi/discussions)
 
 <br/><br/><br/><br/>
 # Branding Assets

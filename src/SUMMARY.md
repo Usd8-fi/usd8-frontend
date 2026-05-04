@@ -4,5 +4,7 @@
 - [Protected Savings](./protected-savings.md)
 - [Cover Pool](./cover-pool.md)
 - [Boosters](./boosters.md)
+- [White Hat Economy](./white-hat-economy.md)
+- [Help Needed](./help-needed.md)
 - [FAQs](./faqs.md)
 - [Contact & Branding](./contact.md)

@@ -220,7 +220,7 @@
         <td>0.7 Eth</td>
     </tr>
     <tr>
-        <td><img src="https://pbs.twimg.com/profile_images/1828469202753122304/i8YRkB4A_400x400.jpg" width="40px" /></td>
+        <td><img src="https://assets.coingecko.com/coins/images/39925/large/sky.jpg" width="40px" /></td>
         <td>Sky Savings sUSDS</td>
         <td>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br/> impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</td>
         <td>0.7 USDS</td>
@@ -257,7 +257,7 @@
 <br/><br/><br/><br/></p>
 <h1 id="cover-score"><a class="header" href="#cover-score">Cover Score</a></h1>
 <p>Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.</p>
-<p>Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
+<p>Cover Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
 <p>Cover scores reset after a successful claim.</p>
 <h2 id="algorithm-details"><a class="header" href="#algorithm-details">Algorithm Details</a></h2>
 <p>Your Cover Score is your share of the cover pool, computed as a <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>:</p>
@@ -268,6 +268,73 @@ dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
 <p>Each holder's weight <code>ωᵢ</code> is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower. Your share <code>φᵢ</code> is proportional to your weighted total.</p>
 <p>This is the unique fair allocation in <a href="https://en.wikipedia.org/wiki/Cooperative_game_theory">cooperative game theory</a> — the only rule that satisfies all four Shapley axioms simultaneously (efficiency, symmetry, null-player, additivity). Pro-rata, time-weighted, and tier-based alternatives each violate at least one.</p>
 <p>The algorithm is <a href="https://github.com/Usd8-fi/Usd8-fi-usd8-cover-score">open-source</a> and deterministic. Anyone can run it locally and reproduce any holder's score against the chain.</p>
+<p><br/><br/><br/><br/></p>
+<h1 id="cover-pool-size-projection"><a class="header" href="#cover-pool-size-projection">Cover Pool Size Projection</a></h1>
+<p>We’re modeling pool size as a function of</p>
+<ul>
+<li>supply growth</li>
+<li>reserve yield at est 6.5%</li>
+<li>budget locked at 2.1% of reserve yield</li>
+</ul>
+<table class="cover-table">
+    <tr>
+        <td><b>Year</b></td>
+        <td><b>Y1</b></td>
+        <td><b>Y2</b></td>
+        <td><b>Y3</b></td>
+        <td><b>Y4</b></td>
+        <td><b>Y5</b></td>
+    </tr>
+    <tr>
+        <td>USD8 Supply</td>
+        <td>$5M</td>
+        <td>$50M</td>
+        <td>$500M</td>
+        <td>$5B</td>
+        <td>$37B</td>
+    </tr>
+    <tr>
+        <td>% of USDT supply</td>
+        <td>0.003%</td>
+        <td>0.027%</td>
+        <td>0.27%</td>
+        <td>2.67%</td>
+        <td>19.79%</td>
+    </tr>
+    <tr>
+        <td>Collateral Yield (est. 6.5%)</td>
+        <td>$325K</td>
+        <td>$3.25M</td>
+        <td>$32.5M</td>
+        <td>$325M</td>
+        <td>$2.41B</td>
+    </tr>
+    <tr>
+        <td>Cover Pool Yield Budget (2.1%)</td>
+        <td>$105K</td>
+        <td>$1.05M</td>
+        <td>$10.5M</td>
+        <td>$105M</td>
+        <td>$777M</td>
+    </tr>
+    <tr style="color: #16a34a;">
+        <td>Cover Pool size @ 15% APY</td>
+        <td>$700K</td>
+        <td>$7M</td> 
+        <td>$70M</td>
+        <td>$700M</td>
+        <td>$5.18B</td>
+    </tr>
+    <tr style="color: #16a34a;">
+        <td>Cover Pool size @ 30% APY</td>
+        <td>$350K</td>
+        <td>$3.5M</td>
+        <td>$35M</td>
+        <td>$350M</td>
+        <td>$2.59B</td>
+    </tr>
+</table>
+<p>As shown in the estimation at Y5 if we achieve 20% Tether supply, we could unlock a cover pool size from 2.5-5 Billion per year for Defi, which will be significant enough as an insurance primitive for the whote industry.</p>
 <p><br/><br/><br/><br/></p>
 <h1 id="passing-the-walkaway-test"><a class="header" href="#passing-the-walkaway-test">Passing the Walkaway Test</a></h1>
 <p>Computing Cover Scores is critical for Usd8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">Walkaway Test</a>.</p>

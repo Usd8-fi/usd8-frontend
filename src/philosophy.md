@@ -1,6 +1,9 @@
 <img class="floating-logo" src="/assets/tyche.png" width="400" />
 <br/><br/>
 
+TLDR; [This video](https://x.com/codephobic/status/2045127803897516132) covers most of the philosophical theory about Usd8, if you prefer to watch instead of reading.
+<br/><br/><br/><br/>
+
 # The Broken Dream
 As we embrace decentralized dream to resist the abuses of centralized power, we also give up the enforcement mechanisms that deal with wrongdoing. Without safeguards, crypto is slowly turning into a dystopia where bad actors like hackers and malicious founders are heavily incentivized and rewarded to hack and steal in broad daylight with little consequence. 
 
@@ -23,7 +26,7 @@ We need a new solution, one without centralized power while still be able to det
 <img src="assets/murrayRothbard.jpg" width="500px"/>
 <div class="image-caption">Murray Rothbard (1926–1995), founder and primary theoretician of anarcho-capitalism.</div>
 
-Usd8 is rooted in the philosophical proposal of [anarcho-captialism](https://en.wikipedia.org/wiki/Anarcho-capitalism) where a voluntary society would use insurance companies and private agencies to replace essential services provided by centralized state system. Incentives are carefully aligned in this system using capitalism and game theory to achieve a functional society without central government presents.
+Usd8 is rooted in the philosophical proposal of [anarcho-capitalism](https://en.wikipedia.org/wiki/Anarcho-capitalism) where a voluntary society would use insurance companies and private agencies to replace essential services provided by centralized state system. Incentives are carefully aligned in this system using capitalism and game theory to achieve a functional society without central government presents.
 
 We adapted this model and made it crypto native, to provide the last missing piece for Defi and the whole crypto system. Usd8 will be serving two major purposes - as insurance to cover users' losses and as an order-enforcing mechanism to recover hack losses.
 <br/><br/><br/><br/>
@@ -46,14 +49,7 @@ This insurance system is exciting because:
 
 # Order enforcement
 
-Since Usd8 sits on a pile of hacked LP tokens after users claim, this puts Usd8 in a unique position with significant financial incentives to recover these funds. Usd8 will be cultivating a "white hat economy" as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds, including the following mechanisms
-
-1. Million-dollar public bounties without an expiry date for any help in recovering lost funds
-
-2. Working with hacked project teams, white hats, professional groups, and law enforcement agencies across borders
-
-3. Educating the public how to trace, identify, and monitor stolen funds
-
+Since Usd8 sits on a pile of hacked LP tokens after users claim, this puts Usd8 in a unique position with significant financial incentives to recover these funds. Usd8 will be cultivating a [White Hat Economy](./white-hat-economy.md) as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds — read more on the [White Hat Economy](./white-hat-economy.md) page.
 
 This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, potentially leads to perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.
 

@@ -27,8 +27,10 @@ On top of that, you still earn competitive yield.
 
 ## <span class="emoji">💭</span> How safe is the Cover Pool?
 Assets deposited in the Cover Pool might be deployed to cover hacking losses from Covered Protocols. This makes it riskier than the Protected Savings vault, which is why it offers a higher APY.
+
+Our security experts independently vet and audit every protocol before offering coverage. Claims are not expected to occur often, but there is always a possibility.
 <br/>
-Our security experts independently vet and audit every protocol before offering coverage. Claims are not expected to occur often, but there is always a possibility. 
+<br/>
 
 
 ## <span class="emoji">💭</span> So all my positions in Covered DeFi Protocols are protected?
@@ -68,7 +70,13 @@ USD8 only covers up to 80% of any position at max. Unless the LP token’s value
 
 ## <span class="emoji">💭</span> How does USD8 make money?
 
-Like most stablecoins, USD8 generates revenue from collateral yield.
+Like most stablecoins, USD8 generates revenue from collateral yield. USD8 also earns from recovering losses through the [White Hat Economy](./white-hat-economy.md).
+<br/>
+<br/>
+
+## <span class="emoji">💭</span> How can I contribute or help with USD8?
+
+We are a brand new primitive with real unsolved challenges, and we welcome community contributions across mechanism design, partnerships, marketing, and more. See the [Help Needed](./help-needed.md) page for the current list of open challenges. The best place to post proposals, critiques, and ideas is our [GitHub Discussions](https://github.com/orgs/Usd8-fi/discussions). Contributors can earn [Boosters](./boosters.md), permanent on-chain attribution, and priority on future paid work.
 <br/>
 <br/>
 

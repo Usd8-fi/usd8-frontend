@@ -183,6 +183,8 @@
 <p>Redeem USD8 back to USDC will be also be permissionless, while we expect this process to be instant there might be a delay for large redeems because some external defi protocol might have a delay in their redeeming process, which is out of our control. However there will be an AMM pool available for swaps at anytime.</p>
 <div style="break-before: page; page-break-before: always;"></div><img class="floating-logo" src="/assets/tyche.png" width="400" />
 <br/><br/>
+<p>TLDR; <a href="https://x.com/codephobic/status/2045127803897516132">This video</a> covers most of the philosophical theory about Usd8, if you prefer to watch instead of reading.
+<br/><br/><br/><br/></p>
 <h1 id="the-broken-dream"><a class="header" href="#the-broken-dream">The Broken Dream</a></h1>
 <p>As we embrace decentralized dream to resist the abuses of centralized power, we also give up the enforcement mechanisms that deal with wrongdoing. Without safeguards, crypto is slowly turning into a dystopia where bad actors like hackers and malicious founders are heavily incentivized and rewarded to hack and steal in broad daylight with little consequence.</p>
 <p>This dystopia is slowly killing the decentralized industry following <a href="https://en.wikipedia.org/wiki/Gresham%27s_law">Gresham's Law</a>, where good actors are gradually driven out till only bad actors left.</p>
@@ -197,7 +199,7 @@
 <p>We need a new solution, one without centralized power while still be able to deter malicious actors. Usd8 is our attempt at this, our mission is to restore the missing layer of order enforcement in DeFi security.</p>
 <img src="assets/murrayRothbard.jpg" width="500px"/>
 <div class="image-caption">Murray Rothbard (1926–1995), founder and primary theoretician of anarcho-capitalism.</div>
-<p>Usd8 is rooted in the philosophical proposal of <a href="https://en.wikipedia.org/wiki/Anarcho-capitalism">anarcho-captialism</a> where a voluntary society would use insurance companies and private agencies to replace essential services provided by centralized state system. Incentives are carefully aligned in this system using capitalism and game theory to achieve a functional society without central government presents.</p>
+<p>Usd8 is rooted in the philosophical proposal of <a href="https://en.wikipedia.org/wiki/Anarcho-capitalism">anarcho-capitalism</a> where a voluntary society would use insurance companies and private agencies to replace essential services provided by centralized state system. Incentives are carefully aligned in this system using capitalism and game theory to achieve a functional society without central government presents.</p>
 <p>We adapted this model and made it crypto native, to provide the last missing piece for Defi and the whole crypto system. Usd8 will be serving two major purposes - as insurance to cover users' losses and as an order-enforcing mechanism to recover hack losses.
 <br/><br/><br/><br/></p>
 <h1 id="the-insurance"><a class="header" href="#the-insurance">The Insurance</a></h1>
@@ -216,18 +218,7 @@
 </li>
 </ol>
 <h1 id="order-enforcement"><a class="header" href="#order-enforcement">Order enforcement</a></h1>
-<p>Since Usd8 sits on a pile of hacked LP tokens after users claim, this puts Usd8 in a unique position with significant financial incentives to recover these funds. Usd8 will be cultivating a "white hat economy" as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds, including the following mechanisms</p>
-<ol>
-<li>
-<p>Million-dollar public bounties without an expiry date for any help in recovering lost funds</p>
-</li>
-<li>
-<p>Working with hacked project teams, white hats, professional groups, and law enforcement agencies across borders</p>
-</li>
-<li>
-<p>Educating the public how to trace, identify, and monitor stolen funds</p>
-</li>
-</ol>
+<p>Since Usd8 sits on a pile of hacked LP tokens after users claim, this puts Usd8 in a unique position with significant financial incentives to recover these funds. Usd8 will be cultivating a <a href="./white-hat-economy.html">White Hat Economy</a> as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds — read more on the <a href="./white-hat-economy.html">White Hat Economy</a> page.</p>
 <p>This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, potentially leads to perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.</p>
 <p><br/><br/><br/><br/></p>
 <h1 id="we-are-crypto-native"><a class="header" href="#we-are-crypto-native">We are Crypto Native</a></h1>
@@ -306,7 +297,7 @@
         <td>0.7 Eth</td>
     </tr>
     <tr>
-        <td><img src="https://pbs.twimg.com/profile_images/1828469202753122304/i8YRkB4A_400x400.jpg" width="40px" /></td>
+        <td><img src="https://assets.coingecko.com/coins/images/39925/large/sky.jpg" width="40px" /></td>
         <td>Sky Savings sUSDS</td>
         <td>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br/> impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</td>
         <td>0.7 USDS</td>
@@ -343,7 +334,7 @@
 <br/><br/><br/><br/></p>
 <h1 id="cover-score"><a class="header" href="#cover-score">Cover Score</a></h1>
 <p>Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.</p>
-<p>Cover Socre is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
+<p>Cover Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
 <p>Cover scores reset after a successful claim.</p>
 <h2 id="algorithm-details"><a class="header" href="#algorithm-details">Algorithm Details</a></h2>
 <p>Your Cover Score is your share of the cover pool, computed as a <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>:</p>
@@ -354,6 +345,73 @@ dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
 <p>Each holder's weight <code>ωᵢ</code> is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower. Your share <code>φᵢ</code> is proportional to your weighted total.</p>
 <p>This is the unique fair allocation in <a href="https://en.wikipedia.org/wiki/Cooperative_game_theory">cooperative game theory</a> — the only rule that satisfies all four Shapley axioms simultaneously (efficiency, symmetry, null-player, additivity). Pro-rata, time-weighted, and tier-based alternatives each violate at least one.</p>
 <p>The algorithm is <a href="https://github.com/Usd8-fi/Usd8-fi-usd8-cover-score">open-source</a> and deterministic. Anyone can run it locally and reproduce any holder's score against the chain.</p>
+<p><br/><br/><br/><br/></p>
+<h1 id="cover-pool-size-projection"><a class="header" href="#cover-pool-size-projection">Cover Pool Size Projection</a></h1>
+<p>We’re modeling pool size as a function of</p>
+<ul>
+<li>supply growth</li>
+<li>reserve yield at est 6.5%</li>
+<li>budget locked at 2.1% of reserve yield</li>
+</ul>
+<table class="cover-table">
+    <tr>
+        <td><b>Year</b></td>
+        <td><b>Y1</b></td>
+        <td><b>Y2</b></td>
+        <td><b>Y3</b></td>
+        <td><b>Y4</b></td>
+        <td><b>Y5</b></td>
+    </tr>
+    <tr>
+        <td>USD8 Supply</td>
+        <td>$5M</td>
+        <td>$50M</td>
+        <td>$500M</td>
+        <td>$5B</td>
+        <td>$37B</td>
+    </tr>
+    <tr>
+        <td>% of USDT supply</td>
+        <td>0.003%</td>
+        <td>0.027%</td>
+        <td>0.27%</td>
+        <td>2.67%</td>
+        <td>19.79%</td>
+    </tr>
+    <tr>
+        <td>Collateral Yield (est. 6.5%)</td>
+        <td>$325K</td>
+        <td>$3.25M</td>
+        <td>$32.5M</td>
+        <td>$325M</td>
+        <td>$2.41B</td>
+    </tr>
+    <tr>
+        <td>Cover Pool Yield Budget (2.1%)</td>
+        <td>$105K</td>
+        <td>$1.05M</td>
+        <td>$10.5M</td>
+        <td>$105M</td>
+        <td>$777M</td>
+    </tr>
+    <tr style="color: #16a34a;">
+        <td>Cover Pool size @ 15% APY</td>
+        <td>$700K</td>
+        <td>$7M</td> 
+        <td>$70M</td>
+        <td>$700M</td>
+        <td>$5.18B</td>
+    </tr>
+    <tr style="color: #16a34a;">
+        <td>Cover Pool size @ 30% APY</td>
+        <td>$350K</td>
+        <td>$3.5M</td>
+        <td>$35M</td>
+        <td>$350M</td>
+        <td>$2.59B</td>
+    </tr>
+</table>
+<p>As shown in the estimation at Y5 if we achieve 20% Tether supply, we could unlock a cover pool size from 2.5-5 Billion per year for Defi, which will be significant enough as an insurance primitive for the whote industry.</p>
 <p><br/><br/><br/><br/></p>
 <h1 id="passing-the-walkaway-test"><a class="header" href="#passing-the-walkaway-test">Passing the Walkaway Test</a></h1>
 <p>Computing Cover Scores is critical for Usd8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">Walkaway Test</a>.</p>
@@ -376,6 +434,7 @@ dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
 <ul>
 <li>post on social media about Usd8 (do not spam)</li>
 <li>follow our <a href="https://x.com/usd8_fi">X</a> and <a href="https://t.me/+e84i2oYk1ao1MTk1">Telegram</a> and engage in meaningful discussions</li>
+<li>contribute to any of the <a href="./help-needed.html#open-challenges">Open Challenges</a></li>
 </ul>
 <p>Our team monitors social channels will reach out to offer Boosters. If your posts has lots of impact, you will get multiple Boosters.</p>
 <p>You can also send links to your posts in our <a href="https://t.me/+e84i2oYk1ao1MTk1">Telegram group</a> or ping <a href="https://x.com/usd8_fi">USD8 on X.com</a> to request Boosters if we missed any.</p>
@@ -389,6 +448,57 @@ dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
     <div id="booster-result" class="booster-result"></div>
 </div>
 <br/><br/><br/><br/>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="white-hat-economy-building"><a class="header" href="#white-hat-economy-building">White Hat Economy <span class="coming-soon-pill">Building</span></a></h1>
+<p>The White Hat economy is the enforcement layer of Usd8. It plays a critical role in recovering lost assets and deterring future malicious activities in Defi.<br/></p>
+<p>After a successful claim, the forfeited LP tokens become the property of the Usd8 protocol, providing the financial engine to power the White Hat economy. We plan to explore multiple mechanisms depending on the size of the hack:</p>
+<h2 id="-onchain-debt-market"><a class="header" href="#-onchain-debt-market"><span class="emoji">📈</span> Onchain Debt Market</a></h2>
+<p>Deploy on-chain primitives such as AMMs and bonding curves to facilitate a debt market based on hacked LP tokens, using this as a mechanism to fund early-stage recovery.</p>
+<h2 id="-public-watchlist"><a class="header" href="#-public-watchlist"><span class="emoji">👁️</span> Public Watchlist</a></h2>
+<p>A continuously updated, open list of addresses, entities, and patterns linked to active investigations. Designed for integration by wallets, exchanges, and front ends so attackers face friction every time they try to move or off-ramp.</p>
+<h2 id="-permanent-bounties--anonymous-tips"><a class="header" href="#-permanent-bounties--anonymous-tips"><span class="emoji">🎯</span> Permanent Bounties &amp; Anonymous Tips</a></h2>
+<p>Bounties up to a million dollars without an expiry date, paid in Usd8 from the recovered funds. A hacker who launders successfully today still has a price on their address ten years from now.</p>
+<p>Allow anyone to submit tips anonymously — wallet clusters, exchange deposits, off-ramp paths — tied to a specific incident. Submissions are timestamped and attributable; all submissions that help recover the lost funds will share a portion of the final bounty.</p>
+<h2 id="-ongoing-negotiation-channel"><a class="header" href="#-ongoing-negotiation-channel"><span class="emoji">🤝</span> Ongoing Negotiation Channel</a></h2>
+<p>Provides an ongoing negotiation channel with the hacker in order to recover as much of the loss as possible and to help facilitate the appropriate legal proceedings.</p>
+<h2 id="-white-hat-guild"><a class="header" href="#-white-hat-guild"><span class="emoji">🕵️</span> White Hat Guild</a></h2>
+<p>Direct sponsorship of white hat groups, independent investigators, forensic firms, and ex-law-enforcement specialists.</p>
+<h2 id="-legal-action--law-enforcement"><a class="header" href="#-legal-action--law-enforcement"><span class="emoji">⚖️</span> Legal Action &amp; Law Enforcement</a></h2>
+<p>Direct fund civil suits, asset freezes, and cross-border legal coordination. A standing point of contact with relevant agencies in major jurisdictions, packaged with the evidence formats they actually use.</p>
+<h2 id="-open-education-and-training"><a class="header" href="#-open-education-and-training"><span class="emoji">🎓</span> Open Education and Training</a></h2>
+<p>Free curriculum, workshops, and tooling that lower the barrier for new investigators to participate. The more people who can read a transaction graph, the less defensible black-hat behavior becomes.</p>
+<p><br/><br/><br/><br/></p>
+<h1 id="why-this-matters"><a class="header" href="#why-this-matters">Why This Matters</a></h1>
+<p>Insurance alone is reactive. The <a href="./cover-pool.html">Cover Pool</a> makes users whole after a hack, but it does not change the incentives that produced the hack in the first place.</p>
+<p>The White Hat Economy is the second half of Usd8's thesis — turning the proceeds of every claim into pressure on the attacker, and turning every member of the public into a potential adversary for bad actors. Combined with the Cover Pool, this is what closes the loop: victims get covered, recoveries fund more coverage, and the cost of attacking DeFi rises every time the system is used.</p>
+<p>This is also how Usd8 addresses the deeper problem laid out in our <a href="./philosophy.html">Philosophical Roots</a> — the missing alignment and enforcement layer that has let malicious activity flourish in crypto. By rewarding good actors and imposing permanent, compounding risk on bad ones, the White Hat Economy realigns the industry's incentives and, over time, deters the next hack from being committed in the first place.
+<br/><br/><br/><br/></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="help-needed-live"><a class="header" href="#help-needed-live">Help Needed <span class="live-pill">Live</span></a></h1>
+<p>Usd8 is a brand new primitive for DeFi — a usage-based free insurance layer combined with a white-hat-funded enforcement layer. Nothing quite like this has been built before, so there are real unsolved challenges in the design and we don't pretend to have all the answers.</p>
+<p>We are asking the broader crypto community — researchers, security professionals, mechanism designers, lawyers, white hats — to help us pressure-test the model and close the gaps.</p>
+<p>Please post contributions in our <a href="https://github.com/orgs/Usd8-fi/discussions">GitHub Discussions</a> — that is the canonical place for proposals, critiques, and design ideas. You can also reach us on <a href="https://t.me/+e84i2oYk1ao1MTk1">Telegram</a> or <a href="https://x.com/usd8_fi">X</a>.
+<br/><br/><br/><br/></p>
+<h1 id="open-challenges"><a class="header" href="#open-challenges">Open Challenges</a></h1>
+<h2 id="1-hacker-double-dipping-mechanism-design"><a class="header" href="#1-hacker-double-dipping-mechanism-design">1. Hacker double dipping <span class="tag-pill tag-pill--purple">mechanism design</span></a></h2>
+<p>Currently hackers can claim insurance payouts on own positions they exploited. Although we believe the likelihood is low as it requires significant extra capital from hackers to be worthwhile, we would like to find a neat solution doesn't cause too much system overheads.</p>
+<h2 id="2-universal-coverage-for-all-eth-users-partnerships"><a class="header" href="#2-universal-coverage-for-all-eth-users-partnerships">2. Universal Coverage for all Eth Users <span class="tag-pill tag-pill--blue">partnerships</span></a></h2>
+<p>Today, Usd8 coverage is tied to a user's Usd8 usage history. We would love to extend this into a universal coverage layer for every Ethereum address — similar in spirit to the FDIC.</p>
+<p>Doing so requires a meaningful capital commitment from a major ecosystem actor such as the Ethereum Foundation, held either as Usd8 or deposited into the Cover Pool as an LP. With that backing in place, we could offer a base level of insurance to every Ethereum address up to a fixed amount, regardless of Usd8 usage history, with the cap scaled to the size of the commitment.</p>
+<p>We would like some help in getting in touch with potential ecosystem actors.</p>
+<h2 id="3-white-hat-economy-design-mechanism-design"><a class="header" href="#3-white-hat-economy-design-mechanism-design">3. White Hat Economy Design <span class="tag-pill tag-pill--purple">mechanism design</span></a></h2>
+<p>We would love some help in exploring how existing DeFi primitives — such as prediction markets — could be used to facilitate the <a href="./white-hat-economy.html">White Hat Economy</a>.</p>
+<h2 id="4-theory-awareness-marketing"><a class="header" href="#4-theory-awareness-marketing">4. Theory awareness <span class="tag-pill tag-pill--orange">marketing</span></a></h2>
+<p>Usd8 is grounded in Anarcho-Capitalism theory — the idea that a decentralized society like crypto still needs an enforcement layer to align incentives correctly, just one built on incentive design and game theory rather than centralized power. More on the reasoning is in our <a href="./philosophy.html">Philosophical Roots</a>.</p>
+<p>Getting this idea in front of the right people has been very challenging so far. We would love help getting the word out to crypto KOLs, researchers, and industry stakeholders who care about the long-term future of the space — anyone worries about Defi security and the future of the Ethereum ecosystem.
+<br/><br/><br/><br/></p>
+<h1 id="what-we-can-offer-in-return"><a class="header" href="#what-we-can-offer-in-return">What We Can Offer In Return</a></h1>
+<p>Usd8 is just starting and our resources are limited, but we want to recognize people who help us build this.</p>
+<ul>
+<li><a href="./boosters.html">Boosters</a></li>
+<li>Permanent attribution — public acknowledgement of the contribution on the Usd8 website or in the associated smart contracts. Recognition does not expire</li>
+<li>Priority on work and collaboration — early contributors are first in line for paid work, audits, and partnerships as Usd8 grows</li>
+<li>Financial incentives where budget allows — as revenue grows we expect to set aside budget for direct compensation on specific problems.
+<br/><br/><br/><br/></li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="faqs"><a class="header" href="#faqs">FAQs</a></h1>
 <h2 id="-can-i-just-buy-usd8-and-use-it-for-claiming-whenever-i-need-it"><a class="header" href="#-can-i-just-buy-usd8-and-use-it-for-claiming-whenever-i-need-it"><span class="emoji">💭</span> Can I just buy USD8 and use it for claiming whenever I need it?</a></h2>
 <p>No. Cover amount depends on your USD8 usage history, without it you will not get much coverage. It's best to start using USD8 so you can build up your history.
@@ -408,9 +518,10 @@ dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
 <br/>
 <br/></p>
 <h2 id="-how-safe-is-the-cover-pool"><a class="header" href="#-how-safe-is-the-cover-pool"><span class="emoji">💭</span> How safe is the Cover Pool?</a></h2>
-<p>Assets deposited in the Cover Pool might be deployed to cover hacking losses from Covered Protocols. This makes it riskier than the Protected Savings vault, which is why it offers a higher APY.
+<p>Assets deposited in the Cover Pool might be deployed to cover hacking losses from Covered Protocols. This makes it riskier than the Protected Savings vault, which is why it offers a higher APY.</p>
+<p>Our security experts independently vet and audit every protocol before offering coverage. Claims are not expected to occur often, but there is always a possibility.
 <br/>
-Our security experts independently vet and audit every protocol before offering coverage. Claims are not expected to occur often, but there is always a possibility.</p>
+<br/></p>
 <h2 id="-so-all-my-positions-in-covered-defi-protocols-are-protected"><a class="header" href="#-so-all-my-positions-in-covered-defi-protocols-are-protected"><span class="emoji">💭</span> So all my positions in Covered DeFi Protocols are protected?</a></h2>
 <p>Yes. As long as you use USD8, you are covered. The more USD8 and the longer you hold, the higher your cover score.
 <br/>
@@ -434,7 +545,11 @@ Our security experts independently vet and audit every protocol before offering 
 <br/>
 <br/>
 <h2 id="-how-does-usd8-make-money"><a class="header" href="#-how-does-usd8-make-money"><span class="emoji">💭</span> How does USD8 make money?</a></h2>
-<p>Like most stablecoins, USD8 generates revenue from collateral yield.
+<p>Like most stablecoins, USD8 generates revenue from collateral yield. USD8 also earns from recovering losses through the <a href="./white-hat-economy.html">White Hat Economy</a>.
+<br/>
+<br/></p>
+<h2 id="-how-can-i-contribute-or-help-with-usd8"><a class="header" href="#-how-can-i-contribute-or-help-with-usd8"><span class="emoji">💭</span> How can I contribute or help with USD8?</a></h2>
+<p>We are a brand new primitive with real unsolved challenges, and we welcome community contributions across mechanism design, partnerships, marketing, and more. See the <a href="./help-needed.html">Help Needed</a> page for the current list of open challenges. The best place to post proposals, critiques, and ideas is our <a href="https://github.com/orgs/Usd8-fi/discussions">GitHub Discussions</a>. Contributors can earn <a href="./boosters.html">Boosters</a>, permanent on-chain attribution, and priority on future paid work.
 <br/>
 <br/></p>
 <h2 id="-who-is-behind-usd8"><a class="header" href="#-who-is-behind-usd8"><span class="emoji">💭</span> Who is behind USD8?</a></h2>
@@ -448,6 +563,7 @@ Our security experts independently vet and audit every protocol before offering 
 <ul>
 <li>telegram <a href="https://t.me/+e84i2oYk1ao1MTk1">https://t.me/+e84i2oYk1ao1MTk1</a></li>
 <li>X <a href="https://x.com/usd8_fi">@usd8_fi</a> or <a href="https://x.com/codephobic">@codephobic</a></li>
+<li>GitHub Discussions <a href="https://github.com/orgs/Usd8-fi/discussions">https://github.com/orgs/Usd8-fi/discussions</a></li>
 </ul>
 <p><br/><br/><br/><br/></p>
 <h1 id="branding-assets"><a class="header" href="#branding-assets">Branding Assets</a></h1>

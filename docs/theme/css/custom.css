@@ -39,6 +39,35 @@
     50% { opacity: 0.35; }
 }
 
+/* category pills — like .live-pill but without the breathing dot. */
+/* usage: <span class="tag-pill tag-pill--purple">mechanism design</span> */
+/* add a new color by appending one line below. */
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.45em;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    padding: 0.6em 0.95em;
+    border-radius: 999px;
+    margin-left: 0.6em;
+    text-transform: lowercase;
+    line-height: 1;
+    position: relative;
+    top: -0.25em;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.tag-pill--purple { background: #9333ea; }
+.tag-pill--blue   { background: #2563eb; }
+.tag-pill--green  { background: #16a34a; }
+.tag-pill--orange { background: #ea580c; }
+.tag-pill--pink   { background: #db2777; }
+.tag-pill--gray   { background: #6b7280; }
+
 .booster-check {
     display: flex;
     flex-wrap: wrap;
