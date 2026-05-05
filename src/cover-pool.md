@@ -1,11 +1,9 @@
 # Cover Pool <span class="coming-soon-pill">Building</span>
 <br/><img src="/assets/coverPool.png" width="700px" /><br/><br/>
 
-The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; withdrawals are subject to a 2-day cooldown period if there is no unresolved hacking events. In case of hacking events, withdraw might make longer till the claims are finalised.
+The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; withdrawals are subject to a 2-day cooldown period if there are no unresolved hacking events, longer (till claims finalised) if there are. Assets still accrue yield during cool down period.
 
-Assets in the Cover Pool are not protected by USD8 and might be deployed to cover losses from protected Defi protocols. 
-
-Depositors should be aware of the risk associated before depositing.
+Assets in the Cover Pool are not protected by USD8 and might be deployed to cover losses from protected Defi protocols. Depositors should be aware of the risk associated before depositing.
 <br/><br/><br/><br/>
 # Covered DeFi Protocols<br/>
 
@@ -46,15 +44,15 @@ Planned coverage (Eth mainnet)
     </tr>
     <tr>
         <td><img src="assets/usd8Logo.svg" width="40px" /></td>
-        <td>Usd8</td>
+        <td>USD8</td>
         <td>TBD</td>
         <td>0.8 USDC</td>
     </tr>
     <tr>
         <td><img src="assets/usd8Logo.svg" width="40px" /></td>
-        <td>Usd8 Protected Savings sUsd8 </td>
+        <td>USD8 Protected Savings sUSD8 </td>
         <td>TBD</td>
-        <td>0.8 Usd8</td>
+        <td>0.8 USD8</td>
     </tr>
     <tr>
         <td><img src="assets/aavelogo.svg" width="40px" /></td>
@@ -109,7 +107,7 @@ Planned coverage (Eth mainnet)
 2. The claim enters a 10-day window where others can join. After 10 days, that LP token is removed from the covered list and no new claims are accepted.
 3. Claimants can withdraw their reimbursement. The amount is calculated from total claims, each claimant’s cover score*, and the current Cover Pool balance. Payouts will match the Cover Pool’s asset mix.
 
-After a claim, the protected LP tokens forfeited by claimers becomes the property of Usd8 protocol.
+After a claim, the protected LP tokens forfeited by claimers becomes the property of USD8 protocol.
 <br/><br/><br/><br/>
 # Cover Score
 
@@ -208,11 +206,11 @@ As shown in the estimation at Y5 if we achieve 20% Tether supply, we could unloc
 <br/><br/><br/><br/>
 # Passing the Walkaway Test
 
-Computing Cover Scores is critical for Usd8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the [Walkaway Test](https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html).
+Computing Cover Scores is critical for USD8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the [Walkaway Test](https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html).
 
-We are partnering with Brevis and using their ZK Coprocessor to independently compute Cover Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their Cover Score based on their Usd8 history. This proof can then be submitted directly to the Usd8 payout contract onchain, which verifies it and processes the claim automatically.
+We are partnering with Brevis and using their ZK Coprocessor to independently compute Cover Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their Cover Score based on their USD8 history. This proof can then be submitted directly to the USD8 payout contract onchain, which verifies it and processes the claim automatically.
 
-Now, even if our team disappears, Usd8 payouts will still function independently and trustlessly.
+Now, even if our team disappears, USD8 payouts will still function independently and trustlessly.
 
 <br/><img src="/assets/brevis_logo.png" width="200px" /><br/><br/>
 

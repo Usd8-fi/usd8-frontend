@@ -43,7 +43,7 @@ Yes. As long as you use USD8, you are covered. The more USD8 and the longer you 
 
 ## <span class="emoji">💭</span> Do I forfeit my covered LP token when claiming from the Cover Pool?
 
-Yes. To claim from the Cover Pool, you must provide a covered LP token, which becomes the assets of Usd8 protocol.
+Yes. To claim from the Cover Pool, you must provide a covered LP token, which becomes the assets of USD8 protocol.
  
 <br/>
 <br/>
@@ -51,7 +51,7 @@ Yes. To claim from the Cover Pool, you must provide a covered LP token, which be
 ## <span class="emoji">💭</span> Will I always get 80% of my money back for a defi protocol with 80% coverage?
 
 Not necessarily. The actual reimbursed amount depends on:
-- Your cover score based on your Usd8 history
+- Your cover score based on your USD8 history
 - How many other users are claiming and their cover scores
 - The balance of the Cover Pool
 
