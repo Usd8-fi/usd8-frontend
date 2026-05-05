@@ -1,7 +1,7 @@
 # Cover Pool <span class="coming-soon-pill">Building</span>
 <br/><img src="/assets/coverPool.png" width="700px" /><br/><br/>
 
-The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; however, withdrawals are subject to a 14-day cooldown period(while still accrue yield).
+The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; withdrawals are subject to a 2-day cooldown period if there is no unresolved hacking events. In case of hacking events, withdraw might make longer till the claims are finalised.
 
 Assets in the Cover Pool are not protected by USD8 and might be deployed to cover losses from protected Defi protocols. 
 
