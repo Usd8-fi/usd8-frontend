@@ -3,13 +3,13 @@
 
 # USD8 <span class="coming-soon-pill">Building</span>
 
-USD8 is a stablecoin with built-in DeFi insurance — USD8 usage history can be used to cover losses in supported defi protocols, across any position, up to 80%, completely free. 
+Usd8 is a stablecoin with two baked-in functions — free Defi Insurance and Order Enforcement. 
 
-By simply holding and using Usd8, users get free insurance coverage for both their Usd8 as well as any other positions in covered defi protocols. 
+## Free Defi Insurance 
+Usd8 users get Defi Insurance covering [multiple defi protocols](./cover-pool.md#covered-defi-protocols), across any position, up to 80%, completely free. Claims are onchain and permissionless. Funds come from Usd8's [Cover Pool](./cover-pool.md). The more you use Usd8, the more you are covered.
 
-Claims can be made at anytime, 100% onchain and permissionless. Funds come from Usd8's Cover Pool - a high yield public vault. 
-
-The more you use USD8, the more you are covered.
+## Order Enforcement
+After claims, Usd8 curates a [White Hat Economy](./white-hat-economy.md), chasing lost assets on an ongoing basis — enforcing orders for the Defi space and deterring future hacks. 
 <br/><br/><br/><br/>
 
 
