@@ -11,9 +11,9 @@ Yes. As long as you have used USD8 before, you will get some coverage.
 <br/>
 <br/>
 
-## <span class="emoji">💭</span> So I have to hold USD8 to build a cover score?
+## <span class="emoji">💭</span> So I have to hold USD8 to build a USD8 History Score?
 
-No. While holding USD8 certainly build your cover score, you can also deposit USD8 to a recognized yield vault; these will also count towards your cover score.
+No. While holding USD8 certainly build your USD8 History Score, you can also deposit USD8 to a recognized yield vault; these will also count towards your USD8 History Score.
 <br/>
 <br/>
 
@@ -35,7 +35,7 @@ Our security experts independently vet and audit every protocol before offering 
 
 ## <span class="emoji">💭</span> So all my positions in Covered DeFi Protocols are protected?
 
-Yes. As long as you use USD8, you are covered. The more USD8 and the longer you hold, the higher your cover score.
+Yes. As long as you use USD8, you are covered. The more USD8 and the longer you hold, the higher your USD8 History Score.
 <br/>
 <br/>
 
@@ -51,11 +51,11 @@ Yes. To claim from the Cover Pool, you must provide a covered LP token, which be
 ## <span class="emoji">💭</span> Will I always get 80% of my money back for a defi protocol with 80% coverage?
 
 Not necessarily. The actual reimbursed amount depends on:
-- Your cover score based on your USD8 history
-- How many other users are claiming and their cover scores
+- Your USD8 History Score based on your USD8 history
+- How many other users are claiming and their USD8 History Scores
 - The balance of the Cover Pool
 
-In practice, the more cover score you have, the higher your claim weight. The max reimbursement amount is 80% your LP value, but it is also possible you might get less than that.
+In practice, the more USD8 History Score you have, the higher your claim weight. The max reimbursement amount is 80% your LP value, but it is also possible you might get less than that.
  
 <br/>
 <br/>

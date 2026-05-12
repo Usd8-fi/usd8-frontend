@@ -103,31 +103,49 @@ Planned coverage (Eth mainnet)
 # Claiming
 <br/><img src="/assets/claiming.png" width="700px" /><br/><br/>
 
-1. To start a claim, user transfers the protected LP token to the Cover Pool. Our front end will also calculate user's cover scores based on historical USD8 usage during this process and submit it on chain.
+1. To start a claim, user transfers the protected LP token to the Cover Pool. Our front end will also calculate user's USD8 History Scores based on historical USD8 usage during this process and submit it on chain.
 2. The claim enters a 10-day window where others can join. After 10 days, that LP token is removed from the covered list and no new claims are accepted.
-3. Claimants can withdraw their reimbursement. The amount is calculated from total claims, each claimant’s cover score*, and the current Cover Pool balance. Payouts will match the Cover Pool’s asset mix.
+3. Claimants can withdraw their reimbursement. The amount is calculated from total claims, each claimant’s USD8 History Score*, and the current Cover Pool balance. Payouts will match the Cover Pool’s asset mix.
 
 After a claim, the protected LP tokens forfeited by claimers becomes the property of USD8 protocol.
 <br/><br/><br/><br/>
-# Cover Score
+# USD8 History Score
 
-Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.
+USD8 History Score is calculated based on your USD8 holding history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings and other LPs so you can still make yield.
 
-Cover Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
+USD8 History Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score. 
 
-Cover scores reset after a successful claim. 
+USD8 History Scores reset after a successful claim. 
 
 ## Algorithm Details
 
-Your Cover Score is your share of the cover pool, computed as a [Shapley value](https://en.wikipedia.org/wiki/Shapley_value):
+Your USD8 History Score is your share of the cover pool, computed as a [Shapley value](https://en.wikipedia.org/wiki/Shapley_value):
 
-```
-ωᵢ = Σ_token weight_token × ∫₀ᵀ balance_token(t)
-   
-dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
-```
+<div style="font-size: 1.25em;">
+\[ \omega_i = \sum_{\text{token}} \text{weight}_{\text{token}} \times \int_0^T \text{balance}_{\text{token}}(t)\, dt \]
+</div>
 
-Each holder's weight `ωᵢ` is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower. Your share `φᵢ` is proportional to your weighted total.
+<div style="font-size: 1.25em;">
+\[ \varphi_i = \omega_i \times \frac{\text{cover pool}}{\sum_{j \in \text{claimants}} \omega_j} \]
+</div>
+
+<div style="font-size: 1.25em;">
+\[ \rho_i = \min\left(\varphi_i,\ \text{loss}_i \times \kappa_{\text{protocol}}\right) \]
+</div>
+
+Where:
+- \\(\omega_i\\) — claimant \\(i\\)'s USD8 History Score (weight)
+- \\(\varphi_i\\) — claimant \\(i\\)'s share of the cover pool before cap
+- \\(\rho_i\\) — claimant \\(i\\)'s final reimbursement amount
+- \\(\kappa_{\text{protocol}}\\) — coverage factor for the hacked protocol (e.g. 0.8 for USD8, 0.7 for Lido)
+- \\(\text{weight}_{\text{token}}\\) — admin-configurable weight per qualifying token (raw USD8 highest, staked / LP lower)
+- \\(\text{balance}_{\text{token}}(t)\\) — claimant's balance of that token at time \\(t\\)
+- \\(T\\) — lookback window over which balances are integrated
+- \\(\text{loss}_i\\) — claimant's loss value in the incident
+
+Each holder's weight \\(\omega_i\\) is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower.
+
+Your share \\(\varphi_i\\) is your weight divided by the total weight of all claimants on the same incident, times the cover pool. The actual reimbursement \\(\rho_i\\) is capped at your loss times the covered protocol's coverage factor \\(\kappa_{\text{protocol}}\\) — so you can never claim more than your covered loss, no matter how large your \\(\varphi_i\\) is.
 
 This is the unique fair allocation in [cooperative game theory](https://en.wikipedia.org/wiki/Cooperative_game_theory) — the only rule that satisfies all four Shapley axioms simultaneously (efficiency, symmetry, null-player, additivity). Pro-rata, time-weighted, and tier-based alternatives each violate at least one.
 
@@ -206,9 +224,9 @@ As shown in the estimation at Y5 if we achieve 20% Tether supply, we could unloc
 <br/><br/><br/><br/>
 # Passing the Walkaway Test
 
-Computing Cover Scores is critical for USD8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the [Walkaway Test](https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html).
+Computing USD8 History Scores is critical for USD8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the [Walkaway Test](https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html).
 
-We are partnering with Brevis and using their ZK Coprocessor to independently compute Cover Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their Cover Score based on their USD8 history. This proof can then be submitted directly to the USD8 payout contract onchain, which verifies it and processes the claim automatically.
+We are partnering with Brevis and using their ZK Coprocessor to independently compute USD8 History Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their USD8 History Score based on their USD8 history. This proof can then be submitted directly to the USD8 payout contract onchain, which verifies it and processes the claim automatically.
 
 Now, even if our team disappears, USD8 payouts will still function independently and trustlessly.
 

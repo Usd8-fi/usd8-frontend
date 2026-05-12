@@ -22,7 +22,7 @@ Security is the core of USD8. For every covered DeFi protocol we work alongside 
 
 # Use cases
 
-1. For passive DeFi users who want their savings protected - Swap your stablecoins for USD8 and deposit into our [Protected Savings](protected-savings.md) to earn yield(est. 3-5%) while being covered. If Protected Savings is hacked, you can claim upto 80% of your loss from the [Cover Pool](cover-pool.md).
+1. For passive DeFi users who want their savings protected - Swap your stablecoins for USD8 and deposit into our [Protected Savings](protected-savings.md) to earn yield(est. 3-5%) while being protected. If this vault is hacked, you can claim upto 80% of your loss from the [Cover Pool](cover-pool.md).
 
 2. For advanced DeFi users actively managing their own yield strategies - Hold USD8 (or USD8 LSTs with yield) and freely use any [Covered DeFi Protocols](cover-pool.md#covered-defi-protocols), now all your positions are protected by the Cover Pool.
 
@@ -35,4 +35,7 @@ Security is the core of USD8. For every covered DeFi protocol we work alongside 
 USD8 can be minted 1:1 with USDC permissionlessly, these USDC collateral will be deployed to Defi platform for yield. Rest assured your USD8 is covered by the [Cover Pool](cover-pool.md) upto 80% incase anything goes wrong, you can redeem USD8 upto 80% value. 
 
 Redeem USD8 back to USDC will be also be permissionless, while we expect this process to be instant there might be a delay for large redeems because some external defi protocol might have a delay in their redeeming process, which is out of our control. However there will be an AMM pool available for swaps at anytime.
+<br/><br/><br/><br/>
 
+# We are Crypto Native
+We are crypto native — we live and breathe the decentralized dream and are committed to building projects that adhere as closely as possible to the [Trustless Manifesto](https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html). <br/><br/>[Join us](https://t.me/+e84i2oYk1ao1MTk1) if you share our vision.

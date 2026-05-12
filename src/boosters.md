@@ -1,6 +1,6 @@
 <img class="floating-logo" src="/assets/booster.png" width="500px" /><br/>
 # Boosters <span class="live-pill">Live</span>
-Boosters are NFTs that can be burned when filing a claim to add a 1% boost to your total Cover Score, meaning more insurance coverage for your funds in Defi protocols. Boosters are
+Boosters are NFTs that can be burned when filing a claim to add a 1% boost to your total USD8 History Score, meaning more insurance coverage for your funds in Defi protocols. Boosters are
 
 - usable after USD8 is launched and the Cover Pool is in operation
 - stackable, 2 Boosters give you 2%. No limits

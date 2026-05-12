@@ -248,23 +248,40 @@
 <h1 id="claiming"><a class="header" href="#claiming">Claiming</a></h1>
 <p><br/><img src="/assets/claiming.png" width="700px" /><br/><br/></p>
 <ol>
-<li>To start a claim, user transfers the protected LP token to the Cover Pool. Our front end will also calculate user's cover scores based on historical USD8 usage during this process and submit it on chain.</li>
+<li>To start a claim, user transfers the protected LP token to the Cover Pool. Our front end will also calculate user's USD8 History Scores based on historical USD8 usage during this process and submit it on chain.</li>
 <li>The claim enters a 10-day window where others can join. After 10 days, that LP token is removed from the covered list and no new claims are accepted.</li>
-<li>Claimants can withdraw their reimbursement. The amount is calculated from total claims, each claimant’s cover score*, and the current Cover Pool balance. Payouts will match the Cover Pool’s asset mix.</li>
+<li>Claimants can withdraw their reimbursement. The amount is calculated from total claims, each claimant’s USD8 History Score*, and the current Cover Pool balance. Payouts will match the Cover Pool’s asset mix.</li>
 </ol>
 <p>After a claim, the protected LP tokens forfeited by claimers becomes the property of USD8 protocol.
 <br/><br/><br/><br/></p>
-<h1 id="cover-score"><a class="header" href="#cover-score">Cover Score</a></h1>
-<p>Cover Score is calculated based on your USD8 usage history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings.</p>
-<p>Cover Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
-<p>Cover scores reset after a successful claim.</p>
+<h1 id="usd8-history-score"><a class="header" href="#usd8-history-score">USD8 History Score</a></h1>
+<p>USD8 History Score is calculated based on your USD8 holding history — how much you’ve held and for how long. More USD8 held for longer increases the score, this includes USD8 LSTs like USD8 savings and other LPs so you can still make yield.</p>
+<p>USD8 History Score is computed off-chain with an open sourced algorithm, signed by the USD8's front end, and verified on-chain during a claim. Anyone can recalculate and validate every user's score.</p>
+<p>USD8 History Scores reset after a successful claim.</p>
 <h2 id="algorithm-details"><a class="header" href="#algorithm-details">Algorithm Details</a></h2>
-<p>Your Cover Score is your share of the cover pool, computed as a <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>:</p>
-<pre><code>ωᵢ = Σ_token weight_token × ∫₀ᵀ balance_token(t)
-   
-dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
-</code></pre>
-<p>Each holder's weight <code>ωᵢ</code> is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower. Your share <code>φᵢ</code> is proportional to your weighted total.</p>
+<p>Your USD8 History Score is your share of the cover pool, computed as a <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a>:</p>
+<div style="font-size: 1.25em;">
+\[ \omega_i = \sum_{\text{token}} \text{weight}_{\text{token}} \times \int_0^T \text{balance}_{\text{token}}(t)\, dt \]
+</div>
+<div style="font-size: 1.25em;">
+\[ \varphi_i = \omega_i \times \frac{\text{cover pool}}{\sum_{j \in \text{claimants}} \omega_j} \]
+</div>
+<div style="font-size: 1.25em;">
+\[ \rho_i = \min\left(\varphi_i,\ \text{loss}_i \times \kappa_{\text{protocol}}\right) \]
+</div>
+<p>Where:</p>
+<ul>
+<li>\(\omega_i\) — claimant \(i\)'s USD8 History Score (weight)</li>
+<li>\(\varphi_i\) — claimant \(i\)'s share of the cover pool before cap</li>
+<li>\(\rho_i\) — claimant \(i\)'s final reimbursement amount</li>
+<li>\(\kappa_{\text{protocol}}\) — coverage factor for the hacked protocol (e.g. 0.8 for USD8, 0.7 for Lido)</li>
+<li>\(\text{weight}_{\text{token}}\) — admin-configurable weight per qualifying token (raw USD8 highest, staked / LP lower)</li>
+<li>\(\text{balance}_{\text{token}}(t)\) — claimant's balance of that token at time \(t\)</li>
+<li>\(T\) — lookback window over which balances are integrated</li>
+<li>\(\text{loss}_i\) — claimant's loss value in the incident</li>
+</ul>
+<p>Each holder's weight \(\omega_i\) is the sum across qualifying tokens of their balance integrated over time, scaled by an admin-configurable weight per token. Raw USD8 weighs heaviest; staked USD8 and LP positions weigh lower.</p>
+<p>Your share \(\varphi_i\) is your weight divided by the total weight of all claimants on the same incident, times the cover pool. The actual reimbursement \(\rho_i\) is capped at your loss times the covered protocol's coverage factor \(\kappa_{\text{protocol}}\) — so you can never claim more than your covered loss, no matter how large your \(\varphi_i\) is.</p>
 <p>This is the unique fair allocation in <a href="https://en.wikipedia.org/wiki/Cooperative_game_theory">cooperative game theory</a> — the only rule that satisfies all four Shapley axioms simultaneously (efficiency, symmetry, null-player, additivity). Pro-rata, time-weighted, and tier-based alternatives each violate at least one.</p>
 <p>The algorithm is <a href="https://github.com/Usd8-fi/Usd8-fi-usd8-cover-score">open-source</a> and deterministic. Anyone can run it locally and reproduce any holder's score against the chain.</p>
 <p><br/><br/><br/><br/></p>
@@ -336,8 +353,8 @@ dtφᵢ = ωᵢ × pool_reserve / Σⱼ ωⱼ
 <p>As shown in the estimation at Y5 if we achieve 20% Tether supply, we could unlock a cover pool size from 2.5-5 Billion per year for Defi, which will be significant enough as an insurance primitive for the whote industry.</p>
 <p><br/><br/><br/><br/></p>
 <h1 id="passing-the-walkaway-test"><a class="header" href="#passing-the-walkaway-test">Passing the Walkaway Test</a></h1>
-<p>Computing Cover Scores is critical for USD8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">Walkaway Test</a>.</p>
-<p>We are partnering with Brevis and using their ZK Coprocessor to independently compute Cover Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their Cover Score based on their USD8 history. This proof can then be submitted directly to the USD8 payout contract onchain, which verifies it and processes the claim automatically.</p>
+<p>Computing USD8 History Scores is critical for USD8. While relying on our front end works, that is not good enough, we are crypto natives, and we want to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">Walkaway Test</a>.</p>
+<p>We are partnering with Brevis and using their ZK Coprocessor to independently compute USD8 History Scores. Users will be able to use Brevis's ProverNet to generate a cryptographic proof of their USD8 History Score based on their USD8 history. This proof can then be submitted directly to the USD8 payout contract onchain, which verifies it and processes the claim automatically.</p>
 <p>Now, even if our team disappears, USD8 payouts will still function independently and trustlessly.</p>
 <p><br/><img src="/assets/brevis_logo.png" width="200px" /><br/><br/></p>
 <p><br/><br/><br/><br/></p>
