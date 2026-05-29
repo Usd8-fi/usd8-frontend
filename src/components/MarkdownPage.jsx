@@ -54,7 +54,7 @@ export function MarkdownPage({ page, onNavigate }) {
           );
         },
         img({ src = '', alt = '', ...props }) {
-          return <img {...props} src={src} alt={alt} loading="lazy" />;
+          return <img {...props} src={src} alt={alt} />;
         },
         div({ className = '', children, ...props }) {
           if (className === 'booster-checker-placeholder') return <BoosterChecker />;

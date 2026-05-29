@@ -75,6 +75,7 @@ input {
   padding: 16px 10px 12px;
   border-right: 1px solid var(--line);
   background: var(--sidebar);
+  font-size: 0.875em;
   overflow-y: auto;
   overscroll-behavior-y: contain;
 }
@@ -109,13 +110,13 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 5px;
+  gap: 0;
   width: fit-content;
   min-height: 0;
   margin-block-start: 0.6em;
   padding: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 1em;
   line-height: 1.5em;
 }
 
@@ -133,12 +134,16 @@ input {
   border-radius: 999px;
   background: var(--accent);
   color: #fff;
-  font-size: 8px;
+  font-size: 0.55em;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   line-height: 1;
-  padding: 3px 6px;
-  transform: translateY(-1px);
+  margin-left: 0.5em;
+  padding: 0.35em 0.6em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .sidebar-social {
@@ -249,7 +254,7 @@ input {
 .content {
   width: min(100%, calc(var(--content-width) + 30px));
   margin: 0 auto;
-  padding: 40px 15px 64px;
+  padding: 92px 15px 64px;
 }
 
 .content main {
@@ -267,21 +272,21 @@ input {
   font-weight: 700;
   letter-spacing: 0;
   color: var(--text);
-  line-height: 1.05;
+  line-height: normal;
 }
 
 .content h1 {
-  margin: 1.2em 0 0.55em;
+  margin: 1.2em 0 0.6em;
   font-size: 3.5em;
 }
 
 .content h2 {
-  margin: 2.2em 0 0.8em;
+  margin: 2.5em 0 0.8em;
   font-size: 1.7em;
 }
 
 .content h3 {
-  margin: 2em 0 0.8em;
+  margin: 2.5em 0 0.8em;
   font-size: 1.35em;
 }
 
@@ -292,13 +297,14 @@ input {
 }
 
 .content p {
-  margin: 0 0 2em;
+  margin: 1em 0 2em;
 }
 
 .content ul,
 .content ol {
-  margin: 0 0 2em;
-  padding-left: 1.5em;
+  margin: 1em 0 2em;
+  padding-left: 40px;
+  line-height: 1.7em;
 }
 
 .content li {
@@ -322,11 +328,11 @@ input {
 
 .content img,
 .content video {
-  max-width: min(100%, 560px);
+  max-width: 100%;
 }
 
 .content svg {
-  max-width: min(100%, 560px);
+  max-width: 100%;
   height: auto;
 }
 
@@ -596,7 +602,7 @@ tr:nth-child(even) {
   .content img,
   .content video,
   .content svg {
-    max-width: min(100%, 330px);
+    max-width: 100%;
   }
 }
 
