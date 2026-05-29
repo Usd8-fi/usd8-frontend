@@ -177,8 +177,29 @@ USD8 Protected Savings is a yield vault designed for passive DeFi users who want
 Managed by USD8, this vault is covered by the Cover Pool for up to 80% of its value, subject to the pool’s limit.
 
 Depositors receive yield-bearing sUSD8, which can be used to claim coverage from the Cover Pool, permissionlessly, at any time, up to 80% of the sUSD8 value, capped by the Cover Pool balance.
-`},{id:`cover-pool`,title:`Cover Pool`,navTitle:`Cover Pool`,route:`cover-pool.html`,source:`# Cover Pool <span class="coming-soon-pill">Building</span>
-<br/><img src="/assets/coverPool.png" width="700px" /><br/><br/>
+`},{id:`cover-pool`,title:`Cover Pool`,navTitle:`Cover Pool`,route:`cover-pool.html`,source:`<svg class="floating-logo" viewBox="0 0 1836 1304" width="560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="coverpool-ink" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="3" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="260" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <mask id="coverpool-reveal">
+      <rect width="1836" height="1304" fill="black"/>
+      <circle cx="918" cy="652" r="0" fill="white" filter="url(#coverpool-ink)">
+        <animate attributeName="r"
+                 values="0;0;1450"
+                 keyTimes="0;0.15;1"
+                 dur="5s" fill="freeze"
+                 calcMode="spline"
+                 keySplines="0 0 1 1; 0.22 0.61 0.36 1"/>
+      </circle>
+    </mask>
+  </defs>
+  <image href="/assets/coverPool.png" width="1836" height="1304" mask="url(#coverpool-reveal)"/>
+</svg>
+<br/><br/>
+
+# Cover Pool <span class="coming-soon-pill">Building</span>
 
 The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; withdrawals are subject to a 2-day cooldown period if there are no unresolved hacking events, longer (till claims finalised) if there are. Assets still accrue yield during cool down period.
 
