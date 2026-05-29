@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Send } from 'lucide-react';
+import { Menu, Send, X } from 'lucide-react';
 import { MarkdownPage } from './components/MarkdownPage.jsx';
 import { notFoundPage, pages, routeToPage } from './content/pages.js';
 
@@ -46,9 +46,9 @@ function useAnalytics(routeKey) {
   }, [routeKey]);
 }
 
-function Sidebar({ activeId, onNavigate }) {
+function Sidebar({ activeId, isOpen, onNavigate }) {
   return (
-    <aside className="sidebar" aria-label="Table of contents">
+    <aside className={`sidebar${isOpen ? ' open' : ''}`} id="site-navigation" aria-label="Table of contents">
       <a
         className="brand"
         href="/"
@@ -93,6 +93,34 @@ function Sidebar({ activeId, onNavigate }) {
   );
 }
 
+function MobileTopBar({ isOpen, onNavigate, onToggle }) {
+  return (
+    <header className="mobile-topbar">
+      <button
+        className="mobile-menu-button"
+        type="button"
+        aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
+        aria-controls="site-navigation"
+        aria-expanded={isOpen}
+        onClick={onToggle}
+      >
+        {isOpen ? <X size={24} strokeWidth={2.2} /> : <Menu size={24} strokeWidth={2.2} />}
+      </button>
+      <a
+        className="mobile-brand"
+        href="/"
+        onClick={(event) => {
+          event.preventDefault();
+          onNavigate('index.html');
+        }}
+      >
+        <img src="/assets/usd8Logo.svg" alt="" />
+        <span>USD8</span>
+      </a>
+    </header>
+  );
+}
+
 function GitHubMark() {
   return (
     <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
@@ -121,6 +149,7 @@ function PrintPage({ onNavigate }) {
 
 export default function App() {
   const [route, setRoute] = useState(currentRoute);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isPrint = route.file === 'print.html';
   const page = useMemo(() => resolvePage(route.file), [route.file]);
 
@@ -135,15 +164,30 @@ export default function App() {
     setRoute(currentRoute());
   }, [route.file]);
 
+  const navigateAndClose = useCallback((href) => {
+    navigate(href);
+    setMobileNavOpen(false);
+  }, [navigate]);
+
   useAnalytics(route.key);
 
   useEffect(() => {
     function onPopState() {
       setRoute(currentRoute());
+      setMobileNavOpen(false);
     }
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -169,11 +213,22 @@ export default function App() {
   const activeId = isPrint ? '' : page.id;
 
   return (
-    <div className="app-shell">
-      <Sidebar activeId={activeId} onNavigate={navigate} />
+    <div className={`app-shell${mobileNavOpen ? ' nav-open' : ''}`}>
+      <MobileTopBar
+        isOpen={mobileNavOpen}
+        onNavigate={navigateAndClose}
+        onToggle={() => setMobileNavOpen((isOpen) => !isOpen)}
+      />
+      <button
+        className="mobile-nav-backdrop"
+        type="button"
+        aria-label="Close navigation"
+        onClick={() => setMobileNavOpen(false)}
+      />
+      <Sidebar activeId={activeId} isOpen={mobileNavOpen} onNavigate={navigateAndClose} />
       <main className="content-shell">
         <div className="content">
-          {isPrint ? <PrintPage onNavigate={navigate} /> : <MarkdownPage page={page} onNavigate={navigate} />}
+          {isPrint ? <PrintPage onNavigate={navigateAndClose} /> : <MarkdownPage page={page} onNavigate={navigateAndClose} />}
         </div>
       </main>
     </div>

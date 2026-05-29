@@ -60,6 +60,11 @@ input {
   min-height: 100vh;
 }
 
+.mobile-topbar,
+.mobile-nav-backdrop {
+  display: none;
+}
+
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -163,6 +168,77 @@ input {
   height: 21px;
   background: currentColor;
   mask: url("/assets/xlogo.svg") center / contain no-repeat;
+}
+
+@media (max-width: 860px) {
+  .mobile-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 140;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--sidebar);
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .mobile-menu-button:hover {
+    color: var(--gold);
+  }
+
+  .mobile-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--text);
+    font-family: "Delight", ui-monospace, monospace;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .mobile-brand:hover {
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .mobile-brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobile-nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 125;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .nav-open .mobile-nav-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .content-shell {
@@ -451,14 +527,27 @@ tr:nth-child(even) {
 
 @media (max-width: 860px) {
   .sidebar {
-    position: static;
-    width: 100%;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
+    position: fixed;
+    z-index: 130;
+    inset: 56px auto 0 0;
+    width: min(280px, 86vw);
+    padding: 16px 14px 14px;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar .brand {
+    display: none;
   }
 
   .chapter-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .content-shell {
@@ -466,7 +555,7 @@ tr:nth-child(even) {
   }
 
   .content {
-    padding: 40px 15px 56px;
+    padding: 80px 15px 56px;
   }
 
   .content h1 {
