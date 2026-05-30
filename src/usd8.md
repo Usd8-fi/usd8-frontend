@@ -1,4 +1,4 @@
-<img src="/assets/usd8Logo.svg" width="170" />
+<img class="floating-logo" src="/assets/usd8Logo.svg" width="170" />
 <br/><br/>
 
 # USD8 <span class="coming-soon-pill">Building</span>

@@ -1,4 +1,4 @@
-<img src="/assets/booster.png" width="500" />
+<img class="floating-logo" src="/assets/booster.png" width="500" />
 <br/>
 
 # Boosters <span class="live-pill">Live</span>

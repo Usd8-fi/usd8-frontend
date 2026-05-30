@@ -1,4 +1,4 @@
-<img src="/assets/whiteHat.png" width="350" />
+<img class="floating-logo" src="/assets/whiteHat.png" width="350" />
 <br/><br/>
 
 # White Hat Economy <span class="coming-soon-pill">Building</span>

@@ -1,4 +1,4 @@
-<img src="/assets/tyche.png" width="400" />
+<img class="floating-logo" src="/assets/tyche.png" width="400" />
 <br/><br/>
 
 TLDR; [This video](https://x.com/codephobic/status/2045127803897516132) covers most of the philosophical theory about USD8, if you prefer to watch instead of reading.

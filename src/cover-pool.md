@@ -1,6 +1,6 @@
 # Cover Pool <span class="coming-soon-pill">Building</span>
 
-<br/><img src="/assets/coverPool.png" width="700px" />
+<br/><img class="floating-logo" src="/assets/coverPool.png" width="700px" />
 <br/><br/>
 
 The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; withdrawals are subject to a 2-day cooldown period if there are no unresolved hacking events, longer (till claims finalised) if there are. Assets still accrue yield during cool down period.
