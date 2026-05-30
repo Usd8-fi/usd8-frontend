@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import arrowDown from '../assets/arrowDown.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usdcLogo from '../assets/usdc.png';
 
@@ -162,9 +163,9 @@ function ActionModal({ config, connected, onClose }) {
         <div className="dashboard-conversion">
           <div className="dashboard-conversion-rail">
             <Coin type={config.fromCoin} size="xl" />
-            <span className="dashboard-rail-dot" />
-            <span className="dashboard-rail-line" />
-            <span className="dashboard-rail-arrow">v</span>
+            <span className="dashboard-rail-arrow" aria-hidden="true">
+              <img src={arrowDown} alt="" />
+            </span>
             <Coin type={config.toCoin} size="xl" />
           </div>
 
