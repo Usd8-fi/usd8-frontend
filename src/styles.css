@@ -537,7 +537,7 @@ tr:nth-child(even) {
 
 .dashboard-top {
   display: grid;
-  gap: 34px;
+  gap: 14px;
 }
 
 .dashboard-page h1 {
@@ -549,8 +549,8 @@ tr:nth-child(even) {
 .dashboard-wallet-line {
   margin: 0;
   color: #d0d0d0;
-  font-size: 18px;
-  line-height: 1.6;
+  font-size: 1em;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
@@ -1021,11 +1021,7 @@ tr:nth-child(even) {
   }
 
   .dashboard-top {
-    gap: 24px;
-  }
-
-  .dashboard-wallet-line {
-    font-size: 16px;
+    gap: 12px;
   }
 
   .dashboard-summary-row {
