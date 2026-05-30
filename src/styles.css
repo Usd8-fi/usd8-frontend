@@ -592,11 +592,13 @@ tr:nth-child(even) {
   min-height: 140px;
   display: grid;
   align-content: center;
-  justify-items: center;
+  justify-items: end;
   gap: 12px;
+  padding: 26px 32px;
   border-radius: 18px;
   background: #4c4218;
   color: #d7d2c7;
+  text-align: right;
 }
 
 .dashboard-total-card span,
