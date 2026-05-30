@@ -463,15 +463,16 @@ tr:nth-child(even) {
 .booster-check input {
   width: min(100%, 480px);
   padding: 12px 14px;
-  border: 1px solid var(--line);
+  border: 1px solid #454545;
   border-radius: 6px;
-  background: transparent;
+  background: #1f1f1f;
   color: var(--text);
   outline: none;
 }
 
 .booster-check input:focus {
   border-color: var(--accent-strong);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.14);
 }
 
 .booster-check button {
@@ -481,7 +482,8 @@ tr:nth-child(even) {
   border-radius: 6px;
   background: var(--accent);
   color: #fff;
-  font-weight: 800;
+  font: inherit;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -500,8 +502,9 @@ tr:nth-child(even) {
   font-size: 16px;
 }
 
-.booster-message {
+.booster-result .booster-message {
   margin: 0;
+  color: inherit;
 }
 
 .booster-grid {
