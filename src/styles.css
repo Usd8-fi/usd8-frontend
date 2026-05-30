@@ -735,18 +735,17 @@ tr:nth-child(even) {
 }
 
 .dashboard-coin--usd8 img,
-.dashboard-coin--susd8 img {
+.dashboard-coin--susd8 img,
+.dashboard-coin--usdc img {
+  display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
-.dashboard-coin--susd8 {
-  background: transparent;
-}
-
+.dashboard-coin--susd8,
 .dashboard-coin--usdc {
-  background: #2c7ed8;
-  box-shadow: inset 0 0 0 8px #5aa7f0;
+  background: transparent;
 }
 
 .dashboard-modal-backdrop {

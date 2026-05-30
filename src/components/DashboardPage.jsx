@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import sUsd8Logo from '../assets/sUSD8.svg';
+import usdcLogo from '../assets/usdc.png';
 
 const DUMMY_VALUES = {
   totalHistoryScore: '234231',
@@ -81,10 +82,12 @@ function getEthereum() {
 }
 
 function Coin({ type, size = 'md' }) {
-  if (type === 'usd8' || type === 'susd8') {
+  if (type === 'usd8' || type === 'susd8' || type === 'usdc') {
+    const logo = type === 'susd8' ? sUsd8Logo : type === 'usdc' ? usdcLogo : '/assets/usd8Logo.svg';
+
     return (
       <span className={`dashboard-coin dashboard-coin--${size} dashboard-coin--${type}`}>
-        <img src={type === 'susd8' ? sUsd8Logo : '/assets/usd8Logo.svg'} alt="" />
+        <img src={logo} alt="" />
       </span>
     );
   }
