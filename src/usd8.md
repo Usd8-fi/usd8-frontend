@@ -1,23 +1,4 @@
-<svg class="floating-logo" viewBox="0 0 105 105" width="170" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="usd8-ink" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.15" numOctaves="3" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <mask id="usd8-reveal">
-      <rect width="105" height="105" fill="black"/>
-      <circle cx="52.5" cy="52.5" r="0" fill="white" filter="url(#usd8-ink)">
-        <animate attributeName="r"
-                 values="0;0;95"
-                 keyTimes="0;0.15;1"
-                 dur="5s" fill="freeze"
-                 calcMode="spline"
-                 keySplines="0 0 1 1; 0.22 0.61 0.36 1"/>
-      </circle>
-    </mask>
-  </defs>
-  <image href="/assets/usd8Logo.svg" width="105" height="105" mask="url(#usd8-reveal)"/>
-</svg>
+<img src="/assets/usd8Logo.svg" width="170" />
 <br/><br/>
 
 # USD8 <span class="coming-soon-pill">Building</span>

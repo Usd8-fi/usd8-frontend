@@ -1,23 +1,4 @@
-<svg class="floating-logo" viewBox="0 0 408 538" width="350" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="whitehat-ink" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.039" numOctaves="3" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="78" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <mask id="whitehat-reveal">
-      <rect width="408" height="538" fill="black"/>
-      <circle cx="204" cy="269" r="0" fill="white" filter="url(#whitehat-ink)">
-        <animate attributeName="r"
-                 values="0;0;370"
-                 keyTimes="0;0.15;1"
-                 dur="5s" fill="freeze"
-                 calcMode="spline"
-                 keySplines="0 0 1 1; 0.22 0.61 0.36 1"/>
-      </circle>
-    </mask>
-  </defs>
-  <image href="/assets/whiteHat.png" width="408" height="538" mask="url(#whitehat-reveal)"/>
-</svg>
+<img src="/assets/whiteHat.png" width="350" />
 <br/><br/>
 
 # White Hat Economy <span class="coming-soon-pill">Building</span>

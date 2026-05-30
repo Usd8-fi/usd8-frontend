@@ -1,23 +1,4 @@
-<svg class="floating-logo" viewBox="0 0 1019 1411" width="400" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="tyche-ink" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="200" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <mask id="tyche-reveal">
-      <rect width="1019" height="1411" fill="black"/>
-      <circle cx="509.5" cy="705.5" r="0" fill="white" filter="url(#tyche-ink)">
-        <animate attributeName="r"
-                 values="0;0;950"
-                 keyTimes="0;0.15;1"
-                 dur="5s" fill="freeze"
-                 calcMode="spline"
-                 keySplines="0 0 1 1; 0.22 0.61 0.36 1"/>
-      </circle>
-    </mask>
-  </defs>
-  <image href="/assets/tyche.png" width="1019" height="1411" mask="url(#tyche-reveal)"/>
-</svg>
+<img src="/assets/tyche.png" width="400" />
 <br/><br/>
 
 TLDR; [This video](https://x.com/codephobic/status/2045127803897516132) covers most of the philosophical theory about USD8, if you prefer to watch instead of reading.
@@ -71,4 +52,3 @@ This insurance system is exciting because:
 Since USD8 sits on a pile of hacked LP tokens after users claim, this puts USD8 in a unique position with significant financial incentives to recover these funds. USD8 will be cultivating a [White Hat Economy](./white-hat-economy.md) as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds — read more on the [White Hat Economy](./white-hat-economy.md) page.
 
 This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, potentially leads to perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.
-

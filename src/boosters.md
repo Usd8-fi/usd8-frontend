@@ -1,23 +1,4 @@
-<svg class="floating-logo" viewBox="0 0 1204 1160" width="500" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="booster-ink" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="3" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="230" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <mask id="booster-reveal">
-      <rect width="1204" height="1160" fill="black"/>
-      <circle cx="602" cy="580" r="0" fill="white" filter="url(#booster-ink)">
-        <animate attributeName="r"
-                 values="0;0;900"
-                 keyTimes="0;0.15;1"
-                 dur="5s" fill="freeze"
-                 calcMode="spline"
-                 keySplines="0 0 1 1; 0.22 0.61 0.36 1"/>
-      </circle>
-    </mask>
-  </defs>
-  <image href="/assets/booster.png" width="1204" height="1160" mask="url(#booster-reveal)"/>
-</svg>
+<img src="/assets/booster.png" width="500" />
 <br/>
 
 # Boosters <span class="live-pill">Live</span>
@@ -50,4 +31,3 @@ Enter an Ethereum address to check Boosters
     <div id="booster-result" class="booster-result"></div>
 </div>
 <br/><br/><br/><br/>
-

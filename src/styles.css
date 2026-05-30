@@ -336,17 +336,6 @@ input {
   height: auto;
 }
 
-.floating-logo {
-  display: inline-block;
-  animation: hero-float 4s ease-in-out infinite;
-}
-
-@keyframes hero-float {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-18px); }
-  100% { transform: translateY(0); }
-}
-
 .image-caption {
   margin: 0.5em 0 3em;
   color: var(--muted);

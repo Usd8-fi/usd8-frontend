@@ -1,25 +1,6 @@
 # Cover Pool <span class="coming-soon-pill">Building</span>
 
-<br/><svg class="floating-logo" viewBox="0 0 1836 1304" width="700px" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="coverpool-ink" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="3" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="260" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <mask id="coverpool-reveal">
-      <rect width="1836" height="1304" fill="black"/>
-      <circle cx="918" cy="652" r="0" fill="white" filter="url(#coverpool-ink)">
-        <animate attributeName="r"
-                 values="0;0;1450"
-                 keyTimes="0;0.15;1"
-                 dur="5s" fill="freeze"
-                 calcMode="spline"
-                 keySplines="0 0 1 1; 0.22 0.61 0.36 1"/>
-      </circle>
-    </mask>
-  </defs>
-  <image href="/assets/coverPool.png" width="1836" height="1304" mask="url(#coverpool-reveal)"/>
-</svg>
+<br/><img src="/assets/coverPool.png" width="700px" />
 <br/><br/>
 
 The Cover Pool is a high yield vault consists of multiple assets, the yield comes from protocol revenue. Anyone can deposit into the pool at any time; withdrawals are subject to a 2-day cooldown period if there are no unresolved hacking events, longer (till claims finalised) if there are. Assets still accrue yield during cool down period.
