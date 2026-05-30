@@ -18,6 +18,7 @@ export const pages = [
   { id: 'help-needed', title: 'Help Needed', navTitle: 'Help Needed', route: 'help-needed.html', source: helpNeeded, navPill: 'LIVE' },
   { id: 'faqs', title: 'FAQs', navTitle: 'FAQs', route: 'faqs.html', source: faqs },
   { id: 'contact', title: 'Contact & Branding', navTitle: 'Contact & Branding', route: 'contact.html', source: contact },
+  { id: 'dashboard', title: 'Dashboard', navTitle: 'Dashboard', route: 'dashboard.html', source: '' },
 ];
 
 export const routeToPage = new Map([

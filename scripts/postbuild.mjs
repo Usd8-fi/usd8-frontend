@@ -13,6 +13,7 @@ const htmlRoutes = [
   'help-needed.html',
   'faqs.html',
   'contact.html',
+  'dashboard.html',
   'print.html',
   '404.html',
 ];
