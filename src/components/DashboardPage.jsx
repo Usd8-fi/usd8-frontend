@@ -34,6 +34,8 @@ const ZERO_VALUES = {
   sUsd8Insurance: '0%',
 };
 
+const WALLET_DISCONNECTED_KEY = 'usd8-dashboard-wallet-disconnected';
+
 const ACTION_CONFIG = {
   mint: {
     title: 'Mint USD8',
@@ -80,6 +82,25 @@ function formatAddress(address) {
 
 function getEthereum() {
   return window.ethereum?.providers?.find((provider) => provider.isMetaMask) || window.ethereum;
+}
+
+function isWalletDisconnected() {
+  try {
+    return window.localStorage.getItem(WALLET_DISCONNECTED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function rememberWalletDisconnected(disconnected) {
+  try {
+    if (disconnected) {
+      window.localStorage.setItem(WALLET_DISCONNECTED_KEY, 'true');
+      return;
+    }
+
+    window.localStorage.removeItem(WALLET_DISCONNECTED_KEY);
+  } catch {}
 }
 
 function Coin({ type, size = 'md' }) {
@@ -249,13 +270,20 @@ export default function DashboardPage() {
 
     let mounted = true;
 
-    ethereum.request({ method: 'eth_accounts' })
-      .then((accounts) => {
-        if (mounted && accounts?.[0]) setAddress(accounts[0]);
-      })
-      .catch(() => {});
+    if (!isWalletDisconnected()) {
+      ethereum.request({ method: 'eth_accounts' })
+        .then((accounts) => {
+          if (mounted && accounts?.[0]) setAddress(accounts[0]);
+        })
+        .catch(() => {});
+    }
 
     function onAccountsChanged(accounts = []) {
+      if (isWalletDisconnected()) {
+        setAddress('');
+        return;
+      }
+
       setAddress(accounts[0] || '');
       setWalletError('');
     }
@@ -279,6 +307,7 @@ export default function DashboardPage() {
     setConnecting(true);
     try {
       const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      rememberWalletDisconnected(false);
       setAddress(accounts?.[0] || '');
     } catch (error) {
       setWalletError(error?.message || 'Wallet connection was cancelled.');
@@ -297,6 +326,7 @@ export default function DashboardPage() {
   }
 
   function disconnectWallet() {
+    rememberWalletDisconnected(true);
     setAddress('');
     setModalKey('');
     setWalletError('');
