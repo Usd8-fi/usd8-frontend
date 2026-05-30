@@ -362,20 +362,19 @@ input {
   gap: 0.35em;
   border-radius: 999px;
   color: #fff;
-  font-weight: 700;
-  letter-spacing: 0;
+  font-weight: 300;
+  letter-spacing: 0.08em;
   line-height: 1;
   white-space: nowrap;
-  vertical-align: middle;
 }
 
 .live-pill,
 .coming-soon-pill {
   position: relative;
-  top: -0.45em;
-  margin-left: 0.35em;
-  padding: 0.48em 0.8em;
-  font-size: 0.22em;
+  top: -2em;
+  margin-left: 0.4em;
+  padding: 0.5em 0.8em 0.45em;
+  font-size: 0.25em;
   text-transform: lowercase;
 }
 
@@ -384,7 +383,7 @@ input {
 }
 
 .coming-soon-pill {
-  background: var(--gold);
+  background: #eab308;
 }
 
 .live-pill::before,
@@ -405,11 +404,12 @@ input {
 .tag-pill {
   position: relative;
   top: -0.25em;
-  margin-left: 0.5em;
-  padding: 0.55em 0.85em;
+  margin-left: 0.6em;
+  padding: 0.6em 0.95em;
   font-size: 0.45em;
-  font-weight: 700;
+  font-weight: 400;
   text-transform: lowercase;
+  vertical-align: middle;
 }
 
 .tag-pill--purple { background: #9333ea; }
@@ -584,12 +584,6 @@ tr:nth-child(even) {
 
   .content h2 {
     font-size: 1.55em;
-  }
-
-  .live-pill,
-  .coming-soon-pill {
-    top: -0.2em;
-    font-size: 10px;
   }
 
   .tag-pill {
