@@ -760,8 +760,8 @@ tr:nth-child(even) {
   padding: 64px 90px 72px;
   border: 8px solid #e6a600;
   border-radius: 28px;
-  background: #181818;
-  color: #fff;
+  background: var(--gold);
+  color: #181818;
 }
 
 .dashboard-confirm-modal {
@@ -770,8 +770,8 @@ tr:nth-child(even) {
   padding: 54px 44px 42px;
   border: 6px solid #e6a600;
   border-radius: 22px;
-  background: #181818;
-  color: #fff;
+  background: var(--gold);
+  color: #181818;
   text-align: center;
 }
 
@@ -787,17 +787,17 @@ tr:nth-child(even) {
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: #f6c24c;
+  color: #181818;
   cursor: pointer;
 }
 
 .dashboard-modal-close:hover {
-  background: rgba(230, 166, 0, 0.16);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .dashboard-page .dashboard-modal h2 {
   margin: 0;
-  color: #ffd36d;
+  color: #181818;
   text-align: center;
   font-size: 42px;
   line-height: 1.1;
@@ -805,14 +805,14 @@ tr:nth-child(even) {
 
 .dashboard-page .dashboard-confirm-modal h2 {
   margin: 0;
-  color: #ffd36d;
+  color: #181818;
   font-size: 34px;
   line-height: 1.1;
 }
 
 .dashboard-confirm-modal p {
   margin: 22px 0 0;
-  color: #d0d0d0;
+  color: #312800;
   line-height: 1.6;
 }
 
@@ -835,11 +835,13 @@ tr:nth-child(even) {
 }
 
 .dashboard-confirm-primary {
-  background: #e6a600;
+  background: #181818;
+  color: var(--gold);
 }
 
 .dashboard-confirm-secondary {
-  background: #3a3a3a;
+  background: rgba(0, 0, 0, 0.22);
+  color: #181818;
 }
 
 .dashboard-confirm-primary:hover,
@@ -891,7 +893,7 @@ tr:nth-child(even) {
 }
 
 .dashboard-token-label {
-  color: #fff;
+  color: #181818;
   font-size: 18px;
 }
 
@@ -901,14 +903,14 @@ tr:nth-child(even) {
   padding: 0 28px;
   border: 0;
   border-radius: 8px;
-  background: #303030;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.48);
+  color: #181818;
   outline: none;
   font-size: 18px;
 }
 
 .dashboard-amount-input:focus {
-  box-shadow: 0 0 0 2px rgba(230, 166, 0, 0.42);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
 }
 
 .dashboard-percent-options {
@@ -920,14 +922,14 @@ tr:nth-child(even) {
 .dashboard-percent-options button {
   border: 0;
   background: transparent;
-  color: #8d8d8d;
+  color: rgba(24, 24, 24, 0.55);
   cursor: pointer;
   font-size: 18px;
 }
 
 .dashboard-percent-options button:hover,
 .dashboard-percent-options button:last-child {
-  color: #fff;
+  color: #181818;
 }
 
 .dashboard-conversion-row--output {
@@ -936,7 +938,7 @@ tr:nth-child(even) {
 }
 
 .dashboard-output-amount {
-  color: #fff;
+  color: #181818;
   font-size: 18px;
 }
 
@@ -948,8 +950,8 @@ tr:nth-child(even) {
   padding: 0 32px;
   border: 0;
   border-radius: 8px;
-  background: #e6a600;
-  color: #fff;
+  background: #181818;
+  color: var(--gold);
   cursor: pointer;
   font-size: 18px;
   transition: opacity 0.18s ease, filter 0.18s ease;
