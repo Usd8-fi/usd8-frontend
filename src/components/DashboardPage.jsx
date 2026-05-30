@@ -5,7 +5,6 @@ import sUsd8Logo from '../assets/sUSD8.svg';
 import usdcLogo from '../assets/usdc.png';
 
 const DUMMY_VALUES = {
-  totalHistoryScore: '234231',
   usd8Balance: '3000',
   usd8Value: '$3000',
   usd8Rate: '10',
@@ -20,7 +19,6 @@ const DUMMY_VALUES = {
 };
 
 const ZERO_VALUES = {
-  totalHistoryScore: '0',
   usd8Balance: '0',
   usd8Value: '$0',
   usd8Rate: '0',
@@ -75,9 +73,9 @@ const ACTION_CONFIG = {
   },
 };
 
-function formatAddress(address) {
-  if (!address) return '';
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+function parseScore(value) {
+  const score = Number(String(value).replace(/[^\d.-]/g, ''));
+  return Number.isFinite(score) ? score : 0;
 }
 
 function getEthereum() {
@@ -263,6 +261,9 @@ export default function DashboardPage() {
   const connected = Boolean(address);
   const values = connected ? DUMMY_VALUES : ZERO_VALUES;
   const modalConfig = modalKey ? ACTION_CONFIG[modalKey] : null;
+  const totalHistoryScore = useMemo(() => (
+    parseScore(values.usd8HistoryEarned) + parseScore(values.sUsd8HistoryEarned)
+  ).toLocaleString('en-US', { maximumFractionDigits: 2 }).replace(/,/g, ''), [values]);
 
   useEffect(() => {
     const ethereum = getEthereum();
@@ -333,12 +334,6 @@ export default function DashboardPage() {
     setDisconnectOpen(false);
   }
 
-  const walletLabel = useMemo(() => {
-    if (connected) return `Wallet connected ${formatAddress(address)}`;
-    if (connecting) return 'Connecting wallet...';
-    return 'Connect wallet';
-  }, [address, connected, connecting]);
-
   function openAction(key) {
     if (!connected) {
       setWalletError('Connect a wallet to use dashboard actions.');
@@ -351,22 +346,31 @@ export default function DashboardPage() {
   return (
     <div className="dashboard-page">
       <div className="dashboard-top">
-        <h1>Your Dashboard</h1>
-        <button
-          className={`dashboard-wallet-button${connected ? ' connected' : ''}`}
-          type="button"
-          disabled={connecting}
-          onClick={onWalletButtonClick}
-        >
-          {walletLabel}
-        </button>
+        <h1>Dashboard</h1>
+        <p className="dashboard-wallet-line">
+          {connected ? (
+            <>
+              Wallet connected as{' '}
+              <button className="dashboard-wallet-link" type="button" onClick={onWalletButtonClick}>
+                {address}
+              </button>
+            </>
+          ) : (
+            <>
+              Wallet not connected{' '}
+              <button className="dashboard-wallet-link" type="button" disabled={connecting} onClick={onWalletButtonClick}>
+                {connecting ? 'Connecting...' : 'Connect'}
+              </button>
+            </>
+          )}
+        </p>
       </div>
       {walletError ? <p className="dashboard-wallet-error">{walletError}</p> : null}
 
       <div className="dashboard-summary-row">
         <div className="dashboard-total-card">
           <span>Total History Score Earned</span>
-          <strong>{values.totalHistoryScore}</strong>
+          <strong>{totalHistoryScore}</strong>
         </div>
       </div>
 

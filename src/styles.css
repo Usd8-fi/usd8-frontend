@@ -536,41 +536,38 @@ tr:nth-child(even) {
 }
 
 .dashboard-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 22px;
+  display: grid;
+  gap: 34px;
 }
 
 .dashboard-page h1 {
   margin: 0;
-  font-size: 40px;
+  font-size: 54px;
   line-height: 1.05;
 }
 
-.dashboard-wallet-button {
-  min-width: 260px;
-  min-height: 52px;
-  padding: 0 30px;
-  border: 1px solid #4a4a4a;
-  border-radius: 999px;
-  background: #222;
-  color: var(--text);
+.dashboard-wallet-line {
+  margin: 0;
+  color: #d0d0d0;
+  font-size: 18px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-wallet-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
   cursor: pointer;
-  transition: opacity 0.18s ease, filter 0.18s ease;
+  text-align: left;
 }
 
-.dashboard-wallet-button.connected {
-  border-color: transparent;
-  background: #70c993;
-  color: #eaf8ef;
+.dashboard-wallet-link:hover:not(:disabled) {
+  text-decoration: underline;
 }
 
-.dashboard-wallet-button:hover:not(:disabled) {
-  opacity: 0.82;
-}
-
-.dashboard-wallet-button:disabled {
+.dashboard-wallet-link:disabled {
   cursor: wait;
   opacity: 0.75;
 }
@@ -588,15 +585,10 @@ tr:nth-child(even) {
 }
 
 .dashboard-total-card {
-  width: min(100%, 286px);
-  min-height: 140px;
+  width: min(100%, 420px);
   display: grid;
-  align-content: center;
   justify-items: end;
   gap: 12px;
-  padding: 26px 32px;
-  border-radius: 18px;
-  background: #4c4218;
   color: #d7d2c7;
   text-align: right;
 }
@@ -612,7 +604,7 @@ tr:nth-child(even) {
 .dashboard-total-card strong {
   color: #fff;
   font-family: "Delight", ui-monospace, monospace;
-  font-size: 46px;
+  font-size: 62px;
   line-height: 1;
 }
 
@@ -1019,7 +1011,7 @@ tr:nth-child(even) {
   }
 
   .dashboard-page h1 {
-    font-size: 34px;
+    font-size: 42px;
   }
 
   .content h2 {
@@ -1027,13 +1019,11 @@ tr:nth-child(even) {
   }
 
   .dashboard-top {
-    align-items: flex-start;
-    flex-direction: column;
+    gap: 24px;
   }
 
-  .dashboard-wallet-button {
-    width: 100%;
-    min-width: 0;
+  .dashboard-wallet-line {
+    font-size: 16px;
   }
 
   .dashboard-summary-row {
@@ -1099,7 +1089,7 @@ tr:nth-child(even) {
   }
 
   .dashboard-page h1 {
-    font-size: 30px;
+    font-size: 36px;
   }
 
   .content h2 {
