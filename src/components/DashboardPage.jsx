@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import sUsd8Logo from '../assets/sUSD8.svg';
 
 const DUMMY_VALUES = {
   totalHistoryScore: '234231',
@@ -80,10 +81,10 @@ function getEthereum() {
 }
 
 function Coin({ type, size = 'md' }) {
-  if (type === 'usd8') {
+  if (type === 'usd8' || type === 'susd8') {
     return (
-      <span className={`dashboard-coin dashboard-coin--${size} dashboard-coin--usd8`}>
-        <img src="/assets/usd8Logo.svg" alt="" />
+      <span className={`dashboard-coin dashboard-coin--${size} dashboard-coin--${type}`}>
+        <img src={type === 'susd8' ? sUsd8Logo : '/assets/usd8Logo.svg'} alt="" />
       </span>
     );
   }
@@ -196,11 +197,44 @@ function ActionModal({ config, connected, onClose }) {
   );
 }
 
+function DisconnectModal({ onCancel, onConfirm }) {
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.key === 'Escape') onCancel();
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onCancel]);
+
+  return (
+    <div
+      className="dashboard-modal-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <section className="dashboard-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="disconnect-title">
+        <button className="dashboard-modal-close" type="button" aria-label="Close dialog" onClick={onCancel}>
+          <X size={22} strokeWidth={2} />
+        </button>
+        <h2 id="disconnect-title">Disconnect wallet?</h2>
+        <p>Disconnecting will clear your dashboard values in this session.</p>
+        <div className="dashboard-confirm-actions">
+          <button className="dashboard-confirm-secondary" type="button" onClick={onCancel}>Cancel</button>
+          <button className="dashboard-confirm-primary" type="button" onClick={onConfirm}>Yes, disconnect</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [address, setAddress] = useState('');
   const [walletError, setWalletError] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [modalKey, setModalKey] = useState('');
+  const [disconnectOpen, setDisconnectOpen] = useState(false);
   const connected = Boolean(address);
   const values = connected ? DUMMY_VALUES : ZERO_VALUES;
   const modalConfig = modalKey ? ACTION_CONFIG[modalKey] : null;
@@ -249,6 +283,22 @@ export default function DashboardPage() {
     }
   }
 
+  function onWalletButtonClick() {
+    if (connected) {
+      setDisconnectOpen(true);
+      return;
+    }
+
+    connectWallet();
+  }
+
+  function disconnectWallet() {
+    setAddress('');
+    setModalKey('');
+    setWalletError('');
+    setDisconnectOpen(false);
+  }
+
   const walletLabel = useMemo(() => {
     if (connected) return `Wallet connected ${formatAddress(address)}`;
     if (connecting) return 'Connecting wallet...';
@@ -272,7 +322,7 @@ export default function DashboardPage() {
           className={`dashboard-wallet-button${connected ? ' connected' : ''}`}
           type="button"
           disabled={connecting}
-          onClick={connectWallet}
+          onClick={onWalletButtonClick}
         >
           {walletLabel}
         </button>
@@ -324,6 +374,7 @@ export default function DashboardPage() {
       </AssetSection>
 
       {modalConfig ? <ActionModal config={modalConfig} connected={connected} onClose={() => setModalKey('')} /> : null}
+      {disconnectOpen ? <DisconnectModal onCancel={() => setDisconnectOpen(false)} onConfirm={disconnectWallet} /> : null}
     </div>
   );
 }
