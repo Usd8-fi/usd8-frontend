@@ -692,6 +692,14 @@ tr:nth-child(even) {
   min-height: 46px;
 }
 
+.dashboard-stat-label > span {
+  display: block;
+}
+
+.dashboard-apy-range span {
+  color: #8d8d8d;
+}
+
 .dashboard-stat-value {
   margin-top: 12px;
   color: #fff;

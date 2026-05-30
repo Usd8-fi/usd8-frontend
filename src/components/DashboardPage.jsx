@@ -120,9 +120,15 @@ function Coin({ type, size = 'md' }) {
 }
 
 function Stat({ label, value, helper }) {
+  const labelLines = Array.isArray(label) ? label : [label];
+
   return (
     <div className="dashboard-stat">
-      <div className="dashboard-stat-label">{label}</div>
+      <div className="dashboard-stat-label">
+        {labelLines.map((line, index) => (
+          <span key={index}>{line}</span>
+        ))}
+      </div>
       <div className="dashboard-stat-value">{value}</div>
       {helper ? <div className="dashboard-stat-helper">{helper}</div> : null}
     </div>
@@ -385,10 +391,10 @@ export default function DashboardPage() {
         )}
       >
         <div className="dashboard-stats dashboard-stats--usd8">
-          <Stat label="Your USD8 Balance" value={values.usd8Balance} helper={values.usd8Value} />
-          <Stat label="History Score Earning Rate" value={values.usd8Rate} helper="per USD8 per block" />
-          <Stat label="History Score Earned" value={values.usd8HistoryEarned} />
-          <Stat label="Insurance Upto" value={values.usd8Insurance} />
+          <Stat label={['USD8', 'Balance']} value={values.usd8Balance} helper={values.usd8Value} />
+          <Stat label={['History Score', 'Earning Rate']} value={values.usd8Rate} helper="per USD8 per block" />
+          <Stat label={['History Score', 'Earned']} value={values.usd8HistoryEarned} />
+          <Stat label={['Insurance', 'Upto']} value={values.usd8Insurance} />
         </div>
       </AssetSection>
 
@@ -403,11 +409,17 @@ export default function DashboardPage() {
         )}
       >
         <div className="dashboard-stats dashboard-stats--savings">
-          <Stat label="Your sUSD8 Balance" value={values.sUsd8Balance} helper={values.sUsd8Value} />
-          <Stat label="APY" value={values.sUsd8Apy} helper="7D 14D 30D" />
-          <Stat label="History Score Earning Rate" value={values.sUsd8Rate} helper="per sUSD8 per block" />
-          <Stat label="History Score Earned" value={values.sUsd8HistoryEarned} />
-          <Stat label="Insurance Upto" value={values.sUsd8Insurance} />
+          <Stat label={['sUSD8', 'Balance']} value={values.sUsd8Balance} helper={values.sUsd8Value} />
+          <Stat
+            label={[
+              'APY',
+              <span className="dashboard-apy-range">7D <span>14D</span> <span>30D</span></span>,
+            ]}
+            value={values.sUsd8Apy}
+          />
+          <Stat label={['History Score', 'Earning Rate']} value={values.sUsd8Rate} helper="per sUSD8 per block" />
+          <Stat label={['History Score', 'Earned']} value={values.sUsd8HistoryEarned} />
+          <Stat label={['Insurance', 'Upto']} value={values.sUsd8Insurance} />
         </div>
       </AssetSection>
 
