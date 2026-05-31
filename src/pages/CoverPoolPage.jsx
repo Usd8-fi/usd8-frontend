@@ -170,7 +170,7 @@ export default function CoverPoolPage() {
         <li>{'\\(\\kappa_{\\text{protocol}}\\)'} — coverage factor for the hacked protocol (e.g. 0.8 for USD8, 0.7 for Lido)</li>
         <li>{'\\(\\text{weight}_{\\text{token}}\\)'} — admin-configurable weight per qualifying token (raw USD8 highest, staked / LP lower)</li>
         <li>{'\\(\\text{balance}_{\\text{token}}(t)\\)'} — claimant&apos;s balance of that token at time {'\\(t\\)'}</li>
-        <li>{'\\(T\\)'} — lookback window over which balances are integrated</li>
+        <li>{'\\(T\\)'} — score period from the configured starting block to the current block</li>
         <li>{'\\(\\text{loss}_i\\)'} — claimant&apos;s loss value in the incident</li>
       </ul>
 

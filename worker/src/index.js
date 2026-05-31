@@ -3,10 +3,10 @@ const BALANCE_OF_SELECTOR = '0x70a08231';
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
 const DEFAULT_CONFIRMATIONS = 12n;
 const DEFAULT_CHUNK_BLOCKS = 50_000n;
-const DEFAULT_LOOKBACK_BLOCKS = 648_000n;
+const DEFAULT_SCORE_START_BLOCK = 24_567_921n;
 const DEFAULT_MAX_RANGES_PER_ASSET = 4;
 const ALCHEMY_TRANSFER_MAX_COUNT = '0x3e8';
-const CHECKPOINT_VERSION = 2;
+const CHECKPOINT_VERSION = 3;
 
 const ASSETS = {
   usd8: {
@@ -452,10 +452,9 @@ function parseAlchemyLogIndex(uniqueId = '') {
 
 function getDefaultFromBlock(env, asset, targetBlock) {
   const deploymentBlock = readBigInt(env[asset.deployBlockEnv], asset.defaultDeployBlock);
-  const lookbackBlocks = readBigInt(env.LOOKBACK_BLOCKS, DEFAULT_LOOKBACK_BLOCKS);
-  const lookbackStart = targetBlock > lookbackBlocks ? targetBlock - lookbackBlocks : 0n;
+  const startBlock = readBigInt(env.SCORE_START_BLOCK, DEFAULT_SCORE_START_BLOCK);
 
-  return lookbackStart > deploymentBlock ? lookbackStart : deploymentBlock;
+  return startBlock > deploymentBlock ? startBlock : deploymentBlock;
 }
 
 function normalizeAddress(address) {
