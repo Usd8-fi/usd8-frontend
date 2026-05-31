@@ -340,6 +340,20 @@ function DisconnectModal({ onCancel, onConfirm }) {
   );
 }
 
+function CriticalAlert({ messages }) {
+  const visibleMessages = messages.filter(Boolean);
+  if (!visibleMessages.length) return null;
+
+  return (
+    <section className="dashboard-critical-alert" role="alert" aria-live="assertive">
+      <strong>Alert</strong>
+      {visibleMessages.map((message) => (
+        <p key={message}>{message}</p>
+      ))}
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const [address, setAddress] = useState('');
   const [walletError, setWalletError] = useState('');
@@ -368,6 +382,10 @@ export default function DashboardPage() {
 
     return (usd8Score + sUsd8Score).toLocaleString('en-US', { maximumFractionDigits: 2 }).replace(/,/g, '');
   }, [values]);
+  const criticalMessages = [
+    walletError,
+    scoreError ? `Could not calculate live history score: ${scoreError}` : '',
+  ];
 
   useEffect(() => {
     const ethereum = getEthereum();
@@ -475,6 +493,8 @@ export default function DashboardPage() {
 
   return (
     <div className={`dashboard-page${connected ? '' : ' dashboard-page--disconnected'}`}>
+      <CriticalAlert messages={criticalMessages} />
+
       <div className="dashboard-top">
         <h1>Dashboard</h1>
         <p className="dashboard-wallet-line">
@@ -496,8 +516,6 @@ export default function DashboardPage() {
           )}
         </p>
       </div>
-      {walletError ? <p className="dashboard-wallet-error">{walletError}</p> : null}
-      {scoreError ? <p className="dashboard-wallet-error">Could not calculate live history score: {scoreError}</p> : null}
 
       <div className="dashboard-summary-row">
         <div className="dashboard-total-card">
