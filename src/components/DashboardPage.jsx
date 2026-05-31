@@ -105,6 +105,10 @@ function formatModalAmount(value) {
   return value.toFixed(6).replace(/\.?0+$/, '');
 }
 
+function getDashboardErrorMessage(error) {
+  return error?.userMessage || error?.shortMessage || error?.message || 'Unable to calculate live cover score.';
+}
+
 function getEthereum() {
   return window.ethereum?.providers?.find((provider) => provider.isMetaMask) || window.ethereum;
 }
@@ -436,7 +440,7 @@ export default function DashboardPage() {
       .catch((error) => {
         if (cancelled) return;
         setDashboardValues(ZERO_VALUES);
-        setScoreError(error?.shortMessage || error?.message || 'Unable to calculate live cover score.');
+        setScoreError(getDashboardErrorMessage(error));
       });
 
     return () => {

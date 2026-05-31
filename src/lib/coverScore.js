@@ -6,6 +6,7 @@ const ERC20_BALANCE_ABI = parseAbi(['function balanceOf(address account) view re
 
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
 const DEFAULT_CHUNK_BLOCKS = 10_000n;
+const MIN_CHUNK_BLOCKS = 1n;
 const USDC_DEPLOYMENT_BLOCK = 6_082_465n;
 const USDT_DEPLOYMENT_BLOCK = 4_634_748n;
 const DEFAULT_USD8_DEPLOY_BLOCK = USDC_DEPLOYMENT_BLOCK;
@@ -56,6 +57,58 @@ function parseBlockValue(value) {
   }
 }
 
+function getErrorText(error) {
+  const parts = [];
+  let current = error;
+  let depth = 0;
+
+  while (current && depth < 5) {
+    parts.push(current.shortMessage, current.message, current.details, current.name, current.code?.toString());
+    current = current.cause;
+    depth += 1;
+  }
+
+  return parts.filter(Boolean).join(' ').toLowerCase();
+}
+
+function isProviderRangeLimitError(error) {
+  const text = getErrorText(error);
+
+  return [
+    'request exceeds defined limit',
+    'defined limit',
+    'block range',
+    'range limit',
+    'query returned more',
+    'response size',
+    'more than',
+  ].some((pattern) => text.includes(pattern));
+}
+
+function isProviderLimitError(error) {
+  const text = getErrorText(error);
+
+  return isProviderRangeLimitError(error) || [
+    'rate limit',
+    'too many requests',
+    '429',
+    'limit exceeded',
+  ].some((pattern) => text.includes(pattern));
+}
+
+function normalizeCoverScoreError(error) {
+  if (!isProviderLimitError(error)) return error;
+
+  const providerError = new Error(
+    'Ethereum RPC rejected the history request because it exceeds the provider query limits. Use a dedicated RPC URL or a shorter history window.',
+  );
+  providerError.name = 'CoverScoreProviderLimitError';
+  providerError.cause = error;
+  providerError.userMessage = providerError.message;
+
+  return providerError;
+}
+
 function getPublicClient() {
   return createPublicClient({
     chain: mainnet,
@@ -72,6 +125,13 @@ function clampStartBlock(startBlock, asofBlock) {
 
 function getDeploymentBlock(asset) {
   return parseBlockValue(readEnv(asset.deployBlockEnv)) ?? asset.defaultDeployBlock;
+}
+
+function getChunkBlocks() {
+  const configuredChunkBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_CHUNK_BLOCKS'));
+
+  if (configuredChunkBlocks !== null && configuredChunkBlocks >= MIN_CHUNK_BLOCKS) return configuredChunkBlocks;
+  return DEFAULT_CHUNK_BLOCKS;
 }
 
 function getFromBlock(asofBlock, deploymentBlock) {
@@ -126,15 +186,38 @@ async function fetchBalanceAt(client, token, holder, blockNumber) {
   }
 }
 
+async function fetchLogsInRange(client, request, fromBlock, toBlock) {
+  try {
+    return await client.getLogs({ ...request, fromBlock, toBlock });
+  } catch (error) {
+    if (!isProviderRangeLimitError(error) || fromBlock >= toBlock) throw error;
+
+    const midpoint = fromBlock + ((toBlock - fromBlock) / 2n);
+    const first = await fetchLogsInRange(client, request, fromBlock, midpoint);
+    const second = await fetchLogsInRange(client, request, midpoint + 1n, toBlock);
+
+    return [...first, ...second];
+  }
+}
+
 async function fetchTransfers(client, token, holder, asofBlock, fromBlock, chunkBlocks) {
   const logs = [];
 
-  for (let cursor = fromBlock; cursor <= asofBlock; cursor += chunkBlocks + 1n) {
-    const toBlock = cursor + chunkBlocks > asofBlock ? asofBlock : cursor + chunkBlocks;
-    const [outgoing, incoming] = await Promise.all([
-      client.getLogs({ address: token, event: TRANSFER_EVENT, args: { from: holder }, fromBlock: cursor, toBlock }),
-      client.getLogs({ address: token, event: TRANSFER_EVENT, args: { to: holder }, fromBlock: cursor, toBlock }),
-    ]);
+  for (let cursor = fromBlock; cursor <= asofBlock; cursor += chunkBlocks) {
+    const toBlock = cursor + chunkBlocks - 1n > asofBlock ? asofBlock : cursor + chunkBlocks - 1n;
+    const outgoing = await fetchLogsInRange(
+      client,
+      { address: token, event: TRANSFER_EVENT, args: { from: holder } },
+      cursor,
+      toBlock,
+    );
+    const incoming = await fetchLogsInRange(
+      client,
+      { address: token, event: TRANSFER_EVENT, args: { to: holder } },
+      cursor,
+      toBlock,
+    );
+
     logs.push(...outgoing, ...incoming);
   }
 
@@ -207,7 +290,7 @@ async function computeStandInScore(holderAddress, asset, client, asofBlock) {
   const tokenAddress = getAddress(asset.token.address);
   const deploymentBlock = getDeploymentBlock(asset);
   const fromBlock = getFromBlock(asofBlock, deploymentBlock);
-  const chunkBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_CHUNK_BLOCKS')) ?? DEFAULT_CHUNK_BLOCKS;
+  const chunkBlocks = getChunkBlocks();
   const asofBlockData = await client.getBlock({ blockNumber: asofBlock });
 
   const fromBlockTimestamp = fromBlock === 0n ? 0n : (await client.getBlock({ blockNumber: fromBlock })).timestamp;
@@ -242,41 +325,45 @@ async function computeStandInScore(holderAddress, asset, client, asofBlock) {
 }
 
 export async function computeDashboardCoverStats(holderAddress) {
-  const client = getPublicClient();
-  const asofBlock = await client.getBlockNumber();
-  const [usd8Score, sUsd8Score] = await Promise.all([
-    computeStandInScore(holderAddress, SCORE_ASSETS.usd8, client, asofBlock),
-    computeStandInScore(holderAddress, SCORE_ASSETS.sUsd8, client, asofBlock),
-  ]);
-  const usd8HistoryScore = usd8Score.tokenBlockWeight * SCORE_ASSETS.usd8.scorePerTokenPerBlock;
-  const sUsd8HistoryScore = sUsd8Score.tokenBlockWeight * SCORE_ASSETS.sUsd8.scorePerTokenPerBlock;
+  try {
+    const client = getPublicClient();
+    const asofBlock = await client.getBlockNumber();
+    const [usd8Score, sUsd8Score] = await Promise.all([
+      computeStandInScore(holderAddress, SCORE_ASSETS.usd8, client, asofBlock),
+      computeStandInScore(holderAddress, SCORE_ASSETS.sUsd8, client, asofBlock),
+    ]);
+    const usd8HistoryScore = usd8Score.tokenBlockWeight * SCORE_ASSETS.usd8.scorePerTokenPerBlock;
+    const sUsd8HistoryScore = sUsd8Score.tokenBlockWeight * SCORE_ASSETS.sUsd8.scorePerTokenPerBlock;
 
-  return {
-    values: {
-      usd8Balance: formatDashboardNumber(usd8Score.balance, 2),
-      usd8Rate: formatDashboardNumber(SCORE_ASSETS.usd8.scorePerTokenPerBlock, 0),
-      usd8HistoryEarned: formatDashboardNumber(usd8HistoryScore, 0),
-      usd8Insurance: '80%',
-      sUsd8Balance: formatDashboardNumber(sUsd8Score.balance, 2),
-      sUsd8Rate: formatDashboardNumber(SCORE_ASSETS.sUsd8.scorePerTokenPerBlock, 0),
-      sUsd8HistoryEarned: formatDashboardNumber(sUsd8HistoryScore, 0),
-      sUsd8Insurance: '80%',
-    },
-    meta: {
-      usd8: usd8Score,
-      sUsd8: sUsd8Score,
-      rates: {
-        usd8: SCORE_ASSETS.usd8.scorePerTokenPerBlock,
-        sUsd8: SCORE_ASSETS.sUsd8.scorePerTokenPerBlock,
+    return {
+      values: {
+        usd8Balance: formatDashboardNumber(usd8Score.balance, 2),
+        usd8Rate: formatDashboardNumber(SCORE_ASSETS.usd8.scorePerTokenPerBlock, 0),
+        usd8HistoryEarned: formatDashboardNumber(usd8HistoryScore, 0),
+        usd8Insurance: '80%',
+        sUsd8Balance: formatDashboardNumber(sUsd8Score.balance, 2),
+        sUsd8Rate: formatDashboardNumber(SCORE_ASSETS.sUsd8.scorePerTokenPerBlock, 0),
+        sUsd8HistoryEarned: formatDashboardNumber(sUsd8HistoryScore, 0),
+        sUsd8Insurance: '80%',
       },
-      deploymentBlocks: {
-        usd8: usd8Score.deploymentBlock,
-        sUsd8: sUsd8Score.deploymentBlock,
+      meta: {
+        usd8: usd8Score,
+        sUsd8: sUsd8Score,
+        rates: {
+          usd8: SCORE_ASSETS.usd8.scorePerTokenPerBlock,
+          sUsd8: SCORE_ASSETS.sUsd8.scorePerTokenPerBlock,
+        },
+        deploymentBlocks: {
+          usd8: usd8Score.deploymentBlock,
+          sUsd8: sUsd8Score.deploymentBlock,
+        },
+        fromBlocks: {
+          usd8: usd8Score.fromBlock,
+          sUsd8: sUsd8Score.fromBlock,
+        },
       },
-      fromBlocks: {
-        usd8: usd8Score.fromBlock,
-        sUsd8: sUsd8Score.fromBlock,
-      },
-    },
-  };
+    };
+  } catch (error) {
+    throw normalizeCoverScoreError(error);
+  }
 }
