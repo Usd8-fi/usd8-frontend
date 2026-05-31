@@ -5,8 +5,11 @@ const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, addres
 const ERC20_BALANCE_ABI = parseAbi(['function balanceOf(address account) view returns (uint256)']);
 
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
-const DEFAULT_CHUNK_BLOCKS = 10_000n;
+const DEFAULT_CHUNK_BLOCKS = 1_000n;
 const MIN_CHUNK_BLOCKS = 1n;
+const DEFAULT_BLOCK_SECONDS = 12n;
+const DEFAULT_LOOKBACK_DAYS = 365n;
+const DEFAULT_LOOKBACK_BLOCKS = (DEFAULT_LOOKBACK_DAYS * 24n * 60n * 60n) / DEFAULT_BLOCK_SECONDS;
 const USDC_DEPLOYMENT_BLOCK = 6_082_465n;
 const USDT_DEPLOYMENT_BLOCK = 4_634_748n;
 const DEFAULT_USD8_DEPLOY_BLOCK = USDC_DEPLOYMENT_BLOCK;
@@ -134,19 +137,19 @@ function getChunkBlocks() {
   return DEFAULT_CHUNK_BLOCKS;
 }
 
+function getLookbackBlocks() {
+  return parseBlockValue(readEnv('VITE_COVER_SCORE_LOOKBACK_BLOCKS')) ?? DEFAULT_LOOKBACK_BLOCKS;
+}
+
 function getFromBlock(asofBlock, deploymentBlock) {
   const configuredFromBlock = parseBlockValue(readEnv('VITE_COVER_SCORE_FROM_BLOCK'));
   if (configuredFromBlock !== null) {
     return clampStartBlock(configuredFromBlock > deploymentBlock ? configuredFromBlock : deploymentBlock, asofBlock);
   }
 
-  const lookbackBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_LOOKBACK_BLOCKS'));
-  if (lookbackBlocks !== null) {
-    const lookbackStart = asofBlock > lookbackBlocks ? asofBlock - lookbackBlocks : 0n;
-    return clampStartBlock(lookbackStart > deploymentBlock ? lookbackStart : deploymentBlock, asofBlock);
-  }
-
-  return clampStartBlock(deploymentBlock, asofBlock);
+  const lookbackBlocks = getLookbackBlocks();
+  const lookbackStart = asofBlock > lookbackBlocks ? asofBlock - lookbackBlocks : 0n;
+  return clampStartBlock(lookbackStart > deploymentBlock ? lookbackStart : deploymentBlock, asofBlock);
 }
 
 function formatDashboardNumber(value, maximumFractionDigits = 2) {
