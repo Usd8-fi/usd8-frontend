@@ -597,6 +597,13 @@ tr:nth-child(even) {
   margin-top: 66px;
 }
 
+.dashboard-page--disconnected .dashboard-summary-row,
+.dashboard-page--disconnected .dashboard-asset {
+  opacity: 0.38;
+  filter: grayscale(1) saturate(0);
+  transition: opacity 0.18s ease, filter 0.18s ease;
+}
+
 .dashboard-total-card {
   width: min(100%, 420px);
   display: grid;

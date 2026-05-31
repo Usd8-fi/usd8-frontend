@@ -409,7 +409,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="dashboard-page">
+    <div className={`dashboard-page${connected ? '' : ' dashboard-page--disconnected'}`}>
       <div className="dashboard-top">
         <h1>Dashboard</h1>
         <p className="dashboard-wallet-line">
