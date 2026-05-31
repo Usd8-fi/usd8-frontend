@@ -42,7 +42,8 @@ const ACTION_CONFIG = {
     to: 'USD8',
     fromCoin: 'usdc',
     toCoin: 'usd8',
-    defaultAmount: '2000',
+    available: '40000 available',
+    defaultAmount: '200',
   },
   redeem: {
     title: 'Redeem USD8',
@@ -51,7 +52,8 @@ const ACTION_CONFIG = {
     to: 'USDC',
     fromCoin: 'usd8',
     toCoin: 'usdc',
-    defaultAmount: '2000',
+    available: '3000 available',
+    defaultAmount: '200',
   },
   deposit: {
     title: 'Deposit USD8',
@@ -60,6 +62,7 @@ const ACTION_CONFIG = {
     to: 'sUSD8',
     fromCoin: 'usd8',
     toCoin: 'susd8',
+    available: '3000 available',
     defaultAmount: '200',
   },
   withdraw: {
@@ -69,6 +72,7 @@ const ACTION_CONFIG = {
     to: 'USD8',
     fromCoin: 'susd8',
     toCoin: 'usd8',
+    available: '200 available',
     defaultAmount: '200',
   },
 };
@@ -161,6 +165,12 @@ function AssetSection({ type, title, actions, children }) {
 function ActionModal({ config, connected, onClose }) {
   const [amount, setAmount] = useState(config.defaultAmount);
   const outputAmount = amount || '0';
+  const setPercentAmount = (percent) => {
+    const baseAmount = Number(config.defaultAmount);
+    if (!Number.isFinite(baseAmount)) return;
+
+    setAmount(String((baseAmount * percent) / 100));
+  };
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -186,17 +196,10 @@ function ActionModal({ config, connected, onClose }) {
         <h2 id="dashboard-modal-title">{config.title}</h2>
 
         <div className="dashboard-conversion">
-          <div className="dashboard-conversion-rail">
+          <div className="dashboard-conversion-row dashboard-conversion-row--input">
             <Coin type={config.fromCoin} size="xl" />
-            <span className="dashboard-rail-arrow" aria-hidden="true">
-              <img src={arrowDown} alt="" />
-            </span>
-            <Coin type={config.toCoin} size="xl" />
-          </div>
-
-          <div className="dashboard-conversion-fields">
-            <div className="dashboard-conversion-row">
-              <span className="dashboard-token-label">{config.from}</span>
+            <span className="dashboard-token-label">{config.from}</span>
+            <div className="dashboard-amount-field">
               <input
                 className="dashboard-amount-input"
                 inputMode="decimal"
@@ -204,17 +207,25 @@ function ActionModal({ config, connected, onClose }) {
                 onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ''))}
                 aria-label={`${config.from} amount`}
               />
-              <div className="dashboard-percent-options" aria-label="Quick amount options">
-                <button type="button" onClick={() => setAmount('500')}>25%</button>
-                <button type="button" onClick={() => setAmount('1000')}>50%</button>
-                <button type="button" onClick={() => setAmount(config.defaultAmount)}>100%</button>
+              <div className="dashboard-amount-meta">
+                <span className="dashboard-available">{config.available}</span>
+                <div className="dashboard-percent-options" aria-label="Quick amount options">
+                  <button type="button" onClick={() => setPercentAmount(25)}>25%</button>
+                  <button type="button" onClick={() => setPercentAmount(50)}>50%</button>
+                  <button type="button" onClick={() => setPercentAmount(100)}>100%</button>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="dashboard-conversion-row dashboard-conversion-row--output">
-              <span className="dashboard-token-label">{config.to}</span>
-              <span className="dashboard-output-amount">{outputAmount}</span>
-            </div>
+          <span className="dashboard-rail-arrow" aria-hidden="true">
+            <img src={arrowDown} alt="" />
+          </span>
+
+          <div className="dashboard-conversion-row dashboard-conversion-row--output">
+            <Coin type={config.toCoin} size="xl" />
+            <span className="dashboard-token-label">{config.to}</span>
+            <span className="dashboard-output-amount">{outputAmount}</span>
           </div>
         </div>
 
