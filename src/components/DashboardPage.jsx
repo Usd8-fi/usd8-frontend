@@ -6,13 +6,10 @@ import usdcLogo from '../assets/usdc.png';
 
 const DUMMY_VALUES = {
   usd8Balance: '3000',
-  usd8Value: '$3000',
   usd8Rate: '10',
   usd8HistoryEarned: '234231',
   usd8Insurance: '80%',
   sUsd8Balance: '200',
-  sUsd8Value: '$230',
-  sUsd8Apy: '3.5%',
   sUsd8Rate: '1',
   sUsd8HistoryEarned: '1800',
   sUsd8Insurance: '80%',
@@ -20,12 +17,10 @@ const DUMMY_VALUES = {
 
 const ZERO_VALUES = {
   usd8Balance: '0',
-  usd8Value: '$0',
   usd8Rate: '0',
   usd8HistoryEarned: '0',
   usd8Insurance: '0%',
   sUsd8Balance: '0',
-  sUsd8Value: '$0',
   sUsd8Apy: '0%',
   sUsd8Rate: '0',
   sUsd8HistoryEarned: '0',
@@ -33,6 +28,21 @@ const ZERO_VALUES = {
 };
 
 const WALLET_DISCONNECTED_KEY = 'usd8-dashboard-wallet-disconnected';
+
+const APY_VALUES = {
+  '7D': '3.5%',
+  '14D': '5%',
+  '30D': '6%',
+};
+
+const INFO_COPY = {
+  usd8Rate: 'The amount of History Score you earn for holding 1 USD8 for 1 block.',
+  usd8Earned: 'The total History Score earned from your USD8 balance.',
+  usd8Insurance: 'The maximum insurance coverage available for your USD8 balance.',
+  sUsd8Rate: 'The amount of History Score you earn for holding 1 sUSD8 for 1 block.',
+  sUsd8Earned: 'The total History Score earned from your sUSD8 balance.',
+  sUsd8Insurance: 'The maximum insurance coverage available for your sUSD8 balance.',
+};
 
 const ACTION_CONFIG = {
   mint: {
@@ -123,19 +133,53 @@ function Coin({ type, size = 'md' }) {
   );
 }
 
-function Stat({ label, value, helper }) {
+function Stat({ label, value, tooltip }) {
   const labelLines = Array.isArray(label) ? label : [label];
+  const tooltipLabel = labelLines.map((line) => (typeof line === 'string' ? line : '')).filter(Boolean).join(' ');
 
   return (
     <div className="dashboard-stat">
       <div className="dashboard-stat-label">
-        {labelLines.map((line, index) => (
-          <span key={index}>{line}</span>
-        ))}
+        {labelLines.map((line, index) => {
+          const isLastLine = index === labelLines.length - 1;
+
+          return (
+            <span className="dashboard-stat-label-line" key={index}>
+              {line}
+              {isLastLine && tooltip ? (
+                <span className="dashboard-help">
+                  <button className="dashboard-help-button" type="button" aria-label={`${tooltipLabel} info`}>
+                    ?
+                  </button>
+                  <span className="dashboard-help-tooltip" role="tooltip">
+                    {tooltip}
+                  </span>
+                </span>
+              ) : null}
+            </span>
+          );
+        })}
       </div>
       <div className="dashboard-stat-value">{value}</div>
-      {helper ? <div className="dashboard-stat-helper">{helper}</div> : null}
     </div>
+  );
+}
+
+function ApyRangeSelector({ active, onSelect }) {
+  return (
+    <span className="dashboard-apy-range" aria-label="APY range">
+      {Object.keys(APY_VALUES).map((range) => (
+        <button
+          className={active === range ? 'active' : ''}
+          type="button"
+          key={range}
+          onClick={() => onSelect(range)}
+          aria-pressed={active === range}
+        >
+          {range}
+        </button>
+      ))}
+    </span>
   );
 }
 
@@ -275,8 +319,10 @@ export default function DashboardPage() {
   const [connecting, setConnecting] = useState(false);
   const [modalKey, setModalKey] = useState('');
   const [disconnectOpen, setDisconnectOpen] = useState(false);
+  const [apyRange, setApyRange] = useState('7D');
   const connected = Boolean(address);
   const values = connected ? DUMMY_VALUES : ZERO_VALUES;
+  const sUsd8Apy = connected ? APY_VALUES[apyRange] : ZERO_VALUES.sUsd8Apy;
   const modalConfig = modalKey ? ACTION_CONFIG[modalKey] : null;
   const totalHistoryScore = useMemo(() => (
     parseScore(values.usd8HistoryEarned) + parseScore(values.sUsd8HistoryEarned)
@@ -402,10 +448,10 @@ export default function DashboardPage() {
         )}
       >
         <div className="dashboard-stats dashboard-stats--usd8">
-          <Stat label={['USD8', 'Balance']} value={values.usd8Balance} helper={values.usd8Value} />
-          <Stat label={['History Score', 'Earning Rate']} value={values.usd8Rate} helper="per USD8 per block" />
-          <Stat label={['History Score', 'Earned']} value={values.usd8HistoryEarned} />
-          <Stat label={['Insurance', 'Upto']} value={values.usd8Insurance} />
+          <Stat label={['USD8', 'Balance']} value={values.usd8Balance} />
+          <Stat label={['History Score', 'Earning Rate']} value={values.usd8Rate} tooltip={INFO_COPY.usd8Rate} />
+          <Stat label={['History Score', 'Earned']} value={values.usd8HistoryEarned} tooltip={INFO_COPY.usd8Earned} />
+          <Stat label={['Insurance', 'Upto']} value={values.usd8Insurance} tooltip={INFO_COPY.usd8Insurance} />
         </div>
       </AssetSection>
 
@@ -420,17 +466,17 @@ export default function DashboardPage() {
         )}
       >
         <div className="dashboard-stats dashboard-stats--savings">
-          <Stat label={['sUSD8', 'Balance']} value={values.sUsd8Balance} helper={values.sUsd8Value} />
+          <Stat label={['sUSD8', 'Balance']} value={values.sUsd8Balance} />
           <Stat
             label={[
               'APY',
-              <span className="dashboard-apy-range">7D <span>14D</span> <span>30D</span></span>,
+              <ApyRangeSelector active={apyRange} onSelect={setApyRange} />,
             ]}
-            value={values.sUsd8Apy}
+            value={sUsd8Apy}
           />
-          <Stat label={['History Score', 'Earning Rate']} value={values.sUsd8Rate} helper="per sUSD8 per block" />
-          <Stat label={['History Score', 'Earned']} value={values.sUsd8HistoryEarned} />
-          <Stat label={['Insurance', 'Upto']} value={values.sUsd8Insurance} />
+          <Stat label={['History Score', 'Earning Rate']} value={values.sUsd8Rate} tooltip={INFO_COPY.sUsd8Rate} />
+          <Stat label={['History Score', 'Earned']} value={values.sUsd8HistoryEarned} tooltip={INFO_COPY.sUsd8Earned} />
+          <Stat label={['Insurance', 'Upto']} value={values.sUsd8Insurance} tooltip={INFO_COPY.sUsd8Insurance} />
         </div>
       </AssetSection>
 

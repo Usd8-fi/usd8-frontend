@@ -594,8 +594,7 @@ tr:nth-child(even) {
 }
 
 .dashboard-total-card span,
-.dashboard-stat-label,
-.dashboard-stat-helper {
+.dashboard-stat-label {
   color: #d0d0d0;
   font-size: 14px;
   line-height: 1.6;
@@ -692,12 +691,95 @@ tr:nth-child(even) {
   min-height: 46px;
 }
 
-.dashboard-stat-label > span {
-  display: block;
+.dashboard-stat-label-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: 100%;
+  min-height: 22px;
+  white-space: nowrap;
 }
 
-.dashboard-apy-range span {
-  color: #8d8d8d;
+.dashboard-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.dashboard-help-button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #e7ca5d;
+  color: #181818;
+  cursor: pointer;
+  font-family: "Delight", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.dashboard-help-button:hover,
+.dashboard-help-button:focus-visible {
+  opacity: 0.76;
+}
+
+.dashboard-help-tooltip {
+  position: absolute;
+  bottom: calc(100% + 18px);
+  left: 50%;
+  z-index: 40;
+  width: 292px;
+  padding: 28px 30px;
+  border: 6px solid #e7ca5d;
+  border-radius: 18px;
+  background: #181818;
+  color: #d0d0d0;
+  font-size: 14px;
+  line-height: 1.8;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  white-space: normal;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.dashboard-help:hover .dashboard-help-tooltip,
+.dashboard-help:focus-within .dashboard-help-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.dashboard-apy-range {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.dashboard-apy-range button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  cursor: pointer;
+  line-height: inherit;
+}
+
+.dashboard-apy-range button:hover {
+  text-decoration: underline;
+}
+
+.dashboard-apy-range button.active {
+  color: #fff;
+  cursor: default;
+}
+
+.dashboard-apy-range button.active:hover {
+  text-decoration: none;
 }
 
 .dashboard-stat-value {
@@ -706,10 +788,6 @@ tr:nth-child(even) {
   font-family: "Delight", ui-monospace, monospace;
   font-size: 44px;
   line-height: 1;
-}
-
-.dashboard-stat-helper {
-  margin-top: 18px;
 }
 
 .dashboard-coin {
