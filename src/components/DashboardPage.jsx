@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import arrowDown from '../assets/arrowDown.png';
+import greenWallet from '../assets/greenWallet.png';
+import greyWallet from '../assets/greyWallet.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usdcLogo from '../assets/usdc.png';
 
@@ -411,20 +413,21 @@ export default function DashboardPage() {
       <div className="dashboard-top">
         <h1>Dashboard</h1>
         <p className="dashboard-wallet-line">
+          <img className="dashboard-wallet-icon" src={connected ? greenWallet : greyWallet} alt="" />
           {connected ? (
-            <>
+            <span className="dashboard-wallet-copy">
               Wallet connected as{' '}
               <button className="dashboard-wallet-link" type="button" onClick={onWalletButtonClick}>
                 {address}
               </button>
-            </>
+            </span>
           ) : (
-            <>
+            <span className="dashboard-wallet-copy">
               Wallet not connected{' '}
               <button className="dashboard-wallet-link" type="button" disabled={connecting} onClick={onWalletButtonClick}>
                 {connecting ? 'Connecting...' : 'Connect'}
               </button>
-            </>
+            </span>
           )}
         </p>
       </div>
