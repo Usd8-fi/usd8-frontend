@@ -5,17 +5,7 @@ import greenWallet from '../assets/greenWallet.png';
 import greyWallet from '../assets/greyWallet.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usdcLogo from '../assets/usdc.png';
-
-const DUMMY_VALUES = {
-  usd8Balance: '3000',
-  usd8Rate: '10',
-  usd8HistoryEarned: '234231',
-  usd8Insurance: '80%',
-  sUsd8Balance: '200',
-  sUsd8Rate: '1',
-  sUsd8HistoryEarned: '1800',
-  sUsd8Insurance: '80%',
-};
+import { computeDashboardCoverStats } from '../lib/coverScore.js';
 
 const ZERO_VALUES = {
   usd8Balance: '0',
@@ -27,6 +17,17 @@ const ZERO_VALUES = {
   sUsd8Rate: '0',
   sUsd8HistoryEarned: '0',
   sUsd8Insurance: '0%',
+};
+
+const LOADING_VALUES = {
+  usd8Balance: '...',
+  usd8Rate: '...',
+  usd8HistoryEarned: '...',
+  usd8Insurance: '80%',
+  sUsd8Balance: '...',
+  sUsd8Rate: '...',
+  sUsd8HistoryEarned: '...',
+  sUsd8Insurance: '80%',
 };
 
 const WALLET_DISCONNECTED_KEY = 'usd8-dashboard-wallet-disconnected';
@@ -90,6 +91,7 @@ const ACTION_CONFIG = {
 };
 
 function parseScore(value) {
+  if (String(value).includes('...')) return null;
   const score = Number(String(value).replace(/[^\d.-]/g, ''));
   return Number.isFinite(score) ? score : 0;
 }
@@ -322,13 +324,19 @@ export default function DashboardPage() {
   const [modalKey, setModalKey] = useState('');
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [apyRange, setApyRange] = useState('7D');
+  const [dashboardValues, setDashboardValues] = useState(ZERO_VALUES);
+  const [scoreError, setScoreError] = useState('');
   const connected = Boolean(address);
-  const values = connected ? DUMMY_VALUES : ZERO_VALUES;
+  const values = connected ? dashboardValues : ZERO_VALUES;
   const sUsd8Apy = connected ? APY_VALUES[apyRange] : ZERO_VALUES.sUsd8Apy;
   const modalConfig = modalKey ? ACTION_CONFIG[modalKey] : null;
-  const totalHistoryScore = useMemo(() => (
-    parseScore(values.usd8HistoryEarned) + parseScore(values.sUsd8HistoryEarned)
-  ).toLocaleString('en-US', { maximumFractionDigits: 2 }).replace(/,/g, ''), [values]);
+  const totalHistoryScore = useMemo(() => {
+    const usd8Score = parseScore(values.usd8HistoryEarned);
+    const sUsd8Score = parseScore(values.sUsd8HistoryEarned);
+    if (usd8Score === null || sUsd8Score === null) return '...';
+
+    return (usd8Score + sUsd8Score).toLocaleString('en-US', { maximumFractionDigits: 2 }).replace(/,/g, '');
+  }, [values]);
 
   useEffect(() => {
     const ethereum = getEthereum();
@@ -360,6 +368,32 @@ export default function DashboardPage() {
       ethereum.removeListener?.('accountsChanged', onAccountsChanged);
     };
   }, []);
+
+  useEffect(() => {
+    if (!address) {
+      setDashboardValues(ZERO_VALUES);
+      setScoreError('');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setDashboardValues(LOADING_VALUES);
+    setScoreError('');
+
+    computeDashboardCoverStats(address)
+      .then(({ values: liveValues }) => {
+        if (!cancelled) setDashboardValues(liveValues);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setDashboardValues(ZERO_VALUES);
+        setScoreError(error?.shortMessage || error?.message || 'Unable to calculate live cover score.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
   async function connectWallet() {
     const ethereum = getEthereum();
@@ -432,6 +466,7 @@ export default function DashboardPage() {
         </p>
       </div>
       {walletError ? <p className="dashboard-wallet-error">{walletError}</p> : null}
+      {scoreError ? <p className="dashboard-wallet-error">Could not calculate live history score: {scoreError}</p> : null}
 
       <div className="dashboard-summary-row">
         <div className="dashboard-total-card">
