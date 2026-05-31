@@ -91,9 +91,13 @@ const ACTION_CONFIG = {
 };
 
 function parseScore(value) {
-  if (String(value).includes('...')) return null;
+  if (isLoadingValue(value)) return null;
   const score = Number(String(value).replace(/[^\d.-]/g, ''));
   return Number.isFinite(score) ? score : 0;
+}
+
+function isLoadingValue(value) {
+  return String(value).includes('...');
 }
 
 function getEthereum() {
@@ -164,8 +168,20 @@ function Stat({ label, value, tooltip }) {
           );
         })}
       </div>
-      <div className="dashboard-stat-value">{value}</div>
+      <div className="dashboard-stat-value"><DashboardNumber value={value} /></div>
     </div>
+  );
+}
+
+function DashboardNumber({ value, size = 'stat' }) {
+  if (!isLoadingValue(value)) return value;
+
+  return (
+    <span
+      className={`dashboard-number-spinner dashboard-number-spinner--${size}`}
+      role="status"
+      aria-label="Loading calculated value"
+    />
   );
 }
 
@@ -471,7 +487,7 @@ export default function DashboardPage() {
       <div className="dashboard-summary-row">
         <div className="dashboard-total-card">
           <span>Total History Score Earned</span>
-          <strong>{totalHistoryScore}</strong>
+          <strong><DashboardNumber value={totalHistoryScore} size="total" /></strong>
         </div>
       </div>
 
