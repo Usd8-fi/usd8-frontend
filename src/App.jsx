@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Menu, Send, X } from 'lucide-react';
-import DashboardPage from './components/DashboardPage.jsx';
-import { MarkdownPage } from './components/MarkdownPage.jsx';
 import { notFoundPage, pages, routeToPage } from './content/pages.js';
 
 const GA_MEASUREMENT_ID = 'G-XZ3M0DQJ6M';
@@ -139,11 +137,14 @@ function PrintPage({ onNavigate }) {
       <div className="print-title">
         <h1>USD8</h1>
       </div>
-      {pages.filter((page) => page.source).map((page) => (
-        <section className="print-section" key={page.id}>
-          <MarkdownPage page={page} onNavigate={onNavigate} />
-        </section>
-      ))}
+      {pages.filter((page) => page.includeInPrint).map((page) => {
+        const PageComponent = page.component;
+        return (
+          <section className="print-section" key={page.id}>
+            <PageComponent onNavigate={onNavigate} />
+          </section>
+        );
+      })}
     </>
   );
 }
@@ -213,6 +214,7 @@ export default function App() {
 
   const activeId = isPrint ? '' : page.id;
   const isDashboard = !isPrint && page.id === 'dashboard';
+  const PageComponent = page?.component;
 
   return (
     <div className={`app-shell${mobileNavOpen ? ' nav-open' : ''}`}>
@@ -230,7 +232,7 @@ export default function App() {
       <Sidebar activeId={activeId} isOpen={mobileNavOpen} onNavigate={navigateAndClose} />
       <main className="content-shell">
         <div className={`content${isDashboard ? ' dashboard-content' : ''}`}>
-          {isPrint ? <PrintPage onNavigate={navigateAndClose} /> : isDashboard ? <DashboardPage /> : <MarkdownPage page={page} onNavigate={navigateAndClose} />}
+          {isPrint ? <PrintPage onNavigate={navigateAndClose} /> : PageComponent ? <PageComponent onNavigate={navigateAndClose} /> : null}
         </div>
       </main>
     </div>
