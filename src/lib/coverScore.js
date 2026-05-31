@@ -6,7 +6,10 @@ const ERC20_BALANCE_ABI = parseAbi(['function balanceOf(address account) view re
 
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
 const DEFAULT_CHUNK_BLOCKS = 10_000n;
-const DEFAULT_LOOKBACK_BLOCKS = 10_000n;
+const USDC_DEPLOYMENT_BLOCK = 6_082_465n;
+const USDT_DEPLOYMENT_BLOCK = 4_634_748n;
+const DEFAULT_USD8_DEPLOY_BLOCK = USDC_DEPLOYMENT_BLOCK;
+const DEFAULT_SUSD8_DEPLOY_BLOCK = USDT_DEPLOYMENT_BLOCK;
 const USD8_SCORE_PER_TOKEN_PER_BLOCK = 10;
 const SUSD8_SCORE_PER_TOKEN_PER_BLOCK = 1;
 
@@ -15,6 +18,28 @@ const USDC_TOKEN = {
   symbol: 'USDC',
   decimals: 6,
   weight: 1,
+};
+
+const USDT_TOKEN = {
+  address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  symbol: 'USDT',
+  decimals: 6,
+  weight: 1,
+};
+
+const SCORE_ASSETS = {
+  usd8: {
+    token: USDC_TOKEN,
+    deployBlockEnv: 'VITE_USD8_DEPLOY_BLOCK',
+    defaultDeployBlock: DEFAULT_USD8_DEPLOY_BLOCK,
+    scorePerTokenPerBlock: USD8_SCORE_PER_TOKEN_PER_BLOCK,
+  },
+  sUsd8: {
+    token: USDT_TOKEN,
+    deployBlockEnv: 'VITE_SUSD8_DEPLOY_BLOCK',
+    defaultDeployBlock: DEFAULT_SUSD8_DEPLOY_BLOCK,
+    scorePerTokenPerBlock: SUSD8_SCORE_PER_TOKEN_PER_BLOCK,
+  },
 };
 
 function readEnv(name) {
@@ -41,12 +66,27 @@ function getPublicClient() {
   });
 }
 
-function getFromBlock(asofBlock) {
-  const configuredFromBlock = parseBlockValue(readEnv('VITE_COVER_SCORE_FROM_BLOCK'));
-  if (configuredFromBlock !== null) return configuredFromBlock > asofBlock ? asofBlock : configuredFromBlock;
+function clampStartBlock(startBlock, asofBlock) {
+  return startBlock > asofBlock ? asofBlock : startBlock;
+}
 
-  const lookbackBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_LOOKBACK_BLOCKS')) ?? DEFAULT_LOOKBACK_BLOCKS;
-  return asofBlock > lookbackBlocks ? asofBlock - lookbackBlocks : 0n;
+function getDeploymentBlock(asset) {
+  return parseBlockValue(readEnv(asset.deployBlockEnv)) ?? asset.defaultDeployBlock;
+}
+
+function getFromBlock(asofBlock, deploymentBlock) {
+  const configuredFromBlock = parseBlockValue(readEnv('VITE_COVER_SCORE_FROM_BLOCK'));
+  if (configuredFromBlock !== null) {
+    return clampStartBlock(configuredFromBlock > deploymentBlock ? configuredFromBlock : deploymentBlock, asofBlock);
+  }
+
+  const lookbackBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_LOOKBACK_BLOCKS'));
+  if (lookbackBlocks !== null) {
+    const lookbackStart = asofBlock > lookbackBlocks ? asofBlock - lookbackBlocks : 0n;
+    return clampStartBlock(lookbackStart > deploymentBlock ? lookbackStart : deploymentBlock, asofBlock);
+  }
+
+  return clampStartBlock(deploymentBlock, asofBlock);
 }
 
 function formatDashboardNumber(value, maximumFractionDigits = 2) {
@@ -126,7 +166,7 @@ function buildSegments(token, holder, transfers, asofBlock, asofTimestamp, initi
     const endTimestamp = transfers[0]?.blockTimestamp ?? asofTimestamp;
     if (endTimestamp > fromBlockTimestamp) {
       segments.push({
-        token,
+        token: token.address,
         balance: initialBalance,
         startBlock: fromBlock,
         startTimestamp: fromBlockTimestamp,
@@ -142,14 +182,14 @@ function buildSegments(token, holder, transfers, asofBlock, asofTimestamp, initi
     if (getAddress(transfer.to) === holder) balance += transfer.value;
 
     if (balance < 0n) {
-      throw new Error(`negative ${USDC_TOKEN.symbol} balance at block ${transfer.blockNumber}`);
+      throw new Error(`negative ${token.symbol} balance at block ${transfer.blockNumber}`);
     }
 
     const next = transfers[index + 1];
     const endTimestamp = next?.blockTimestamp ?? asofTimestamp;
     if (balance > 0n && endTimestamp > transfer.blockTimestamp) {
       segments.push({
-        token,
+        token: token.address,
         balance,
         startBlock: transfer.blockNumber,
         startTimestamp: transfer.blockTimestamp,
@@ -162,12 +202,11 @@ function buildSegments(token, holder, transfers, asofBlock, asofTimestamp, initi
   return segments;
 }
 
-async function computeUsdcStandInScore(holderAddress) {
+async function computeStandInScore(holderAddress, asset, client, asofBlock) {
   const holder = getAddress(holderAddress);
-  const tokenAddress = getAddress(USDC_TOKEN.address);
-  const client = getPublicClient();
-  const asofBlock = await client.getBlockNumber();
-  const fromBlock = getFromBlock(asofBlock);
+  const tokenAddress = getAddress(asset.token.address);
+  const deploymentBlock = getDeploymentBlock(asset);
+  const fromBlock = getFromBlock(asofBlock, deploymentBlock);
   const chunkBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_CHUNK_BLOCKS')) ?? DEFAULT_CHUNK_BLOCKS;
   const asofBlockData = await client.getBlock({ blockNumber: asofBlock });
 
@@ -179,7 +218,7 @@ async function computeUsdcStandInScore(holderAddress) {
   ]);
 
   const segments = buildSegments(
-    tokenAddress,
+    asset.token,
     holder,
     transfers,
     asofBlock,
@@ -189,40 +228,54 @@ async function computeUsdcStandInScore(holderAddress) {
     fromBlockTimestamp,
   );
   const rawTokenBlockIntegral = integrateRawTokenBlocks(segments);
-  const tokenBlockWeight = normalizeTokenBlockIntegral(rawTokenBlockIntegral, USDC_TOKEN.decimals) * USDC_TOKEN.weight;
-  const balance = Number(formatUnits(currentBalance, USDC_TOKEN.decimals));
+  const tokenBlockWeight = normalizeTokenBlockIntegral(rawTokenBlockIntegral, asset.token.decimals) * asset.token.weight;
+  const balance = Number(formatUnits(currentBalance, asset.token.decimals));
 
   return {
     balance,
     tokenBlockWeight,
     asofBlock,
     fromBlock,
-    token: USDC_TOKEN,
+    deploymentBlock,
+    token: asset.token,
   };
 }
 
 export async function computeDashboardCoverStats(holderAddress) {
-  const usdcScore = await computeUsdcStandInScore(holderAddress);
-  const balance = formatDashboardNumber(usdcScore.balance, 2);
-  const usd8HistoryScore = usdcScore.tokenBlockWeight * USD8_SCORE_PER_TOKEN_PER_BLOCK;
-  const sUsd8HistoryScore = usdcScore.tokenBlockWeight * SUSD8_SCORE_PER_TOKEN_PER_BLOCK;
+  const client = getPublicClient();
+  const asofBlock = await client.getBlockNumber();
+  const [usd8Score, sUsd8Score] = await Promise.all([
+    computeStandInScore(holderAddress, SCORE_ASSETS.usd8, client, asofBlock),
+    computeStandInScore(holderAddress, SCORE_ASSETS.sUsd8, client, asofBlock),
+  ]);
+  const usd8HistoryScore = usd8Score.tokenBlockWeight * SCORE_ASSETS.usd8.scorePerTokenPerBlock;
+  const sUsd8HistoryScore = sUsd8Score.tokenBlockWeight * SCORE_ASSETS.sUsd8.scorePerTokenPerBlock;
 
   return {
     values: {
-      usd8Balance: balance,
-      usd8Rate: formatDashboardNumber(USD8_SCORE_PER_TOKEN_PER_BLOCK, 0),
+      usd8Balance: formatDashboardNumber(usd8Score.balance, 2),
+      usd8Rate: formatDashboardNumber(SCORE_ASSETS.usd8.scorePerTokenPerBlock, 0),
       usd8HistoryEarned: formatDashboardNumber(usd8HistoryScore, 0),
       usd8Insurance: '80%',
-      sUsd8Balance: balance,
-      sUsd8Rate: formatDashboardNumber(SUSD8_SCORE_PER_TOKEN_PER_BLOCK, 0),
+      sUsd8Balance: formatDashboardNumber(sUsd8Score.balance, 2),
+      sUsd8Rate: formatDashboardNumber(SCORE_ASSETS.sUsd8.scorePerTokenPerBlock, 0),
       sUsd8HistoryEarned: formatDashboardNumber(sUsd8HistoryScore, 0),
       sUsd8Insurance: '80%',
     },
     meta: {
-      ...usdcScore,
+      usd8: usd8Score,
+      sUsd8: sUsd8Score,
       rates: {
-        usd8: USD8_SCORE_PER_TOKEN_PER_BLOCK,
-        sUsd8: SUSD8_SCORE_PER_TOKEN_PER_BLOCK,
+        usd8: SCORE_ASSETS.usd8.scorePerTokenPerBlock,
+        sUsd8: SCORE_ASSETS.sUsd8.scorePerTokenPerBlock,
+      },
+      deploymentBlocks: {
+        usd8: usd8Score.deploymentBlock,
+        sUsd8: sUsd8Score.deploymentBlock,
+      },
+      fromBlocks: {
+        usd8: usd8Score.fromBlock,
+        sUsd8: sUsd8Score.fromBlock,
       },
     },
   };
