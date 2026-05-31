@@ -46,6 +46,12 @@ The React site should call this Worker instead of scanning Ethereum logs directl
 
 8. Set `VITE_SCORE_API_URL` for the React build to the deployed Worker URL.
 
+Current Worker URL:
+
+```txt
+https://usd8-score-api.usd8-fi.workers.dev
+```
+
 ## Endpoint
 
 ```txt
