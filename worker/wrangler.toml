@@ -5,10 +5,11 @@ workers_dev = true
 
 [vars]
 ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://usd8.fi,https://www.usd8.fi"
-CHUNK_BLOCKS = "1000"
+CHUNK_BLOCKS = "50000"
 CONFIRMATIONS = "12"
 LOOKBACK_BLOCKS = "2628000"
-MAX_RANGES_PER_ASSET = "20"
+MAX_RANGES_PER_ASSET = "4"
+TRANSFER_HISTORY_SOURCE = "alchemy"
 
 [[d1_databases]]
 binding = "DB"

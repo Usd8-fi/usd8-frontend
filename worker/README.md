@@ -2,7 +2,7 @@
 
 Cloudflare Worker API for dashboard score calculation.
 
-The React site should call this Worker instead of scanning Ethereum logs directly in the browser. The Worker stores resumable per-wallet checkpoints in D1 and advances each score calculation in bounded chunks, so provider limits do not require one huge request.
+The React site should call this Worker instead of scanning Ethereum logs directly in the browser. The Worker stores resumable per-wallet checkpoints in D1 and advances each score calculation in bounded chunks, using Alchemy's indexed `alchemy_getAssetTransfers` API for ERC-20 history.
 
 ## Setup
 
@@ -26,7 +26,7 @@ The React site should call this Worker instead of scanning Ethereum logs directl
    npx wrangler d1 execute usd8-score-cache --remote --file worker/schema.sql --config worker/wrangler.toml
    ```
 
-5. Set the RPC secret:
+5. Set the Alchemy Ethereum mainnet RPC secret:
 
    ```bash
    npx wrangler secret put ETH_RPC_URL --config worker/wrangler.toml

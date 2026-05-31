@@ -2,9 +2,10 @@ const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a
 const BALANCE_OF_SELECTOR = '0x70a08231';
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
 const DEFAULT_CONFIRMATIONS = 12n;
-const DEFAULT_CHUNK_BLOCKS = 1_000n;
+const DEFAULT_CHUNK_BLOCKS = 50_000n;
 const DEFAULT_LOOKBACK_BLOCKS = 2_628_000n;
-const DEFAULT_MAX_RANGES_PER_ASSET = 20;
+const DEFAULT_MAX_RANGES_PER_ASSET = 4;
+const ALCHEMY_TRANSFER_MAX_COUNT = '0x3e8';
 const CHECKPOINT_VERSION = 1;
 
 const ASSETS = {
@@ -232,6 +233,63 @@ async function processTokenRange(env, token, holder, startBlock, endBlock, start
 async function fetchTransfers(env, token, holder, fromBlock, toBlock) {
   if (fromBlock > toBlock) return [];
 
+  if (getTransferHistorySource(env) === 'alchemy') {
+    return fetchTransfersFromAlchemy(env, token, holder, fromBlock, toBlock);
+  }
+
+  return fetchTransfersFromLogs(env, token, holder, fromBlock, toBlock);
+}
+
+async function fetchTransfersFromAlchemy(env, token, holder, fromBlock, toBlock) {
+  const [outgoing, incoming] = await Promise.all([
+    fetchAlchemyTransfersByAddress(env, token, holder, fromBlock, toBlock, 'fromAddress'),
+    fetchAlchemyTransfersByAddress(env, token, holder, fromBlock, toBlock, 'toAddress'),
+  ]);
+  const seen = new Set();
+
+  return [...outgoing, ...incoming]
+    .filter((transfer) => {
+      const id = transfer.id;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.blockNumber !== b.blockNumber) return a.blockNumber < b.blockNumber ? -1 : 1;
+      if (a.logIndex !== b.logIndex) return a.logIndex < b.logIndex ? -1 : 1;
+      return a.id.localeCompare(b.id);
+    });
+}
+
+async function fetchAlchemyTransfersByAddress(env, token, holder, fromBlock, toBlock, addressField) {
+  let pageKey = '';
+  const transfers = [];
+
+  do {
+    const request = {
+      fromBlock: toBlockHex(fromBlock),
+      toBlock: toBlockHex(toBlock),
+      [addressField]: holder,
+      contractAddresses: [token],
+      category: ['erc20'],
+      withMetadata: false,
+      excludeZeroValue: true,
+      maxCount: ALCHEMY_TRANSFER_MAX_COUNT,
+    };
+
+    if (pageKey) request.pageKey = pageKey;
+
+    const result = await rpc(env, 'alchemy_getAssetTransfers', [request]);
+    transfers.push(...(result.transfers || []).map((transfer) => parseAlchemyTransfer(transfer, token)));
+    pageKey = result.pageKey || '';
+  } while (pageKey);
+
+  return transfers;
+}
+
+async function fetchTransfersFromLogs(env, token, holder, fromBlock, toBlock) {
+  if (fromBlock > toBlock) return [];
+
   const holderTopic = addressToTopic(holder);
   const [outgoing, incoming] = await rpcBatch(env, [
     {
@@ -267,6 +325,14 @@ async function fetchTransfers(env, token, holder, fromBlock, toBlock) {
       if (a.blockNumber === b.blockNumber) return Number(a.logIndex - b.logIndex);
       return a.blockNumber < b.blockNumber ? -1 : 1;
     });
+}
+
+function getTransferHistorySource(env) {
+  const configuredSource = String(env.TRANSFER_HISTORY_SOURCE || '').toLowerCase();
+  if (configuredSource === 'alchemy' || configuredSource === 'eth_getlogs') return configuredSource;
+
+  const rpcUrl = String(env.ETH_RPC_URL || env.DEFAULT_RPC_URL || '');
+  return rpcUrl.includes('alchemy.com') ? 'alchemy' : 'eth_getlogs';
 }
 
 async function fetchBalanceAt(env, token, holder, blockNumber) {
@@ -356,12 +422,32 @@ function normalizeRpcError(error) {
 
 function parseTransferLog(log) {
   return {
+    id: `${log.transactionHash}:${log.logIndex}`,
     blockNumber: BigInt(log.blockNumber),
     logIndex: BigInt(log.logIndex || '0x0'),
     from: topicToAddress(log.topics[1]),
     to: topicToAddress(log.topics[2]),
     value: BigInt(log.data || '0x0'),
   };
+}
+
+function parseAlchemyTransfer(transfer, expectedToken) {
+  const rawContractAddress = normalizeAddress(transfer.rawContract?.address || transfer.contractAddress || expectedToken);
+  if (rawContractAddress !== expectedToken) throw new Error(`Unexpected transfer token ${rawContractAddress}.`);
+
+  return {
+    id: transfer.uniqueId || `${transfer.hash}:${transfer.blockNum}:${transfer.from}:${transfer.to}:${transfer.rawContract?.value || '0x0'}`,
+    blockNumber: BigInt(transfer.blockNum),
+    logIndex: parseAlchemyLogIndex(transfer.uniqueId),
+    from: normalizeAddress(transfer.from),
+    to: normalizeAddress(transfer.to),
+    value: BigInt(transfer.rawContract?.value || '0x0'),
+  };
+}
+
+function parseAlchemyLogIndex(uniqueId = '') {
+  const match = String(uniqueId).match(/log:(\d+)$/i);
+  return match ? BigInt(match[1]) : 0n;
 }
 
 function getDefaultFromBlock(env, asset, targetBlock) {
