@@ -678,10 +678,6 @@ tr:nth-child(even) {
   transition: opacity 0.18s ease, filter 0.18s ease;
 }
 
-.dashboard-asset--susd8 .dashboard-action-button {
-  background: #4f8d70;
-}
-
 .dashboard-action-button:disabled {
   cursor: not-allowed;
   filter: saturate(0.6);
