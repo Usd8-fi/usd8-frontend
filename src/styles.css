@@ -883,22 +883,34 @@ tr:nth-child(even) {
 }
 
 .dashboard-modal .dashboard-coin--xl {
-  width: 84px;
-  height: 84px;
+  width: 78px;
+  height: 78px;
 }
 
 .dashboard-conversion-row {
   display: grid;
-  grid-template-columns: 96px 130px minmax(240px, 380px);
+  grid-template-columns: 90px 118px minmax(220px, 360px);
   align-items: center;
-  gap: 24px;
+  gap: 22px;
+}
+
+.dashboard-conversion-row--input {
+  align-items: start;
+}
+
+.dashboard-conversion-row--input > .dashboard-coin {
+  margin-top: -6px;
+}
+
+.dashboard-conversion-row--input > .dashboard-token-label {
+  margin-top: 17px;
 }
 
 .dashboard-token-label {
   font-family: "Delight", ui-monospace, monospace;
   font-weight: 700;
   color: #fff;
-  font-size: 36px;
+  font-size: 32px;
   line-height: 1;
 }
 
@@ -908,7 +920,7 @@ tr:nth-child(even) {
 
 .dashboard-amount-input {
   width: 100%;
-  height: 74px;
+  height: 66px;
   padding: 0 28px;
   border: 2px solid #4e8fea;
   border-radius: 8px;
@@ -916,7 +928,7 @@ tr:nth-child(even) {
   color: #fff;
   outline: none;
   font-family: "Delight", ui-monospace, monospace;
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1;
 }
@@ -963,13 +975,13 @@ tr:nth-child(even) {
 }
 
 .dashboard-conversion-row--output {
-  grid-template-columns: 96px 130px auto;
+  grid-template-columns: 90px 118px auto;
 }
 
 .dashboard-output-amount {
   color: #fff;
   font-family: "Delight", ui-monospace, monospace;
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1;
 }
@@ -1171,8 +1183,8 @@ tr:nth-child(even) {
   }
 
   .dashboard-modal .dashboard-coin--xl {
-    width: 72px;
-    height: 72px;
+    width: 66px;
+    height: 66px;
     font-size: 42px;
   }
 
@@ -1186,14 +1198,22 @@ tr:nth-child(even) {
     grid-column: 1 / -1;
   }
 
+  .dashboard-conversion-row--input > .dashboard-coin {
+    margin-top: 0;
+  }
+
+  .dashboard-conversion-row--input > .dashboard-token-label {
+    margin-top: 20px;
+  }
+
   .dashboard-token-label,
   .dashboard-output-amount,
   .dashboard-amount-input {
-    font-size: 28px;
+    font-size: 26px;
   }
 
   .dashboard-amount-input {
-    height: 64px;
+    height: 58px;
   }
 
   .dashboard-amount-meta {
