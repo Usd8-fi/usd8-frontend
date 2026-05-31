@@ -10,6 +10,7 @@ const MIN_CHUNK_BLOCKS = 1n;
 const DEFAULT_BLOCK_SECONDS = 12n;
 const DEFAULT_LOOKBACK_DAYS = 90n;
 const DEFAULT_LOOKBACK_BLOCKS = (DEFAULT_LOOKBACK_DAYS * 24n * 60n * 60n) / DEFAULT_BLOCK_SECONDS;
+const DEFAULT_SCORE_API_URL = 'https://usd8-score-api.usd8-fi.workers.dev';
 const DEFAULT_SCORE_API_POLL_MS = 1_500;
 const DEFAULT_SCORE_API_MAX_POLLS = 120;
 const USDC_DEPLOYMENT_BLOCK = 6_082_465n;
@@ -64,7 +65,7 @@ function sleep(ms) {
 }
 
 function getScoreApiUrl() {
-  const url = readEnv('VITE_SCORE_API_URL');
+  const url = readEnv('VITE_SCORE_API_URL') || DEFAULT_SCORE_API_URL;
   return url ? String(url).replace(/\/+$/, '') : '';
 }
 
