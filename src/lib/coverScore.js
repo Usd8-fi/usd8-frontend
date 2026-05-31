@@ -7,7 +7,8 @@ const ERC20_BALANCE_ABI = parseAbi(['function balanceOf(address account) view re
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
 const DEFAULT_CHUNK_BLOCKS = 10_000n;
 const DEFAULT_LOOKBACK_BLOCKS = 10_000n;
-const DEFAULT_BLOCK_SECONDS = 12;
+const USD8_SCORE_PER_TOKEN_PER_BLOCK = 10;
+const SUSD8_SCORE_PER_TOKEN_PER_BLOCK = 1;
 
 const USDC_TOKEN = {
   address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -57,15 +58,18 @@ function formatDashboardNumber(value, maximumFractionDigits = 2) {
   }).format(value);
 }
 
-function integrateRaw(segments) {
-  return segments.reduce((total, segment) => total + segment.balance * segment.durationSeconds, 0n);
+function integrateRawTokenBlocks(segments) {
+  return segments.reduce((total, segment) => {
+    const durationBlocks = segment.endBlock > segment.startBlock ? segment.endBlock - segment.startBlock : 0n;
+    return total + segment.balance * durationBlocks;
+  }, 0n);
 }
 
-function normalizeIntegral(rawIntegral, decimals) {
+function normalizeTokenBlockIntegral(rawIntegral, decimals) {
   const scale = 10n ** BigInt(decimals);
-  const wholeTokenSeconds = rawIntegral / scale;
+  const wholeTokenBlocks = rawIntegral / scale;
   const remainder = rawIntegral % scale;
-  return Number(wholeTokenSeconds) + Number(remainder) / Number(scale);
+  return Number(wholeTokenBlocks) + Number(remainder) / Number(scale);
 }
 
 async function fetchBalanceAt(client, token, holder, blockNumber) {
@@ -128,7 +132,6 @@ function buildSegments(token, holder, transfers, asofBlock, asofTimestamp, initi
         startTimestamp: fromBlockTimestamp,
         endBlock: transfers[0]?.blockNumber ?? asofBlock,
         endTimestamp,
-        durationSeconds: endTimestamp - fromBlockTimestamp,
       });
     }
   }
@@ -152,7 +155,6 @@ function buildSegments(token, holder, transfers, asofBlock, asofTimestamp, initi
         startTimestamp: transfer.blockTimestamp,
         endBlock: next?.blockNumber ?? asofBlock,
         endTimestamp,
-        durationSeconds: endTimestamp - transfer.blockTimestamp,
       });
     }
   }
@@ -167,10 +169,7 @@ async function computeUsdcStandInScore(holderAddress) {
   const asofBlock = await client.getBlockNumber();
   const fromBlock = getFromBlock(asofBlock);
   const chunkBlocks = parseBlockValue(readEnv('VITE_COVER_SCORE_CHUNK_BLOCKS')) ?? DEFAULT_CHUNK_BLOCKS;
-  const [asofBlockData, previousBlockData] = await Promise.all([
-    client.getBlock({ blockNumber: asofBlock }),
-    asofBlock > 0n ? client.getBlock({ blockNumber: asofBlock - 1n }) : null,
-  ]);
+  const asofBlockData = await client.getBlock({ blockNumber: asofBlock });
 
   const fromBlockTimestamp = fromBlock === 0n ? 0n : (await client.getBlock({ blockNumber: fromBlock })).timestamp;
   const [transfers, initialBalance, currentBalance] = await Promise.all([
@@ -189,16 +188,13 @@ async function computeUsdcStandInScore(holderAddress) {
     fromBlock,
     fromBlockTimestamp,
   );
-  const rawIntegral = integrateRaw(segments);
-  const rawWeight = normalizeIntegral(rawIntegral, USDC_TOKEN.decimals) * USDC_TOKEN.weight;
-  const blockSeconds = previousBlockData ? Number(asofBlockData.timestamp - previousBlockData.timestamp) : DEFAULT_BLOCK_SECONDS;
-  const ratePerTokenPerBlock = Math.max(blockSeconds || DEFAULT_BLOCK_SECONDS, 1) * USDC_TOKEN.weight;
+  const rawTokenBlockIntegral = integrateRawTokenBlocks(segments);
+  const tokenBlockWeight = normalizeTokenBlockIntegral(rawTokenBlockIntegral, USDC_TOKEN.decimals) * USDC_TOKEN.weight;
   const balance = Number(formatUnits(currentBalance, USDC_TOKEN.decimals));
 
   return {
     balance,
-    ratePerTokenPerBlock,
-    rawWeight,
+    tokenBlockWeight,
     asofBlock,
     fromBlock,
     token: USDC_TOKEN,
@@ -208,20 +204,26 @@ async function computeUsdcStandInScore(holderAddress) {
 export async function computeDashboardCoverStats(holderAddress) {
   const usdcScore = await computeUsdcStandInScore(holderAddress);
   const balance = formatDashboardNumber(usdcScore.balance, 2);
-  const rate = formatDashboardNumber(usdcScore.ratePerTokenPerBlock, 0);
-  const historyScore = formatDashboardNumber(usdcScore.rawWeight, 0);
+  const usd8HistoryScore = usdcScore.tokenBlockWeight * USD8_SCORE_PER_TOKEN_PER_BLOCK;
+  const sUsd8HistoryScore = usdcScore.tokenBlockWeight * SUSD8_SCORE_PER_TOKEN_PER_BLOCK;
 
   return {
     values: {
       usd8Balance: balance,
-      usd8Rate: rate,
-      usd8HistoryEarned: historyScore,
+      usd8Rate: formatDashboardNumber(USD8_SCORE_PER_TOKEN_PER_BLOCK, 0),
+      usd8HistoryEarned: formatDashboardNumber(usd8HistoryScore, 0),
       usd8Insurance: '80%',
       sUsd8Balance: balance,
-      sUsd8Rate: rate,
-      sUsd8HistoryEarned: historyScore,
+      sUsd8Rate: formatDashboardNumber(SUSD8_SCORE_PER_TOKEN_PER_BLOCK, 0),
+      sUsd8HistoryEarned: formatDashboardNumber(sUsd8HistoryScore, 0),
       sUsd8Insurance: '80%',
     },
-    meta: usdcScore,
+    meta: {
+      ...usdcScore,
+      rates: {
+        usd8: USD8_SCORE_PER_TOKEN_PER_BLOCK,
+        sUsd8: SUSD8_SCORE_PER_TOKEN_PER_BLOCK,
+      },
+    },
   };
 }
