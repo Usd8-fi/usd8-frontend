@@ -10,6 +10,8 @@ const MIN_CHUNK_BLOCKS = 1n;
 const DEFAULT_BLOCK_SECONDS = 12n;
 const DEFAULT_LOOKBACK_DAYS = 365n;
 const DEFAULT_LOOKBACK_BLOCKS = (DEFAULT_LOOKBACK_DAYS * 24n * 60n * 60n) / DEFAULT_BLOCK_SECONDS;
+const DEFAULT_SCORE_API_POLL_MS = 1_500;
+const DEFAULT_SCORE_API_MAX_POLLS = 120;
 const USDC_DEPLOYMENT_BLOCK = 6_082_465n;
 const USDT_DEPLOYMENT_BLOCK = 4_634_748n;
 const DEFAULT_USD8_DEPLOY_BLOCK = USDC_DEPLOYMENT_BLOCK;
@@ -48,6 +50,46 @@ const SCORE_ASSETS = {
 
 function readEnv(name) {
   return import.meta.env?.[name];
+}
+
+function readNumberEnv(name, fallback) {
+  const parsed = Number(readEnv(name));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function getScoreApiUrl() {
+  const url = readEnv('VITE_SCORE_API_URL');
+  return url ? String(url).replace(/\/+$/, '') : '';
+}
+
+async function computeDashboardCoverStatsFromApi(holderAddress, scoreApiUrl) {
+  const pollMs = readNumberEnv('VITE_SCORE_API_POLL_MS', DEFAULT_SCORE_API_POLL_MS);
+  const maxPolls = readNumberEnv('VITE_SCORE_API_MAX_POLLS', DEFAULT_SCORE_API_MAX_POLLS);
+
+  for (let attempt = 0; attempt < maxPolls; attempt += 1) {
+    const response = await fetch(`${scoreApiUrl}/score?address=${encodeURIComponent(holderAddress)}`, {
+      headers: { accept: 'application/json' },
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(payload.error || `Score API request failed with status ${response.status}.`);
+    if (payload.status === 'complete') {
+      return {
+        values: payload.values,
+        meta: payload.meta,
+      };
+    }
+
+    await sleep(pollMs);
+  }
+
+  throw new Error('Score sync is still running. Keep the dashboard open or try again in a few minutes.');
 }
 
 function parseBlockValue(value) {
@@ -327,7 +369,7 @@ async function computeStandInScore(holderAddress, asset, client, asofBlock) {
   };
 }
 
-export async function computeDashboardCoverStats(holderAddress) {
+async function computeDashboardCoverStatsFromRpc(holderAddress) {
   try {
     const client = getPublicClient();
     const asofBlock = await client.getBlockNumber();
@@ -369,4 +411,11 @@ export async function computeDashboardCoverStats(holderAddress) {
   } catch (error) {
     throw normalizeCoverScoreError(error);
   }
+}
+
+export async function computeDashboardCoverStats(holderAddress) {
+  const scoreApiUrl = getScoreApiUrl();
+  if (scoreApiUrl) return computeDashboardCoverStatsFromApi(holderAddress, scoreApiUrl);
+
+  return computeDashboardCoverStatsFromRpc(holderAddress);
 }

@@ -3,7 +3,10 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build && node scripts/postbuild.mjs",
     "preview": "vite preview --host 0.0.0.0",
-    "deploy": "./deploy.sh"
+    "deploy": "./deploy.sh",
+    "score-api:dev": "npx wrangler dev --config worker/wrangler.toml",
+    "score-api:deploy": "npx wrangler deploy --config worker/wrangler.toml",
+    "score-api:schema": "npx wrangler d1 execute usd8-score-cache --remote --file worker/schema.sql --config worker/wrangler.toml"
   },
   "dependencies": {
     "lucide-react": "^1.17.0",

@@ -1,0 +1,16 @@
+name = "usd8-score-api"
+main = "src/index.js"
+compatibility_date = "2026-05-31"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://usd8.fi,https://www.usd8.fi"
+CHUNK_BLOCKS = "1000"
+CONFIRMATIONS = "12"
+LOOKBACK_BLOCKS = "2628000"
+MAX_RANGES_PER_ASSET = "20"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "usd8-score-cache"
+database_id = "98fbfd6d-4a8d-470d-b12e-d318680a7cb5"
