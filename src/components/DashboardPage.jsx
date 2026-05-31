@@ -55,7 +55,7 @@ const ACTION_CONFIG = {
     to: 'USD8',
     fromCoin: 'usdc',
     toCoin: 'usd8',
-    available: '40000 available',
+    availableValueKey: 'usd8Balance',
     defaultAmount: '200',
   },
   redeem: {
@@ -65,7 +65,7 @@ const ACTION_CONFIG = {
     to: 'USDC',
     fromCoin: 'usd8',
     toCoin: 'usdc',
-    available: '3000 available',
+    availableValueKey: 'usd8Balance',
     defaultAmount: '200',
   },
   deposit: {
@@ -75,7 +75,7 @@ const ACTION_CONFIG = {
     to: 'sUSD8',
     fromCoin: 'usd8',
     toCoin: 'susd8',
-    available: '3000 available',
+    availableValueKey: 'usd8Balance',
     defaultAmount: '200',
   },
   withdraw: {
@@ -85,7 +85,7 @@ const ACTION_CONFIG = {
     to: 'USD8',
     fromCoin: 'susd8',
     toCoin: 'usd8',
-    available: '200 available',
+    availableValueKey: 'sUsd8Balance',
     defaultAmount: '200',
   },
 };
@@ -98,6 +98,11 @@ function parseScore(value) {
 
 function isLoadingValue(value) {
   return String(value).includes('...');
+}
+
+function formatModalAmount(value) {
+  if (!Number.isFinite(value) || value <= 0) return '0';
+  return value.toFixed(6).replace(/\.?0+$/, '');
 }
 
 function getEthereum() {
@@ -229,11 +234,13 @@ function AssetSection({ type, title, actions, children }) {
 function ActionModal({ config, connected, onClose }) {
   const [amount, setAmount] = useState(config.defaultAmount);
   const outputAmount = amount || '0';
+  const availableAmount = parseScore(config.availableValue);
+  const availableText = availableAmount === null ? '... available' : `${config.availableValue} available`;
   const setPercentAmount = (percent) => {
-    const baseAmount = Number(config.defaultAmount);
+    const baseAmount = availableAmount;
     if (!Number.isFinite(baseAmount)) return;
 
-    setAmount(String((baseAmount * percent) / 100));
+    setAmount(formatModalAmount((baseAmount * percent) / 100));
   };
 
   useEffect(() => {
@@ -272,11 +279,11 @@ function ActionModal({ config, connected, onClose }) {
                 aria-label={`${config.from} amount`}
               />
               <div className="dashboard-amount-meta">
-                <span className="dashboard-available">{config.available}</span>
+                <span className="dashboard-available">{availableText}</span>
                 <div className="dashboard-percent-options" aria-label="Quick amount options">
-                  <button type="button" onClick={() => setPercentAmount(25)}>25%</button>
-                  <button type="button" onClick={() => setPercentAmount(50)}>50%</button>
-                  <button type="button" onClick={() => setPercentAmount(100)}>100%</button>
+                  <button type="button" disabled={availableAmount === null} onClick={() => setPercentAmount(25)}>25%</button>
+                  <button type="button" disabled={availableAmount === null} onClick={() => setPercentAmount(50)}>50%</button>
+                  <button type="button" disabled={availableAmount === null} onClick={() => setPercentAmount(100)}>100%</button>
                 </div>
               </div>
             </div>
@@ -345,7 +352,15 @@ export default function DashboardPage() {
   const connected = Boolean(address);
   const values = connected ? dashboardValues : ZERO_VALUES;
   const sUsd8Apy = connected ? APY_VALUES[apyRange] : ZERO_VALUES.sUsd8Apy;
-  const modalConfig = modalKey ? ACTION_CONFIG[modalKey] : null;
+  const modalConfig = useMemo(() => {
+    const config = modalKey ? ACTION_CONFIG[modalKey] : null;
+    if (!config) return null;
+
+    return {
+      ...config,
+      availableValue: values[config.availableValueKey] ?? '0',
+    };
+  }, [modalKey, values]);
   const totalHistoryScore = useMemo(() => {
     const usd8Score = parseScore(values.usd8HistoryEarned);
     const sUsd8Score = parseScore(values.sUsd8HistoryEarned);
