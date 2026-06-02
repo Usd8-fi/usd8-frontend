@@ -1,51 +1,49 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import { useAppKit } from '@reown/appkit/react';
+import { useAccount, useDisconnect } from 'wagmi';
 import arrowDown from '../assets/arrowDown.png';
 import greenWallet from '../assets/greenWallet.png';
 import greyWallet from '../assets/greyWallet.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
+import usd8Logo from '../assets/usd8Logo.svg';
 import usdcLogo from '../assets/usdc.png';
+import CoverPoolTable, { COVER_POOL_ROWS } from './CoverPoolTable.jsx';
+import CoveredProtocolsTable from './CoveredProtocolsTable.jsx';
+import InfoTooltip from './InfoTooltip.jsx';
+import { BuildingPill } from './PagePrimitives.jsx';
+import TableTokenCell from './TableTokenCell.jsx';
 import { computeDashboardCoverStats } from '../lib/coverScore.js';
+import { walletConnectorConfigured } from '../lib/walletConnector.js';
 
 const ZERO_VALUES = {
   usd8Balance: '0',
   usd8Rate: '0',
   usd8HistoryEarned: '0',
-  usd8Insurance: '0%',
   sUsd8Balance: '0',
-  sUsd8Apy: '0%',
   sUsd8Rate: '0',
   sUsd8HistoryEarned: '0',
-  sUsd8Insurance: '0%',
 };
 
 const LOADING_VALUES = {
   usd8Balance: '...',
   usd8Rate: '...',
   usd8HistoryEarned: '...',
-  usd8Insurance: '80%',
   sUsd8Balance: '...',
   sUsd8Rate: '...',
   sUsd8HistoryEarned: '...',
-  sUsd8Insurance: '80%',
 };
 
-const WALLET_DISCONNECTED_KEY = 'usd8-dashboard-wallet-disconnected';
-
-const APY_VALUES = {
-  '7D': '3.5%',
-  '14D': '5%',
-  '30D': '6%',
-};
+const DEFAULT_SUSD8_APY = '3.5%';
 
 const INFO_COPY = {
-  usd8Rate: 'The amount of History Score you earn for holding 1 USD8 for 1 block.',
-  usd8Earned: 'The total History Score earned from your USD8 balance.',
-  usd8Insurance: 'The maximum insurance coverage available for your USD8 balance.',
-  sUsd8Rate: 'The amount of History Score you earn for holding 1 sUSD8 for 1 block.',
-  sUsd8Earned: 'The total History Score earned from your sUSD8 balance.',
-  sUsd8Insurance: 'The maximum insurance coverage available for your sUSD8 balance.',
+  tableRate: 'This is the standard daily Insurance Score earning rate per token. Your actual daily score is this rate multiplied by your token balance.',
+  tableUserRate: 'This is your daily Insurance Score earning rate based on your current token balance and the standard rate.',
+  tableEarned: 'The total Insurance Score earned from this token position.',
 };
+
+const TOTAL_INSURANCE_SCORE_COPY = 'This is the total overall Insurance Score you have earned through different token positions. This score can be used to claim insurance for any covered DeFi protocol. The actual claim amount depends on the claim, and the more score you have, the more you may be able to claim.';
+const AVAILABLE_INSURANCE_SCORE_COPY = 'This is the Insurance Score currently available for Free Insurance claims. The more Insurance Score you have, the more coverage you may receive.';
 
 const ACTION_CONFIG = {
   mint: {
@@ -56,7 +54,6 @@ const ACTION_CONFIG = {
     fromCoin: 'usdc',
     toCoin: 'usd8',
     availableValueKey: 'usd8Balance',
-    defaultAmount: '200',
   },
   redeem: {
     title: 'Redeem USD8',
@@ -66,7 +63,6 @@ const ACTION_CONFIG = {
     fromCoin: 'usd8',
     toCoin: 'usdc',
     availableValueKey: 'usd8Balance',
-    defaultAmount: '200',
   },
   deposit: {
     title: 'Deposit USD8',
@@ -76,7 +72,6 @@ const ACTION_CONFIG = {
     fromCoin: 'usd8',
     toCoin: 'susd8',
     availableValueKey: 'usd8Balance',
-    defaultAmount: '200',
   },
   withdraw: {
     title: 'Withdraw USD8',
@@ -86,7 +81,6 @@ const ACTION_CONFIG = {
     fromCoin: 'susd8',
     toCoin: 'usd8',
     availableValueKey: 'sUsd8Balance',
-    defaultAmount: '200',
   },
 };
 
@@ -105,31 +99,62 @@ function formatModalAmount(value) {
   return value.toFixed(6).replace(/\.?0+$/, '');
 }
 
+function getWalletInputAmount(availableValue) {
+  const availableAmount = parseScore(availableValue);
+  return availableAmount === null ? '0' : formatModalAmount(availableAmount);
+}
+
+function formatInsuranceRate(value) {
+  if (!Number.isFinite(value) || value <= 0) return '0';
+
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 4,
+    useGrouping: false,
+  }).format(value);
+}
+
+function getUserInsuranceRate(balance, standardRate) {
+  const balanceValue = parseScore(balance);
+  const standardRateValue = parseScore(standardRate);
+  if (balanceValue === null || standardRateValue === null) return '...';
+
+  return formatInsuranceRate(balanceValue * standardRateValue);
+}
+
+function formatCompactStatValue(value) {
+  if (isLoadingValue(value)) return value;
+
+  const rawValue = String(value).trim();
+  if (!rawValue || rawValue.includes('%')) return value;
+
+  const normalizedValue = rawValue.replace(/,/g, '');
+  if (!/^-?\d+(\.\d+)?$/.test(normalizedValue)) return value;
+
+  const numberValue = Number(normalizedValue);
+  if (!Number.isFinite(numberValue)) return value;
+
+  const absoluteValue = Math.abs(numberValue);
+  const units = [
+    { threshold: 1_000_000_000, suffix: 'B' },
+    { threshold: 1_000_000, suffix: 'M' },
+    { threshold: 1_000, suffix: 'k' },
+  ];
+  const unit = units.find((item) => absoluteValue >= item.threshold);
+
+  return unit ? `${(numberValue / unit.threshold).toFixed(1)}${unit.suffix}` : value;
+}
+
+function parseUsdValue(value) {
+  const usdValue = Number(String(value).replace(/[^\d.-]/g, ''));
+  return Number.isFinite(usdValue) ? usdValue : 0;
+}
+
+function formatUsdValue(value) {
+  return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+}
+
 function getDashboardErrorMessage(error) {
   return error?.userMessage || error?.shortMessage || error?.message || 'Unable to calculate live cover score.';
-}
-
-function getEthereum() {
-  return window.ethereum?.providers?.find((provider) => provider.isMetaMask) || window.ethereum;
-}
-
-function isWalletDisconnected() {
-  try {
-    return window.localStorage.getItem(WALLET_DISCONNECTED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function rememberWalletDisconnected(disconnected) {
-  try {
-    if (disconnected) {
-      window.localStorage.setItem(WALLET_DISCONNECTED_KEY, 'true');
-      return;
-    }
-
-    window.localStorage.removeItem(WALLET_DISCONNECTED_KEY);
-  } catch {}
 }
 
 function Coin({ type, size = 'md' }) {
@@ -150,40 +175,8 @@ function Coin({ type, size = 'md' }) {
   );
 }
 
-function Stat({ label, value, tooltip }) {
-  const labelLines = Array.isArray(label) ? label : [label];
-  const tooltipLabel = labelLines.map((line) => (typeof line === 'string' ? line : '')).filter(Boolean).join(' ');
-
-  return (
-    <div className="dashboard-stat">
-      <div className="dashboard-stat-label">
-        {labelLines.map((line, index) => {
-          const isLastLine = index === labelLines.length - 1;
-
-          return (
-            <span className="dashboard-stat-label-line" key={index}>
-              {line}
-              {isLastLine && tooltip ? (
-                <span className="dashboard-help">
-                  <button className="dashboard-help-button" type="button" aria-label={`${tooltipLabel} info`}>
-                    ?
-                  </button>
-                  <span className="dashboard-help-tooltip" role="tooltip">
-                    {tooltip}
-                  </span>
-                </span>
-              ) : null}
-            </span>
-          );
-        })}
-      </div>
-      <div className="dashboard-stat-value"><DashboardNumber value={value} /></div>
-    </div>
-  );
-}
-
-function DashboardNumber({ value, size = 'stat' }) {
-  if (!isLoadingValue(value)) return value;
+function DashboardNumber({ value, size = 'stat', compact = false }) {
+  if (!isLoadingValue(value)) return compact ? formatCompactStatValue(value) : value;
 
   return (
     <span
@@ -194,41 +187,16 @@ function DashboardNumber({ value, size = 'stat' }) {
   );
 }
 
-function ApyRangeSelector({ active, onSelect }) {
+function DashboardTableSection({ className = '', title, pill, meta, children }) {
   return (
-    <span className="dashboard-apy-range" aria-label="APY range">
-      {Object.keys(APY_VALUES).map((range) => (
-        <button
-          className={active === range ? 'active' : ''}
-          type="button"
-          key={range}
-          onClick={() => onSelect(range)}
-          aria-pressed={active === range}
-        >
-          {range}
-        </button>
-      ))}
-    </span>
-  );
-}
-
-function ActionButton({ children, disabled, onClick }) {
-  return (
-    <button className="dashboard-action-button" type="button" disabled={disabled} onClick={onClick}>
-      {children}
-    </button>
-  );
-}
-
-function AssetSection({ type, title, actions, children }) {
-  return (
-    <section className={`dashboard-asset dashboard-asset--${type}`}>
-      <div className="dashboard-asset-header">
-        <div className="dashboard-asset-title">
-          <Coin type={type} size="lg" />
-          <h2>{title}</h2>
+    <section className={`dashboard-table-section${className ? ` ${className}` : ''}`}>
+      <div className="dashboard-table-section-header">
+        <div className="dashboard-asset-title dashboard-table-section-heading">
+          <h2>
+            {title} {pill ?? <BuildingPill />}
+          </h2>
         </div>
-        <div className="dashboard-asset-actions">{actions}</div>
+        {meta ? <div className="dashboard-table-section-meta">{meta}</div> : null}
       </div>
       {children}
     </section>
@@ -236,16 +204,19 @@ function AssetSection({ type, title, actions, children }) {
 }
 
 function ActionModal({ config, connected, onClose }) {
-  const [amount, setAmount] = useState(config.defaultAmount);
-  const outputAmount = amount || '0';
   const availableAmount = parseScore(config.availableValue);
-  const availableText = availableAmount === null ? '... available' : `${config.availableValue} available`;
-  const setPercentAmount = (percent) => {
-    const baseAmount = availableAmount;
-    if (!Number.isFinite(baseAmount)) return;
-
-    setAmount(formatModalAmount((baseAmount * percent) / 100));
+  const walletAmount = availableAmount === null ? '...' : formatModalAmount(availableAmount);
+  const [amount, setAmount] = useState(() => getWalletInputAmount(config.availableValue));
+  const outputAmount = amount || '0';
+  const setMaxAmount = () => {
+    if (!Number.isFinite(availableAmount)) return;
+    setAmount(formatModalAmount(availableAmount));
   };
+
+  useEffect(() => {
+    if (!Number.isFinite(availableAmount)) return;
+    setAmount(formatModalAmount(availableAmount));
+  }, [availableAmount, config.from, config.to]);
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -279,17 +250,20 @@ function ActionModal({ config, connected, onClose }) {
                 className="dashboard-amount-input"
                 inputMode="decimal"
                 value={amount}
-                onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ''))}
+                onChange={(event) => {
+                  setAmount(event.target.value.replace(/[^\d.]/g, ''));
+                }}
                 aria-label={`${config.from} amount`}
               />
-              <div className="dashboard-amount-meta">
-                <span className="dashboard-available">{availableText}</span>
-                <div className="dashboard-percent-options" aria-label="Quick amount options">
-                  <button type="button" disabled={availableAmount === null} onClick={() => setPercentAmount(25)}>25%</button>
-                  <button type="button" disabled={availableAmount === null} onClick={() => setPercentAmount(50)}>50%</button>
-                  <button type="button" disabled={availableAmount === null} onClick={() => setPercentAmount(100)}>100%</button>
-                </div>
-              </div>
+              <button
+                className="text-link-button dashboard-max-wallet-button"
+                type="button"
+                disabled={availableAmount === null}
+                onClick={setMaxAmount}
+                aria-label={`Use maximum ${config.from} amount`}
+              >
+                {walletAmount} in wallet
+              </button>
             </div>
           </div>
 
@@ -312,38 +286,6 @@ function ActionModal({ config, connected, onClose }) {
   );
 }
 
-function DisconnectModal({ onCancel, onConfirm }) {
-  useEffect(() => {
-    function onKeyDown(event) {
-      if (event.key === 'Escape') onCancel();
-    }
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onCancel]);
-
-  return (
-    <div
-      className="dashboard-modal-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onCancel();
-      }}
-    >
-      <section className="dashboard-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="disconnect-title">
-        <button className="dashboard-modal-close" type="button" aria-label="Close dialog" onClick={onCancel}>
-          <X size={22} strokeWidth={2} />
-        </button>
-        <h2 id="disconnect-title">Disconnect wallet?</h2>
-        <p>Disconnecting will clear your dashboard values in this session.</p>
-        <div className="dashboard-confirm-actions">
-          <button className="dashboard-confirm-secondary" type="button" onClick={onCancel}>Cancel</button>
-          <button className="dashboard-confirm-primary" type="button" onClick={onConfirm}>Yes, disconnect</button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function CriticalAlert({ messages }) {
   const visibleMessages = messages.filter(Boolean);
   if (!visibleMessages.length) return null;
@@ -358,18 +300,115 @@ function CriticalAlert({ messages }) {
   );
 }
 
-export default function DashboardPage() {
-  const [address, setAddress] = useState('');
-  const [walletError, setWalletError] = useState('');
-  const [connecting, setConnecting] = useState(false);
+function TokenOverviewTable({ values, sUsd8Apy, connected, onAction }) {
+  const rows = [
+    {
+      id: 'usd8',
+      iconSrc: usd8Logo,
+      token: 'USD8',
+      apy: '-',
+      balance: values.usd8Balance,
+      rate: values.usd8Rate,
+      userRate: getUserInsuranceRate(values.usd8Balance, values.usd8Rate),
+      earned: values.usd8HistoryEarned,
+      actions: [
+        { key: 'mint', label: 'Mint' },
+        { key: 'redeem', label: 'Redeem' },
+      ],
+    },
+    {
+      id: 'susd8',
+      iconSrc: sUsd8Logo,
+      token: 'Protected Savings sUSD8',
+      apy: sUsd8Apy,
+      balance: values.sUsd8Balance,
+      rate: values.sUsd8Rate,
+      userRate: getUserInsuranceRate(values.sUsd8Balance, values.sUsd8Rate),
+      earned: values.sUsd8HistoryEarned,
+      actions: [
+        { key: 'deposit', label: 'Deposit' },
+        { key: 'withdraw', label: 'Withdraw' },
+      ],
+    },
+  ];
+
+  return (
+    <table className="cover-table dashboard-token-table dashboard-insured-token-table">
+      <tbody>
+        <tr className="cover-table-heading-row">
+          <td className="dashboard-insured-token-token-cell">Token</td>
+          <td className="dashboard-insured-token-apy-cell">APY</td>
+          <td className="dashboard-insured-token-balance-cell">Your Balance</td>
+          <td className="dashboard-insured-token-rate-cell">
+            <span className="dashboard-table-heading-label">
+              Standard Insurance Score Earning Rate
+              <InfoTooltip ariaLabel="Standard Insurance Score Earning Rate info" className="dashboard-help--table">
+                {INFO_COPY.tableRate}
+              </InfoTooltip>
+            </span>
+          </td>
+          <td className="dashboard-insured-token-user-rate-cell">
+            <span className="dashboard-table-heading-label">
+              Your Insurance Score Earning Rate
+              <InfoTooltip ariaLabel="Your Insurance Score Earning Rate info" className="dashboard-help--table">
+                {INFO_COPY.tableUserRate}
+              </InfoTooltip>
+            </span>
+          </td>
+          <td className="dashboard-insured-token-earned-cell">
+            <span className="dashboard-table-heading-label">
+              Insurance Score Earned
+              <InfoTooltip ariaLabel="Insurance Score Earned info" className="dashboard-help--table">
+                {INFO_COPY.tableEarned}
+              </InfoTooltip>
+            </span>
+          </td>
+          <td className="table-action-cell dashboard-insured-token-action-cell">Actions</td>
+        </tr>
+
+        {rows.map((row) => (
+          <tr key={row.id}>
+            <td className="dashboard-insured-token-token-cell"><TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell></td>
+            <td className="dashboard-insured-token-apy-cell">{row.apy}</td>
+            <td className="dashboard-insured-token-balance-cell"><DashboardNumber value={row.balance} compact /></td>
+            <td className="dashboard-insured-token-rate-cell"><DashboardNumber value={row.rate} compact /></td>
+            <td className="dashboard-insured-token-user-rate-cell"><DashboardNumber value={row.userRate} compact /></td>
+            <td className="dashboard-insured-token-earned-cell"><DashboardNumber value={row.earned} compact /></td>
+            <td className="table-action-cell dashboard-insured-token-action-cell">
+              <div className="table-action-buttons">
+                {row.actions.map((action) => (
+                  <button
+                    className="dashboard-action-button dashboard-table-action-button"
+                    type="button"
+                    disabled={!connected}
+                    key={action.key}
+                    onClick={() => onAction(action.key)}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function DashboardContent({
+  address = '',
+  connected = false,
+  connecting = false,
+  walletError = '',
+  onWalletButtonClick,
+  onWalletDisconnect,
+}) {
   const [modalKey, setModalKey] = useState('');
-  const [disconnectOpen, setDisconnectOpen] = useState(false);
-  const [apyRange, setApyRange] = useState('7D');
   const [dashboardValues, setDashboardValues] = useState(ZERO_VALUES);
   const [scoreError, setScoreError] = useState('');
-  const connected = Boolean(address);
+  const [actionError, setActionError] = useState('');
   const values = connected ? dashboardValues : ZERO_VALUES;
-  const sUsd8Apy = connected ? APY_VALUES[apyRange] : ZERO_VALUES.sUsd8Apy;
   const modalConfig = useMemo(() => {
     const config = modalKey ? ACTION_CONFIG[modalKey] : null;
     if (!config) return null;
@@ -386,41 +425,19 @@ export default function DashboardPage() {
 
     return (usd8Score + sUsd8Score).toLocaleString('en-US', { maximumFractionDigits: 2 }).replace(/,/g, '');
   }, [values]);
+  const coverPoolTvl = useMemo(() => (
+    formatUsdValue(COVER_POOL_ROWS.reduce((total, row) => total + parseUsdValue(row.tvlUsd), 0))
+  ), []);
   const criticalMessages = [
     walletError,
-    scoreError ? `Could not calculate live history score: ${scoreError}` : '',
+    actionError,
+    scoreError ? `Could not calculate live insurance score: ${scoreError}` : '',
   ];
 
   useEffect(() => {
-    const ethereum = getEthereum();
-    if (!ethereum?.request) return;
-
-    let mounted = true;
-
-    if (!isWalletDisconnected()) {
-      ethereum.request({ method: 'eth_accounts' })
-        .then((accounts) => {
-          if (mounted && accounts?.[0]) setAddress(accounts[0]);
-        })
-        .catch(() => {});
-    }
-
-    function onAccountsChanged(accounts = []) {
-      if (isWalletDisconnected()) {
-        setAddress('');
-        return;
-      }
-
-      setAddress(accounts[0] || '');
-      setWalletError('');
-    }
-
-    ethereum.on?.('accountsChanged', onAccountsChanged);
-    return () => {
-      mounted = false;
-      ethereum.removeListener?.('accountsChanged', onAccountsChanged);
-    };
-  }, []);
+    if (connected) setActionError('');
+    if (!connected) setModalKey('');
+  }, [connected]);
 
   useEffect(() => {
     if (!address) {
@@ -448,50 +465,13 @@ export default function DashboardPage() {
     };
   }, [address]);
 
-  async function connectWallet() {
-    const ethereum = getEthereum();
-    setWalletError('');
-
-    if (!ethereum?.request) {
-      setWalletError('No wallet found. Install MetaMask or another injected wallet.');
-      return;
-    }
-
-    setConnecting(true);
-    try {
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      rememberWalletDisconnected(false);
-      setAddress(accounts?.[0] || '');
-    } catch (error) {
-      setWalletError(error?.message || 'Wallet connection was cancelled.');
-    } finally {
-      setConnecting(false);
-    }
-  }
-
-  function onWalletButtonClick() {
-    if (connected) {
-      setDisconnectOpen(true);
-      return;
-    }
-
-    connectWallet();
-  }
-
-  function disconnectWallet() {
-    rememberWalletDisconnected(true);
-    setAddress('');
-    setModalKey('');
-    setWalletError('');
-    setDisconnectOpen(false);
-  }
-
   function openAction(key) {
     if (!connected) {
-      setWalletError('Connect a wallet to use dashboard actions.');
+      setActionError('Connect a wallet to use dashboard actions.');
       return;
     }
 
+    setActionError('');
     setModalKey(key);
   }
 
@@ -505,15 +485,23 @@ export default function DashboardPage() {
           <img className="dashboard-wallet-icon" src={connected ? greenWallet : greyWallet} alt="" />
           {connected ? (
             <span className="dashboard-wallet-copy">
-              Wallet connected as{' '}
-              <button className="dashboard-wallet-link" type="button" onClick={onWalletButtonClick}>
+              Connected{' '}
+              <span className="dashboard-wallet-address">
                 {address}
+              </span>{' '}
+              <button className="text-link-button dashboard-wallet-link" type="button" onClick={onWalletDisconnect}>
+                Disconnect
               </button>
             </span>
           ) : (
             <span className="dashboard-wallet-copy">
               Wallet not connected{' '}
-              <button className="dashboard-wallet-link" type="button" disabled={connecting} onClick={onWalletButtonClick}>
+              <button
+                className="text-link-button dashboard-wallet-link"
+                type="button"
+                disabled={connecting || !onWalletButtonClick}
+                onClick={onWalletButtonClick}
+              >
                 {connecting ? 'Connecting...' : 'Connect'}
               </button>
             </span>
@@ -521,58 +509,117 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="dashboard-summary-row">
-        <div className="dashboard-total-card">
-          <span>Total History Score Earned</span>
-          <strong><DashboardNumber value={totalHistoryScore} size="total" /></strong>
-        </div>
-      </div>
-
-      <AssetSection
-        type="usd8"
+      <DashboardTableSection
+        className="dashboard-insured-token-section"
         title="USD8"
-        actions={(
+        pill={<span className="live-pill">insured by cover pool</span>}
+        meta={(
           <>
-            <ActionButton disabled={!connected} onClick={() => openAction('mint')}>Mint USD8</ActionButton>
-            <ActionButton disabled={!connected} onClick={() => openAction('redeem')}>Redeem USD8</ActionButton>
+            <span className="dashboard-table-heading-label">
+              Total Insurance Score Earned
+              <InfoTooltip ariaLabel="Total Insurance Score info" className="dashboard-help--total">
+                {TOTAL_INSURANCE_SCORE_COPY}
+              </InfoTooltip>
+            </span>
+            <strong><DashboardNumber value={totalHistoryScore} size="total" /></strong>
           </>
         )}
       >
-        <div className="dashboard-stats dashboard-stats--usd8">
-          <Stat label={['USD8', 'Balance']} value={values.usd8Balance} />
-          <Stat label={['History Score', 'Earning Rate']} value={values.usd8Rate} tooltip={INFO_COPY.usd8Rate} />
-          <Stat label={['History Score', 'Earned']} value={values.usd8HistoryEarned} tooltip={INFO_COPY.usd8Earned} />
-          <Stat label={['Insurance', 'Upto']} value={values.usd8Insurance} tooltip={INFO_COPY.usd8Insurance} />
-        </div>
-      </AssetSection>
+        <TokenOverviewTable
+          values={values}
+          sUsd8Apy={DEFAULT_SUSD8_APY}
+          connected={connected}
+          onAction={openAction}
+        />
+      </DashboardTableSection>
 
-      <AssetSection
-        type="susd8"
-        title="USD8 Savings - sUSD8"
-        actions={(
+      <DashboardTableSection
+        className="cover-pool-section"
+        title="Cover Pool"
+        meta={(
           <>
-            <ActionButton disabled={!connected} onClick={() => openAction('deposit')}>Deposit USD8</ActionButton>
-            <ActionButton disabled={!connected} onClick={() => openAction('withdraw')}>Withdraw USD8</ActionButton>
+            <span>Total TVL</span>
+            <strong>{coverPoolTvl}</strong>
           </>
         )}
       >
-        <div className="dashboard-stats dashboard-stats--savings">
-          <Stat label={['sUSD8', 'Balance']} value={values.sUsd8Balance} />
-          <Stat
-            label={[
-              'APY',
-              <ApyRangeSelector active={apyRange} onSelect={setApyRange} />,
-            ]}
-            value={sUsd8Apy}
-          />
-          <Stat label={['History Score', 'Earning Rate']} value={values.sUsd8Rate} tooltip={INFO_COPY.sUsd8Rate} />
-          <Stat label={['History Score', 'Earned']} value={values.sUsd8HistoryEarned} tooltip={INFO_COPY.sUsd8Earned} />
-          <Stat label={['Insurance', 'Upto']} value={values.sUsd8Insurance} tooltip={INFO_COPY.sUsd8Insurance} />
-        </div>
-      </AssetSection>
+        <CoverPoolTable />
+      </DashboardTableSection>
+
+      <DashboardTableSection
+        className="claim-insurance"
+        title="Free Insurance"
+        meta={(
+          <>
+            <span className="dashboard-table-heading-label">
+              Available Insurance Score
+              <InfoTooltip ariaLabel="Available Insurance Score info" className="dashboard-help--total">
+                {AVAILABLE_INSURANCE_SCORE_COPY}
+              </InfoTooltip>
+            </span>
+            <strong><DashboardNumber value={totalHistoryScore} size="total" /></strong>
+          </>
+        )}
+      >
+        <CoveredProtocolsTable />
+      </DashboardTableSection>
 
       {modalConfig ? <ActionModal config={modalConfig} connected={connected} onClose={() => setModalKey('')} /> : null}
-      {disconnectOpen ? <DisconnectModal onCancel={() => setDisconnectOpen(false)} onConfirm={disconnectWallet} /> : null}
     </div>
   );
+}
+
+function DashboardWithWalletConnector() {
+  const { open } = useAppKit();
+  const { address, isConnected, isConnecting, isReconnecting } = useAccount();
+  const { disconnectAsync } = useDisconnect();
+  const [walletError, setWalletError] = useState('');
+  const [openingWalletModal, setOpeningWalletModal] = useState(false);
+  const connected = isConnected && Boolean(address);
+
+  async function onWalletButtonClick() {
+    setWalletError('');
+    setOpeningWalletModal(true);
+
+    try {
+      await open({ view: 'Connect' });
+    } catch (error) {
+      setWalletError(error?.message || 'Unable to open wallet connector.');
+    } finally {
+      setOpeningWalletModal(false);
+    }
+  }
+
+  async function onWalletDisconnect() {
+    setWalletError('');
+
+    try {
+      await disconnectAsync();
+    } catch (error) {
+      setWalletError(error?.message || 'Unable to disconnect wallet.');
+    }
+  }
+
+  return (
+    <DashboardContent
+      address={address || ''}
+      connected={connected}
+      connecting={openingWalletModal || isConnecting || isReconnecting}
+      walletError={walletError}
+      onWalletButtonClick={onWalletButtonClick}
+      onWalletDisconnect={onWalletDisconnect}
+    />
+  );
+}
+
+export default function DashboardPage() {
+  if (!walletConnectorConfigured) {
+    return (
+      <DashboardContent
+        walletError="Wallet connector is not configured. Set reownProjectId in src/config/protocolConfig.js."
+      />
+    );
+  }
+
+  return <DashboardWithWalletConnector />;
 }

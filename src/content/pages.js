@@ -6,15 +6,13 @@ import FaqsPage from '../pages/FaqsPage.jsx';
 import HelpNeededPage from '../pages/HelpNeededPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 import PhilosophyPage from '../pages/PhilosophyPage.jsx';
-import ProtectedSavingsPage from '../pages/ProtectedSavingsPage.jsx';
 import Usd8Page from '../pages/Usd8Page.jsx';
 import WhiteHatEconomyPage from '../pages/WhiteHatEconomyPage.jsx';
 
 export const pages = [
   { id: 'usd8', title: 'USD8', navTitle: 'USD8', route: 'usd8.html', component: Usd8Page, includeInPrint: true },
   { id: 'philosophy', title: 'Philosophical Roots', navTitle: 'Philosophical Roots', route: 'philosophy.html', component: PhilosophyPage, includeInPrint: true },
-  { id: 'protected-savings', title: 'Protected Savings', navTitle: 'Protected Savings', route: 'protected-savings.html', component: ProtectedSavingsPage, includeInPrint: true },
-  { id: 'cover-pool', title: 'Cover Pool', navTitle: 'Cover Pool', route: 'cover-pool.html', component: CoverPoolPage, includeInPrint: true },
+  { id: 'cover-pool', title: 'Free DeFi Insurance', navTitle: 'Free DeFi Insurance', route: 'cover-pool.html', component: CoverPoolPage, includeInPrint: true },
   { id: 'boosters', title: 'Boosters', navTitle: 'Boosters', route: 'boosters.html', component: BoostersPage, navPill: 'LIVE', includeInPrint: true },
   { id: 'white-hat-economy', title: 'White Hat Economy', navTitle: 'White Hat Economy', route: 'white-hat-economy.html', component: WhiteHatEconomyPage, includeInPrint: true },
   { id: 'help-needed', title: 'Help Needed', navTitle: 'Help Needed', route: 'help-needed.html', component: HelpNeededPage, navPill: 'LIVE', includeInPrint: true },

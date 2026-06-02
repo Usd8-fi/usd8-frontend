@@ -44,7 +44,7 @@ The React site should call this Worker instead of scanning Ethereum logs directl
    npx wrangler deploy --config worker/wrangler.toml
    ```
 
-8. Set `VITE_SCORE_API_URL` for the React build to the deployed Worker URL.
+8. Check the public protocol settings in `src/config/protocolConfig.js` before building the React site.
 
 Current Worker URL:
 

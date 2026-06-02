@@ -8,7 +8,6 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://usd8.fi,h
 CHUNK_BLOCKS = "50000"
 CONFIRMATIONS = "12"
 MAX_RANGES_PER_ASSET = "4"
-SCORE_START_BLOCK = "24567921"
 TRANSFER_HISTORY_SOURCE = "alchemy"
 
 [[d1_databases]]

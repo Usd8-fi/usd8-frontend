@@ -13,8 +13,8 @@ export default function FaqsPage({ onNavigate }) {
       <p>Yes. As long as you have used USD8 before, you will get some coverage.</p>
       <PageBreak count={2} />
 
-      <H2 id="so-i-have-to-hold-usd8-to-build-a-usd8-history-score"><span className="emoji">💭</span> So I have to hold USD8 to build a USD8 History Score?</H2>
-      <p>No. While holding USD8 certainly build your USD8 History Score, you can also deposit USD8 to a recognized yield vault; these will also count towards your USD8 History Score.</p>
+      <H2 id="so-i-have-to-hold-usd8-to-build-a-usd8-insurance-score"><span className="emoji">💭</span> So I have to hold USD8 to build a USD8 Insurance Score?</H2>
+      <p>No. While holding USD8 certainly build your USD8 Insurance Score, you can also deposit USD8 to a recognized yield vault; these will also count towards your USD8 Insurance Score.</p>
       <PageBreak count={2} />
 
       <H2 id="how-safe-is-the-protected-savings-vault"><span className="emoji">💭</span> How safe is the Protected Savings vault?</H2>
@@ -28,7 +28,7 @@ export default function FaqsPage({ onNavigate }) {
       <PageBreak count={2} />
 
       <H2 id="so-all-my-positions-in-covered-defi-protocols-are-protected"><span className="emoji">💭</span> So all my positions in Covered DeFi Protocols are protected?</H2>
-      <p>Yes. As long as you use USD8, you are covered. The more USD8 and the longer you hold, the higher your USD8 History Score.</p>
+      <p>Yes. As long as you use USD8, you are covered. The more USD8 and the longer you hold, the higher your USD8 Insurance Score.</p>
       <PageBreak count={2} />
 
       <H2 id="do-i-forfeit-my-covered-lp-token-when-claiming-from-the-cover-pool"><span className="emoji">💭</span> Do I forfeit my covered LP token when claiming from the Cover Pool?</H2>
@@ -38,11 +38,11 @@ export default function FaqsPage({ onNavigate }) {
       <H2 id="will-i-always-get-80-of-my-money-back-for-a-defi-protocol-with-80-coverage"><span className="emoji">💭</span> Will I always get 80% of my money back for a defi protocol with 80% coverage?</H2>
       <p>Not necessarily. The actual reimbursed amount depends on:</p>
       <ul>
-        <li>Your USD8 History Score based on your USD8 history</li>
-        <li>How many other users are claiming and their USD8 History Scores</li>
+        <li>Your USD8 Insurance Score based on your USD8 history</li>
+        <li>How many other users are claiming and their USD8 Insurance Scores</li>
         <li>The balance of the Cover Pool</li>
       </ul>
-      <p>In practice, the more USD8 History Score you have, the higher your claim weight. The max reimbursement amount is 80% your LP value, but it is also possible you might get less than that.</p>
+      <p>In practice, the more USD8 Insurance Score you have, the higher your claim weight. The max reimbursement amount is 80% your LP value, but it is also possible you might get less than that.</p>
       <PageBreak count={2} />
 
       <H2 id="how-do-you-prevent-fraudulent-claims"><span className="emoji">💭</span> How do you prevent fraudulent claims?</H2>

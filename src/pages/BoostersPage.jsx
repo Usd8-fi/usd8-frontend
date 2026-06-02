@@ -9,7 +9,7 @@ export default function BoostersPage({ onNavigate }) {
 
       <H1 id="boosters">Boosters <span className="live-pill">Live</span></H1>
       <p>
-        Boosters are NFTs that can be burned when filing a claim to add a 1% boost to your total USD8 History Score,
+        Boosters are NFTs that can be burned when filing a claim to add a 1% boost to your total USD8 Insurance Score,
         meaning more insurance coverage for your funds in Defi protocols. Boosters are
       </p>
       <ul>

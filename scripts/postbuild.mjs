@@ -6,7 +6,6 @@ const source = join(outDir, 'index.html');
 const htmlRoutes = [
   'usd8.html',
   'philosophy.html',
-  'protected-savings.html',
   'cover-pool.html',
   'boosters.html',
   'white-hat-economy.html',

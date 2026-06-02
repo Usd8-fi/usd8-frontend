@@ -1,4 +1,4 @@
-import { H1, H2, PageBreak, PageLink } from '../components/PagePrimitives.jsx';
+import { BuildingPill, H1, H2, PageBreak, PageLink } from '../components/PagePrimitives.jsx';
 
 export default function WhiteHatEconomyPage({ onNavigate }) {
   return (
@@ -6,7 +6,7 @@ export default function WhiteHatEconomyPage({ onNavigate }) {
       <img className="floating-logo" src="/assets/whiteHat.png" width="350" alt="" />
       <PageBreak count={2} />
 
-      <H1 id="white-hat-economy">White Hat Economy <span className="coming-soon-pill">Building</span></H1>
+      <H1 id="white-hat-economy">White Hat Economy <BuildingPill /></H1>
 
       <p>
         The White Hat economy is the enforcement layer of USD8. It plays a critical role in recovering lost assets and

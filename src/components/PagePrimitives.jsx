@@ -33,6 +33,10 @@ export function H2({ id, children }) {
   );
 }
 
+export function BuildingPill() {
+  return <span className="coming-soon-pill">Building</span>;
+}
+
 export function PageBreak({ count = 4 }) {
   return Array.from({ length: count }, (_, index) => <br key={index} />);
 }

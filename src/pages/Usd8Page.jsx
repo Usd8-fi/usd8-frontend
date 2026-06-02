@@ -1,4 +1,4 @@
-import { H1, H2, PageBreak, PageLink } from '../components/PagePrimitives.jsx';
+import { BuildingPill, H1, H2, PageBreak, PageLink } from '../components/PagePrimitives.jsx';
 
 export default function Usd8Page({ onNavigate }) {
   return (
@@ -6,7 +6,7 @@ export default function Usd8Page({ onNavigate }) {
       <img className="floating-logo" src="/assets/usd8Logo.svg" width="170" alt="" />
       <PageBreak count={2} />
 
-      <H1 id="usd8">USD8 <span className="coming-soon-pill">Building</span></H1>
+      <H1 id="usd8">USD8 <BuildingPill /></H1>
 
       <p>USD8 is a stablecoin with two baked-in functions — free Defi Insurance and Order Enforcement.</p>
 
@@ -35,8 +35,6 @@ export default function Usd8Page({ onNavigate }) {
         <a href="https://frameworks.securityalliance.dev/certs/overview/">SEAL Certification from Security Alliance</a>{' '}
         when evaluating coverage for a protocol.
         <PageBreak count={3} />
-        <img src="/assets/OZ-Logo-WhiteBG.png" width="200" style={{ marginRight: 50 }} alt="" />
-        <img src="/assets/securityAllianceLogo.svg" width="120" alt="" />
       </p>
 
       <PageBreak />
@@ -45,7 +43,7 @@ export default function Usd8Page({ onNavigate }) {
       <ol>
         <li>
           For passive DeFi users who want their savings protected - Swap your stablecoins for USD8 and deposit into our{' '}
-          <PageLink to="protected-savings.html" onNavigate={onNavigate}>Protected Savings</PageLink> to earn yield(est.
+          <PageLink to="usd8.html#protected-savings" onNavigate={onNavigate}>Protected Savings</PageLink> to earn yield(est.
           3-5%) while being protected. If this vault is hacked, you can claim upto 80% of your loss from the{' '}
           <PageLink to="cover-pool.html" onNavigate={onNavigate}>Cover Pool</PageLink>.
         </li>
@@ -79,6 +77,24 @@ export default function Usd8Page({ onNavigate }) {
         Redeem USD8 back to USDC will be also be permissionless, while we expect this process to be instant there might
         be a delay for large redeems because some external defi protocol might have a delay in their redeeming process,
         which is out of our control. However there will be an AMM pool available for swaps at anytime.
+      </p>
+      <PageBreak />
+
+      <H1 id="protected-savings">Protected Savings</H1>
+      <PageBreak count={2} />
+      <img src="/assets/savingsVault.png" width="350" alt="" />
+      <PageBreak count={2} />
+
+      <p>
+        USD8 Protected Savings is a yield vault designed for passive DeFi users who want simple, deposit-and-forget yield
+        with built-in protection.
+      </p>
+      <p>
+        Managed by USD8, this vault is covered by the Cover Pool for up to 80% of its value, subject to the pool’s limit.
+      </p>
+      <p>
+        Depositors receive yield-bearing sUSD8, which can be used to claim coverage from the Cover Pool,
+        permissionlessly, at any time, up to 80% of the sUSD8 value, capped by the Cover Pool balance.
       </p>
       <PageBreak />
 

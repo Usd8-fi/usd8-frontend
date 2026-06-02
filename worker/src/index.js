@@ -1,33 +1,30 @@
+import { protocolConfig } from '../../src/config/protocolConfig.js';
+
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const BALANCE_OF_SELECTOR = '0x70a08231';
 const DEFAULT_RPC_URL = 'https://ethereum.publicnode.com';
 const DEFAULT_CONFIRMATIONS = 12n;
 const DEFAULT_CHUNK_BLOCKS = 50_000n;
-const DEFAULT_SCORE_START_BLOCK = 24_567_921n;
 const DEFAULT_MAX_RANGES_PER_ASSET = 4;
+const ETHEREUM_BLOCKS_PER_DAY = 7_200;
 const ALCHEMY_TRANSFER_MAX_COUNT = '0x3e8';
-const CHECKPOINT_VERSION = 3;
 
 const ASSETS = {
   usd8: {
     token: {
-      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      address: normalizeAddress(protocolConfig.usd8TokenAddress),
       symbol: 'USDC',
-      decimals: 6,
+      decimals: protocolConfig.usd8TokenDecimals,
     },
-    deployBlockEnv: 'USD8_DEPLOY_BLOCK',
-    defaultDeployBlock: 6_082_465n,
-    scorePerTokenPerBlock: 10,
+    scorePerTokenPerBlock: protocolConfig.usd8HistoryScoreEarningRate,
   },
   sUsd8: {
     token: {
-      address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      address: normalizeAddress(protocolConfig.sUsd8TokenAddress),
       symbol: 'USDT',
-      decimals: 6,
+      decimals: protocolConfig.sUsd8TokenDecimals,
     },
-    deployBlockEnv: 'SUSD8_DEPLOY_BLOCK',
-    defaultDeployBlock: 4_634_748n,
-    scorePerTokenPerBlock: 1,
+    scorePerTokenPerBlock: protocolConfig.sUsd8HistoryScoreEarningRate,
   },
 };
 
@@ -68,16 +65,18 @@ async function getScore(env, holder) {
   const complete = Object.values(results).every((result) => result.complete);
   const usd8HistoryScore = results.usd8.tokenBlockWeight * ASSETS.usd8.scorePerTokenPerBlock;
   const sUsd8HistoryScore = results.sUsd8.tokenBlockWeight * ASSETS.sUsd8.scorePerTokenPerBlock;
+  const usd8DailyRate = getDailyScoreRate(ASSETS.usd8);
+  const sUsd8DailyRate = getDailyScoreRate(ASSETS.sUsd8);
 
   return {
     status: complete ? 'complete' : 'syncing',
     values: {
       usd8Balance: complete ? formatDashboardNumber(results.usd8.balance, 2) : '...',
-      usd8Rate: formatDashboardNumber(ASSETS.usd8.scorePerTokenPerBlock, 0),
+      usd8Rate: formatDashboardNumber(usd8DailyRate, 4),
       usd8HistoryEarned: complete ? formatDashboardNumber(usd8HistoryScore, 0) : '...',
       usd8Insurance: '80%',
       sUsd8Balance: complete ? formatDashboardNumber(results.sUsd8.balance, 2) : '...',
-      sUsd8Rate: formatDashboardNumber(ASSETS.sUsd8.scorePerTokenPerBlock, 0),
+      sUsd8Rate: formatDashboardNumber(sUsd8DailyRate, 4),
       sUsd8HistoryEarned: complete ? formatDashboardNumber(sUsd8HistoryScore, 0) : '...',
       sUsd8Insurance: '80%',
     },
@@ -92,6 +91,10 @@ async function getScore(env, holder) {
         usd8: ASSETS.usd8.scorePerTokenPerBlock,
         sUsd8: ASSETS.sUsd8.scorePerTokenPerBlock,
       },
+      dailyRates: {
+        usd8: usd8DailyRate,
+        sUsd8: sUsd8DailyRate,
+      },
       fromBlocks: {
         usd8: results.usd8.fromBlock.toString(),
         sUsd8: results.sUsd8.fromBlock.toString(),
@@ -100,21 +103,34 @@ async function getScore(env, holder) {
         usd8: results.usd8.processedUntilBlock.toString(),
         sUsd8: results.sUsd8.processedUntilBlock.toString(),
       },
+      cacheAgeBlocks: {
+        usd8: results.usd8.cacheAgeBlocks.toString(),
+        sUsd8: results.sUsd8.cacheAgeBlocks.toString(),
+      },
+      refreshBlockThreshold: getScoreRefreshBlockThreshold().toString(),
     },
   };
+}
+
+function getDailyScoreRate(asset) {
+  return asset.scorePerTokenPerBlock * ETHEREUM_BLOCKS_PER_DAY;
 }
 
 async function advanceAssetCheckpoint(env, holder, assetKey, asset, targetBlock) {
   const checkpoint = await getOrCreateCheckpoint(env, holder, assetKey, asset, targetBlock);
   const chunkBlocks = readBigInt(env.CHUNK_BLOCKS, DEFAULT_CHUNK_BLOCKS);
   const maxRanges = Number(readBigInt(env.MAX_RANGES_PER_ASSET, BigInt(DEFAULT_MAX_RANGES_PER_ASSET)));
+  const refreshBlockThreshold = getScoreRefreshBlockThreshold();
   let processedUntilBlock = BigInt(checkpoint.processed_until_block);
+  const startingProcessedUntilBlock = processedUntilBlock;
   let balanceRaw = BigInt(checkpoint.balance_raw);
   let rawTokenBlockIntegral = BigInt(checkpoint.raw_token_block_integral);
   let rangesProcessed = 0;
+  const startingCacheAgeBlocks = targetBlock > processedUntilBlock ? targetBlock - processedUntilBlock : 0n;
+  const refreshTargetBlock = startingCacheAgeBlocks >= refreshBlockThreshold ? targetBlock : processedUntilBlock;
 
-  while (processedUntilBlock < targetBlock && rangesProcessed < maxRanges) {
-    const nextProcessedUntilBlock = minBigInt(processedUntilBlock + chunkBlocks, targetBlock);
+  while (processedUntilBlock < refreshTargetBlock && rangesProcessed < maxRanges) {
+    const nextProcessedUntilBlock = minBigInt(processedUntilBlock + chunkBlocks, refreshTargetBlock);
     const step = await processTokenRange(env, asset.token.address, holder, processedUntilBlock, nextProcessedUntilBlock, balanceRaw);
 
     balanceRaw = step.balanceRaw;
@@ -123,19 +139,21 @@ async function advanceAssetCheckpoint(env, holder, assetKey, asset, targetBlock)
     rangesProcessed += 1;
   }
 
-  await saveCheckpoint(env, {
-    holder,
-    assetKey,
-    targetBlock,
-    processedUntilBlock,
-    balanceRaw,
-    rawTokenBlockIntegral,
-  });
+  if (processedUntilBlock !== startingProcessedUntilBlock) {
+    await saveCheckpoint(env, {
+      holder,
+      assetKey,
+      processedUntilBlock,
+      balanceRaw,
+      rawTokenBlockIntegral,
+    });
+  }
 
   const tokenBlockWeight = normalizeTokenBlockIntegral(rawTokenBlockIntegral, asset.token.decimals);
-  const complete = processedUntilBlock >= targetBlock;
-  const totalBlocks = targetBlock > BigInt(checkpoint.from_block) ? targetBlock - BigInt(checkpoint.from_block) : 0n;
+  const complete = processedUntilBlock >= refreshTargetBlock;
+  const totalBlocks = refreshTargetBlock > BigInt(checkpoint.from_block) ? refreshTargetBlock - BigInt(checkpoint.from_block) : 0n;
   const processedBlocks = processedUntilBlock > BigInt(checkpoint.from_block) ? processedUntilBlock - BigInt(checkpoint.from_block) : 0n;
+  const cacheAgeBlocks = targetBlock > processedUntilBlock ? targetBlock - processedUntilBlock : 0n;
 
   return {
     complete,
@@ -143,14 +161,26 @@ async function advanceAssetCheckpoint(env, holder, assetKey, asset, targetBlock)
     tokenBlockWeight,
     fromBlock: BigInt(checkpoint.from_block),
     processedUntilBlock,
+    cacheAgeBlocks,
     progress: {
       complete,
       processedBlocks: processedBlocks.toString(),
       totalBlocks: totalBlocks.toString(),
       percent: totalBlocks > 0n ? Number((processedBlocks * 10_000n) / totalBlocks) / 100 : 100,
       rangesProcessed,
+      cacheAgeBlocks: cacheAgeBlocks.toString(),
+      refreshBlockThreshold: refreshBlockThreshold.toString(),
+      refreshSkipped: startingCacheAgeBlocks > 0n && startingCacheAgeBlocks < refreshBlockThreshold,
     },
   };
+}
+
+function getScoreRefreshBlockThreshold() {
+  const threshold = protocolConfig.scoreRefreshBlockThreshold;
+  if (typeof threshold === 'bigint') return threshold;
+  if (typeof threshold === 'number' && Number.isFinite(threshold) && threshold >= 0) return BigInt(Math.floor(threshold));
+  if (typeof threshold === 'string' && threshold) return readBigInt(threshold, 0n);
+  return 0n;
 }
 
 async function getOrCreateCheckpoint(env, holder, assetKey, asset, targetBlock) {
@@ -161,8 +191,8 @@ async function getOrCreateCheckpoint(env, holder, assetKey, asset, targetBlock) 
 
   if (
     existing
-    && existing.version === CHECKPOINT_VERSION
     && existing.token_address === asset.token.address
+    && existing.from_block === fromBlock.toString()
   ) {
     return existing;
   }
@@ -175,30 +205,20 @@ async function getOrCreateCheckpoint(env, holder, assetKey, asset, targetBlock) 
       holder,
       asset_key,
       token_address,
-      token_symbol,
-      decimals,
-      score_per_token_per_block,
       from_block,
       processed_until_block,
-      target_block,
       balance_raw,
       raw_token_block_integral,
-      version,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     holder,
     assetKey,
     asset.token.address,
-    asset.token.symbol,
-    asset.token.decimals,
-    asset.scorePerTokenPerBlock,
     fromBlock.toString(),
     fromBlock.toString(),
-    targetBlock.toString(),
     initialBalance.toString(),
     '0',
-    CHECKPOINT_VERSION,
     now,
   ).run();
 
@@ -389,14 +409,12 @@ async function saveCheckpoint(env, checkpoint) {
   await env.DB.prepare(`
     UPDATE score_checkpoints
     SET processed_until_block = ?,
-      target_block = ?,
       balance_raw = ?,
       raw_token_block_integral = ?,
       updated_at = ?
     WHERE holder = ? AND asset_key = ?
   `).bind(
     checkpoint.processedUntilBlock.toString(),
-    checkpoint.targetBlock.toString(),
     checkpoint.balanceRaw.toString(),
     checkpoint.rawTokenBlockIntegral.toString(),
     new Date().toISOString(),
@@ -450,11 +468,8 @@ function parseAlchemyLogIndex(uniqueId = '') {
   return match ? BigInt(match[1]) : 0n;
 }
 
-function getDefaultFromBlock(env, asset, targetBlock) {
-  const deploymentBlock = readBigInt(env[asset.deployBlockEnv], asset.defaultDeployBlock);
-  const startBlock = readBigInt(env.SCORE_START_BLOCK, DEFAULT_SCORE_START_BLOCK);
-
-  return startBlock > deploymentBlock ? startBlock : deploymentBlock;
+function getDefaultFromBlock(_env, _asset, targetBlock) {
+  return protocolConfig.scoreStartBlock > targetBlock ? targetBlock : protocolConfig.scoreStartBlock;
 }
 
 function normalizeAddress(address) {
@@ -508,7 +523,7 @@ function minBigInt(a, b) {
 function corsHeaders(request, env) {
   const origin = request.headers.get('origin') || '';
   const allowedOrigins = String(env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
-  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0] || '*';
+  const allowedOrigin = getAllowedOrigin(origin, allowedOrigins);
 
   return {
     'access-control-allow-origin': allowedOrigin,
@@ -516,6 +531,14 @@ function corsHeaders(request, env) {
     'access-control-allow-headers': 'content-type',
     'vary': 'Origin',
   };
+}
+
+function getAllowedOrigin(origin, allowedOrigins) {
+  if (!origin) return allowedOrigins[0] || '*';
+  if (allowedOrigins.includes(origin)) return origin;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return origin;
+
+  return allowedOrigins[0] || '*';
 }
 
 function jsonResponse(request, env, body, status = 200) {
