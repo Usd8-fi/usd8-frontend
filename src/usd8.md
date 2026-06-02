@@ -35,7 +35,7 @@ After claims, USD8 curates a [White Hat Economy](./white-hat-economy.md), chasin
 # Security
 
 Security is the core of USD8. For every covered DeFi protocol we work alongside our audit partners to enforce rigorous audits and ongoing reviews. We accept independent security audits from [OpenZeppelin](https://www.openzeppelin.com/). On top of that, we also accept [SEAL Certification from Security Alliance](https://frameworks.securityalliance.dev/certs/overview/) when evaluating coverage for a protocol.<br/><br/><br/>
-<img src="/assets/OZ-Logo-WhiteBG.png" width="200" style="margin-right: 50px;"/><img src="/assets/securityAllianceLogo.svg" width="120" />
+<img src="/assets/securityAllianceLogo.svg" width="120" />
 
 <br/><br/><br/><br/>
 
