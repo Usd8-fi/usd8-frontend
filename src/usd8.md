@@ -34,7 +34,7 @@ After claims, USD8 curates a [White Hat Economy](./white-hat-economy.md), chasin
 
 # Security
 
-Security is the core of USD8. We conduct security reviews on each protocol before we offer coverage to. We also accept trusted independent security audits from the following
+Security is the core of USD8. We conduct security reviews on each protocol before we offer coverage. We also accept trusted independent security audits from the following
 - [OpenZeppelin](https://www.openzeppelin.com/)
 - [Trial of Bits](https://trailofbits.com/)
 - [SEAL Certification from Security Alliance](https://frameworks.securityalliance.dev/certs/overview/)
