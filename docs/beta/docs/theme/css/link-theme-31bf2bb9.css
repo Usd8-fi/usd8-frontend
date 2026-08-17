@@ -1,0 +1,147 @@
+:root {
+  --accent: #ffcc00;
+  --accent-hover: color-mix(in srgb, var(--accent) 82%, black);
+  --link: var(--accent);
+  --link-inverse: #000;
+  --navigation-inactive: #5f5f5f;
+}
+
+a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+a:active {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.usd8-dialog-tab {
+  color: var(--navigation-inactive);
+  text-decoration: none;
+}
+
+.usd8-dialog-tab:hover,
+.usd8-dialog-tab:focus-visible {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.landing-product-tab,
+.landing-footer-links .site-nav-link,
+.sidebar .chapter a {
+  color: var(--navigation-inactive);
+  text-decoration: none;
+}
+
+.landing-footer-links .site-nav-link,
+.sidebar .chapter a {
+  background: transparent;
+}
+
+.landing-product-tab:hover,
+.landing-product-tab:focus-visible,
+.landing-footer-links .site-nav-link:hover,
+.landing-footer-links .site-nav-link:focus-visible,
+.sidebar .chapter a:hover,
+.sidebar .chapter a:focus-visible {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.landing-footer-links .site-nav-link:hover,
+.landing-footer-links .site-nav-link:focus-visible,
+.sidebar .chapter a:hover,
+.sidebar .chapter a:focus-visible {
+  background: transparent;
+}
+
+.landing-product-tab--active,
+.landing-product-tab--active:hover,
+.landing-product-tab--active:focus-visible {
+  background: var(--background);
+  color: var(--link);
+  text-decoration: none;
+}
+
+.usd8-dialog-tab--active,
+.usd8-dialog-tab--active:hover,
+.usd8-dialog-tab--active:focus-visible {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.usd8-dialog-available {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content .faq-question::before {
+  display: inline-block;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.content .header.faq-question {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content .header.faq-question:hover::before,
+.content .header.faq-question:focus-visible::before {
+  color: var(--link-inverse);
+}
+
+.content .faq-question[aria-expanded="true"]:not(:hover):not(:focus-visible) {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.content main a:link,
+.content main a:visited {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content main a:active {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.sidebar .chapter a.active,
+.sidebar .chapter a.current-header {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.sidebar-telegram,
+.sidebar-x,
+.sidebar-github {
+  color: var(--link);
+}
+
+a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):hover,
+a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):focus-visible,
+.usd8-dialog-available:hover,
+.usd8-dialog-available:focus-visible,
+.content .header.faq-question:hover,
+.content .header.faq-question:focus-visible,
+.content main a:hover,
+.content main a:focus-visible,
+.sidebar-telegram:hover,
+.sidebar-x:hover,
+.sidebar-github:hover {
+  background: var(--link);
+  color: var(--link-inverse);
+  text-decoration: none;
+}
