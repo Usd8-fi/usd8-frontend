@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-mdbook build
+npm run build
 
 if git diff --quiet && git diff --cached --quiet; then
   echo "No file changes — skipping commit."

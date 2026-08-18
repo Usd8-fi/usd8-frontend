@@ -1,3 +1,9 @@
 CLAUDE.md
 .claude/
 usd8-periphery/
+node_modules/
+.DS_Store
+.dev.vars
+worker/.dev.vars
+.env
+.env.local
