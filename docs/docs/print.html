@@ -1,0 +1,509 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>USD8 docs</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="USD8 protocol, insurance, cover pools, and ecosystem documentation">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-eff64164.svg">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/link-theme-31bf2bb9.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-843c9104.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-b8bd7da6.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-29ea1b74.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">USD8 docs</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/Usd8-fi/usd8-core" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <img src="/assets/usd8Logo.svg" width="100px">
+<h1 id="usd8"><a class="header" href="#usd8">USD8</a></h1>
+<p>USD8 is a stable coin backed 1:1 by USDC.</p>
+<p>It is designed to correct the mis-aligned incentive design in current Defi landscape with 2 major functions - <a href="#defi-insurance">Free Defi Insurance</a> and <a href="#white-hat-economy">White Hat Economy</a>, you can read more about our <a href="#philosophical-roots">philosophical roots</a></p>
+<h2 id="why-usd8"><a class="header" href="#why-usd8">Why USD8</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th><span class="comparison-token"><img src="/assets/usd8Logo.svg" alt="USD8 logo">USD8</span></th><th><span class="comparison-token"><img src="/assets/usdc.png" alt="USDC logo">USDC</span></th></tr>
+</thead>
+<tbody>
+<tr><td>Stable property</td><td><span class="comparison-yes" aria-label="Yes">✓</span><br><small>Backed 1:1 by USDC</small></td><td><span class="comparison-yes" aria-label="Yes">✓</span></td></tr>
+<tr><td>Yield opportunities</td><td><span class="comparison-yes" aria-label="Yes">✓</span></td><td><span class="comparison-yes" aria-label="Yes">✓</span></td></tr>
+<tr><td>Stablecoin itself is insured</td><td><span class="comparison-yes" aria-label="Yes">✓</span><br><small>Limited by Cover Pool</small></td><td><span class="comparison-no" aria-label="No">✕</span></td></tr>
+<tr><td>Insures other selected DeFi tokens</td><td><span class="comparison-yes" aria-label="Yes">✓</span></td><td><span class="comparison-no" aria-label="No">✕</span></td></tr>
+<tr><td>Helps deter future DeFi hacks</td><td><span class="comparison-yes" aria-label="Yes">✓</span><br><small>Through White Hat Economy</small></td><td><span class="comparison-no" aria-label="No">✕</span></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="how-to-use-usd8"><a class="header" href="#how-to-use-usd8">How to use USD8</a></h2>
+<p>Low risk defi users - hold or yield with USD8 to get free defi insurance for a range of Defi tokens and positions, including USD8 itself.</p>
+<p>High apy seekers with high risk appetite - deposit into USD8’s Cover Pools for high APY while backing the Defi insurance.</p>
+<h2 id="open-sourced"><a class="header" href="#open-sourced">Open-sourced</a></h2>
+<p>This Docs aims to explain USD8 in simple terms. USD8 is fully open-sourced, for technical details and code implementation, visit our <a href="https://github.com/Usd8-fi/usd8-core">Github repo</a>.</p>
+<h2 id="contact"><a class="header" href="#contact">Contact</a></h2>
+<p>You can reach us through the following channels</p>
+<ul>
+<li>USD8 telegram <a href="https://t.me/+e84i2oYk1ao1MTk1">https://t.me/+e84i2oYk1ao1MTk1</a></li>
+<li>X <a href="https://x.com/usd8_fi">@usd8_fi</a></li>
+<li>email info[at]usd8.fi</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="philosophical-roots"><a href="#philosophical-roots" class="header">Philosophical Roots</a></h1>
+<img src="/assets/tyche.png" width="300px" />
+<h2 id="the-broken-dream"><a class="header" href="#the-broken-dream">The Broken Dream</a></h2>
+<p>As we embrace decentralized dream to resist the abuses of centralized power, we also give up the enforcement mechanisms that deal with wrongdoing. Without safeguards, crypto is slowly turning into a dystopia where bad actors like hackers and malicious founders are heavily incentivized and rewarded to hack and steal in broad daylight with little consequence.</p>
+<p>This dystopia is slowly killing the decentralized industry following <a href="https://en.wikipedia.org/wiki/Gresham%27s_law">Gresham’s Law</a>, where good actors are gradually driven out till only bad actors left.</p>
+<img src="/assets/thomas_gresham.jpg" width="800px" />
+<p>Sir Thomas Gresham (1519–1579)</p>
+<h2 id="failed-attempt"><a class="header" href="#failed-attempt">Failed Attempt</a></h2>
+<p>Early-stage Ethereum did have an attempted solution — “Code is Law”, which uses smart contracts’ immutability to prevent misconduct. Unfortunately, this hasn’t worked out, largely due to vulnerabilities in smart contracts as well as the practical needs of upgradability, which remains as <a href="https://medium.com/consensys-diligence/upgradeability-is-a-bug-dba0203152ce">an industry disagreement</a> till today.</p>
+<p>Now that the crypto space is flawed, we didn’t come up with a new solution but ignored the flaw because we have become numb to the hacks and rug pulls happening all the time. This is rather irresponsible. And it is even worse when we onboard the next million innocent users, exposing them to sophisticated hackers and social engineering attacks with their life savings at stake.</p>
+<h2 id="a-crypto-native-alternative"><a class="header" href="#a-crypto-native-alternative">A Crypto-Native Alternative</a></h2>
+<p>We need a new solution, one without centralized power while still be able to deter malicious actors. USD8 is our attempt at this, our mission is to restore the missing layer of order enforcement in DeFi security.</p>
+<img src="/assets/murrayRothbard.jpg" width="800px" />
+<p>Murray Rothbard (1926–1995), founder and primary theoretician of anarcho-capitalism.</p>
+<p>USD8 is rooted in the philosophical proposal of <a href="https://en.wikipedia.org/wiki/Anarcho-capitalism">anarcho-capitalism</a> where a voluntary society would use insurance companies and private agencies to replace essential services provided by centralized state system. Incentives are carefully aligned in this system using capitalism and game theory to achieve a functional society without central government presents.</p>
+<p>We adapted this model and made it crypto native, to provide the last missing piece for Defi and the whole crypto system. USD8 will be serving two major purposes - as insurance to cover users’ losses and as an order-enforcing mechanism to recover hacked assets.</p>
+<h2 id="the-insurance"><a class="header" href="#the-insurance">The Insurance</a></h2>
+<p>USD8 offers coverage to DeFi users based on their USD8 usage history, covering a range of DeFi protocols vetted by the USD8 team. The more you use USD8, the more you are covered. If a hack occurs in any covered DeFi protocol, users can claim coverage (up to 80% value) with their covered LP token.</p>
+<p>E.g., if Aave USDC market is hacked and 1 aUSDC drops to 0.3 USDC, users can claim up to 0.8 USDC with their aUSDC.</p>
+<p>The actual coverage depends on 3 factors - the user’s USD8 history, how many other users are also claiming, and the Cover Pool size.</p>
+<p>The coverage funds come from USD8’s <a href="#cover-pools">Cover Pool</a>, a public vault with different asset types, incentivized by USD8’s revenue. Any LPs depositing into this vault will get stable coin yield in USD8, however assets in the Cover Pool might be deployed to cover any potential losses.</p>
+<p>This insurance system is exciting because:</p>
+<ol>
+<li>It is a first-in-the-industry coverage, free for all USD8 users, past and present.</li>
+<li>It offers a new stream of yield in stable coins for assets that traditionally lack yield sources, like wBTC, or even alts like AAVE, LINK, UNI… unlocking capital efficiency.</li>
+</ol>
+<h2 id="order-enforcement"><a class="header" href="#order-enforcement">Order Enforcement</a></h2>
+<p>Since USD8 sits on a pile of hacked LP tokens after users claim, this puts USD8 in a unique position with significant financial incentives to recover these funds. USD8 will be cultivating a <a href="#white-hat-economy">White Hat Economy</a> as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds — read more on the <a href="#white-hat-economy">White Hat Economy</a> page.</p>
+<p>This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, potentially leads to perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="defi-insurance"><a class="header" href="#defi-insurance">DeFi Insurance</a></h1>
+<ul>
+<li>USD8 &amp; sUSD8 holders get insurance score every block</li>
+<li>insurance score can be used to file claims for a range of insured Defi tokens, including USD8 and sUSD8</li>
+<li>the more score, the more payout. Up to 80% value, capped by Cover Pool limit</li>
+<li>score is non transferrable and never expire</li>
+<li>payout funds come from the <a href="#cover-pools">Cover Pools</a></li>
+</ul>
+<div class="example-box">
+<p>E.g. assume Aave aUSDC is an insured token with 80% max coverage</p>
+
+<ol>
+<li>aUSDC to USDC drops from 1 to 0.3</li>
+
+<li>user with insurance score get up to 0.8 USDC in value from the Cover Pool asset, in exchange for their aUSDC</li>
+
+</ol>
+
+</div>
+
+<h2 id="claim-process"><a class="header" href="#claim-process">Claim Process</a></h2>
+<p>Claim is a 3-step process combine both onchain and offchain(TEE) process, it takes around 9-12 days during beta and 6-9 days after beta. It is important to not miss any deadlines.</p>
+<h3 id="1-file-a-claim"><a class="header" href="#1-file-a-claim">1 File a Claim</a></h3>
+<p>Anyone can file a claim if</p>
+<ol>
+<li>an insured token’s adjacent 24hr TWAP prices dropped &gt;=20% in the past 1-6 days.</li>
+<li>claimer has insurance score available to spend (min 7 days old)</li>
+<li>claimer held the insured token for min 7 days before the price drop</li>
+</ol>
+<p>There is also a 10 USD8 bond, fully refunded if condition 2 and 3 are satisfied. First claimer needs to provide a rough time when the price drop happened, our TEE will ping down the exact block.</p>
+<p>Important - claim window closes 3 days after the first valid claim, after that no claims can be filed for this insured token.</p>
+<h3 id="2-settle-claims"><a class="header" href="#2-settle-claims">2 Settle Claims</a></h3>
+<p>Anyone can settle a claim by submitting an attestation from the TEE which uses open-sourced algorithm to compute every claimers insurance score and payout. Results are fully verifiable.</p>
+<p>Individual payout amount is calculated based on</p>
+<ol>
+<li>claimer’s insurance score vs total score from all claimers</li>
+<li>Cover Pool limit</li>
+<li>max coverage of the insured token</li>
+</ol>
+<div class="example-box">
+<p>E.g. 2 claimers, A has 100 score and B has 200 score, and they both escrowed $500 worth of insured tokens with a max coverage of 80%. Current Cover Pool has $2250 worth of assets.</p>
+
+<ol>
+<li>the Cover Pool limit is current set to 50%, so total $1125 can be used. 80% of which is the budget to cover claims which is $900. A has half score as B, A can claim up to $300 and B $600</li>
+
+<li>Both A and B escrowed $500 worth of insured tokens, at max coverage of 80%, their claims are capped at $400 for their loss.</li>
+
+<li>A will get $300 payout, B gets $400</li>
+
+</ol>
+
+</div>
+
+<p>Settlement window opens for max 3 days, as soon as its settled user can finalize their payouts. If not settled, claimers can withdraw their escrowed tokens, no insurance scores will be spent.</p>
+<p>During beta - admin has an extra 3 days after settlement to verify and dispute with a TEE signed new settlement. This is a safety measure to ensure no malicious settlement bugs exist.</p>
+<h3 id="3-finalize-payouts"><a class="header" href="#3-finalize-payouts">3 Finalize Payouts</a></h3>
+<p>During this process claimers has 3 days to accept the payout, if they choose to accept, they will</p>
+<ol>
+<li>forfeits their escrowed insured token and insurance score</li>
+<li>receives Cover Pool asset(s) with total USD value matching the entitled payout</li>
+</ol>
+<p>If claimers choose to not accept the payout, they can withdraw escrowed tokens and keep their insurance score.</p>
+<p>No matter claimers choose to finalize or not, bond will be returned as long as bond conditions are met.</p>
+<p>Important - payout window is 3 days, after that all pending claims are considered not accepted, claimers can withdraw their escrowed tokens.</p>
+<h2 id="tee"><a class="header" href="#tee">TEE</a></h2>
+<p>USD8 uses an amazon secure enclave running open sourced algorithm offchain to compute and sign payouts. Anyone can trigger the TEE and submit the result onchain which will verify the TEE’s signature before accepting the final result. Since the algorithm is open sourced, the result is publically verifiable by anyone.</p>
+<p>We plan to shift to a zk-coprocessor network like <a href="https://brevis.network/">Brevis</a> in the future to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">walkaway test</a>.</p>
+<h2 id="boosters"><a class="header" href="#boosters">Boosters</a></h2>
+<p><img src="/assets/booster.png" width="300px" /><br /><br /><br><a href="https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f12d">Boosters</a> are NFTs that can be burnt when filing a claim to add a 1% boost to your total insurance score. You can stack multiple Boosters. Boosters are not for sale, they are only minted to early stage users who help USD8 grow. Follow our <a href="https://x.com/usd8_fi">X</a> and <a href="https://t.me/+e84i2oYk1ao1MTk1">Telegram</a>.</p>
+<p>Enter an Ethereum address to check Boosters</p>
+<div class="booster-check">
+<input id="booster-address" type="text" placeholder="0x..." autocomplete="off" spellcheck="false">
+<button id="booster-check-btn" type="button">Check</button>
+<div id="booster-result" class="booster-result"></div>
+
+</div>
+
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cover-pools"><a class="header" href="#cover-pools">Cover Pools</a></h1>
+<p>Cover Pools are public vaults anyone can deposit and withdraw at any time. Cover Pools</p>
+<ul>
+<li>accepts a specific token as deposit e.g. wstEth</li>
+<li>pays an APY in USD8 funded by USD8’s treasury yield</li>
+<li>capped size</li>
+</ul>
+<div class="example-box">
+  Warning - Cover Pool asset will be used to cover claims if any insured token suffers a price drop &gt;= 20%.
+</div>
+
+<h2 id="insured-tokens"><a class="header" href="#insured-tokens">Insured Tokens</a></h2>
+<p>Insured tokens are carefully evaluated, selected and adjusted on an ongoing basis. USD8 accepts independent security audits or certificates from the following sources.</p>
+<ul>
+<li><a href="https://www.openzeppelin.com/">OpenZeppelin</a></li>
+<li><a href="https://trailofbits.com/">Trail of Bits</a></li>
+<li><a href="https://diligence.security/">Consensys Deligence</a></li>
+<li><a href="https://frameworks.securityalliance.dev/certs/overview/">SEAL Certification from Security Alliance</a></li>
+</ul>
+<h2 id="withdraw"><a class="header" href="#withdraw">Withdraw</a></h2>
+<p>Withdraw has a 7 day cool down window, can be requested at anytime when there are no active claims.</p>
+<p>If new claims are made during this time, cool down can be extended for another 9-12 days during beta (6-9 days after beta) from the first claim.</p>
+<p>Assets in cool down do not gain yield and are still covering claims. Assets are withdrawable after cool down at anytime, they do not cover any claims nor gain yield anymore.</p>
+<h2 id="payout-limit"><a class="header" href="#payout-limit">Payout Limit</a></h2>
+<p>There is a limit for each payout from Cover Pool, currently set at 50%, meaning max payout of each incident is capped at 50% size of the current Cover Pool.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="white-hat-economy"><a class="header" href="#white-hat-economy">White Hat Economy</a></h1>
+<p>The White Hat economy is the enforcement layer of USD8. It plays a critical role in recovering lost assets and deterring future malicious activities in Defi.</p>
+<p>After a successful claim, the forfeited LP tokens become the property of the USD8 protocol, providing the financial engine to power the White Hat Economy. We plan to explore multiple mechanisms depending on the size of the hack:</p>
+<ul>
+<li>Tokenized Distressed Debt Market</li>
+<li>Bounties &amp; Anonymous Tips</li>
+<li>White Hat Guild &amp; Open Education</li>
+<li>Legal Action &amp; Law Enforcement</li>
+</ul>
+<h2 id="why-this-matters"><a class="header" href="#why-this-matters">Why This Matters</a></h2>
+<p>Insurance alone is reactive. The <a href="#cover-pools">Cover Pool</a> makes users whole after a hack, but it does not change the incentives that produced the hack in the first place.</p>
+<p>The White Hat Economy is the second half of USD8’s thesis — turning the proceeds of every claim into pressure on the attacker, and turning every member of the public into a potential adversary for bad actors.</p>
+<p>This is how USD8 addresses the deeper problem laid out in our <a href="#philosophical-roots">Philosophical Roots</a> — the missing alignment and enforcement layer that let malicious activity flourish in crypto. By rewarding good actors and imposing permanent, compounding risk on bad ones, the White Hat Economy realigns the industry’s incentives and, over time, deters the next hack from being committed in the first place.</p>
+<h2 id="launch-time"><a class="header" href="#launch-time">Launch Time</a></h2>
+<p>We aim to launch the White Hat Economy once USD8 holds meaningful amount of forfeited insured tokens.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="faqs" class="faq-title">FAQs</h1>
+
+<h2 id="so-i-get-free-insurance-from-usd8--susd8"><a class="header" href="#so-i-get-free-insurance-from-usd8--susd8">So I get free insurance from USD8 &amp; sUSD8?</a></h2>
+<p>Yes, that’s the benefit of USD8 comparing to other stable coins. You get Insurance Score every block, the more and longer you hold USD8/sUSD8, the more score you get.</p>
+<p>The rate of accumulating score differs, currently 1 USD8 gets you 1 score per day, while 1 sUSD8 gets you 0.1 score per day.</p>
+<h2 id="is-there-a-min-holding-requirement-before-claim"><a class="header" href="#is-there-a-min-holding-requirement-before-claim">Is there a min holding requirement before claim?</a></h2>
+<p>Yes. Insurance score needs to be 7 days old when making a claim. You also need to hold the insured token for min 7 days before price drops.</p>
+<h2 id="i-had-usd8-before-but-not-now-am-i-still-insured"><a class="header" href="#i-had-usd8-before-but-not-now-am-i-still-insured">I had USD8 before but not now, am I still insured?</a></h2>
+<p>Yes. You should have some insurance score accumulated, it does not expire. You can file claims as long as your score is 7 days old.</p>
+<h2 id="how-much-payout-do-i-get"><a class="header" href="#how-much-payout-do-i-get">How much payout do I get?</a></h2>
+<p>Depends on 1.your insurance score vs others’ claiming at the same time 2.cover pool size limit.</p>
+<p>The more Insurance Score, the higher your claim weights. Max payout amount is 80%, you might get less than that if you have a low score - however you can always choose to not accept the final payout if it is too low and keep your Insurance Score for future use.</p>
+<h2 id="whats-needed-when-filing-a-claim"><a class="header" href="#whats-needed-when-filing-a-claim">What’s needed when filing a claim?</a></h2>
+<ul>
+<li>the insured token you are claim against</li>
+<li>insurance score</li>
+<li>10 USD8 bond, refunded after claim</li>
+<li>boosters (optional)</li>
+</ul>
+<h2 id="how-do-you-reduce-the-cover-pool-lp-risk"><a class="header" href="#how-do-you-reduce-the-cover-pool-lp-risk">How do you reduce the Cover Pool LP risk?</a></h2>
+<p>Cover Pool assets might be deployed to cover claims, which makes it riskier that’s why it comes with a higher APY. To reduce Cover Pool risk, our team</p>
+<ul>
+<li>independently vets every protocol before offering insurance</li>
+<li>review third party audits for each protocol</li>
+<li>adjust/revoke coverage for each protocol based on ongoing monitoring</li>
+</ul>
+<p>Claims are not expected to occur often, but there is always a possibility.</p>
+<h2 id="whats-different-in-beta"><a class="header" href="#whats-different-in-beta">What’s different in beta?</a></h2>
+<p>Beta has a few safety training wheels which we plan to remove afterwards, which means during beta admin has special rights and privileges.</p>
+<ul>
+<li>Admin or Timelock can dispute an incident payout settlement by submitting a new settlement root. However the new root still needs to be signed by TEE key which is saved in our smart contract, a malicious  admin can’t just forge a random root. This also adds a 3 day dispute window to the claim process, which will be removed after beta.</li>
+<li>Timelock can upgrade Registry, USD8, Treasury, and DefiInsurance, we plan to remove upgradability after beta.</li>
+</ul>
+<h2 id="does-usd8-has-a-governance-token"><a class="header" href="#does-usd8-has-a-governance-token">Does USD8 has a governance token?</a></h2>
+<p>Not at the moment.</p>
+<h2 id="how-does-usd8-make-money"><a class="header" href="#how-does-usd8-make-money">How does USD8 make money?</a></h2>
+<p>USD8 has several revenue models,</p>
+<ul>
+<li>partial USD8 treasury yield</li>
+<li>20% from payout left over - because claimers only get max 80% coverage, the left over 20% is USD8’s fees.</li>
+<li>partial loss recovered through <a href="#white-hat-economy">White Hat Economy</a></li>
+</ul>
+<h2 id="how-can-i-contribute-to-usd8"><a class="header" href="#how-can-i-contribute-to-usd8">How can I contribute to USD8?</a></h2>
+<p>We welcome community contributions across mechanism design, partnerships, marketing, and more. The best place to post proposals, critiques, and ideas is our <a href="https://github.com/orgs/Usd8-fi/discussions">GitHub Discussions</a>. Contributors can earn <a href="#boosters">Boosters</a>.</p>
+<h2 id="who-is-behind-usd8"><a class="header" href="#who-is-behind-usd8">Who is behind USD8?</a></h2>
+<img src="/assets/my_avatar.png" width="100px" />
+<p>Hi my name is Rick, I am the core dev behind USD8, during the day I work as a Security Researcher. You can reach out to me via x - <a href="https://x.com/codephobic">@codephobic</a> or email rick[at]usd8.fi.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="transparency"><a class="header" href="#transparency">Transparency</a></h1>
+<p>Here are the trust assumptions and risks involved in USD8 protocol. Most of these are commonly found in Defi protocols, we choose to declare these up-front to our users.</p>
+<h2 id="admin--timelock"><a class="header" href="#admin--timelock">Admin &amp; Timelock</a></h2>
+<p>Admin privileges was reduced as much as possible during the design, most critical actions are performed through the timelock, which allows extra time for users to react to any upcoming changes.</p>
+<p>Admin is allowed to perform system settings like</p>
+<ul>
+<li>Deploy USD8 treasury to pre-approved strategies, but can’t directly add strategies</li>
+<li>Manage pausing, revenue weights, protocol fee, cover pool deposit caps</li>
+</ul>
+<p>Timelock manages sensitive system settings</p>
+<ul>
+<li>Add/remove admins or replace the timelock</li>
+<li>Configure pools, insured tokens, scoring, oracles, incident/exit timing, claim bonds and TEE signers</li>
+<li>Manage Treasury strategies and revenue distribution.</li>
+<li>Permanently call endBetaMode, disabling upgrades and beta settlement corrections</li>
+</ul>
+<h2 id="during-beta"><a class="header" href="#during-beta">During Beta</a></h2>
+<p>Beta has a few extra safety training wheels which gives admin and timelock extra privileges.</p>
+<ul>
+<li>
+<p>Admin or Timelock can correct settlement root, which also adds a 3 day dispute window to the claim process</p>
+</li>
+<li>
+<p>Timelock can upgrade Registry, USD8, Treasury, and DefiInsurance</p>
+</li>
+</ul>
+<p>Both will be removed once beta ends.</p>
+<h2 id="defi-insurance-1"><a class="header" href="#defi-insurance-1">Defi Insurance</a></h2>
+<p>Defi Insurance is free for all USD8/sUSD8 users, however the payout amount can vary based on claimers’ insurance scores and Cover Pool size limit.</p>
+<p>We designed a process to allow users the freedom to accept or reject the payout in case it’s not up to expectation.</p>
+<h2 id="cover-pool"><a class="header" href="#cover-pool">Cover Pool</a></h2>
+<p>Cover pools are more risky because they are used to cover claims. Our team carefully vets each individual token we insure to reduce the risk as much as possible, see <a href="#how-do-you-reduce-the-cover-pool-lp-risk">How do you reduce the Cover Pool LP risk?</a>.</p>
+<p>Cover Pool LPs should be aware of the risk.</p>
+<h2 id="tees"><a class="header" href="#tees">TEEs</a></h2>
+<p>USD8 system uses offchain TEEs to compute coverage, this means the current system relies on servers we operate. However we are planning to move to a trustless setup using zk-coprocessor networks in the future.</p>
+<h2 id="external-services"><a class="header" href="#external-services">External Services</a></h2>
+<p>USD8 relies on a few external services to function, such as</p>
+<ul>
+<li>Chainlink Oracles</li>
+<li>RPC providers</li>
+<li>Server/TEE providers (however we are planning to move to a trustless zk-coprocessor network in the future)</li>
+<li>Defi yield sources like Aave, Morpho etc</li>
+</ul>
+<p>Any issues with these services might also impact USD8.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="analytics-8434d4e3.js"></script>
+        <script src="docs-theme-13a6a8a3.js"></script>
+        <script src="booster-check-aac21633.js"></script>
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>

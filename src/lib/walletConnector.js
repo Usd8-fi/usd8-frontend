@@ -1,13 +1,12 @@
 import { createAppKit } from '@reown/appkit/react';
-import { mainnet } from '@reown/appkit/networks';
+import { mainnet, sepolia } from '@reown/appkit/networks';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { protocolConfig } from '../config/protocolConfig.js';
 
 const PLACEHOLDER_PROJECT_IDS = new Set(['', 'YOUR_REOWN_PROJECT_ID']);
-
-export const reownProjectId = String(protocolConfig.reownProjectId || '').trim();
+const DEFAULT_REOWN_PROJECT_ID = '0a6111479b9c06dc90f816d4138a6c4e';
+export const reownProjectId = String(import.meta.env.VITE_REOWN_PROJECT_ID || DEFAULT_REOWN_PROJECT_ID).trim();
 export const walletConnectorConfigured = Boolean(reownProjectId) && !PLACEHOLDER_PROJECT_IDS.has(reownProjectId);
-export const walletNetworks = [mainnet];
+export const walletNetworks = [sepolia, mainnet];
 
 export const wagmiAdapter = walletConnectorConfigured
   ? new WagmiAdapter({
@@ -25,7 +24,7 @@ function getMetadata() {
 
   return {
     name: 'USD8',
-    description: 'USD8 Dashboard',
+    description: 'USD8 DeFi insurance and cover pools',
     url: origin,
     icons: [`${origin}/assets/usd8Logo.svg`],
   };
@@ -37,10 +36,13 @@ export function initializeWalletConnector() {
   createAppKit({
     adapters: [wagmiAdapter],
     networks: walletNetworks,
-    defaultNetwork: mainnet,
+    defaultNetwork: sepolia,
     projectId: reownProjectId,
     metadata: getMetadata(),
     themeMode: 'dark',
+    themeVariables: {
+      '--w3m-font-family': '"BlexMono Nerd Font Mono", monospace',
+    },
     enableEIP6963: true,
     enableInjected: true,
     enableCoinbase: true,

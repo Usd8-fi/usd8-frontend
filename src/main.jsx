@@ -5,6 +5,7 @@ import { WagmiProvider } from 'wagmi';
 import App from './App.jsx';
 import { initializeWalletConnector, wagmiConfig, walletConnectorConfigured } from './lib/walletConnector.js';
 import './styles.css';
+import '../theme/css/link-theme.css';
 
 const queryClient = new QueryClient();
 

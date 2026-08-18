@@ -1,0 +1,26 @@
+[book]
+title = "USD8 docs"
+authors = ["USD8"]
+description = "USD8 protocol, insurance, cover pools, and ecosystem documentation"
+src = "book-src"
+language = "en"
+
+[build]
+build-dir = "docs/docs"
+create-missing = false
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+no-section-label = true
+git-repository-url = "https://github.com/Usd8-fi/usd8-core"
+site-url = "/docs/"
+additional-css = ["theme/css/link-theme.css", "theme/css/usd8-docs.css"]
+additional-js = ["analytics.js", "docs-theme.js", "booster-check.js"]
+
+[output.html.search]
+enable = true
+
+[output.html.fold]
+enable = true
+level = 0
