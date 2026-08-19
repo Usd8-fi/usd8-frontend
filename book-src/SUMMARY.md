@@ -7,3 +7,4 @@
 - [White Hat Economy](white-hat-economy.md)
 - [FAQs](faqs.md)
 - [Transparency](transparency.md)
+- [Legal](legal.md)
