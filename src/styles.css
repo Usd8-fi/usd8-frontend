@@ -525,11 +525,18 @@ a:focus-visible {
 .action-button-shell {
   position: relative;
   display: inline-flex;
+  align-items: center;
   width: max-content;
+  gap: 14px;
 }
 
-.action-button-shell > button:disabled {
-  cursor: not-allowed;
+.action-validation-warning {
+  flex: 0 0 auto;
+  color: #e00000;
+  font: inherit;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .dashboard-help {
@@ -593,27 +600,21 @@ a:focus-visible {
   visibility: visible;
 }
 
-.action-availability-tooltip {
+.dashboard-help-tooltip--floating {
   position: fixed;
   z-index: 2000;
-  right: auto;
-  bottom: auto;
-  border-color: #e00000;
-  background: #b14649;
-  color: var(--text);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
 }
 
-.action-availability-tooltip--visible {
+.dashboard-help-tooltip--visible {
   opacity: 1;
+  transform: translateY(0);
   visibility: visible;
 }
 
 .cover-pool-card .dashboard-help-tooltip {
   color: #d0d0d0;
-}
-
-.cover-pool-card .action-availability-tooltip {
-  color: var(--text);
 }
 
 .cover-pool-card .dashboard-help-button,
@@ -1171,8 +1172,14 @@ a:focus-visible {
   width: 282px;
 }
 
-.file-claim-dialog-form > .action-button-shell {
-  margin-top: 112px;
+.file-claim-tee-note {
+  margin: 48px 0 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.file-claim-submit-row {
+  margin-top: 48px;
 }
 
 .file-claim-dialog-form .usd8-dialog-submit {

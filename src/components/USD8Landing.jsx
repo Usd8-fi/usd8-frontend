@@ -131,8 +131,6 @@ function WalletButton({ wallet }) {
       onClick={connected ? onDisconnect : onConnect}
       aria-label={connected ? `Disconnect wallet ${address}` : 'Connect wallet'}
       unavailableReason={connected ? '' : connectUnavailableReason}
-      tooltipAlign="right"
-      tooltipPosition="below"
     >
       {connecting ? 'connecting...' : connected ? `${address.slice(0, 6)}...${address.slice(-4)}${networkName ? ` ${networkName}` : ''}` : 'connect wallet'}
     </AvailabilityAction>
@@ -179,6 +177,7 @@ function SiteFooter() {
         <div>
           <a className="site-nav-link" href={docsUrl('transparency.html')}>Transparency</a>
           <a className="site-nav-link" href={docsUrl('usd8.html#contact')}>Contacts</a>
+          <a className="site-nav-link" href={docsUrl('legal.html')}>Legal</a>
         </div>
       </nav>
     </footer>
@@ -291,7 +290,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
           <AvailabilityAction type="button" onClick={() => onUsd8Action?.('mint')} unavailableReason={walletUnavailableReason}>
             mint
           </AvailabilityAction>
-          <AvailabilityAction type="button" onClick={() => onUsd8Action?.('redeem')} unavailableReason={walletUnavailableReason} tooltipAlign="right">
+          <AvailabilityAction type="button" onClick={() => onUsd8Action?.('redeem')} unavailableReason={walletUnavailableReason}>
             redeem
           </AvailabilityAction>
         </AssetCard>

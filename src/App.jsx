@@ -15,13 +15,17 @@ import { displayAvailableBalance } from './lib/displayAvailableBalance.js';
 import { useLivePoolEarnings } from './lib/livePoolEarnings.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
 import { getNetwork, getProtocolNetwork } from './lib/networkConfig.js';
+import { claimApiConfigured, prepareIncidentOpen } from './lib/claimApi.js';
 import { fetchInsuranceScore } from './lib/scoreApi.js';
+import { tokenAmountExceedsBalance } from './lib/tokenAmount.js';
 import { walletConnectorConfigured } from './lib/walletConnector.js';
 
 const EMPTY_CHAIN_DATA = {
   activeIncidentId: '0',
   scoreBalances: null,
-  balances: { usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' },
+  balances: {
+    usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', insuredTokens: {},
+  },
   pool: {
     apy: '34%',
     tvl: '$122.2K',
@@ -64,6 +68,16 @@ function parseTokenAmount(raw, decimals) {
   } catch {
     throw new Error('Please enter a valid number.');
   }
+}
+
+function tokenAmountValidationReason(raw, available, token, action) {
+  const normalized = String(raw ?? '').trim();
+  if (!defaultTokenAmount(available)) return `You do not have any ${token} available to ${action}.`;
+  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(normalized)) return `Enter a valid ${token} amount to ${action}.`;
+  if (!/[1-9]/.test(normalized)) return `Enter a ${token} amount greater than zero to ${action}.`;
+  return tokenAmountExceedsBalance(normalized, available)
+    ? `The ${token} amount exceeds your available balance.`
+    : '';
 }
 
 function scoreWithTokenBreakdown(score, contracts) {
@@ -114,6 +128,25 @@ const treasuryWriteAbi = [
   { type: 'function', name: 'usd8ToUsdcRate', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
 ];
 
+const claimWriteAbi = [
+  { type: 'function', name: 'activeIncidentId', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+  { type: 'function', name: 'claimBondAmount', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint128' }] },
+  {
+    type: 'function',
+    name: 'fileClaim',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'insuredToken', type: 'address' },
+      { name: 'insuredTokenAmount', type: 'uint128' },
+      { name: 'scoreToSpend', type: 'uint256' },
+      { name: 'boosterAmount', type: 'uint256' },
+      { name: 'referenceBlock', type: 'uint64' },
+      { name: 'signature', type: 'bytes' },
+    ],
+    outputs: [{ name: 'claimId', type: 'uint256' }],
+  },
+];
+
 function DialogCloseButton({ label, onClose }) {
   return (
     <button className="app-dialog-close" type="button" aria-label={label} onClick={onClose}>×</button>
@@ -137,6 +170,8 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
   const outputToken = minting ? 'USD8' : 'USDC';
   const availableBalance = minting ? usdcBalance : usd8Balance;
   const [amount, setAmount] = useState(() => defaultTokenAmount(availableBalance));
+  const amountUnavailableReason = submitUnavailableReason
+    || tokenAmountValidationReason(amount, availableBalance, inputToken, minting ? 'mint USD8' : 'redeem USD8');
 
   useEffect(() => {
     setAmount(defaultTokenAmount(availableBalance));
@@ -175,7 +210,7 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
 
         <form className="usd8-dialog-form" onSubmit={(event) => {
           event.preventDefault();
-          if (!submitUnavailableReason) onSubmit(mode, amount);
+          if (!amountUnavailableReason) onSubmit(mode, amount);
         }}>
           <div className="usd8-dialog-flow">
             <label className="usd8-dialog-amount">
@@ -213,7 +248,12 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
           </div>
 
           <div className="usd8-dialog-submit-row">
-            <AvailabilityAction className="usd8-dialog-submit" type="submit" unavailableReason={submitUnavailableReason}>
+            <AvailabilityAction
+              className="usd8-dialog-submit"
+              type="submit"
+              unavailableReason={amountUnavailableReason}
+              warningResetKey={`${mode}:${amount}`}
+            >
               {mode}
             </AvailabilityAction>
             {statusMessage ? (
@@ -256,6 +296,10 @@ function PoolActionDialog({
   const hasWithdrawAvailable = !/^0(?:\.0+)?$/.test(String(withdrawAvailable).replace(/,/g, ''));
   const actionUnavailableReason = submitUnavailableReason
     || (withdrawingEarnings && !hasEarnings ? 'No earnings to withdraw.' : '');
+  const amountUnavailableReason = actionUnavailableReason
+    || (!withdrawingEarnings
+      ? tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown')
+      : '');
 
   useEffect(() => {
     setAmount(defaultTokenAmount(available));
@@ -301,7 +345,7 @@ function PoolActionDialog({
 
         <form className="usd8-dialog-form" onSubmit={(event) => {
           event.preventDefault();
-          if (!actionUnavailableReason && !withdrawing) onSubmit(mode, amount);
+          if (!amountUnavailableReason && !withdrawing) onSubmit(mode, amount);
         }}>
           {withdrawingEarnings ? (
             <div className="usd8-dialog-flow usd8-dialog-flow--single">
@@ -362,7 +406,8 @@ function PoolActionDialog({
                   className="usd8-dialog-submit"
                   type="button"
                   onClick={() => onSubmit('startCooldown', amount)}
-                  unavailableReason={actionUnavailableReason}
+                  unavailableReason={amountUnavailableReason}
+                  warningResetKey={`${mode}:${amount}`}
                 >
                   start cooldown
                 </AvailabilityAction>
@@ -389,7 +434,12 @@ function PoolActionDialog({
                 ) : null}
               </>
             ) : (
-              <AvailabilityAction className="usd8-dialog-submit" type="submit" unavailableReason={actionUnavailableReason}>
+              <AvailabilityAction
+                className="usd8-dialog-submit"
+                type="submit"
+                unavailableReason={amountUnavailableReason}
+                warningResetKey={`${mode}:${amount}`}
+              >
                 {withdrawingEarnings ? 'withdraw earnings' : mode}
               </AvailabilityAction>
             )}
@@ -431,6 +481,9 @@ export default function App() {
   const [poolStatus, setPoolStatus] = useState('');
   const [poolStatusAction, setPoolStatusAction] = useState('');
   const [claimToken, setClaimToken] = useState(null);
+  const [claimStatus, setClaimStatus] = useState('');
+  const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const claimAbortController = useRef(null);
   const livePool = useLivePoolEarnings(chainData.pool);
 
   useEffect(() => {
@@ -653,7 +706,114 @@ export default function App() {
 
   function fileClaimAction(row) {
     if (!connected) return;
+    setClaimStatus('');
     setClaimToken(row);
+  }
+
+  async function submitClaim({ token, amount: rawAmount, scoreToSpend: rawScore, boosterAmount: rawBoosters }) {
+    if (claimSubmitting) return;
+    const controller = new AbortController();
+    claimAbortController.current = controller;
+    setClaimSubmitting(true);
+    setClaimStatus('Checking current incident and claim requirements.');
+    try {
+      const network = requireProtocolNetwork();
+      const { contracts } = network;
+      const client = publicClientFor(network.id);
+      const insuredToken = contracts.insuredTokens?.[token];
+      if (!insuredToken) throw new Error('This token is not enabled for claims on the selected network.');
+
+      const insuredTokenAmount = parseTokenAmount(rawAmount, 18);
+      const scoreToSpend = parseTokenAmount(rawScore, 18);
+      if (!/^\d+$/.test(String(rawBoosters ?? ''))) throw new Error('Please enter a valid Booster amount.');
+      const boosterAmount = BigInt(rawBoosters);
+      if (insuredTokenAmount <= 0n) throw new Error('Insured token amount must be positive.');
+      if (scoreToSpend <= 0n) throw new Error('Insurance score to spend must be positive.');
+      if (boosterAmount !== 0n) throw new Error('Booster claims are not connected yet.');
+
+      let activeIncidentId = await client.readContract({
+        address: contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'activeIncidentId',
+      });
+      const claimBondAmount = await client.readContract({
+        address: contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'claimBondAmount',
+      });
+      const usd8Balance = parseTokenAmount(String(chainData.balances.usd8).replace(/,/g, ''), 18);
+      const usd8Required = insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
+        ? insuredTokenAmount + claimBondAmount
+        : claimBondAmount;
+      if (usd8Required > usd8Balance) {
+        throw new Error(insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
+          ? 'Insufficient USD8 balance for the insured amount and claim bond.'
+          : 'Insufficient USD8 balance for the claim bond.');
+      }
+      const approvals = insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
+        ? [[contracts.usd8, insuredTokenAmount + claimBondAmount, 'USD8']]
+        : [
+          [insuredToken, insuredTokenAmount, claimToken?.symbol || 'insured token'],
+          [contracts.usd8, claimBondAmount, 'USD8'],
+        ];
+      for (const [approvalToken, requiredAmount, symbol] of approvals) {
+        const allowance = await client.readContract({
+          address: approvalToken,
+          abi: approveAbi,
+          functionName: 'allowance',
+          args: [address, contracts.defiInsurance],
+        });
+        if (allowance < requiredAmount) {
+          await submitTransaction({
+            address: approvalToken,
+            abi: approveAbi,
+            functionName: 'approve',
+            args: [contracts.defiInsurance, requiredAmount],
+          }, `Approve ${symbol} for the claim in your wallet.`, setClaimStatus);
+        }
+      }
+
+      activeIncidentId = await client.readContract({
+        address: contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'activeIncidentId',
+      });
+      let referenceBlock = 0n;
+      let signature = '0x';
+      if (activeIncidentId === 0n) {
+        setClaimStatus('Verifying incident in the TEE. First claim may take several minutes.');
+        const authorization = await prepareIncidentOpen(insuredToken, {
+          chainId: network.id,
+          registry: contracts.registry,
+          defiInsurance: contracts.defiInsurance,
+          signal: controller.signal,
+        });
+        activeIncidentId = await client.readContract({
+          address: contracts.defiInsurance,
+          abi: claimWriteAbi,
+          functionName: 'activeIncidentId',
+        });
+        if (activeIncidentId === 0n) {
+          referenceBlock = authorization.referenceBlock;
+          signature = authorization.signature;
+        }
+      }
+
+      await submitTransaction({
+        address: contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'fileClaim',
+        args: [insuredToken, insuredTokenAmount, scoreToSpend, boosterAmount, referenceBlock, signature],
+      }, 'Confirm the claim in your wallet.', setClaimStatus);
+      setClaimStatus(`Claim confirmed on ${network.name}.`);
+    } catch (error) {
+      if (error?.name !== 'AbortError') {
+        setClaimStatus(error?.shortMessage || error?.message || 'Claim submission failed.');
+      }
+    } finally {
+      if (claimAbortController.current === controller) claimAbortController.current = null;
+      setClaimSubmitting(false);
+    }
   }
 
   function openUsd8Action(action) {
@@ -754,17 +914,32 @@ export default function App() {
           insuredTokens={COVERED_PROTOCOL_ROWS.map((row) => ({
             id: row.id,
             symbol: row.symbol,
+            address: protocolNetwork?.contracts.insuredTokens?.[row.id],
             balance: row.id === 'usd8'
               ? chainData.balances.usd8
-              : row.id === 'susd8' ? chainData.balances.savings : '0',
-          }))}
+              : row.id === 'susd8'
+                ? chainData.balances.savings
+                : chainData.balances.insuredTokens?.[row.id] || '0',
+          })).filter((row) => row.address)}
           availableScore={score?.availableScore || '0'}
           availableBoosters="0"
           claimBond="10 USD8"
+          claimBondAvailable={chainData.balances.usd8}
           maxIncidentAgeHours={144}
           requiresIncidentTime={!chainData.activeIncidentId || chainData.activeIncidentId === '0'}
-          onClose={() => setClaimToken(null)}
-          onSubmit={() => {}}
+          submitUnavailableReason={claimSubmitting
+            ? 'Claim preparation is in progress.'
+            : ((!chainData.activeIncidentId || chainData.activeIncidentId === '0') && !claimApiConfigured
+              ? 'Claim verification service is not configured.'
+              : '')}
+          statusMessage={claimStatus}
+          onClearStatus={() => setClaimStatus('')}
+          onClose={() => {
+            claimAbortController.current?.abort();
+            setClaimStatus('');
+            setClaimToken(null);
+          }}
+          onSubmit={submitClaim}
         />
       ) : null}
       {connected && usd8Action ? (

@@ -58,6 +58,7 @@ describe('USD8 landing navigation', () => {
       'FAQs',
       'Transparency',
       'Contacts',
+      'Legal',
     ]) {
       expect(within(footerNav).getByRole('link', { name: label })).toBeInTheDocument();
     }
@@ -85,8 +86,15 @@ describe('USD8 landing navigation', () => {
       'href',
       './docs/usd8.html#contact',
     );
+    expect(within(footerNav).getByRole('link', { name: 'Legal' })).toHaveAttribute(
+      'href',
+      './docs/legal.html',
+    );
     expect(within(footerNav).getByRole('link', { name: 'Transparency' }).compareDocumentPosition(
       within(footerNav).getByRole('link', { name: 'Contacts' }),
+    ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(footerNav).getByRole('link', { name: 'Contacts' }).compareDocumentPosition(
+      within(footerNav).getByRole('link', { name: 'Legal' }),
     ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -172,7 +180,7 @@ describe('USD8 landing navigation', () => {
     expect(poolCard.querySelector('.cover-pool-actions').children).toHaveLength(3);
   });
 
-  it('disables wallet actions and explains their availability on rollover', () => {
+  it('keeps wallet actions clickable and explains blockers beside each clicked action', () => {
     const onUsd8Action = vi.fn();
     const onFileClaim = vi.fn();
     const onPoolAction = vi.fn();
@@ -189,15 +197,11 @@ describe('USD8 landing navigation', () => {
     const redeem = screen.getByRole('button', { name: 'redeem' });
     const claimButtons = screen.getAllByRole('button', { name: /file claim/i });
     for (const button of [mint, redeem, ...claimButtons]) {
-      expect(button).toBeDisabled();
+      expect(button).toBeEnabled();
+      fireEvent.click(button);
       expect(availabilityTooltip(button)).toHaveTextContent('Please connect your wallet first.');
     }
-    fireEvent.mouseEnter(mint.parentElement);
-    expect(availabilityTooltip(mint).parentElement).toBe(document.body);
 
-    fireEvent.click(mint);
-    fireEvent.click(redeem);
-    fireEvent.click(claimButtons[0]);
     expect(onUsd8Action).not.toHaveBeenCalled();
     expect(onFileClaim).not.toHaveBeenCalled();
 
@@ -205,9 +209,9 @@ describe('USD8 landing navigation', () => {
     expect(screen.queryByRole('button', { name: 'start cooldown' })).not.toBeInTheDocument();
     for (const action of ['deposit', 'withdraw', 'withdraw earnings']) {
       const button = screen.getByRole('button', { name: action });
-      expect(button).toBeDisabled();
-      expect(availabilityTooltip(button)).toHaveTextContent('Please connect your wallet first.');
+      expect(button).toBeEnabled();
       fireEvent.click(button);
+      expect(availabilityTooltip(button)).toHaveTextContent('Please connect your wallet first.');
     }
     expect(onPoolAction).not.toHaveBeenCalled();
   });

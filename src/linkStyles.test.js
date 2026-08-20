@@ -139,6 +139,7 @@ describe('shared text-link styling', () => {
     expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\):not\(:disabled\):hover,[\s\S]*?background: var\(--pool-button-hover\);\s+color: var\(--text\);/);
     expect(appStyles).toMatch(/\.landing-brand:hover,[\s\S]*?filter: brightness\(0\.82\);/);
     expect(appStyles).toMatch(/\.landing-beta-link:hover,[\s\S]*?background: color-mix\(in srgb, rgb\(208, 153, 40\) 82%, black\);/);
+    expect(docsStyles).toMatch(/\.sidebar-logo \{[\s\S]*?width: 64px;/);
     expect(docsStyles).toMatch(/\.sidebar-logo:hover,[\s\S]*?filter: brightness\(0\.82\);/);
     expect(docsStyles).toMatch(/\.sidebar-beta-link:hover,[\s\S]*?background: color-mix\(in srgb, rgb\(208, 153, 40\) 82%, black\);/);
     expect(sharedStyles).toContain(':not(.sidebar-logo):not(.sidebar-beta-link):hover');

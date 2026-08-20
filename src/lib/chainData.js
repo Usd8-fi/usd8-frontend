@@ -203,9 +203,11 @@ export async function fetchLandingChainData(account, chainId) {
     { address: contracts.coverPool, abi: poolAbi, functionName: 'balanceOf', args: [contracts.coverPool] },
     { address: contracts.coverPool, abi: poolAbi, functionName: 'periodFinish' },
     { address: contracts.coverPool, abi: poolAbi, functionName: 'exitRequests', args: [account] },
+    { address: contracts.insuredTokens['aave-sgho'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+    { address: contracts.insuredTokens['sky-susds'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
   ];
 
-  const [usdc, usd8, savings, coverAsset, poolShares, totalAssets, depositCap, earnings, shareDecimals, rewardRate, [, wstEthUsdPrice], wstEthUsdDecimals, activeIncidentId, totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch]] = await client.multicall({
+  const [usdc, usd8, savings, coverAsset, poolShares, totalAssets, depositCap, earnings, shareDecimals, rewardRate, [, wstEthUsdPrice], wstEthUsdDecimals, activeIncidentId, totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch], sGho, sUsds] = await client.multicall({
     contracts: calls,
     allowFailure: false,
   });
@@ -258,6 +260,10 @@ export async function fetchLandingChainData(account, chainId) {
       savingsAssets: formatted(savingsAssets),
       coverAsset: formatted(coverAsset),
       poolShares: formatted(poolShares, Number(shareDecimals)),
+      insuredTokens: {
+        'aave-sgho': formatted(sGho),
+        'sky-susds': formatted(sUsds),
+      },
     },
     pool: {
       apy: formattedAnnualRewardRate(rewardRate, totalAssets, wstEthUsdPrice, wstEthUsdDecimals),

@@ -87,7 +87,6 @@ export default function CoveredProtocolsTable({ onFileClaim, fileClaimUnavailabl
                 onClick={() => onFileClaim?.(row)}
                 aria-label={`File claim for ${row.id}`}
                 unavailableReason={fileClaimUnavailableReason}
-                tooltipAlign="right"
               >
                 file claim
               </AvailabilityAction>

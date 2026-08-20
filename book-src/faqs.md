@@ -45,14 +45,16 @@ Claims are not expected to occur often, but there is always a possibility.
 
 
 ## What's different in beta?
-Beta has a few safety training wheels which we plan to remove afterwards, which means during beta admin has special rights and privileges. 
-- Admin or Timelock can dispute an incident payout settlement by submitting a new settlement root. However the new root still needs to be signed by TEE key which is saved in our smart contract, a malicious  admin can't just forge a random root. This also adds a 3 day dispute window to the claim process, which will be removed after beta.
+Beta has a few safety training wheels which we plan to remove afterwards, during beta admin/Timelock has special rights and privileges.
+- Admin or Timelock can dispute an incident payout settlement by submitting a new settlement root. This also adds a 3 day dispute window to the claim process, which will be removed after beta.
 - Timelock can upgrade Registry, USD8, Treasury, and DefiInsurance, we plan to remove upgradability after beta.
 
 
 ## Does USD8 has a governance token?
 Not at the moment.
 
+## Show all the risk involved in USD8?
+Sure, see [Transparency](./transparency.md)
 
 ## How does USD8 make money?
 USD8 has several revenue models, 
