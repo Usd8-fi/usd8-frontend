@@ -1,4 +1,4 @@
-<img src="/assets/tyche.png" width="300px" />
+<img src="../assets/tyche.png" width="300px" />
   
 
 ## The Broken Dream
@@ -7,7 +7,7 @@ As we embrace decentralized dream to resist the abuses of centralized power, we 
 
 This dystopia is slowly killing the decentralized industry following [Gresham's Law](https://en.wikipedia.org/wiki/Gresham%27s_law), where good actors are gradually driven out till only bad actors left.
 
-<img src="/assets/thomas_gresham.jpg" width="800px" />
+<img src="../assets/thomas_gresham.jpg" width="800px" />
 
 Sir Thomas Gresham (1519–1579)
   
@@ -29,7 +29,7 @@ Now that the crypto space is flawed, we didn't come up with a new solution but i
 
 We need a new solution, one without centralized power while still be able to deter malicious actors. USD8 is our attempt at this, our mission is to restore the missing layer of order enforcement in DeFi security.
 
-<img src="/assets/murrayRothbard.jpg" width="800px" />
+<img src="../assets/murrayRothbard.jpg" width="800px" />
 
 Murray Rothbard (1926–1995), founder and primary theoretician of anarcho-capitalism.
 

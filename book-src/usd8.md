@@ -1,4 +1,4 @@
-<img src="/assets/usd8Logo.svg" width="100px">
+<img src="../assets/usd8Logo.svg" width="100px">
 
 # USD8
 
@@ -9,7 +9,7 @@ It is designed to correct the mis-aligned incentive design in current Defi lands
 
 ## Why USD8
 
-| | <span class="comparison-token"><img src="/assets/usd8Logo.svg" alt="USD8 logo">USD8</span> | <span class="comparison-token"><img src="/assets/usdc.png" alt="USDC logo">USDC</span> |
+| | <span class="comparison-token"><img src="../assets/usd8Logo.svg" alt="USD8 logo">USD8</span> | <span class="comparison-token"><img src="../assets/usdc.png" alt="USDC logo">USDC</span> |
 | --- | --- | --- |
 | Stable property | <span class="comparison-yes" aria-label="Yes">✓</span><br><small>Backed 1:1 by USDC</small> | <span class="comparison-yes" aria-label="Yes">✓</span> |
 | Yield opportunities | <span class="comparison-yes" aria-label="Yes">✓</span> | <span class="comparison-yes" aria-label="Yes">✓</span> |

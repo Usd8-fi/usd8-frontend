@@ -1,5 +1,5 @@
 # Contact
-<img src="/assets/my_avatar.png" width="200px" />
+<img src="../assets/my_avatar.png" width="200px" />
 
 Hi I am the core dev behind USD8, during the day I work as a Security Researcher. You can reach out to me via the following channels.
 

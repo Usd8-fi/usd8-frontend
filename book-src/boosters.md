@@ -1,4 +1,4 @@
-![](/assets/booster.png)  
+![](../assets/booster.png)
 
 # Boosters
 

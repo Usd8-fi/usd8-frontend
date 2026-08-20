@@ -74,7 +74,7 @@ We plan to shift to a zk-coprocessor network like [Brevis](https://brevis.networ
 
 
 ## Boosters
-<img src="/assets/booster.png" width="300px" /><br/><br/>     
+<img src="../assets/booster.png" width="300px" /><br/><br/>
 [Boosters](https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f12d) are NFTs that can be burnt when filing a claim to add a 1% boost to your total insurance score. You can stack multiple Boosters. Boosters are not for sale, they are only minted to early stage users who help USD8 grow. Follow our [X](https://x.com/usd8_fi) and [Telegram](https://t.me/+e84i2oYk1ao1MTk1).
 
 Enter an Ethereum address to check Boosters
