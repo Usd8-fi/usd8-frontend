@@ -3,6 +3,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+branch="$(git branch --show-current)"
+if [[ "$branch" == "main" ]]; then
+  echo "Refusing to build directly on main: GitHub Pages main:/docs contains the preserved legacy site plus the new app under /beta."
+  echo "Build the new app on the that-website branch, then publish its generated docs/ tree into main:docs/beta/."
+  exit 1
+fi
+
 npm run build
 
 if git diff --quiet && git diff --cached --quiet; then

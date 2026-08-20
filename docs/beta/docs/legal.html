@@ -1,0 +1,451 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Legal - USD8 docs</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="USD8 protocol, insurance, cover pools, and ecosystem documentation">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-eff64164.svg">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/link-theme-31bf2bb9.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-0244a090.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-d03c186b.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-7654ae6c.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">USD8 docs</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/Usd8-fi/usd8-core" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
+<p><strong>Last updated: August 18, 2026</strong></p>
+<p>Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.</p>
+<h2 id="terms"><a class="header" href="#terms">Terms</a></h2>
+<h3 id="1-acceptance-of-these-terms"><a class="header" href="#1-acceptance-of-these-terms">1. Acceptance of these terms</a></h3>
+<p>These terms govern your access to and use of:</p>
+<ul>
+<li>usd8.fi and its documentation;</li>
+<li>any USD8 web application or wallet interface;</li>
+<li>the USD8 Protocol smart contracts, including USD8, Treasury, sUSD8, Cover Pools, DeFi Insurance, Registry, and related adapters and strategies;</li>
+<li>insurance-score, pricing, settlement, TEE, RPC, and other hosted services made available in connection with USD8; and</li>
+<li>any other content, software, feature, or service that links to these terms.</li>
+</ul>
+<p>Together, these are the <strong>Services</strong>. References to <strong>USD8</strong>, <strong>we</strong>, <strong>us</strong>, or <strong>our</strong> mean the person or entity operating the relevant website, interface, or hosted service, as applicable. Autonomous smart contracts and third-party services may operate independently from us.</p>
+<p>By visiting, accessing, connecting a wallet to, or using any part of the Services, or by initiating any transaction through the Services, you confirm that you have read, understood, and agreed to these terms, the Privacy section, and the Risk Disclaimer. If you act for an organization, you confirm that you have authority to bind that organization. If you do not agree, do not access or use the Services.</p>
+<p>We may update this page at any time. Changes become effective when posted with a revised “Last updated” date. Your continued use after an update constitutes acceptance of the updated terms.</p>
+<h3 id="2-eligibility-and-compliance-with-law"><a class="header" href="#2-eligibility-and-compliance-with-law">2. Eligibility and compliance with law</a></h3>
+<p>You may use the Services only if:</p>
+<ul>
+<li>you are at least 18 years old and have legal capacity to enter into these terms;</li>
+<li>your access and activities are lawful in every jurisdiction applicable to you;</li>
+<li>you are not subject to sanctions or included on a restricted-person list maintained by the United Nations, United States, European Union, United Kingdom, or another applicable authority;</li>
+<li>you are not located, ordinarily resident, incorporated, or acting for a person in a jurisdiction where your use would be unlawful; and</li>
+<li>you are not using the Services to evade legal, regulatory, geographic, sanctions, or other restrictions.</li>
+</ul>
+<p>Laws governing digital assets, stablecoins, lending, yield products, insurance-like arrangements, derivatives, securities, commodities, money transmission, sanctions, taxation, and consumer protection vary between jurisdictions and may change without notice. You are solely responsible for determining whether and how you may lawfully access and use the Services. If applicable law prohibits or restricts your use, you must not use the Services.</p>
+<p>We may restrict, suspend, or terminate access to any hosted Service at any time, including based on location, legal requirements, sanctions risk, security concerns, misuse, or operational necessity. Such restrictions may not prevent direct interaction with independently deployed smart contracts.</p>
+<h3 id="3-nature-of-usd8-and-the-services"><a class="header" href="#3-nature-of-usd8-and-the-services">3. Nature of USD8 and the Services</a></h3>
+<p>USD8 is a decentralized-finance protocol designed for mainnet use.</p>
+<p>The protocol is designed around the following components:</p>
+<ul>
+<li><strong>USD8:</strong> a token minted by depositing USDC through Treasury. In a healthy state, USD8 is intended to redeem for up to one USDC per USD8. If protocol reserves are insufficient, redemption may be pro rata and below one USDC per USD8.</li>
+<li><strong>Treasury:</strong> holds idle USDC and may allocate reserves to strategies approved by the timelock. Strategy assets and idle USDC are counted toward reserves. Strategy returns may fund protocol revenue, sUSD8, Cover Pool rewards, or other configured receivers.</li>
+<li><strong>sUSD8:</strong> an optional Morpho Vault V2 savings share token. Users deposit USD8 and receive vault shares. Under the current design, USD8 remains idle in the savings adapter, and returns depend on Treasury-funded revenue released subject to the vault’s configured rate limit. Returns are variable and are not guaranteed.</li>
+<li><strong>Insurance Score:</strong> a non-transferable accounting value derived from eligible USD8 and sUSD8 holdings. Score is computed from public blockchain history using off-chain services and may be subject to maturity, rate, availability, and spending rules.</li>
+<li><strong>DeFi Insurance mechanism:</strong> an on-chain, rules-based mechanism through which eligible users may submit claims involving configured insured tokens. Claims depend on configured conditions, score, historical holdings, pricing data, deadlines, settlement, available Cover Pool capital, and claimant acceptance.</li>
+<li><strong>Cover Pools:</strong> separate ERC-4626 vaults whose depositors retain exposure to a designated asset, may receive variable USD8 rewards, and intentionally place principal at risk to fund eligible claim payouts.</li>
+</ul>
+<p>The current mechanics, parameters, supported assets, roles, contract addresses, and deployment status may change. The smart-contract code and on-chain state control in the event of any conflict with explanatory content on the website or in the documentation.</p>
+<h3 id="4-non-custodial-operation-and-blockchain-transactions"><a class="header" href="#4-non-custodial-operation-and-blockchain-transactions">4. Non-custodial operation and blockchain transactions</a></h3>
+<p>The interface is designed to be non-custodial. We do not request or possess your private keys or seed phrase and cannot initiate transactions from your wallet without your authorization. Wallet software, RPC providers, blockchain networks, smart contracts, and other infrastructure are provided or operated by third parties or decentralized networks.</p>
+<p>You are solely responsible for:</p>
+<ul>
+<li>securing your wallet, device, private keys, seed phrase, authentication methods, and backups;</li>
+<li>verifying the network, contract address, token, recipient, calldata, approvals, permissions, amounts, slippage, fees, and transaction details before signing;</li>
+<li>maintaining enough native tokens to pay network fees;</li>
+<li>revoking approvals you no longer want;</li>
+<li>protecting yourself from phishing, impersonation, malicious approvals, compromised frontends, and address poisoning; and</li>
+<li>all transactions submitted by your wallet, whether authorized by you or by someone who gained access to it.</li>
+</ul>
+<p>Blockchain transactions may be irreversible. We generally cannot cancel, reverse, recover, or refund a transaction or restore lost credentials or assets.</p>
+<h3 id="5-no-financial-legal-tax-insurance-or-other-advice"><a class="header" href="#5-no-financial-legal-tax-insurance-or-other-advice">5. No financial, legal, tax, insurance, or other advice</a></h3>
+<p>The Services are provided for informational and technical purposes. Nothing in the Services constitutes financial, investment, legal, tax, accounting, insurance, cybersecurity, or other professional advice; a recommendation; an offer or solicitation to buy or sell an asset; or a promise of any outcome.</p>
+<p>Descriptions of yield, annual percentage yield, coverage, value, collateral, reserves, risk, historical performance, audits, or protocol behavior are estimates or explanations only. They are not guarantees. You must conduct your own investigation and consult appropriately qualified advisers before acting.</p>
+<p>No communication, documentation, interface display, contribution, administrative action, or support response creates a fiduciary, advisory, brokerage, agency, partnership, trust, insurer-policyholder, or other special relationship between you and us.</p>
+<h3 id="6-the-defi-insurance-mechanism-is-not-traditional-insurance"><a class="header" href="#6-the-defi-insurance-mechanism-is-not-traditional-insurance">6. The DeFi Insurance mechanism is not traditional insurance</a></h3>
+<p>The terms <strong>insurance</strong>, <strong>insured</strong>, <strong>coverage</strong>, and <strong>claim</strong> describe protocol mechanics. They do not mean that USD8, a contributor, a Cover Pool, or an interface operator is a licensed insurer, insurance intermediary, guarantor, surety, or underwriter. Using or holding USD8 or sUSD8 does not create an insurance policy or a contract requiring anyone to indemnify you.</p>
+<p>The DeFi Insurance mechanism is an experimental on-chain primitive. Although aspects of its operation or economic outcome may resemble traditional insurance, it is inherently different: it is governed by smart-contract rules, configured parameters, limited Cover Pool capital, off-chain computation, and user actions rather than a conventional insurance policy, regulated insurer, underwriting process, or guaranteed contractual indemnity.</p>
+<p>The protocol does not guarantee that:</p>
+<ul>
+<li>any token, protocol, position, incident, exploit, depeg, loss, or event will be covered;</li>
+<li>an incident will satisfy the configured price-drop, timing, holding, score, oracle, or settlement conditions;</li>
+<li>a claim will be valid, settled, finalized, accepted, or paid;</li>
+<li>settlement data, TEE output, signatures, Merkle proofs, price feeds, or historical blockchain data will be available or correct;</li>
+<li>you will meet every filing, cancellation, proof, settlement, or acceptance deadline;</li>
+<li>your Insurance Score will be available, sufficient, correctly displayed, or worth any particular amount;</li>
+<li>Cover Pools will contain enough assets or that configured payout limits will remain unchanged; or</li>
+<li>a payout will equal your loss, the value of escrowed assets, a displayed estimate, a maximum coverage percentage, or any other amount.</li>
+</ul>
+<p>Claimant allocations may be reduced by score allocation, pool-level limits, token-level limits, insufficient pool capital, valuation methods, rounding, or other configured rules. The incident’s gross Cover Pool budget includes a protocol share; once a claimant’s Merkle-proven net payout is fixed, the current contract pays that amount to the claimant and debits the protocol share separately from Cover Pool capital. Coverage generally concerns loss in an insured token relative to its configured immediate underlying; loss in that underlying may not itself qualify. Eligible claimants who accept a payout surrender the eligible portion of escrowed insured tokens, spend Insurance Score, and consume Boosters; excess escrow is returned under the current design. Claimants who do not complete required actions before deadlines may lose the ability to receive a payout.</p>
+<p>You must not rely on USD8 as a substitute for regulated insurance, diversification, due diligence, risk management, or maintaining sufficient assets to absorb a total loss.</p>
+<h3 id="7-prohibited-conduct"><a class="header" href="#7-prohibited-conduct">7. Prohibited conduct</a></h3>
+<p>You must not use the Services to:</p>
+<ul>
+<li>violate any law, regulation, court order, sanctions program, or third-party right;</li>
+<li>launder money, finance terrorism, evade taxes or sanctions, or conceal proceeds of unlawful activity;</li>
+<li>defraud, deceive, manipulate, harass, threaten, or harm another person;</li>
+<li>submit a knowingly false, misleading, duplicated, manipulated, or abusive claim;</li>
+<li>manipulate prices, oracles, markets, governance, settlement inputs, blockchain history, or protocol accounting;</li>
+<li>exploit, attack, disrupt, overload, introduce malware into, or obtain unauthorized access to any website, API, server, TEE, wallet, smart contract, or third-party service;</li>
+<li>bypass access controls, rate limits, geographic restrictions, or security measures;</li>
+<li>infringe intellectual-property, privacy, publicity, or other rights; or</li>
+<li>use the Services in any manner that exposes us, contributors, service providers, or other users to legal or security risk.</li>
+</ul>
+<p>Good-faith security research is permitted only when expressly authorized by, and conducted in accordance with, USD8’s published security or bug-bounty policy. Do not exploit or retain user assets outside an expressly authorized security process.</p>
+<h3 id="8-third-party-services-and-content"><a class="header" href="#8-third-party-services-and-content">8. Third-party services and content</a></h3>
+<p>The Services depend on or link to third parties, potentially including wallet providers, Ethereum and other blockchain networks, RPC and API providers, block explorers, USDC and its issuer, Morpho, ERC-4626 strategies, Chainlink and other oracle providers, Amazon Web Services and enclave infrastructure, GitHub, Google Analytics, bridges, decentralized exchanges, and other protocols.</p>
+<p>We do not control and are not responsible for third-party code, assets, services, terms, privacy practices, uptime, solvency, security, accuracy, or conduct. A link, integration, token listing, strategy approval, audit reference, or mention is not an endorsement or warranty. Your use of a third party is governed by its own terms and is at your own risk.</p>
+<h3 id="9-intellectual-property-and-software-licenses"><a class="header" href="#9-intellectual-property-and-software-licenses">9. Intellectual property and software licenses</a></h3>
+<p>Names, logos, visual assets, site content, and other materials may be protected by intellectual-property laws. Except where a separate license applies, you may use the Services only for lawful personal or internal purposes and may not misrepresent affiliation with or endorsement by USD8.</p>
+<p>Source code is governed by the license contained in its repository. The USD8 Core repository currently uses the Business Source License 1.1, with the stated Change Date and Change License identified there. Source availability does not grant rights beyond the applicable license and does not constitute a warranty.</p>
+<h3 id="10-taxes"><a class="header" href="#10-taxes">10. Taxes</a></h3>
+<p>You are solely responsible for determining, reporting, withholding, collecting, and paying all taxes, duties, levies, and other governmental charges arising from your access, holdings, transfers, rewards, yield, claims, payouts, disposals, or other activities. We do not provide tax advice or undertake tax reporting for you except where legally required.</p>
+<h3 id="11-suspension-changes-and-termination"><a class="header" href="#11-suspension-changes-and-termination">11. Suspension, changes, and termination</a></h3>
+<p>Hosted Services may be changed, paused, restricted, discontinued, or unavailable at any time without notice. Protocol parameters, supported assets, strategies, scoring rates, coverage caps, pool limits, fees, roles, signers, oracles, and other settings may change through authorized administration or timelock processes.</p>
+<p>During beta, specified contracts may be upgradeable, and authorized roles may correct or void settlement roots as described in <a href="./transparency.html">Transparency</a>. Ending beta removes specified upgrade and correction powers but does not remove every administrative or timelock power.</p>
+<p>Terminating or restricting the hosted interface may not terminate independently deployed smart contracts. You are responsible for understanding whether and how you can interact directly with them.</p>
+<h3 id="12-disclaimers-of-warranties"><a class="header" href="#12-disclaimers-of-warranties">12. Disclaimers of warranties</a></h3>
+<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SERVICES ARE PROVIDED <strong>“AS IS,” “AS AVAILABLE,” AND “WITH ALL FAULTS.”</strong> WE DISCLAIM ALL EXPRESS, IMPLIED, AND STATUTORY WARRANTIES, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, SECURITY, AVAILABILITY, QUIET ENJOYMENT, AND THAT THE SERVICES WILL BE UNINTERRUPTED OR ERROR-FREE.</p>
+<p>WE DO NOT WARRANT THAT CODE HAS BEEN FULLY AUDITED; THAT ANY AUDIT, TEST, REVIEW, FORMAL-VERIFICATION RESULT, MONITORING PROCESS, OR SECURITY MEASURE IS COMPLETE; THAT DEFECTS WILL BE CORRECTED; OR THAT ANY ASSET, RESERVE, STRATEGY, VAULT, POOL, OR THIRD PARTY WILL REMAIN SOLVENT, LIQUID, AVAILABLE, OR AT ANY PARTICULAR VALUE.</p>
+<p>Some jurisdictions do not allow certain warranty exclusions, so some exclusions may not apply to you.</p>
+<h3 id="13-limitation-of-liability"><a class="header" href="#13-limitation-of-liability">13. Limitation of liability</a></h3>
+<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, USD8 CONTRIBUTORS, WEBSITE OR INTERFACE OPERATORS, DEVELOPERS, ADMINISTRATORS, SIGNERS, SERVICE PROVIDERS, AFFILIATES, OFFICERS, EMPLOYEES, CONTRACTORS, AND AGENTS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES; LOSS OF ASSETS, TOKENS, PRIVATE KEYS, DATA, REVENUE, PROFITS, BUSINESS, OPPORTUNITY, GOODWILL, OR EXPECTED SAVINGS; OR DAMAGES ARISING FROM SMART CONTRACTS, CLAIMS, COVER POOLS, STRATEGIES, ORACLES, TEES, GOVERNANCE, NETWORKS, THIRD PARTIES, SECURITY INCIDENTS, REGULATORY ACTION, OR YOUR INABILITY TO USE THE SERVICES.</p>
+<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE AGGREGATE LIABILITY OF ALL SUCH PARTIES FOR ALL CLAIMS RELATING TO THE SERVICES WILL NOT EXCEED THE GREATER OF (A) USD 100 OR (B) THE AMOUNT YOU PAID DIRECTLY TO THE RELEVANT WEBSITE OR INTERFACE OPERATOR FOR THE SERVICES DURING THE TWELVE MONTHS BEFORE THE EVENT GIVING RISE TO LIABILITY.</p>
+<p>These limitations apply regardless of the legal theory and even if a party was advised that damages were possible. They do not exclude liability that cannot lawfully be excluded.</p>
+<h3 id="14-indemnification"><a class="header" href="#14-indemnification">14. Indemnification</a></h3>
+<p>To the maximum extent permitted by law, you agree to defend, indemnify, and hold harmless the parties listed in Section 13 from claims, liabilities, damages, judgments, losses, costs, and reasonable legal fees arising from your use or misuse of the Services, violation of these terms or applicable law, infringement of another person’s rights, or transactions initiated through your wallet. We may control the defense of an indemnified matter, and you agree to cooperate with that defense.</p>
+<h3 id="15-disputes-and-time-limit-for-claims"><a class="header" href="#15-disputes-and-time-limit-for-claims">15. Disputes and time limit for claims</a></h3>
+<p>Before starting a formal proceeding concerning the Services, you agree to send a written description of the dispute and requested relief to <a href="mailto:info@usd8.fi">info@usd8.fi</a> and allow 30 days for an informal resolution attempt, except where urgent injunctive relief is reasonably necessary.</p>
+<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, EACH PARTY MAY BRING CLAIMS ONLY IN ITS INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN A CLASS, COLLECTIVE, CONSOLIDATED, OR REPRESENTATIVE ACTION. EACH PARTY WAIVES A JURY TRIAL TO THE MAXIMUM EXTENT THAT WAIVER IS LAWFUL.</p>
+<p>To the maximum extent permitted by law, any claim concerning the Services must be filed within one year after the event giving rise to the claim; otherwise, the claim is permanently barred. Nothing in this section limits a non-waivable limitation period or procedural right.</p>
+<h3 id="16-general-terms"><a class="header" href="#16-general-terms">16. General terms</a></h3>
+<p>These terms and any incorporated notices are the entire agreement concerning the Services. If a provision is held invalid or unenforceable, it will be enforced to the maximum lawful extent and the remaining provisions will continue. Failure to enforce a provision is not a waiver. You may not assign your rights or obligations without prior written consent; we may assign rights and obligations in connection with a reorganization, transfer, or operation of the Services. Sections intended by their nature to survive termination will survive.</p>
+<p>Nothing in these terms limits non-waivable rights available under applicable law. Questions about these terms may be sent to <a href="mailto:info@usd8.fi">info@usd8.fi</a>.</p>
+<h2 id="privacy"><a class="header" href="#privacy">Privacy</a></h2>
+<h3 id="1-scope"><a class="header" href="#1-scope">1. Scope</a></h3>
+<p>This Privacy section explains the limited information USD8 currently collects when you visit its website, documentation, or interface. USD8 currently collects usage information only through Google Analytics. Public blockchains and independent third parties may process information under their own rules and privacy notices; their processing is not collection by USD8.</p>
+<h3 id="2-information-we-may-process"><a class="header" href="#2-information-we-may-process">2. Information we may process</a></h3>
+<p>USD8 currently processes only <strong>website analytics data</strong> through Google Analytics. Depending on Google’s operation and configuration, this may include IP address, approximate location derived from IP, browser and device type, operating system, language, referring page, pages viewed, access times, interactions, cookies, and similar identifiers.</p>
+<p>USD8 does not currently maintain user accounts or intentionally collect or retain names, email addresses, wallet private keys, seed phrases, wallet balances, transaction histories, claim histories, or other protocol activity as user-profile data. Never send us a private key or seed phrase.</p>
+<p>The interface may request public blockchain information or send a public wallet address or chain identifier to an RPC, wallet, blockchain, or other service needed to display protocol information. USD8 does not currently retain that information as a user profile. Those independent services may process it under their own privacy notices.</p>
+<h3 id="3-how-information-may-be-used"><a class="header" href="#3-how-information-may-be-used">3. How information may be used</a></h3>
+<p>Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services. Where applicable, this processing may be based on consent or legitimate interests in understanding and improving the Services. USD8 does not sell personal information for money.</p>
+<h3 id="4-cookies-analytics-and-choices"><a class="header" href="#4-cookies-analytics-and-choices">4. Cookies, analytics, and choices</a></h3>
+<p>Google Analytics loads by default when application or documentation pages open. Loading begins without a prior choice in the current interface and may transmit the visitor’s IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers to Google. Google may place or read cookies or similar identifiers and process this data under its own <a href="https://policies.google.com/privacy">Privacy Policy</a>, including on servers outside your country.</p>
+<p>You can limit cookies through your browser settings, use browser privacy controls, or use Google’s <a href="https://tools.google.com/dlpage/gaoptout">Analytics opt-out tools</a>. Blocking cookies or browser storage may affect functionality. Wallet providers and other third parties may provide separate privacy settings.</p>
+<h3 id="5-how-information-may-be-shared"><a class="header" href="#5-how-information-may-be-shared">5. How information may be shared</a></h3>
+<p>Analytics information is shared with Google as the analytics provider and may be disclosed when legally required. USD8 does not currently share a separate user-profile database because it does not maintain one.</p>
+<p>Public blockchain information is independently public and can be viewed, copied, analyzed, and shared by anyone. We cannot control downstream use of public blockchain data.</p>
+<h3 id="6-third-party-processing"><a class="header" href="#6-third-party-processing">6. Third-party processing</a></h3>
+<p>Google processes analytics information under its own privacy notice. Hosting providers, wallet providers, RPC providers, blockchain networks, block explorers, and linked sites or protocols may also independently process information when you use their services. Their processing is governed by their own privacy notices and is not controlled by USD8.</p>
+<h3 id="7-international-transfers-and-retention"><a class="header" href="#7-international-transfers-and-retention">7. International transfers and retention</a></h3>
+<p>Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google’s policies. USD8 does not currently maintain a separate database of visitor personal information. Public blockchain records are generally permanent and cannot be altered or deleted by us.</p>
+<h3 id="8-security"><a class="header" href="#8-security">8. Security</a></h3>
+<p>We may use reasonable safeguards, but no website, analytics service, or transmission method is completely secure. We cannot guarantee that analytics information will never be lost, accessed, altered, disclosed, or destroyed without authorization.</p>
+<h3 id="9-your-choices-and-rights"><a class="header" href="#9-your-choices-and-rights">9. Your choices and rights</a></h3>
+<p>Depending on your location, you may have rights concerning analytics information, including access, deletion, restriction, objection, or withdrawal of consent where processing relies on consent. Because USD8 does not maintain user accounts or a separate visitor database, we may have limited ability to identify analytics information as belonging to a particular person.</p>
+<p>Requests may be sent to <a href="mailto:info@usd8.fi">info@usd8.fi</a>. You may also use Google’s analytics controls or complain to the data-protection authority applicable to you. We will never ask for a private key, seed phrase, or wallet transaction to process a privacy request.</p>
+<h3 id="10-children-and-changes"><a class="header" href="#10-children-and-changes">10. Children and changes</a></h3>
+<p>The Services are not intended for anyone under 18, and we do not knowingly collect personal information from children. If you believe a child provided information, contact us.</p>
+<p>We may update this Privacy section as the Services, providers, or laws change. The revised version becomes effective when posted with an updated date.</p>
+<h2 id="risk-disclaimer"><a class="header" href="#risk-disclaimer">Risk Disclaimer</a></h2>
+<p>Using USD8 involves substantial risk and can result in partial or total loss. The following list is not exhaustive. You should use only assets you can afford to lose completely.</p>
+<h3 id="usd8-and-treasury-risks"><a class="header" href="#usd8-and-treasury-risks">USD8 and Treasury risks</a></h3>
+<ul>
+<li><strong>Reserve loss:</strong> Treasury may deploy USDC into approved yield strategies. A strategy can lose principal through borrower default, bad debt, liquidation, market dislocation, faulty accounting, governance action, operational failure, or smart-contract exploit.</li>
+<li><strong>Below-par redemption:</strong> Minting may occur at a 1:1 USDC-to-USD8 value, but one USD8 is not guaranteed always to redeem for one USDC or to trade at one dollar. If reserves fall below USD8 supply, redemption may become pro rata below par.</li>
+<li><strong>USDC risk:</strong> USD8 depends on USDC. USDC may depeg, be frozen, become unavailable, lose issuer or banking support, face redemption restrictions, or be affected by legal, operational, custody, or reserve events.</li>
+<li><strong>Liquidity risk:</strong> Treasury or strategies may be unable to return sufficient USDC when requested. Transactions may be delayed, limited, reverted, or processed at an unfavorable value.</li>
+<li><strong>Strategy risk:</strong> Approval by the timelock—and subsequent allocation or withdrawal decisions by an administrator or the timelock—is not a guarantee that a strategy is safe. Strategy tokens, integrations, withdrawal queues, fees, caps, and valuations may behave unexpectedly.</li>
+<li><strong>Yield risk:</strong> Treasury yield may be lower than displayed or expected, stop entirely, become negative after losses or costs, or be diverted among configured receivers. Historical or estimated yield does not predict future results.</li>
+</ul>
+<h3 id="susd8-risks"><a class="header" href="#susd8-risks">sUSD8 risks</a></h3>
+<ul>
+<li>sUSD8 is a Morpho Vault V2 share token, not a bank deposit or savings account.</li>
+<li>Its exchange rate, liquidity, and returns depend on USD8, Morpho Vault V2, the idle-liquidity savings adapter, Treasury revenue, configured rate limits, accounting, and authorized vault configuration.</li>
+<li>Under the current design, deposited USD8 is not deployed by the savings adapter into an external lending market. Nevertheless, USD8 impairment, incorrect accounting, adapter or vault defects, allocation or rate changes, and governance actions can reduce value or delay withdrawals.</li>
+<li>Rewards and APY are variable and may be zero or negative after losses. Principal and profit are not guaranteed.</li>
+<li>Loss or impairment of USD8 also affects sUSD8.</li>
+</ul>
+<h3 id="defi-insurance-and-claim-risks"><a class="header" href="#defi-insurance-and-claim-risks">DeFi Insurance and claim risks</a></h3>
+<ul>
+<li>The DeFi Insurance mechanism is not a traditional insurance policy and does not guarantee compensation.</li>
+<li>Token eligibility, score rates, maturity periods, claim bonds, price-drop thresholds, holding requirements, coverage percentages, pool limits, fees, oracles, phase durations, and other parameters may change.</li>
+<li>A real economic loss may not satisfy the protocol’s technical incident definition. In particular, loss in an underlying asset may not qualify as loss in a wrapper relative to that underlying.</li>
+<li>Claims depend on public historical data, finalized blocks, price samples, oracles, off-chain computation, TEE signatures, Merkle roots, proofs, relayers, and on-chain verification. Missing, incomplete, inconsistent, delayed, reorganized, or manipulated data may prevent or alter a claim.</li>
+<li>During beta, authorized parties may correct or void settlement roots. A compromised, unavailable, misconfigured, or malicious administrator, timelock, signer, or TEE may cause delay, incorrect settlement, or loss.</li>
+<li>Claim windows and acceptance windows are time-limited. Congestion, unavailable infrastructure, insufficient gas, user error, or late action may prevent participation or payout.</li>
+<li>Payouts compete for limited Cover Pool capital and may be materially less than losses or displayed maximums. No claimant is entitled to a minimum payout.</li>
+<li>Accepting a payout may irreversibly transfer or forfeit the eligible portion of escrowed insured assets, spend Insurance Score, and consume Boosters. Excess escrow is returned under the current design. Declining or failing to accept may result in no payout.</li>
+<li>Bonds may be forfeited under configured conditions. Transaction fees and other costs may not be recoverable even when a claim fails or is declined.</li>
+</ul>
+<h3 id="cover-pool-risks"><a class="header" href="#cover-pool-risks">Cover Pool risks</a></h3>
+<ul>
+<li><strong>Cover Pool deposits are high-risk loss-absorbing capital.</strong> They are designed to be used to pay claims. A depositor may lose a substantial portion of principal in a single incident and may lose all principal through one or more incidents, market losses, asset failure, or technical failure.</li>
+<li>A per-incident payout limit does not cap cumulative losses across multiple incidents and may be changed by an authorized role.</li>
+<li>Pool shares are exposed to the deposited asset’s price, liquidity, custody or wrapper mechanics, slashing, depeg, protocol, and smart-contract risks. USD8 rewards do not protect principal or offset losses.</li>
+<li>Deposit caps, rewards, APY, payout limits, and insured-token configurations are changeable and are not promises.</li>
+<li>Exit requests are not immediate. Under the current design, requested shares are escrowed, cannot be cancelled, stop earning rewards, and remain exposed to claims until the relevant exit epoch is settled.</li>
+<li>Incidents can freeze deposits or delay settlement of exits. Network congestion, missing settlement calls, parameter changes, or contract failure can further delay withdrawal.</li>
+<li>A settled withdrawal claim may still be exposed to token-transfer, liquidity, smart-contract, or blockchain risk before completion.</li>
+</ul>
+<h3 id="smart-contract-and-software-risks"><a class="header" href="#smart-contract-and-software-risks">Smart-contract and software risks</a></h3>
+<ul>
+<li>Smart contracts, websites, APIs, scripts, and cryptographic systems may contain known or unknown bugs, design defects, faulty assumptions, integration errors, upgrade errors, or vulnerabilities.</li>
+<li>Audits, tests, formal verification, code review, bug bounties, and open-source availability reduce some risks but cannot prove the absence of defects or guarantee safety.</li>
+<li>Upgradeable contracts or beacons may be changed, intentionally or accidentally, while upgrade authority remains. Even immutable code may depend on mutable configuration and external contracts.</li>
+<li>Frontend displays, simulations, estimates, balances, APYs, scores, transaction status, and documentation may be stale, rounded, incomplete, incorrect, or inconsistent with on-chain state.</li>
+<li>Malicious websites, compromised DNS, dependencies, build systems, browser extensions, wallets, devices, or supply chains may cause users to sign harmful transactions or disclose information.</li>
+</ul>
+<h3 id="oracle-tee-infrastructure-and-third-party-risks"><a class="header" href="#oracle-tee-infrastructure-and-third-party-risks">Oracle, TEE, infrastructure, and third-party risks</a></h3>
+<ul>
+<li>Incorrect, stale, delayed, unavailable, or manipulated price feeds may affect incidents, valuations, redemptions, strategies, claims, and payouts.</li>
+<li>TEE hardware, attestation, signer keys, runtime code, deployment configuration, cloud infrastructure, or settlement algorithms may fail, be compromised, or produce unavailable or disputed results.</li>
+<li>RPC providers, indexers, score services, relayers, APIs, hosting providers, AWS, Morpho, Chainlink, USDC, wallets, bridges, exchanges, and other dependencies may fail or change their services or terms.</li>
+<li>Public networks may experience congestion, high fees, reorganizations, forks, validator attacks, censorship, downtime, or changes in consensus rules.</li>
+<li>Transactions may be subject to front-running, sandwich attacks, maximal extractable value, slippage, failed execution, or unexpected ordering.</li>
+</ul>
+<h3 id="governance-and-operational-risks"><a class="header" href="#governance-and-operational-risks">Governance and operational risks</a></h3>
+<ul>
+<li>Timelock and administrator roles are trusted by design and can exercise the powers described in <a href="./transparency.html">Transparency</a>. Compromise, collusion, negligence, key loss, operational error, or malicious action can cause loss.</li>
+<li>The contracts do not prevent every unsafe or malicious configuration by a trusted role.</li>
+<li>Pauses and emergency actions may protect some functions while preventing access, minting, redemption, deposits, claims, settlement, or withdrawals.</li>
+<li>Ending beta mode does not remove all privileged roles or external dependencies. Cover Pool implementation ownership must be addressed separately.</li>
+<li>Development plans, decentralization goals, launch timelines, supported assets, and migration plans may change or never be completed.</li>
+</ul>
+<h3 id="market-regulatory-and-tax-risks"><a class="header" href="#market-regulatory-and-tax-risks">Market, regulatory, and tax risks</a></h3>
+<ul>
+<li>USD8, sUSD8, Cover Pool shares, Boosters, claim rights, or related activities may be characterized differently across jurisdictions, including as stablecoins, securities, commodities, derivatives, collective investments, lending products, insurance, or regulated financial services.</li>
+<li>Laws or enforcement actions may restrict access, require registration or licensing, impose reporting or identity checks, freeze assets, affect counterparties, or make a feature unavailable.</li>
+<li>Markets may be volatile or illiquid. USD8, sUSD8, pool shares, insured tokens, collateral, or reward assets may lose some or all value.</li>
+<li>You may incur tax liabilities from minting, redemption, rebasing or vault yield, rewards, claims, payouts, transfers, or disposals, even if you later lose the assets.</li>
+</ul>
+<h3 id="no-guarantee-or-bailout"><a class="header" href="#no-guarantee-or-bailout">No guarantee or bailout</a></h3>
+<p>No contributor, administrator, operator, Cover Pool depositor, service provider, or other person promises to reimburse you, restore a peg, make reserves whole, process a claim manually, reverse a transaction, maintain liquidity, continue rewards, or rescue the protocol. There is no deposit insurance, government guarantee, traditional insurance guarantee, or lender of last resort.</p>
+<p>By using the Services, you acknowledge these risks, accept full responsibility for your decisions and transactions, and assume the risk of partial or total loss.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="transparency.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="transparency.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="analytics-8434d4e3.js"></script>
+        <script src="docs-theme-13a6a8a3.js"></script>
+        <script src="booster-check-aac21633.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,660 @@
+.live-pill,
+.coming-soon-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    color: #fff;
+    font-size: 0.25em;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    padding: 0.5em 0.8em 0.45em;
+    border-radius: 999px;
+    margin-left: 0.4em;
+    text-transform: lowercase;
+    line-height: 1;
+    position: relative;
+    top: -2em;
+    white-space: nowrap;
+}
+
+.live-pill { background: #16a34a; }
+.coming-soon-pill { background: var(--accent); }
+
+/* breathing dot */
+.live-pill::before,
+.coming-soon-pill::before {
+    content: "";
+    display: inline-block;
+    width: 0.55em;
+    height: 0.55em;
+    background: #fff;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* category pills — like .live-pill but without the breathing dot. */
+/* usage: <span class="tag-pill tag-pill--purple">mechanism design</span> */
+/* add a new color by appending one line below. */
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.45em;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    padding: 0.6em 0.95em;
+    border-radius: 999px;
+    margin-left: 0.6em;
+    text-transform: lowercase;
+    line-height: 1;
+    position: relative;
+    top: -0.25em;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.tag-pill--purple { background: #9333ea; }
+.tag-pill--blue   { background: #2563eb; }
+.tag-pill--green  { background: #16a34a; }
+.tag-pill--orange { background: #ea580c; }
+.tag-pill--pink   { background: #db2777; }
+.tag-pill--gray   { background: #6b7280; }
+
+.booster-check {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+@media (max-width: 600px) {
+    .booster-check {
+        row-gap: 1rem;
+    }
+    .booster-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+}
+
+.booster-check input {
+    width: 480px;
+    max-width: 100%;
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: 16px;
+    border: 1px solid var(--sidebar-spacer, #3b4556);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    outline: none;
+}
+
+.booster-check input:focus {
+    border-color: #16a34a;
+}
+
+.booster-check button {
+    padding: 12px 22px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    background: #16a34a;
+    color: #fff;
+    cursor: pointer;
+}
+
+.booster-check button:hover:not(:disabled) {
+    background: #15803d;
+}
+
+.booster-check button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.booster-result {
+    flex-basis: 100%;
+    font-size: 16px;
+    line-height: 1.4;
+    min-height: 1.2em;
+}
+
+.booster-message {
+    margin: 0;
+}
+
+.booster-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.booster-grid img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+}
+
+.booster-result[data-state="error"] { color: #dc2626; }
+.booster-result[data-state="success"] { color: #16a34a; }
+.booster-result[data-state="empty"] { opacity: 0.7; }
+.booster-result[data-state="loading"] { opacity: 0.7; }
+
+.nav-live-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #16a34a;
+    color: #fff;
+    font-size: 0.55em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.35em 0.6em;
+    border-radius: 999px;
+    margin-left: 0.5em;
+    text-transform: uppercase;
+    line-height: 1;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+
+/* USD8 docs shell: mirrors the current usd8.fi mdBook theme while retaining mdBook 0.5 search. */
+@font-face {
+    font-family: "BlexMono Nerd Font Mono";
+    src: url("/assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 200;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "BlexMono Nerd Font Mono";
+    src: url("/assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "BlexMono Nerd Font Mono";
+    src: url("/assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+:root {
+    font-size: 60%;
+    --sidebar-target-width: 220px;
+    --sidebar-width: min(var(--sidebar-target-width), 80vw);
+    --page-padding: 15px;
+    --content-max-width: 750px;
+    --menu-bar-height: 50px;
+    --mono-font: "BlexMono Nerd Font Mono", monospace;
+    --bg: #252525;
+    --fg: #ffffff;
+    --sidebar-bg: #1e1e1e;
+    --sidebar-fg: var(--link);
+    --sidebar-non-existant: #505274;
+    --sidebar-active: var(--link);
+    --sidebar-spacer: #333333;
+    --scrollbar: var(--sidebar-fg);
+    --icons: #737480;
+    --icons-hover: #b7b9cc;
+    --links: var(--link);
+    --inline-code-color: #c5c8c6;
+    --theme-popup-bg: #161923;
+    --theme-popup-border: #737480;
+    --theme-hover: #282e40;
+    --quote-bg: hsl(226, 15%, 17%);
+    --quote-border: hsl(226, 15%, 22%);
+    --warning-border: #ff8e00;
+    --table-border-color: hsl(226, 23%, 16%);
+    --table-header-bg: hsl(226, 23%, 31%);
+    --table-alternate-bg: hsl(226, 23%, 14%);
+    --searchbar-border-color: #aaa;
+    --searchbar-bg: #aeaec6;
+    --searchbar-fg: #000;
+    --searchbar-shadow-color: #aaa;
+    --searchresults-header-fg: #5f5f71;
+    --searchresults-border-color: #5c5c68;
+    --searchresults-li-bg: #242430;
+    --search-mark-bg: #a2cff5;
+    --color-scheme: dark;
+}
+
+html,
+html.ayu,
+html.coal,
+html.light,
+html.rust,
+html.navy {
+    --bg: #252525;
+    --fg: #ffffff;
+    --sidebar-bg: #1e1e1e;
+    --sidebar-fg: var(--link);
+    --sidebar-non-existant: #505274;
+    --sidebar-active: var(--link);
+    --sidebar-spacer: #333333;
+    --scrollbar: var(--sidebar-fg);
+    --icons: #737480;
+    --icons-hover: #b7b9cc;
+    --links: var(--link);
+    --inline-code-color: #c5c8c6;
+    --theme-popup-bg: #161923;
+    --theme-popup-border: #737480;
+    --theme-hover: #282e40;
+    --quote-bg: hsl(226, 15%, 17%);
+    --quote-border: hsl(226, 15%, 22%);
+    --warning-border: #ff8e00;
+    --table-border-color: hsl(226, 23%, 16%);
+    --table-header-bg: hsl(226, 23%, 31%);
+    --table-alternate-bg: hsl(226, 23%, 14%);
+    --searchbar-border-color: #aaa;
+    --searchbar-bg: #aeaec6;
+    --searchbar-fg: #000;
+    --searchbar-shadow-color: #aaa;
+    --searchresults-header-fg: #9a9aab;
+    --searchresults-border-color: #5c5c68;
+    --searchresults-li-bg: #242430;
+    --search-mark-bg: #a2cff5;
+    --color-scheme: dark;
+    font-family: "BlexMono Nerd Font Mono", Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+}
+
+body {
+    font-size: 1.6rem;
+}
+
+code,
+kbd,
+pre {
+    font-family: var(--mono-font) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "BlexMono Nerd Font Mono", monospace;
+    font-weight: 200;
+    letter-spacing: 0.01em;
+}
+
+h1,
+h2 {
+    font-size: 2.5em;
+    margin-block-start: 1.2em;
+    margin-block-end: 0.6em;
+}
+
+.content .faq-title ~ h2 {
+    font-size: 1.5em;
+}
+
+.content .faq-question::before {
+    content: "+";
+    margin-right: 0.6em;
+}
+
+.content .header.faq-question {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.content .faq-question[aria-expanded="true"]::before {
+    content: "−";
+}
+
+.content .faq-answer[hidden] {
+    display: none;
+}
+
+.content .faq-answer > :last-child {
+    margin-bottom: 0;
+}
+
+h3 { font-size: 1.45em; }
+h4 { font-size: 1.2em; }
+h5, h6 { font-size: 1em; }
+h2, h3 { margin-block-start: 2.5em; }
+h4, h5 { margin-block-start: 2em; }
+
+h1:target::before,
+h2:target::before,
+h3:target::before,
+h4:target::before,
+h5:target::before,
+h6:target::before,
+dt:target::before {
+    display: none;
+}
+
+.content main {
+    max-width: var(--content-max-width);
+    padding-top: 40px;
+}
+
+.content p {
+    line-height: 1.8em;
+    margin-bottom: 2em;
+}
+
+.content ol,
+.content ul {
+    line-height: 1.7em;
+    margin-bottom: 2em;
+}
+
+.content li {
+    line-height: 1.4em;
+    margin-bottom: 1.3em;
+}
+
+.content .example-box {
+    margin: 2.4em 0;
+    padding: 2.2em;
+    background: #55451f;
+    color: #fff;
+}
+
+.content .example-box p,
+.content .example-box ol {
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+.content .example-box li:last-child {
+    margin-bottom: 0;
+}
+
+.content .comparison-yes,
+.content .comparison-no {
+    font-size: 1.35em;
+    font-weight: 600;
+}
+
+.content .comparison-yes { color: #22c55e; }
+.content .comparison-no { color: #ef4444; }
+
+.content table {
+    width: 100%;
+    border: 1px solid #333;
+    border-collapse: collapse;
+    background: #202020;
+    table-layout: fixed;
+}
+
+.content table thead tr {
+    background: #181818;
+}
+
+.content table th,
+.content table td {
+    width: 33.333%;
+    height: 72px;
+    padding: 0 20px;
+    border: 1px solid #333;
+    background: #202020;
+    color: var(--fg);
+    vertical-align: middle;
+}
+
+.content table thead th {
+    background: #181818;
+}
+
+.content table th:not(:first-child),
+.content table td:not(:first-child) {
+    text-align: center;
+}
+
+.content .comparison-token {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.content .comparison-token img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+.content table small {
+    display: inline-block;
+    margin-top: 0.35em;
+    line-height: 1.35;
+}
+
+.content .header:not(.faq-question),
+.content .header:not(.faq-question):link,
+.content .header:not(.faq-question):visited,
+.content .header:not(.faq-question):hover {
+    color: var(--fg);
+    text-decoration: none;
+    pointer-events: none;
+    cursor: default;
+}
+
+.floating-logo {
+    display: inline-block;
+    width: 170px;
+    animation: hero-float 4s ease-in-out infinite;
+}
+
+@keyframes hero-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-18px); }
+}
+
+#mdbook-menu-bar,
+#mdbook-menu-bar-hover-placeholder {
+    margin: auto calc(0px - var(--page-padding));
+}
+
+#mdbook-menu-bar {
+    background: var(--bg);
+    border-block-end-color: var(--bg);
+}
+
+#mdbook-theme-toggle,
+.right-buttons,
+.menu-title,
+.nav-wide-wrapper,
+.nav-wrapper,
+.mobile-nav-chapters,
+.nav-chapters {
+    display: none !important;
+}
+
+#mdbook-menu-bar .fa-svg,
+#mdbook-menu-bar .icon-button {
+    color: var(--icons);
+}
+
+#mdbook-menu-bar .fa-svg:hover,
+#mdbook-menu-bar .icon-button:hover {
+    color: var(--icons-hover);
+}
+
+#mdbook-search-wrapper {
+    padding-inline: var(--page-padding);
+    background: var(--bg);
+}
+
+#mdbook-searchbar {
+    font-family: "BlexMono Nerd Font Mono", monospace;
+    font-size: 1em;
+}
+
+.sidebar {
+    font-size: 15px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-fg);
+}
+
+.sidebar .sidebar-scrollbox {
+    bottom: 60px;
+    padding: 10px;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 23px;
+    margin: 4px 0 20px;
+}
+
+.sidebar-logo {
+    display: block;
+    width: 64px;
+    flex: 0 0 auto;
+}
+
+.sidebar-logo img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.sidebar-logo:hover,
+.sidebar-logo:focus-visible {
+    background: transparent;
+    filter: brightness(0.82);
+}
+
+.sidebar-beta-link,
+.sidebar-beta-link:link,
+.sidebar-beta-link:visited,
+.sidebar-beta-link:active,
+.sidebar-beta-link:hover,
+.sidebar-beta-link:focus-visible {
+    width: 55px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: rgb(208, 153, 40);
+    color: #fff;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.sidebar-beta-link:hover,
+.sidebar-beta-link:focus-visible {
+    background: color-mix(in srgb, rgb(208, 153, 40) 82%, black);
+}
+
+.chapter li.chapter-item {
+    line-height: 1.5em;
+    margin-block-start: 0.6em;
+}
+
+.sidebar-external-icon {
+    display: inline-block;
+    margin-left: 0.45em;
+    font-size: 0.85em;
+    line-height: 1;
+}
+
+.sidebar-social {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.sidebar-telegram,
+.sidebar-x,
+.sidebar-github {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    text-decoration: none;
+    font-family: "BlexMono Nerd Font Mono", monospace;
+    font-size: 22px;
+}
+
+.sidebar-github { font-size: 26px; }
+
+.sidebar-x .x-mark {
+    display: block;
+    width: 22px;
+    height: 22px;
+    background: currentColor;
+    -webkit-mask: url("/assets/xlogo.svg") center / contain no-repeat;
+    mask: url("/assets/xlogo.svg") center / contain no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .floating-logo,
+    .live-pill::before,
+    .coming-soon-pill::before {
+        animation: none;
+    }
+}
+
+@media only screen and (max-width: 620px) {
+    .content main { padding-top: 30px; }
+    h1,
+    h2 { font-size: 2.5em; }
+    .floating-logo { width: 130px; }
+}
+
+/* Match the application typography and shared footer. */
+html,
+body,
+button,
+input,
+a,
+.content,
+.sidebar {
+    font-family: "BlexMono Nerd Font Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+body {
+    font-weight: 400;
+}
+
+.content h1 > .header,
+.content h2 > .header,
+.content h3 > .header,
+.content h4 > .header,
+.content h5 > .header,
+.content h6 > .header {
+    border-bottom: 0 !important;
+}
+
+/* Keep the sidebar page-level; mdBook otherwise injects every heading. */
+.sidebar .on-this-page {
+    display: none;
+}
+
+
