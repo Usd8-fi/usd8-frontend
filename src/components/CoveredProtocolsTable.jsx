@@ -1,4 +1,5 @@
 import aaveLogo from '../assets/aavelogo.svg';
+import msLossLogo from '../assets/msloss-test.svg';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import AvailabilityAction from './AvailabilityAction.jsx';
@@ -44,6 +45,14 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: 'https://assets.coingecko.com/coins/images/39925/large/sky.jpg',
     token: 'Sky Savings sUSDS',
     address: <>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br />impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</>,
+    reimbursement: '80%',
+  },
+  {
+    id: 'test-msloss',
+    symbol: 'msLOSS',
+    iconSrc: msLossLogo,
+    token: <>Sepolia Test Loss<br />msLOSS</>,
+    address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
     reimbursement: '80%',
   },
 ];

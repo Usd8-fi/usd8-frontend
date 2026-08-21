@@ -9,6 +9,10 @@ const bookConfig = readFileSync(resolve(process.cwd(), 'book.toml'), 'utf8');
 const appEntry = readFileSync(resolve(process.cwd(), 'src/main.jsx'), 'utf8');
 
 describe('shared text-link styling', () => {
+  it('uses a visible light rollover for popup close buttons', () => {
+    expect(appStyles).toMatch(/\.app-dialog-close:hover,[\s\S]*?background: rgba\(255, 255, 255, 0\.16\);/);
+  });
+
   it('defines the app and docs link system once in the shared stylesheet', () => {
     expect(appEntry).toContain("import '../theme/css/link-theme.css';");
     expect(bookConfig).toContain('additional-css = ["theme/css/link-theme.css", "theme/css/usd8-docs.css"]');

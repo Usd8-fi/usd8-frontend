@@ -348,7 +348,7 @@ describe('USD8 landing navigation', () => {
       name: 'You get 0.1 score per day for every sUSD8 you hold. Rewarded every block.',
     })).toBeInTheDocument();
     expect(screen.getByRole('tooltip', {
-      name: 'Your total insurance score earned across all holdings.',
+      name: 'Your total insurance score earned across all holdings. Score updates may be delayed by around 13–19 minutes while Ethereum blocks finalize.',
     })).toBeInTheDocument();
     expect(screen.getByRole('tooltip', { name: /score becomes available to use after seven days, minus any score already spent on claims/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'About coverage limits' })).toHaveLength(2);
@@ -374,7 +374,10 @@ describe('Free insurance table', () => {
     expect(screen.getByRole('button', { name: 'About insured token' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About max coverage' })).toBeInTheDocument();
     expect(screen.getByText(/asset eligible for a claim after a covered loss incident/i)).toBeInTheDocument();
-    expect(within(table).getAllByText('80%')).toHaveLength(5);
+    expect(within(table).getAllByText('80%')).toHaveLength(6);
+    const testTokenRow = within(table).getByRole('button', { name: 'File claim for test-msloss' }).closest('tr');
+    expect(testTokenRow).toHaveTextContent('Sepolia Test LossmsLOSS');
+    expect(testTokenRow.querySelector('.table-token-icon')).toHaveAttribute('src');
     expect(screen.getByText(/maximum reimbursement possible: 80% of the insured token's underlying value/i)).toBeInTheDocument();
     expect(screen.getByText(/actual payout depends on the user's insurance score and cover pool limits/i)).toBeInTheDocument();
   });

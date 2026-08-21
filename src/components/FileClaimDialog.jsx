@@ -37,6 +37,7 @@ export default function FileClaimDialog({
   claimStatus = null,
   submitUnavailableReason = '',
   statusMessage = '',
+  statusTone = 'neutral',
   onClearStatus,
   onClose,
   onSubmit,
@@ -44,13 +45,12 @@ export default function FileClaimDialog({
   const tokenOptions = insuredTokens.length > 0
     ? insuredTokens
     : [{ id: token, symbol: token, balance: '0' }];
-  const initialToken = tokenOptions.find((option) => option.id === token || option.symbol === token) || tokenOptions[0];
-  const [amount, setAmount] = useState(() => defaultTokenAmount(initialToken.balance));
+  const selectedToken = tokenOptions.find((option) => option.id === token || option.symbol === token) || tokenOptions[0];
+  const [amount, setAmount] = useState(() => defaultTokenAmount(selectedToken.balance));
   const [scoreToSpend, setScoreToSpend] = useState(() => normalizedDecimal(availableScore));
   const [boosterAmount, setBoosterAmount] = useState('0');
   const [incidentAgeHours, setIncidentAgeHours] = useState(24);
-  const [selectedTokenId, setSelectedTokenId] = useState(initialToken.id);
-  const selectedToken = tokenOptions.find((option) => option.id === selectedTokenId) || tokenOptions[0];
+
   const incidentAgeLimit = Math.max(1, Math.floor(Number(maxIncidentAgeHours) || 1));
   const incidentDayOptions = Array.from(
     { length: Math.floor(incidentAgeLimit / 24) },
@@ -86,7 +86,13 @@ export default function FileClaimDialog({
     }}>
       <section className="usd8-dialog file-claim-dialog" role="dialog" aria-modal="true" aria-label={`File claim for ${selectedToken.symbol}`}>
         <ClaimDialogCloseButton onClose={onClose} />
-        <h2 className="file-claim-title">{activeClaim ? 'Claim Status' : 'File a Claim'}</h2>
+        <h2
+          className="file-claim-title"
+          aria-label={`${activeClaim ? 'Claim Status' : 'File a Claim'} for ${selectedToken.symbol}`}
+        >
+          {selectedToken.iconSrc ? <img src={selectedToken.iconSrc} alt={selectedToken.symbol} /> : null}
+          <span>{activeClaim ? 'Claim Status' : 'File a Claim'} for {selectedToken.symbol}</span>
+        </h2>
 
         {activeClaim ? (
           <section className="file-claim-status" aria-live="polite">
@@ -114,42 +120,21 @@ export default function FileClaimDialog({
             }
           }}>
             <div className="file-claim-form-grid">
-              <div className="file-claim-field file-claim-field--token">
-                <span className="metric-label-with-help">
-                  Insured token
-                  <InfoTooltip ariaLabel="About insured token" floating>
-                    Select the covered token affected by the incident and the amount to escrow with the claim.
-                  </InfoTooltip>
-                </span>
-                <div className="file-claim-token-entry">
-                  <input
-                    aria-label={`Insured ${selectedToken.symbol} amount`}
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    type="number"
-                    value={amount}
-                    onChange={(event) => {
-                      onClearStatus?.();
-                      setAmount(event.target.value);
-                    }}
-                  />
-                  <select
-                    aria-label="Insured token"
-                    value={selectedTokenId}
-                    onChange={(event) => {
-                      onClearStatus?.();
-                      const nextTokenId = event.target.value;
-                      const nextToken = tokenOptions.find((option) => option.id === nextTokenId);
-                      setSelectedTokenId(nextTokenId);
-                      setAmount(defaultTokenAmount(nextToken?.balance));
-                    }}
-                  >
-                    {tokenOptions.map((option) => (
-                      <option key={option.id} value={option.id}>{option.symbol}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="file-claim-field file-claim-field--token file-claim-field--primary">
+                <label htmlFor="file-claim-token-amount">{selectedToken.symbol} Amount</label>
+                <input
+                  id="file-claim-token-amount"
+                  aria-label={`Insured ${selectedToken.symbol} amount`}
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  type="number"
+                  value={amount}
+                  onChange={(event) => {
+                    onClearStatus?.();
+                    setAmount(event.target.value);
+                  }}
+                />
                 <small>
                   <button
                     className="usd8-dialog-available"
@@ -162,7 +147,7 @@ export default function FileClaimDialog({
                 </small>
               </div>
 
-              <div className="file-claim-field file-claim-field--bond">
+              <div className="file-claim-field file-claim-field--bond file-claim-field--compact">
                 <span className="metric-label-with-help">
                   Claim bond
                   <InfoTooltip ariaLabel="About claim bond" className="dashboard-help--align-right" floating>
@@ -173,7 +158,7 @@ export default function FileClaimDialog({
                 <small><span>{displayAvailableBalance(claimBondAvailable)} available</span></small>
               </div>
 
-              <div className="file-claim-field file-claim-field--score">
+              <div className="file-claim-field file-claim-field--score file-claim-field--primary">
                 <span className="metric-label-with-help">
                   <label htmlFor="file-claim-score">Insurance score to spend</label>
                   <InfoTooltip ariaLabel="About insurance score to spend" floating>
@@ -184,14 +169,13 @@ export default function FileClaimDialog({
                   id="file-claim-score"
                   aria-label="Insurance score to spend"
                   inputMode="decimal"
-                  min="0"
-                  step="any"
-                  type="number"
+                  pattern="[0-9,]*[.]?[0-9]*"
+                  type="text"
                   disabled={!hasAvailableScore}
                   value={scoreToSpend}
                   onChange={(event) => {
                     onClearStatus?.();
-                    setScoreToSpend(event.target.value);
+                    setScoreToSpend(event.target.value.replace(/,/g, ''));
                   }}
                 />
                 <small>
@@ -208,7 +192,7 @@ export default function FileClaimDialog({
                 </small>
               </div>
 
-              <div className="file-claim-field">
+              <div className="file-claim-field file-claim-field--compact">
                 <span className="metric-label-with-help">
                   <label htmlFor="file-claim-boosters">Boosters to burn</label>
                   <InfoTooltip ariaLabel="About boosters to burn" className="dashboard-help--align-right" floating>
@@ -245,7 +229,7 @@ export default function FileClaimDialog({
                   <span className="metric-label-with-help">
                     <label htmlFor="file-claim-incident-age">Roughly when price dropped 20% against its underlying</label>
                     <InfoTooltip ariaLabel="About incident time" floating>
-                      Choose the approximate start of the loss. The TEE verifies finalized prices and selects the eligible reference block within the protocol's 43,200-block lookback.
+                      Choose the approximate start of the loss. Claims can only be made for qualifying drops within the past six days. The TEE verifies finalized prices and selects the eligible reference block within the protocol's 43,200-block lookback.
                     </InfoTooltip>
                   </span>
                   <select
@@ -269,23 +253,22 @@ export default function FileClaimDialog({
               ) : null}
             </div>
 
-            {requiresIncidentTime ? (
-              <p className="file-claim-tee-note" role="note">
-                First claim may take several minutes while the TEE verifies the incident.
-              </p>
-            ) : null}
-
             <div className="usd8-dialog-submit-row file-claim-submit-row">
               <AvailabilityAction
                 className="usd8-dialog-submit"
                 type="submit"
                 unavailableReason={claimUnavailableReason}
-                warningResetKey={`${selectedTokenId}:${amount}:${scoreToSpend}:${boosterAmount}:${incidentAgeHours}`}
+                warningResetKey={`${selectedToken.id}:${amount}:${scoreToSpend}:${boosterAmount}:${incidentAgeHours}`}
               >
                 file claim
               </AvailabilityAction>
               {statusMessage ? (
-                <small className="usd8-dialog-status" role="alert">
+                <small
+                  className={`usd8-dialog-status${statusTone === 'warning' ? ' usd8-dialog-status--warning' : ''}`}
+                  role={statusTone === 'loading' ? 'status' : 'alert'}
+                  aria-label="Claim submission status"
+                >
+                  {statusTone === 'loading' ? <span className="usd8-dialog-status-spinner" aria-hidden="true" /> : null}
                   {statusMessage}
                 </small>
               ) : null}

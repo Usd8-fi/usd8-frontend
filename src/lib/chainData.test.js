@@ -46,6 +46,7 @@ describe('fetchLandingChainData', () => {
       [12_000_000_000_000_000_000_000n, 1_800_000_000n],
       345_000_000_000_000_000_000n,
       678_000_000_000_000_000_000n,
+      5_000_000_000_000_000_000_000n,
     ]);
     mocks.readContract.mockImplementation(({ functionName, args }) => {
       if (functionName === 'convertToAssets' && args[0] === 4_000_000_000_000_000_000n) {
@@ -73,6 +74,7 @@ describe('fetchLandingChainData', () => {
     expect(data.balances.insuredTokens).toEqual({
       'aave-sgho': '345',
       'sky-susds': '678',
+      'test-msloss': '5,000',
     });
     expect(data.pool.hasEarnings).toBe(false);
     expect(data.pool.shareDecimals).toBe(21);
@@ -84,6 +86,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pool.availableForCooldown).toBe('2.1');
     expect(data.pool.availableForWithdraw).toBe('0');
     expect(data.pool.inCooldown).toBe('12');
+    expect(data.pool.cooldownEndsAtMilliseconds).toBe(1_800_000_000_000);
     expect(data.activeIncidentId).toBe('7');
   });
 

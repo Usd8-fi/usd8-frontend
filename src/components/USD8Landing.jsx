@@ -264,7 +264,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
           <span className="metric-label-with-help">
             Total Insurance Score
             <InfoTooltip ariaLabel="About total insurance score" className="dashboard-help--align-right">
-              Your total insurance score earned across all holdings.
+              Your total insurance score earned across all holdings. Score updates may be delayed by around 13–19 minutes while Ethereum blocks finalize.
             </InfoTooltip>
           </span>
           <strong>

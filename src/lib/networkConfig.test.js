@@ -22,6 +22,7 @@ describe('network configuration', () => {
         susd8: '0x830e05aa59f71d5f2977c8089fad14c0e6ad1440',
         'aave-sgho': '0x6e5eb99a5923bea10eb3990ec8da84e70007e668',
         'sky-susds': '0x5279e60d104110db53b9d00a54f323e978be3757',
+        'test-msloss': '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
       },
     });
   });

@@ -23,10 +23,10 @@ describe('FileClaimDialog', () => {
     );
 
     const dialog = screen.getByRole('dialog', { name: 'File claim for sGHO' });
-    const trigger = screen.getByRole('button', { name: 'About insured token' });
+    const trigger = screen.getByRole('button', { name: 'About claim bond' });
     fireEvent.pointerEnter(trigger.closest('.dashboard-help'));
     const tooltip = screen.getByRole('tooltip', {
-      name: 'Select the covered token affected by the incident and the amount to escrow with the claim.',
+      name: 'A 10 USD8 anti-spam bond is required to file. It will not be returned if you are not eligible for a claim.',
     });
 
     expect(dialog).not.toContainElement(tooltip);
@@ -34,14 +34,13 @@ describe('FileClaimDialog', () => {
     expect(appStyles).toMatch(/\.dashboard-help-tooltip--floating \{[\s\S]*position: fixed;[\s\S]*z-index: 2000;/);
   });
 
-  it('selects from all insured tokens and fills the insured amount with the selected balance', () => {
+  it('locks the claim to the token chosen from the insured-token table', () => {
     render(
       <FileClaimDialog
         token="aave-sgho"
         insuredTokens={[
-          { id: 'usd8', symbol: 'USD8', balance: '12.456789' },
-          { id: 'susd8', symbol: 'sUSD8', balance: '8.75' },
-          { id: 'aave-sgho', symbol: 'sGHO', balance: '345' },
+          { id: 'usd8', symbol: 'USD8', balance: '12.456789', iconSrc: '/usd8.svg' },
+          { id: 'aave-sgho', symbol: 'sGHO', balance: '345.123456', iconSrc: '/sgho.svg' },
         ]}
         availableScore="128600"
         onClose={vi.fn()}
@@ -49,19 +48,34 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const tokenMenu = screen.getByRole('combobox', { name: 'Insured token' });
-    expect(tokenMenu).toHaveValue('aave-sgho');
+    const title = screen.getByRole('heading', { name: 'File a Claim for sGHO' });
+    expect(within(title).getByRole('img', { name: 'sGHO' })).toHaveAttribute('src', '/sgho.svg');
+    expect(screen.queryByRole('combobox', { name: 'Insured token' })).not.toBeInTheDocument();
+    expect(screen.getByText('sGHO Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(1);
-    expect(appStyles).toContain('background-position: right 18px center;');
-    expect(appStyles).toContain('grid-template-columns: minmax(0, 1fr) 190px;');
-    expect(within(tokenMenu).getAllByRole('option').map((option) => option.textContent)).toEqual(['USD8', 'sUSD8', 'sGHO']);
-
-    fireEvent.change(tokenMenu, { target: { value: 'usd8' } });
-    expect(screen.getByLabelText('Insured USD8 amount')).toHaveValue(1);
-    const available = screen.getByRole('button', { name: 'Use full USD8 balance 12.456789' });
-    expect(available).toHaveTextContent('12.45 available');
+    const available = screen.getByRole('button', { name: 'Use full sGHO balance 345.123456' });
+    expect(available).toHaveTextContent('345.12 available');
     fireEvent.click(available);
-    expect(screen.getByLabelText('Insured USD8 amount')).toHaveValue(12.456789);
+    expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(345.123456);
+  });
+
+  it('uses wide primary inputs and aligned compact secondary fields', () => {
+    render(
+      <FileClaimDialog
+        token="aave-sgho"
+        insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '345', iconSrc: '/sgho.svg' }]}
+        availableScore="2344322"
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Insured sGHO amount').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
+    expect(screen.getByLabelText('Insurance score to spend').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
+    expect(screen.getByLabelText('Boosters to burn').closest('.file-claim-field')).toHaveClass('file-claim-field--compact');
+    expect(appStyles).toMatch(/\.file-claim-field--primary input \{\s*width: 282px;/);
+    expect(appStyles).toMatch(/\.file-claim-field--compact input \{\s*width: 180px;/);
+    expect(appStyles).toMatch(/\.file-claim-title img \{[\s\S]*width: 34px;[\s\S]*height: 34px;/);
   });
 
   it('defaults score to the maximum, boosters to zero, and collects the first-claim incident age', () => {
@@ -81,7 +95,6 @@ describe('FileClaimDialog', () => {
     );
 
     for (const label of [
-      'About insured token',
       'About claim bond',
       'About insurance score to spend',
       'About boosters to burn',
@@ -90,16 +103,20 @@ describe('FileClaimDialog', () => {
       expect(screen.getByRole('button', { name: label })).toHaveTextContent('?');
     }
 
-    expect(screen.getByLabelText('Insurance score to spend')).toHaveValue(2344322);
+    expect(screen.getByRole('tooltip', {
+      name: /Claims can only be made for qualifying drops within the past six days\./,
+    })).toBeInTheDocument();
+
+    expect(screen.getByLabelText('Insurance score to spend')).toHaveValue('2344322');
     expect(screen.getByLabelText('Boosters to burn')).toHaveValue(0);
     const claimBondField = screen.getByText('Claim bond').closest('.file-claim-field');
     const claimBondAvailable = claimBondField.querySelector('small');
     expect(claimBondAvailable).toHaveTextContent('12.45 available');
     expect(within(claimBondAvailable).queryByRole('button')).not.toBeInTheDocument();
-    expect(appStyles).toContain('.file-claim-field--score input');
-    expect(appStyles).toContain('width: 300px;');
+    expect(appStyles).toContain('.file-claim-field--primary input');
+    expect(appStyles).toContain('width: 282px;');
     fireEvent.click(screen.getByRole('button', { name: 'Use full insurance score 2344322' }));
-    expect(screen.getByLabelText('Insurance score to spend')).toHaveValue(2344322);
+    expect(screen.getByLabelText('Insurance score to spend')).toHaveValue('2344322');
     fireEvent.click(screen.getByRole('button', { name: 'Use all boosters 12' }));
     expect(screen.getByLabelText('Boosters to burn')).toHaveValue(12);
 
@@ -127,9 +144,25 @@ describe('FileClaimDialog', () => {
       incidentAgeHours: 48,
     });
     expect(screen.getByText('10 USD8')).toBeInTheDocument();
-    expect(screen.getByRole('note')).toHaveTextContent(
-      'First claim may take several minutes while the TEE verifies the incident.',
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+  });
+
+  it('always displays a dot as the insurance-score decimal separator', () => {
+    render(
+      <FileClaimDialog
+        token="aave-sgho"
+        insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '345' }]}
+        availableScore="131239.805234839977557855"
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
     );
+
+    const score = screen.getByLabelText('Insurance score to spend');
+    expect(score).toHaveAttribute('type', 'text');
+    expect(score).toHaveValue('131239.805234839977557855');
+    fireEvent.change(score, { target: { value: '131,239.8' } });
+    expect(score).toHaveValue('131239.8');
   });
 
   it('explains that an ineligible claimant loses the anti-spam claim bond', () => {
@@ -197,7 +230,8 @@ describe('FileClaimDialog', () => {
         token="aave-sgho"
         insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '345' }]}
         availableScore="128600"
-        statusMessage="Claim submission is not available."
+        statusMessage="No qualifying 20% price drop was detected."
+        statusTone="warning"
         onClearStatus={onClearStatus}
         onClose={vi.fn()}
         onSubmit={vi.fn()}
@@ -207,10 +241,29 @@ describe('FileClaimDialog', () => {
     const submit = screen.getByRole('button', { name: 'file claim' });
     const warning = screen.getByRole('alert');
     expect(submit.closest('.file-claim-submit-row')).toContainElement(warning);
-    expect(warning).toHaveTextContent('Claim submission is not available.');
+    expect(warning).toHaveTextContent('No qualifying 20% price drop was detected.');
+    expect(warning).toHaveClass('usd8-dialog-status--warning');
 
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '2' } });
     expect(onClearStatus).toHaveBeenCalledOnce();
+  });
+
+  it('shows a spinner while the TEE verifies the price drop', () => {
+    render(
+      <FileClaimDialog
+        token="aave-sgho"
+        insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '345' }]}
+        availableScore="128600"
+        statusMessage="Verifying incident in the TEE. First claim may take several minutes."
+        statusTone="loading"
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const status = screen.getByLabelText('Claim submission status');
+    expect(status).toHaveTextContent('Verifying incident in the TEE. First claim may take several minutes.');
+    expect(status.querySelector('.usd8-dialog-status-spinner')).toBeInTheDocument();
   });
 
   it('omits incident timing when joining an already-open incident', () => {
@@ -266,7 +319,7 @@ describe('FileClaimDialog', () => {
     );
 
     const dialog = screen.getByRole('dialog', { name: 'File claim for wstETH' });
-    expect(within(dialog).getByRole('heading', { name: 'Claim Status' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'Claim Status for wstETH' })).toBeInTheDocument();
     expect(within(dialog).getByText('CP-042')).toBeInTheDocument();
     expect(within(dialog).getByText('Challenge window')).toBeInTheDocument();
     expect(within(dialog).getByText('3 days left')).toBeInTheDocument();

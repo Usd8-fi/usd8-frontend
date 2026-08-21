@@ -34,12 +34,14 @@ const EMPTY_CHAIN_DATA = {
     availableForCooldown: '0',
     availableForWithdraw: '0',
     inCooldown: '0',
+    cooldownEndsAtMilliseconds: 0,
     earnings: '0',
     hasEarnings: false,
     shareDecimals: 21,
   },
 };
 const EMPTY_SAVINGS_VAULT = { balance: '—', apy: '—' };
+const CLAIM_TOKEN_ROWS = COVERED_PROTOCOL_ROWS;
 const EMPTY_SCORE = {
   grossEarnedScore: '0',
   grossScorePerSecond: '0',
@@ -56,6 +58,18 @@ const DOCS_BASE_URL = './docs/';
 function defaultTokenAmount(available) {
   const normalized = String(available ?? '').replace(/,/g, '').trim();
   return /^(?:\d+\.?\d*|\.\d+)$/.test(normalized) && Number(normalized) > 0 ? '1' : '';
+}
+
+function cooldownReadyLabel(endsAtMilliseconds, nowMilliseconds) {
+  const end = Number(endsAtMilliseconds);
+  const remainingMinutes = Math.ceil((end - nowMilliseconds) / 60_000);
+  if (!Number.isFinite(remainingMinutes) || end <= 0) return '';
+  if (remainingMinutes <= 0) return 'ready now';
+  if (remainingMinutes < 60) return `ready in ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}`;
+  const remainingHours = Math.ceil(remainingMinutes / 60);
+  if (remainingHours < 24) return `ready in ${remainingHours} ${remainingHours === 1 ? 'hour' : 'hours'}`;
+  const remainingDays = Math.ceil(remainingHours / 24);
+  return `ready in ${remainingDays} ${remainingDays === 1 ? 'day' : 'days'}`;
 }
 
 function parseTokenAmount(raw, decimals) {
@@ -106,6 +120,12 @@ function scoredTokenBalancesChanged(score, scoreBalances, contracts) {
       && typeof currentBalance === 'string'
       && BigInt(snapshotBalance) !== BigInt(currentBalance);
   });
+}
+
+function scoreBalanceRefreshKey(score, scoreBalances, contracts, chainId, address) {
+  if (!scoredTokenBalancesChanged(score, scoreBalances, contracts)) return '';
+  const tokenBalances = score.tokenScores.map((item) => `${item.token}:${item.balance}`).join('|');
+  return [chainId, address.toLowerCase(), tokenBalances, scoreBalances.usd8, scoreBalances.savings].join(':');
 }
 
 const poolWriteAbi = [
@@ -161,6 +181,24 @@ function NoticeDialog({ message, onClose }) {
         <p>{message}</p>
       </section>
     </div>
+  );
+}
+
+function isWaitingStatus(message) {
+  return message.includes('in your wallet.')
+    || message.startsWith('Checking ')
+    || message.startsWith('Verifying ')
+    || message.startsWith('Transaction submitted:');
+}
+
+function TransactionStatus({ message }) {
+  if (!message) return null;
+  const waiting = isWaitingStatus(message);
+  return (
+    <small className="usd8-dialog-status" role="status" aria-label="Transaction status" aria-live="polite">
+      {waiting ? <span className="usd8-dialog-status-spinner" aria-hidden="true" /> : null}
+      {message}
+    </small>
   );
 }
 
@@ -256,11 +294,7 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
             >
               {mode}
             </AvailabilityAction>
-            {statusMessage ? (
-              <small className="usd8-dialog-status" role="status" aria-label="Transaction status" aria-live="polite">
-                {statusMessage}
-              </small>
-            ) : null}
+            <TransactionStatus message={statusMessage} />
           </div>
         </form>
       </section>
@@ -275,6 +309,7 @@ function PoolActionDialog({
   availableForCooldown,
   availableForWithdraw,
   inCooldown,
+  cooldownEndsAtMilliseconds,
   earnings,
   hasEarnings,
   statusMessage,
@@ -293,10 +328,20 @@ function PoolActionDialog({
   const [amount, setAmount] = useState(() => defaultTokenAmount(available));
   const withdrawAvailable = availableForWithdraw ?? '0';
   const cooldownBalance = inCooldown ?? '0';
+  const [currentTimeMilliseconds, setCurrentTimeMilliseconds] = useState(Date.now());
+  const cooldownTiming = defaultTokenAmount(cooldownBalance)
+    ? cooldownReadyLabel(cooldownEndsAtMilliseconds, currentTimeMilliseconds)
+    : '';
   const hasWithdrawAvailable = !/^0(?:\.0+)?$/.test(String(withdrawAvailable).replace(/,/g, ''));
+  const cooldownUnavailableReason = withdrawing && defaultTokenAmount(cooldownBalance)
+    ? 'A cover-pool cooldown request is already active.'
+    : (withdrawing && hasWithdrawAvailable
+      ? 'Complete your existing cover-pool withdrawal before starting another cooldown.'
+      : '');
   const actionUnavailableReason = submitUnavailableReason
     || (withdrawingEarnings && !hasEarnings ? 'No earnings to withdraw.' : '');
   const amountUnavailableReason = actionUnavailableReason
+    || cooldownUnavailableReason
     || (!withdrawingEarnings
       ? tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown')
       : '');
@@ -304,6 +349,12 @@ function PoolActionDialog({
   useEffect(() => {
     setAmount(defaultTokenAmount(available));
   }, [mode]);
+
+  useEffect(() => {
+    if (!cooldownTiming || cooldownTiming === 'ready now') return undefined;
+    const timer = window.setInterval(() => setCurrentTimeMilliseconds(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [cooldownEndsAtMilliseconds, cooldownTiming]);
 
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -379,7 +430,7 @@ function PoolActionDialog({
                       aria-label={`Use full ${inputToken} balance ${available}`}
                       onClick={() => setAmount(available.replace(/,/g, ''))}
                     >
-                      {displayAvailableBalance(available)} available for cooldown
+                      {displayAvailableBalance(available)} available
                     </button>. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized.{' '}
                     <a href={`${DOCS_BASE_URL}cover-pools.html`}>Learn More</a>.
                   </small>
@@ -411,13 +462,9 @@ function PoolActionDialog({
                 >
                   start cooldown
                 </AvailabilityAction>
-                {statusMessage && statusAction === 'startCooldown' ? (
-                  <small className="usd8-dialog-status" role="status" aria-label="Transaction status" aria-live="polite">
-                    {statusMessage}
-                  </small>
-                ) : null}
+                {statusAction === 'startCooldown' ? <TransactionStatus message={statusMessage} /> : null}
                 <small className="usd8-dialog-withdraw-balances">
-                  {withdrawAvailable} available for withdraw, {cooldownBalance} in cooldown.
+                  {withdrawAvailable} available for withdraw, {cooldownBalance} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
                 </small>
                 <AvailabilityAction
                   className="usd8-dialog-submit"
@@ -427,11 +474,7 @@ function PoolActionDialog({
                 >
                   Withdraw
                 </AvailabilityAction>
-                {statusMessage && statusAction === 'withdraw' ? (
-                  <small className="usd8-dialog-status" role="status" aria-label="Transaction status" aria-live="polite">
-                    {statusMessage}
-                  </small>
-                ) : null}
+                {statusAction === 'withdraw' ? <TransactionStatus message={statusMessage} /> : null}
               </>
             ) : (
               <AvailabilityAction
@@ -443,11 +486,7 @@ function PoolActionDialog({
                 {withdrawingEarnings ? 'withdraw earnings' : mode}
               </AvailabilityAction>
             )}
-            {statusMessage && !withdrawing ? (
-              <small className="usd8-dialog-status" role="status" aria-label="Transaction status" aria-live="polite">
-                {statusMessage}
-              </small>
-            ) : null}
+            {!withdrawing ? <TransactionStatus message={statusMessage} /> : null}
           </div>
         </form>
       </section>
@@ -471,6 +510,7 @@ export default function App() {
   const [score, setScore] = useState(null);
   const [scoreStatus, setScoreStatus] = useState('idle');
   const scoreRefreshAttempt = useRef('');
+  const [scoreRefreshCompletedKey, setScoreRefreshCompletedKey] = useState('');
   const [chainData, setChainData] = useState(EMPTY_CHAIN_DATA);
   const [chainDataStatus, setChainDataStatus] = useState('idle');
   const [savingsVault, setSavingsVault] = useState(EMPTY_SAVINGS_VAULT);
@@ -482,6 +522,7 @@ export default function App() {
   const [poolStatusAction, setPoolStatusAction] = useState('');
   const [claimToken, setClaimToken] = useState(null);
   const [claimStatus, setClaimStatus] = useState('');
+  const [claimStatusIsWarning, setClaimStatusIsWarning] = useState(false);
   const [claimSubmitting, setClaimSubmitting] = useState(false);
   const claimAbortController = useRef(null);
   const livePool = useLivePoolEarnings(chainData.pool);
@@ -500,12 +541,14 @@ export default function App() {
     if (!connected || !activeNetwork) {
       setScore(null);
       setScoreStatus('idle');
+      setScoreRefreshCompletedKey('');
       setChainData(EMPTY_CHAIN_DATA);
       setChainDataStatus('idle');
       return undefined;
     }
 
     const controller = new AbortController();
+    setScoreRefreshCompletedKey('');
     if (activeNetwork.scoreAvailable) {
       setScoreStatus('loading');
       fetchInsuranceScore(address, { chainId: activeNetwork.id, signal: controller.signal })
@@ -546,23 +589,24 @@ export default function App() {
   useEffect(() => {
     if (!connected || !activeNetwork?.scoreAvailable || scoreStatus !== 'ready') {
       scoreRefreshAttempt.current = '';
+      setScoreRefreshCompletedKey('');
       return undefined;
     }
-    if (!scoredTokenBalancesChanged(score, chainData.scoreBalances, activeNetwork.contracts)) {
-      scoreRefreshAttempt.current = '';
-      return undefined;
-    }
-
-    const tokenBalances = score.tokenScores.map((item) => `${item.token}:${item.balance}`).join('|');
-    const refreshKey = [
+    const refreshKey = scoreBalanceRefreshKey(
+      score,
+      chainData.scoreBalances,
+      activeNetwork.contracts,
       activeNetwork.id,
-      address.toLowerCase(),
-      tokenBalances,
-      chainData.scoreBalances.usd8,
-      chainData.scoreBalances.savings,
-    ].join(':');
+      address,
+    );
+    if (!refreshKey) {
+      scoreRefreshAttempt.current = '';
+      setScoreRefreshCompletedKey('');
+      return undefined;
+    }
     if (scoreRefreshAttempt.current === refreshKey) return undefined;
     scoreRefreshAttempt.current = refreshKey;
+    setScoreRefreshCompletedKey('');
 
     const controller = new AbortController();
     fetchInsuranceScore(address, {
@@ -573,7 +617,8 @@ export default function App() {
       .then((nextScore) => setScore(scoreWithTokenBreakdown(nextScore, activeNetwork.contracts)))
       .catch((error) => {
         if (error.name !== 'AbortError') console.warn('Insurance Score refresh failed', error);
-      });
+      })
+      .finally(() => setScoreRefreshCompletedKey(refreshKey));
     return () => controller.abort();
   }, [address, connected, activeNetwork, chainData.scoreBalances, score, scoreStatus]);
 
@@ -609,6 +654,7 @@ export default function App() {
     const estimatedGas = await client.estimateContractGas({ account: address, ...request });
     const gas = estimatedGas + estimatedGas / 2n;
     const hash = await writeContractAsync({ chainId: network.id, ...request, gas });
+    if (!hash) throw new Error('Transaction cancelled in your wallet.');
     setStatus(`Transaction submitted: ${hash.slice(0, 10)}…`);
     const receipt = await client.waitForTransactionReceipt({ hash });
     if (receipt.status !== 'success') throw new Error('Transaction reverted.');
@@ -707,6 +753,7 @@ export default function App() {
   function fileClaimAction(row) {
     if (!connected) return;
     setClaimStatus('');
+    setClaimStatusIsWarning(false);
     setClaimToken(row);
   }
 
@@ -715,6 +762,7 @@ export default function App() {
     const controller = new AbortController();
     claimAbortController.current = controller;
     setClaimSubmitting(true);
+    setClaimStatusIsWarning(false);
     setClaimStatus('Checking current incident and claim requirements.');
     try {
       const network = requireProtocolNetwork();
@@ -751,12 +799,12 @@ export default function App() {
           : 'Insufficient USD8 balance for the claim bond.');
       }
       const approvals = insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
-        ? [[contracts.usd8, insuredTokenAmount + claimBondAmount, 'USD8']]
+        ? [[contracts.usd8, insuredTokenAmount + claimBondAmount]]
         : [
-          [insuredToken, insuredTokenAmount, claimToken?.symbol || 'insured token'],
-          [contracts.usd8, claimBondAmount, 'USD8'],
+          [insuredToken, insuredTokenAmount],
+          [contracts.usd8, claimBondAmount],
         ];
-      for (const [approvalToken, requiredAmount, symbol] of approvals) {
+      for (const [approvalToken, requiredAmount] of approvals) {
         const allowance = await client.readContract({
           address: approvalToken,
           abi: approveAbi,
@@ -769,7 +817,7 @@ export default function App() {
             abi: approveAbi,
             functionName: 'approve',
             args: [contracts.defiInsurance, requiredAmount],
-          }, `Approve ${symbol} for the claim in your wallet.`, setClaimStatus);
+          }, 'Approve token in your wallet.', setClaimStatus);
         }
       }
 
@@ -808,6 +856,7 @@ export default function App() {
       setClaimStatus(`Claim confirmed on ${network.name}.`);
     } catch (error) {
       if (error?.name !== 'AbortError') {
+        setClaimStatusIsWarning(true);
         setClaimStatus(error?.shortMessage || error?.message || 'Claim submission failed.');
       }
     } finally {
@@ -877,10 +926,14 @@ export default function App() {
     && scoreStatus === 'ready'
     && chainDataStatus === 'ready'
     && scoredTokenBalancesChanged(score, chainData.scoreBalances, activeNetwork?.contracts);
+  const currentScoreRefreshKey = scoreNeedsBalanceRefresh
+    ? scoreBalanceRefreshKey(score, chainData.scoreBalances, activeNetwork.contracts, activeNetwork.id, address)
+    : '';
   const displayedScoreStatus = connected
     && scoreStatus === 'ready'
     && protocolNetwork
-    && (chainDataStatus === 'loading' || scoreNeedsBalanceRefresh)
+    && (chainDataStatus === 'loading'
+      || (scoreNeedsBalanceRefresh && scoreRefreshCompletedKey !== currentScoreRefreshKey))
     ? 'loading'
     : scoreStatus;
 
@@ -911,32 +964,42 @@ export default function App() {
       {connected && claimToken ? (
         <FileClaimDialog
           token={claimToken.id}
-          insuredTokens={COVERED_PROTOCOL_ROWS.map((row) => ({
+          insuredTokens={CLAIM_TOKEN_ROWS.map((row) => ({
             id: row.id,
             symbol: row.symbol,
+            iconSrc: row.iconSrc,
             address: protocolNetwork?.contracts.insuredTokens?.[row.id],
             balance: row.id === 'usd8'
               ? chainData.balances.usd8
               : row.id === 'susd8'
                 ? chainData.balances.savings
                 : chainData.balances.insuredTokens?.[row.id] || '0',
-          })).filter((row) => row.address)}
+          }))}
           availableScore={score?.availableScore || '0'}
           availableBoosters="0"
           claimBond="10 USD8"
           claimBondAvailable={chainData.balances.usd8}
           maxIncidentAgeHours={144}
           requiresIncidentTime={!chainData.activeIncidentId || chainData.activeIncidentId === '0'}
-          submitUnavailableReason={claimSubmitting
-            ? 'Claim preparation is in progress.'
-            : ((!chainData.activeIncidentId || chainData.activeIncidentId === '0') && !claimApiConfigured
-              ? 'Claim verification service is not configured.'
-              : '')}
+          submitUnavailableReason={!protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
+            ? `${claimToken.symbol} is not enabled for claims on ${protocolNetwork?.name || 'the selected network'}.`
+            : (claimSubmitting
+              ? 'Claim preparation is in progress.'
+              : ((!chainData.activeIncidentId || chainData.activeIncidentId === '0') && !claimApiConfigured
+                ? 'Claim verification service is not configured.'
+                : ''))}
           statusMessage={claimStatus}
-          onClearStatus={() => setClaimStatus('')}
+          statusTone={claimStatusIsWarning
+            ? 'warning'
+            : (isWaitingStatus(claimStatus) ? 'loading' : 'neutral')}
+          onClearStatus={() => {
+            setClaimStatus('');
+            setClaimStatusIsWarning(false);
+          }}
           onClose={() => {
             claimAbortController.current?.abort();
             setClaimStatus('');
+            setClaimStatusIsWarning(false);
             setClaimToken(null);
           }}
           onSubmit={submitClaim}
@@ -969,6 +1032,7 @@ export default function App() {
           availableForCooldown={chainData.pool.availableForCooldown}
           availableForWithdraw={chainData.pool.availableForWithdraw}
           inCooldown={chainData.pool.inCooldown}
+          cooldownEndsAtMilliseconds={chainData.pool.cooldownEndsAtMilliseconds}
           earnings={livePool.earnings}
           hasEarnings={livePool.hasEarnings}
           statusMessage={poolStatus}
