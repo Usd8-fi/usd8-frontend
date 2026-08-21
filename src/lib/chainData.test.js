@@ -17,12 +17,49 @@ vi.mock('viem', async (importOriginal) => {
   };
 });
 
-import { fetchLandingChainData } from './chainData.js';
+import { calculateTrailingRewardApr, fetchLandingChainData } from './chainData.js';
+
+describe('calculateTrailingRewardApr', () => {
+  it('annualizes rewards accrued over the trailing window against time-weighted pool assets', () => {
+    const day = 24 * 60 * 60;
+    const apr = calculateTrailingRewardApr({
+      nowSeconds: 30 * day,
+      windowSeconds: 30 * day,
+      deploymentTimestamp: 0,
+      currentAssetUsdPrice: 2_000_00000000n,
+      priceDecimals: 8,
+      events: [
+        { timestamp: 0, logIndex: 0, type: 'deposit', assets: 10n * 10n ** 18n },
+        {
+          timestamp: 0,
+          logIndex: 1,
+          type: 'reward',
+          rate: 1_000n * 10n ** 18n / BigInt(30 * day),
+          periodFinish: 30 * day,
+        },
+      ],
+    });
+
+    expect(apr).toBe('60.8%');
+  });
+
+  it('returns unavailable when the pool had no assets in the trailing window', () => {
+    expect(calculateTrailingRewardApr({
+      nowSeconds: 100,
+      windowSeconds: 100,
+      deploymentTimestamp: 0,
+      currentAssetUsdPrice: 2_000_00000000n,
+      priceDecimals: 8,
+      events: [],
+    })).toBe('—');
+  });
+});
 
 describe('fetchLandingChainData', () => {
   beforeEach(() => {
     mocks.multicall.mockReset();
     mocks.readContract.mockReset();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('history unavailable')));
   });
 
   it('reports wstETH pool TVL in USD using the configured onchain oracle', async () => {
@@ -62,7 +99,7 @@ describe('fetchLandingChainData', () => {
     const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
 
     expect(data.pool.tvl).toBe('$20K');
-    expect(data.pool.apy).toBe('35%');
+    expect(data.pool.apy).toBe('—');
     expect(data.pool.capacityUncapped).toBe(false);
     expect(data.pool.assets).toBe('10');
     expect(data.scoreBalances).toEqual({

@@ -2,6 +2,9 @@ import { createPublicClient, formatUnits, http } from 'viem';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 
 const clients = new Map();
+const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
+const SEPOLIA_BLOCKSCOUT_URL = 'https://eth-sepolia.blockscout.com/api/v2';
+const trailingAprCache = new Map();
 
 function protocolUnavailableError(chainId) {
   const network = getNetwork(chainId);
@@ -114,6 +117,42 @@ export const poolAbi = [
       { name: 'remainingAssets', type: 'uint256' },
     ],
   },
+  {
+    type: 'event',
+    name: 'Deposit',
+    inputs: [
+      { indexed: true, name: 'sender', type: 'address' },
+      { indexed: true, name: 'owner', type: 'address' },
+      { indexed: false, name: 'assets', type: 'uint256' },
+      { indexed: false, name: 'shares', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ExitEpochSettled',
+    inputs: [
+      { indexed: true, name: 'exitEpoch', type: 'uint64' },
+      { indexed: false, name: 'shares', type: 'uint256' },
+      { indexed: false, name: 'assets', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ClaimPaid',
+    inputs: [
+      { indexed: true, name: 'to', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'RewardNotified',
+    inputs: [
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'newRate', type: 'uint128' },
+      { indexed: false, name: 'newPeriodFinish', type: 'uint64' },
+    ],
+  },
 ];
 
 const defiInsuranceAbi = [
@@ -169,14 +208,117 @@ function formattedUsd(assetAmount, price, priceDecimals) {
   });
 }
 
-function formattedAnnualRewardRate(rewardRate, assetAmount, price, priceDecimals) {
-  if (assetAmount === 0n || price <= 0n) return '—';
-  const poolValue = (assetAmount * price) / (10n ** BigInt(priceDecimals));
-  if (poolValue === 0n) return '—';
-  const annualReward = rewardRate * 365n * 24n * 60n * 60n;
-  const basisPoints = (annualReward * 10_000n + poolValue / 2n) / poolValue;
+export function calculateTrailingRewardApr({
+  events,
+  nowSeconds,
+  windowSeconds,
+  deploymentTimestamp,
+  currentAssetUsdPrice,
+  priceDecimals,
+}) {
+  if (currentAssetUsdPrice <= 0n) return '—';
+  const windowStart = Math.max(deploymentTimestamp, nowSeconds - windowSeconds);
+  let cursor = deploymentTimestamp;
+  let assets = 0n;
+  let rewardRate = 0n;
+  let periodFinish = 0;
+  let assetSeconds = 0n;
+  let accruedRewards = 0n;
+
+  const integrateUntil = (timestamp) => {
+    const end = Math.min(timestamp, nowSeconds);
+    const start = Math.max(cursor, windowStart);
+    if (end > start) {
+      assetSeconds += assets * BigInt(end - start);
+      const rewardEnd = Math.min(end, periodFinish);
+      if (rewardEnd > start) accruedRewards += rewardRate * BigInt(rewardEnd - start);
+    }
+    cursor = timestamp;
+  };
+
+  [...events]
+    .sort((a, b) => a.timestamp - b.timestamp || a.logIndex - b.logIndex)
+    .forEach((event) => {
+      integrateUntil(event.timestamp);
+      if (event.type === 'deposit') assets += event.assets;
+      if (event.type === 'exit' || event.type === 'claim') {
+        assets = event.assets >= assets ? 0n : assets - event.assets;
+      }
+      if (event.type === 'reward') {
+        rewardRate = event.rate;
+        periodFinish = event.periodFinish;
+      }
+    });
+  integrateUntil(nowSeconds);
+
+  const poolValueSeconds = (assetSeconds * currentAssetUsdPrice) / (10n ** BigInt(priceDecimals));
+  if (poolValueSeconds === 0n) return '—';
+  const annualSeconds = 365n * 24n * 60n * 60n;
+  const basisPoints = (accruedRewards * annualSeconds * 10_000n + poolValueSeconds / 2n) / poolValueSeconds;
   const percent = Number(basisPoints) / 100;
-  return `${percent.toLocaleString('en-US', { maximumFractionDigits: 2 })}%`;
+  return `${percent.toLocaleString('en-US', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
+async function fetchTrailingRewardApr(contracts, price, priceDecimals) {
+  const cacheKey = `${contracts.coverPool}:${price}:${priceDecimals}`;
+  const cached = trailingAprCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 60_000) return cached.value;
+
+  let nextUrl = `${SEPOLIA_BLOCKSCOUT_URL}/addresses/${contracts.coverPool}/logs`;
+  const logs = [];
+  while (nextUrl) {
+    const response = await fetch(nextUrl);
+    if (!response.ok) throw new Error(`Cover pool history unavailable (${response.status})`);
+    const page = await response.json();
+    logs.push(...page.items);
+    if (!page.next_page_params) {
+      nextUrl = '';
+    } else {
+      const url = new URL(`${SEPOLIA_BLOCKSCOUT_URL}/addresses/${contracts.coverPool}/logs`);
+      Object.entries(page.next_page_params).forEach(([key, value]) => url.searchParams.set(key, value));
+      nextUrl = url.toString();
+    }
+  }
+
+  const valueOf = (log, name) => log.decoded?.parameters?.find((parameter) => parameter.name === name)?.value;
+  const events = logs.flatMap((log) => {
+    const timestamp = Math.floor(Date.parse(log.block_timestamp) / 1_000);
+    const logIndex = Number(log.index);
+    const method = log.decoded?.method_call || '';
+    if (method.startsWith('Deposit(')) {
+      return [{ timestamp, logIndex, type: 'deposit', assets: BigInt(valueOf(log, 'assets')) }];
+    }
+    if (method.startsWith('ExitEpochSettled(')) {
+      return [{ timestamp, logIndex, type: 'exit', assets: BigInt(valueOf(log, 'assets')) }];
+    }
+    if (method.startsWith('ClaimPaid(')) {
+      return [{ timestamp, logIndex, type: 'claim', assets: BigInt(valueOf(log, 'amount')) }];
+    }
+    if (method.startsWith('RewardNotified(')) {
+      return [{
+        timestamp,
+        logIndex,
+        type: 'reward',
+        rate: BigInt(valueOf(log, 'newRate')),
+        periodFinish: Number(valueOf(log, 'newPeriodFinish')),
+      }];
+    }
+    return [];
+  });
+  const deploymentTimestamp = Math.min(...logs.map((log) => Math.floor(Date.parse(log.block_timestamp) / 1_000)));
+  const value = calculateTrailingRewardApr({
+    events,
+    nowSeconds: Math.floor(Date.now() / 1_000),
+    windowSeconds: TRAILING_WINDOW_SECONDS,
+    deploymentTimestamp,
+    currentAssetUsdPrice: price,
+    priceDecimals,
+  });
+  trailingAprCache.set(cacheKey, { timestamp: Date.now(), value });
+  return value;
 }
 
 export async function fetchLandingChainData(account, chainId) {
@@ -247,6 +389,11 @@ export async function fetchLandingChainData(account, chainId) {
   const earningsPerSecond = earningShares === zero
     ? zero
     : (poolShares * rewardRate) / earningShares;
+  const trailingRewardApr = await fetchTrailingRewardApr(
+    contracts,
+    wstEthUsdPrice,
+    wstEthUsdDecimals,
+  ).catch(() => '—');
 
   return {
     activeIncidentId: activeIncidentId.toString(),
@@ -268,7 +415,7 @@ export async function fetchLandingChainData(account, chainId) {
       },
     },
     pool: {
-      apy: formattedAnnualRewardRate(rewardRate, totalAssets, wstEthUsdPrice, wstEthUsdDecimals),
+      apy: trailingRewardApr,
       tvl: formattedUsd(totalAssets, wstEthUsdPrice, wstEthUsdDecimals),
       capacityPercent: Math.min(100, capacityPercent),
       capacityUncapped: depositCap === zero,

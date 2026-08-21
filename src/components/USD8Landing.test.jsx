@@ -356,8 +356,10 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
-    expect(screen.getByRole('button', { name: 'About 30-day APY' })).toHaveTextContent('?');
-    expect(screen.getByRole('tooltip', { name: 'APY is paid in USD8, not wstETH.' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'About 30-day reward APR' })).toHaveTextContent('?');
+    expect(screen.getByRole('tooltip', {
+      name: 'USD8 rewards accrued over the past 30 days, annualized against average pool value.',
+    })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About your earnings' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
       name: 'Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.',

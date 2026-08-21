@@ -626,6 +626,15 @@ describe('App', () => {
     expect(availabilityTooltip(submit)).toHaveTextContent('The wstETH amount exceeds your available balance.');
   });
 
+  it('labels the cover-pool return as trailing reward APR and explains its calculation', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
+
+    expect(screen.getByText('30D Reward APR')).toBeInTheDocument();
+    expect(screen.getByText('USD8 rewards accrued over the past 30 days, annualized against average pool value.')).toBeInTheDocument();
+  });
+
   it('prevents starting cooldown for more shares than are available', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
