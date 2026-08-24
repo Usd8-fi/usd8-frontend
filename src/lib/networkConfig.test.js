@@ -6,6 +6,7 @@ describe('network configuration', () => {
     const network = getProtocolNetwork(11155111);
 
     expect(network).toMatchObject({ id: 11155111, name: 'Sepolia', protocolAvailable: true });
+    expect(network.rpcUrls).toEqual(['https://ethereum-sepolia-rpc.publicnode.com']);
     expect(network.contracts).toEqual({
       registry: '0x7d09c1e9ee03350a177c2a542e90285b55e8a218',
       usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
@@ -33,6 +34,7 @@ describe('network configuration', () => {
       name: 'Ethereum',
       protocolAvailable: false,
       scoreAvailable: false,
+      rpcUrls: ['https://ethereum-rpc.publicnode.com'],
     });
     expect(getProtocolNetwork(1)).toBeNull();
   });

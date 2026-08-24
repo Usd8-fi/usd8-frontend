@@ -1,6 +1,6 @@
 # Legal - Terms, Privacy and Risk Disclaimer
 
-**Last updated: August 18, 2026**
+**Last updated: August 22, 2026**
 
 Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.
 
@@ -119,7 +119,7 @@ We do not control and are not responsible for third-party code, assets, services
 
 ### 9. Intellectual property and software licenses
 
-Names, logos, visual assets, site content, and other materials may be protected by intellectual-property laws. Except where a separate license applies, you may use the Services only for lawful personal or internal purposes and may not misrepresent affiliation with or endorsement by USD8.
+Names, logos, visual assets, site content, and other materials may be protected by intellectual-property laws. Copyright © 2026 USD8. All rights reserved. Except where a separate license applies, you may use the Services only for lawful personal or internal purposes and may not misrepresent affiliation with or endorsement by USD8. The names **USD8**, **sUSD8**, and USD8 cover-token naming conventions (including tokens designated `USD8-cp-…`), together with associated logos, are marks of the operator and may not be used to identify any incompatible fork, copy, or unrelated service without prior written consent.
 
 Source code is governed by the license contained in its repository. The USD8 Core repository currently uses the Business Source License 1.1, with the stated Change Date and Change License identified there. Source availability does not grant rights beyond the applicable license and does not constitute a warranty.
 
@@ -155,13 +155,17 @@ These limitations apply regardless of the legal theory and even if a party was a
 
 To the maximum extent permitted by law, you agree to defend, indemnify, and hold harmless the parties listed in Section 13 from claims, liabilities, damages, judgments, losses, costs, and reasonable legal fees arising from your use or misuse of the Services, violation of these terms or applicable law, infringement of another person's rights, or transactions initiated through your wallet. We may control the defense of an indemnified matter, and you agree to cooperate with that defense.
 
-### 15. Disputes and time limit for claims
+### 15. Governing law and disputes
+
+These terms, the Privacy section, the Risk Disclaimer, and any dispute arising out of or relating to them or the Services are governed by the laws of the **Federal Republic of Germany**, excluding its conflict-of-laws rules and excluding the United Nations Convention on Contracts for the International Sale of Goods. Mandatory consumer-protection rights in your country of habitual residence remain unaffected to the extent they cannot be waived.
 
 Before starting a formal proceeding concerning the Services, you agree to send a written description of the dispute and requested relief to [info@usd8.fi](mailto:info@usd8.fi) and allow 30 days for an informal resolution attempt, except where urgent injunctive relief is reasonably necessary.
 
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, EACH PARTY MAY BRING CLAIMS ONLY IN ITS INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN A CLASS, COLLECTIVE, CONSOLIDATED, OR REPRESENTATIVE ACTION. EACH PARTY WAIVES A JURY TRIAL TO THE MAXIMUM EXTENT THAT WAIVER IS LAWFUL.
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, EACH PARTY MAY BRING CLAIMS ONLY IN ITS INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN A CLASS, COLLECTIVE, CONSOLIDATED, OR REPRESENTATIVE ACTION.
 
 To the maximum extent permitted by law, any claim concerning the Services must be filed within one year after the event giving rise to the claim; otherwise, the claim is permanently barred. Nothing in this section limits a non-waivable limitation period or procedural right.
+
+Subject to the foregoing and to the extent permitted by applicable law, the courts of **Frankfurt am Main, Germany** have exclusive jurisdiction over any dispute arising out of or relating to the Services or these terms. Either party may nonetheless seek interim or injunctive relief in any court of competent jurisdiction.
 
 ### 16. General terms
 
@@ -169,11 +173,19 @@ These terms and any incorporated notices are the entire agreement concerning the
 
 Nothing in these terms limits non-waivable rights available under applicable law. Questions about these terms may be sent to [info@usd8.fi](mailto:info@usd8.fi).
 
+**Feedback.** If you send us ideas, suggestions, or feedback about the Services, you grant us a perpetual, irrevocable, worldwide, non-exclusive, royalty-free license to use them freely for any purpose without attribution or obligation. Do not submit feedback you consider confidential or proprietary.
+
+**Electronic communications.** You consent to receive communications from us electronically, including notices posted on the Services or sent to contact points you have provided. These communications satisfy any legal requirement that they be in writing.
+
+**Export controls.** You must not access, export, re-export, or transfer the Services or related technical data in violation of German, European Union, or applicable United States export-control and sanctions laws.
+
 ## Privacy
 
-### 1. Scope
+### 1. Scope and controller
 
 This Privacy section explains the limited information USD8 currently collects when you visit its website, documentation, or interface. USD8 currently collects usage information only through Google Analytics. Public blockchains and independent third parties may process information under their own rules and privacy notices; their processing is not collection by USD8.
+
+The controller responsible for the processing described in this section is the operator of the relevant website or interface identified in these terms (see [Terms §1](#terms)). Privacy requests may be sent to [info@usd8.fi](mailto:info@usd8.fi).
 
 ### 2. Information we may process
 
@@ -187,11 +199,20 @@ The interface may request public blockchain information or send a public wallet 
 
 Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services. Where applicable, this processing may be based on consent or legitimate interests in understanding and improving the Services. USD8 does not sell personal information for money.
 
-### 4. Cookies, analytics, and choices
+### 4. Cookies, browser storage, analytics, and choices
 
 Google Analytics loads by default when application or documentation pages open. Loading begins without a prior choice in the current interface and may transmit the visitor's IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers to Google. Google may place or read cookies or similar identifiers and process this data under its own [Privacy Policy](https://policies.google.com/privacy), including on servers outside your country.
 
-You can limit cookies through your browser settings, use browser privacy controls, or use Google's [Analytics opt-out tools](https://tools.google.com/dlpage/gaoptout). Blocking cookies or browser storage may affect functionality. Wallet providers and other third parties may provide separate privacy settings.
+The Services currently use the following cookies and similar technologies:
+
+| Type | Provider | Purpose | How to control |
+| --- | --- | --- | --- |
+| Analytics (first- and third-party) | Google (Google Analytics) | Understand website and documentation usage, measure performance, identify errors | Browser settings; Google's [Analytics opt-out tools](https://tools.google.com/dlpage/gaoptout) |
+| Essential browser storage (first-party, local storage / session storage) | USD8 interface | Store interface preferences and wallet-connection session state needed for the application to function | Clearing site data in your browser settings |
+
+Essential browser storage does not require consent. Analytics technologies are not strictly necessary: depending on where you are located, you may be entitled to consent before they load or be notified of your ability to object. You can limit cookies through your browser settings, use browser privacy controls, block images, or use Google's opt-out tools. Blocking cookies or browser storage may affect functionality. Wallet providers and other third parties may provide separate privacy settings.
+
+Where required by applicable law, we will provide a consent mechanism or equivalent choice before loading non-essential tracking technologies.
 
 ### 5. How information may be shared
 
@@ -214,6 +235,10 @@ We may use reasonable safeguards, but no website, analytics service, or transmis
 ### 9. Your choices and rights
 
 Depending on your location, you may have rights concerning analytics information, including access, deletion, restriction, objection, or withdrawal of consent where processing relies on consent. Because USD8 does not maintain user accounts or a separate visitor database, we may have limited ability to identify analytics information as belonging to a particular person.
+
+If you are located in the European Economic Area, the United Kingdom, or Switzerland, you have the rights described in the GDPR or UK GDPR, including access, rectification, erasure, restriction of processing, data portability, and objection. The lawful basis for analytics processing is your consent where required; otherwise our legitimate interests in understanding and improving the Services.
+
+If you are a resident of a U.S. state with a comprehensive consumer-privacy law (including California, Colorado, Connecticut, Texas, Virginia, and others), note that **USD8 does not sell personal information for money and does not share personal information for cross-context behavioral advertising as those terms are defined by such statutes**, and therefore the related opt-out rights do not apply to the current Services. Rights of access, deletion, correction, and portability remain available to the extent the law applies and we can identify data relating to you.
 
 Requests may be sent to [info@usd8.fi](mailto:info@usd8.fi). You may also use Google's analytics controls or complain to the data-protection authority applicable to you. We will never ask for a private key, seed phrase, or wallet transaction to process a privacy request.
 

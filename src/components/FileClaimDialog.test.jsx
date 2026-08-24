@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import FileClaimDialog from './FileClaimDialog.jsx';
 
@@ -54,7 +54,9 @@ describe('FileClaimDialog', () => {
     expect(screen.getByText('sGHO Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(1);
     const available = screen.getByRole('button', { name: 'Use full sGHO balance 345.123456' });
-    expect(available).toHaveTextContent('345.12 available');
+    expect(available).toHaveTextContent('345.12');
+    expect(available).not.toHaveTextContent('available');
+    expect(available.closest('small')).toHaveTextContent('345.12 available. 100.0% of all token claims so far.');
     fireEvent.click(available);
     expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(345.123456);
   });
@@ -73,8 +75,9 @@ describe('FileClaimDialog', () => {
     expect(screen.getByLabelText('Insured sGHO amount').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
     expect(screen.getByLabelText('Insurance score to spend').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
     expect(screen.getByLabelText('Boosters to burn').closest('.file-claim-field')).toHaveClass('file-claim-field--compact');
+    expect(appStyles).toMatch(/\.file-claim-form-grid \{[\s\S]*grid-template-columns: 350px 160px;[\s\S]*column-gap: 64px;/);
     expect(appStyles).toMatch(/\.file-claim-field--primary input \{\s*width: 282px;/);
-    expect(appStyles).toMatch(/\.file-claim-field--compact input \{\s*width: 180px;/);
+    expect(appStyles).toMatch(/\.file-claim-field--compact input \{\s*width: 160px;/);
     expect(appStyles).toMatch(/\.file-claim-title img \{[\s\S]*width: 34px;[\s\S]*height: 34px;/);
   });
 
@@ -86,6 +89,7 @@ describe('FileClaimDialog', () => {
         insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '345' }]}
         availableScore="2344322"
         availableBoosters="12"
+        claimTotals={{ insuredTokenAmount: '9655', scoreCommitted: '91428558' }}
         claimBond="10 USD8"
         claimBondAvailable="12.456789"
         maxIncidentAgeHours={144}
@@ -115,9 +119,18 @@ describe('FileClaimDialog', () => {
     expect(within(claimBondAvailable).queryByRole('button')).not.toBeInTheDocument();
     expect(appStyles).toContain('.file-claim-field--primary input');
     expect(appStyles).toContain('width: 282px;');
-    fireEvent.click(screen.getByRole('button', { name: 'Use full insurance score 2344322' }));
+    const tokenAvailable = screen.getByRole('button', { name: 'Use full sGHO balance 345' });
+    expect(tokenAvailable).toHaveTextContent(/^345$/);
+    expect(tokenAvailable.closest('small')).toHaveTextContent('345 available. 0.0% of all token claims so far.');
+    const scoreAvailable = screen.getByRole('button', { name: 'Use full insurance score 2344322' });
+    expect(scoreAvailable).toHaveTextContent(/^2344322$/);
+    expect(scoreAvailable.closest('small')).toHaveTextContent('2344322 available. 2.5% of all score committed so far.');
+    fireEvent.click(scoreAvailable);
     expect(screen.getByLabelText('Insurance score to spend')).toHaveValue('2344322');
-    fireEvent.click(screen.getByRole('button', { name: 'Use all boosters 12' }));
+    const boosterAvailable = screen.getByRole('button', { name: 'Use all boosters 12' });
+    expect(boosterAvailable).toHaveTextContent(/^12$/);
+    expect(boosterAvailable.closest('small')).toHaveTextContent('12 available');
+    fireEvent.click(boosterAvailable);
     expect(screen.getByLabelText('Boosters to burn')).toHaveValue(12);
 
     const incidentAge = screen.getByRole('combobox', { name: 'Approximate incident age' });
@@ -135,7 +148,8 @@ describe('FileClaimDialog', () => {
     fireEvent.change(incidentAge, { target: { value: '48' } });
 
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '345' } });
-    fireEvent.submit(screen.getByRole('button', { name: 'file claim' }).closest('form'));
+    expect(tokenAvailable.closest('small')).toHaveTextContent('345 available. 3.4% of all token claims so far.');
+    fireEvent.submit(screen.getByRole('button', { name: 'File Claim' }).closest('form'));
     expect(onSubmit).toHaveBeenCalledWith({
       token: 'aave-sgho',
       amount: '345',
@@ -147,7 +161,7 @@ describe('FileClaimDialog', () => {
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
   });
 
-  it('always displays a dot as the insurance-score decimal separator', () => {
+  it('truncates insurance-score inputs to two decimal places', () => {
     render(
       <FileClaimDialog
         token="aave-sgho"
@@ -160,9 +174,9 @@ describe('FileClaimDialog', () => {
 
     const score = screen.getByLabelText('Insurance score to spend');
     expect(score).toHaveAttribute('type', 'text');
-    expect(score).toHaveValue('131239.805234839977557855');
-    fireEvent.change(score, { target: { value: '131,239.8' } });
-    expect(score).toHaveValue('131239.8');
+    expect(score).toHaveValue('131239.80');
+    fireEvent.change(score, { target: { value: '131,239.8999' } });
+    expect(score).toHaveValue('131239.89');
   });
 
   it('explains that an ineligible claimant loses the anti-spam claim bond', () => {
@@ -192,7 +206,7 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const submit = screen.getByRole('button', { name: 'file claim' });
+    const submit = screen.getByRole('button', { name: 'File Claim' });
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '' } });
     expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(null);
     expect(submit).toBeEnabled();
@@ -216,7 +230,7 @@ describe('FileClaimDialog', () => {
     );
 
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '345.1234567891' } });
-    const submit = screen.getByRole('button', { name: 'file claim' });
+    const submit = screen.getByRole('button', { name: 'File Claim' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(document.getElementById(submit.getAttribute('aria-describedby')))
@@ -238,7 +252,7 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const submit = screen.getByRole('button', { name: 'file claim' });
+    const submit = screen.getByRole('button', { name: 'File Claim' });
     const warning = screen.getByRole('alert');
     expect(submit.closest('.file-claim-submit-row')).toContainElement(warning);
     expect(warning).toHaveTextContent('No qualifying 20% price drop was detected.');
@@ -282,11 +296,11 @@ describe('FileClaimDialog', () => {
     expect(screen.queryByRole('combobox', { name: 'Approximate incident age' })).not.toBeInTheDocument();
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '1' } });
-    fireEvent.click(screen.getByRole('button', { name: 'file claim' }));
+    fireEvent.click(screen.getByRole('button', { name: 'File Claim' }));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ incidentAgeHours: null }));
   });
 
-  it('prevents score entry when no insurance score is available', () => {
+  it('keeps score entry visually active and validates no available score on submit', () => {
     render(
       <FileClaimDialog
         token="aave-sgho"
@@ -296,33 +310,90 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Insurance score to spend')).toBeDisabled();
-    expect(screen.queryByRole('button', { name: 'Use full insurance score 0' })).not.toBeInTheDocument();
-    expect(screen.getByText('No available insurance score to spend.')).toBeInTheDocument();
-    const submit = screen.getByRole('button', { name: 'file claim' });
+    const scoreInput = screen.getByLabelText('Insurance score to spend');
+    expect(scoreInput).toBeEnabled();
+    fireEvent.change(scoreInput, { target: { value: '12' } });
+    expect(scoreInput).toHaveValue('12');
+    expect(screen.getByRole('button', { name: 'Use full insurance score 0' })).toHaveTextContent('0');
+    expect(screen.queryByText('No available insurance score to spend.')).not.toBeInTheDocument();
+    expect(appStyles).not.toMatch(/\.file-claim-field input:disabled/);
+    const submit = screen.getByRole('button', { name: 'File Claim' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(screen.getByRole('alert')).toHaveTextContent('You do not have any available insurance score to spend.');
   });
 
-  it('opens directly to the active-claim status state', () => {
+  it('shows the active claim amounts, lifecycle, and cancellation action', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2027-01-02T00:00:00Z'));
     const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+    const onClose = vi.fn();
     render(
       <FileClaimDialog
-        token="wstETH"
-        availableScore="128.6K"
-        claimStatus={{ id: 'CP-042', stage: 'Challenge window', daysLeft: 3 }}
-        submitUnavailableReason="No public TEE incident-open route is deployed."
-        onClose={vi.fn()}
+        token="aave-sgho"
+        insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '400' }]}
+        availableScore="128600"
+        claimStatus={{
+          id: '42',
+          stage: 'Claim Open',
+          stageIndex: 0,
+          daysLeft: 2,
+          cancellable: true,
+          insuredTokenAmount: '345',
+          bondAmount: '10',
+          scoreToSpend: '2,344,322',
+          insuredTokenClaimPercentage: '3.4%',
+          scoreCommitmentPercentage: '2.5%',
+          boosterAmount: '2',
+          phaseWindowDays: 3,
+          incident: {
+            phaseDeadlineMilliseconds: Date.now() + (2 * 24 + 23) * 60 * 60 * 1_000,
+            phaseWindowMilliseconds: 3 * 86_400_000,
+            root: `0x${'00'.repeat(32)}`,
+          },
+        }}
+        onClose={onClose}
+        onCancel={onCancel}
         onSubmit={onSubmit}
       />,
     );
 
-    const dialog = screen.getByRole('dialog', { name: 'File claim for wstETH' });
-    expect(within(dialog).getByRole('heading', { name: 'Claim Status for wstETH' })).toBeInTheDocument();
-    expect(within(dialog).getByText('CP-042')).toBeInTheDocument();
-    expect(within(dialog).getByText('Challenge window')).toBeInTheDocument();
-    expect(within(dialog).getByText('3 days left')).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', { name: 'Claim Status for sGHO' });
+    expect(appStyles).not.toMatch(/\.file-claim-dialog--status\s*\{/);
+    expect(appStyles).toMatch(/\.file-claim-status \{[\s\S]*?margin-top: 76px;/);
+    expect(appStyles).toMatch(/\.claim-status-metrics \{[\s\S]*?grid-template-columns: 320px 180px;[\s\S]*?column-gap: 48px;[\s\S]*?row-gap: 72px;/);
+    expect(appStyles).toMatch(/\.claim-status-metrics div \{[\s\S]*?gap: 18px;/);
+    expect(appStyles).toMatch(/\.claim-status-metrics strong \{[\s\S]*?font: inherit;[\s\S]*?font-size: 28px;/);
+    expect(appStyles).toMatch(/\.claim-status-step strong \{[\s\S]*?font: inherit;/);
+    expect(appStyles).toMatch(/\.claim-status-step-bar \{[\s\S]*?height: 3px;/);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close claim status' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByRole('heading', { name: 'Claim Status' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Insured Token')).toBeInTheDocument();
+    expect(within(dialog).getByText('345 sGHO')).toBeInTheDocument();
+    expect(within(dialog).getByText('3.4% of all token claims')).toBeInTheDocument();
+    expect(within(dialog).getByText('Claim Bond')).toBeInTheDocument();
+    expect(within(dialog).getByText('10 USD8')).toBeInTheDocument();
+    expect(within(dialog).getByText('Insurance score to spend')).toBeInTheDocument();
+    expect(within(dialog).getByText('2,344,322')).toBeInTheDocument();
+    expect(within(dialog).getByText('2.5% of all score committed')).toBeInTheDocument();
+    expect(within(dialog).getByText('Booster to spend')).toBeInTheDocument();
+    expect(within(dialog).getByText('2')).toBeInTheDocument();
+    expect(within(dialog).getByText('Status')).toBeInTheDocument();
+    expect(within(dialog).getByText('Claim Open')).toBeInTheDocument();
+    expect(within(dialog).getByText('Settle & Dispute')).toBeInTheDocument();
+    expect(within(dialog).getByText('Finalise Payout')).toBeInTheDocument();
+    expect(within(dialog).getByText('2 days 23 hours left')).toBeInTheDocument();
+    expect(within(dialog).getByText('3 days')).toBeInTheDocument();
+    expect(within(dialog).getByText('3-6 days')).toBeInTheDocument();
+    const progress = within(dialog).getByRole('progressbar', { name: 'Claim Open progress' });
+    expect(progress).toHaveAttribute('aria-valuenow', '1');
+    act(() => vi.advanceTimersByTime(86_400_000));
+    expect(progress).toHaveAttribute('aria-valuenow', '34');
+    expect(within(dialog).getByText('1 day 23 hours left')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel Claim' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { createPublicClient, formatUnits, http } from 'viem';
+import { createPublicClient, fallback, formatUnits, http } from 'viem';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 
 const clients = new Map();
@@ -11,6 +11,11 @@ function protocolUnavailableError(chainId) {
   return new Error(network ? `USD8 is not deployed on ${network.name}` : 'USD8 is not deployed on the selected network');
 }
 
+export function rpcTransportFor(rpcUrls) {
+  const transports = rpcUrls.map((rpcUrl) => http(rpcUrl, { timeout: 15_000 }));
+  return transports.length === 1 ? transports[0] : fallback(transports);
+}
+
 export function publicClientFor(chainId) {
   const network = getProtocolNetwork(chainId);
   if (!network) throw protocolUnavailableError(chainId);
@@ -19,7 +24,7 @@ export function publicClientFor(chainId) {
   if (!client) {
     client = createPublicClient({
       chain: network.chain,
-      transport: http(network.rpcUrl, { timeout: 15_000 }),
+      transport: rpcTransportFor(network.rpcUrls),
     });
     clients.set(network.id, client);
   }
@@ -163,7 +168,74 @@ const defiInsuranceAbi = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  {
+    type: 'function',
+    name: 'incidents',
+    stateMutability: 'view',
+    inputs: [{ name: 'incidentId', type: 'uint256' }],
+    outputs: [
+      { name: 'insuredToken', type: 'address' },
+      { name: 'resolvedAt', type: 'uint64' },
+      { name: 'referenceBlock', type: 'uint64' },
+      { name: 'openBlock', type: 'uint64' },
+      { name: 'phaseDeadline', type: 'uint64' },
+      { name: 'root', type: 'bytes32' },
+      { name: 'unresolvedClaims', type: 'uint256' },
+      { name: 'claimSetHash', type: 'bytes32' },
+      { name: 'teePcrHash', type: 'bytes32' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'incidentPhaseWindow',
+    stateMutability: 'view',
+    inputs: [{ name: 'incidentId', type: 'uint256' }],
+    outputs: [{ name: 'phaseWindow', type: 'uint64' }],
+  },
+  {
+    type: 'function',
+    name: 'claimIdByIncidentAndUser',
+    stateMutability: 'view',
+    inputs: [{ name: 'incidentId', type: 'uint256' }, { name: 'account', type: 'address' }],
+    outputs: [{ name: 'claimId', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'claims',
+    stateMutability: 'view',
+    inputs: [{ name: 'claimId', type: 'uint256' }],
+    outputs: [
+      { name: 'user', type: 'address' },
+      { name: 'incidentId', type: 'uint64' },
+      { name: 'insuredTokenAmount', type: 'uint128' },
+      { name: 'boosterAmount', type: 'uint128' },
+      { name: 'bondAmount', type: 'uint128' },
+      { name: 'resolved', type: 'bool' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ClaimRegistered',
+    inputs: [
+      { indexed: true, name: 'claimId', type: 'uint256' },
+      { indexed: true, name: 'incidentId', type: 'uint256' },
+      { indexed: true, name: 'user', type: 'address' },
+      { indexed: false, name: 'insuredTokenAmount', type: 'uint128' },
+      { indexed: false, name: 'scoreToSpend', type: 'uint256' },
+      { indexed: false, name: 'boosterAmount', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ClaimCancelled',
+    inputs: [
+      { indexed: true, name: 'claimId', type: 'uint256' },
+      { indexed: true, name: 'user', type: 'address' },
+    ],
+  },
 ];
+const claimRegisteredEvent = defiInsuranceAbi.find((item) => item.type === 'event' && item.name === 'ClaimRegistered');
+const claimCancelledEvent = defiInsuranceAbi.find((item) => item.type === 'event' && item.name === 'ClaimCancelled');
 
 const priceOracleAbi = [
   {
@@ -192,6 +264,12 @@ function formatted(value, decimals = 18, maximumFractionDigits = 4) {
   const decimal = Number(formatUnits(value, decimals));
   if (!Number.isFinite(decimal)) return '0';
   return decimal.toLocaleString('en-US', { maximumFractionDigits });
+}
+
+function claimPercentage(amount, total) {
+  if (total === 0n) return '0%';
+  const tenths = (amount * 1_000n) / total;
+  return `${tenths / 10n}.${tenths % 10n}%`;
 }
 
 function formattedUsd(assetAmount, price, priceDecimals) {
@@ -395,8 +473,81 @@ export async function fetchLandingChainData(account, chainId) {
     wstEthUsdDecimals,
   ).catch(() => '—');
 
+  let incident = null;
+  let claim = null;
+  if (activeIncidentId !== zero) {
+    const [incidentState, phaseWindow, claimId] = await client.multicall({
+      contracts: [
+        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidents', args: [activeIncidentId] },
+        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPhaseWindow', args: [activeIncidentId] },
+        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [activeIncidentId, account] },
+      ],
+      allowFailure: false,
+    });
+    const [tokenAddress, , , openBlock, phaseDeadline, root, unresolvedClaims] = incidentState;
+    const tokenId = Object.entries(contracts.insuredTokens)
+      .find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase())?.[0] || '';
+    const claimLogs = await client.getLogs({
+      address: contracts.defiInsurance,
+      events: [claimRegisteredEvent, claimCancelledEvent],
+      fromBlock: openBlock,
+      toBlock: 'latest',
+    }).catch(() => []);
+    const cancelledClaimIds = new Set(
+      claimLogs
+        .filter((log) => log.eventName === 'ClaimCancelled')
+        .map((log) => log.args.claimId.toString()),
+    );
+    const activeRegistrations = claimLogs.filter((log) => (
+      log.eventName === 'ClaimRegistered'
+      && log.args.incidentId === activeIncidentId
+      && !cancelledClaimIds.has(log.args.claimId.toString())
+    ));
+    const totalInsuredTokenClaims = activeRegistrations.reduce(
+      (total, log) => total + log.args.insuredTokenAmount,
+      zero,
+    );
+    const totalScoreCommitted = activeRegistrations.reduce(
+      (total, log) => total + log.args.scoreToSpend,
+      zero,
+    );
+    incident = {
+      id: activeIncidentId.toString(),
+      tokenId,
+      tokenAddress: tokenAddress.toLowerCase(),
+      phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
+      phaseWindowMilliseconds: Number(phaseWindow) * 1_000,
+      root,
+      unresolvedClaims: unresolvedClaims.toString(),
+      totalInsuredTokenClaims: formatUnits(totalInsuredTokenClaims, 18),
+      totalScoreCommitted: formatUnits(totalScoreCommitted, 18),
+    };
+
+    if (claimId !== zero) {
+      const [[, claimIncidentId, insuredTokenAmount, boosterAmount, bondAmount, resolved]] = await client.multicall({
+        contracts: [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId] }],
+        allowFailure: false,
+      });
+      const registration = activeRegistrations.find((log) => log.args.claimId === claimId);
+      const scoreToSpend = registration?.args?.scoreToSpend || zero;
+      claim = {
+        id: claimId.toString(),
+        incidentId: claimIncidentId.toString(),
+        insuredTokenAmount: formatted(insuredTokenAmount),
+        bondAmount: formatted(bondAmount),
+        boosterAmount: boosterAmount.toString(),
+        scoreToSpend: formatted(scoreToSpend),
+        insuredTokenClaimPercentage: claimPercentage(insuredTokenAmount, totalInsuredTokenClaims),
+        scoreCommitmentPercentage: claimPercentage(scoreToSpend, totalScoreCommitted),
+        resolved,
+      };
+    }
+  }
+
   return {
     activeIncidentId: activeIncidentId.toString(),
+    incident,
+    claim,
     scoreBalances: {
       usd8: usd8.toString(),
       savings: savings.toString(),

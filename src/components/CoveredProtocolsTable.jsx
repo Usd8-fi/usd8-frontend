@@ -1,7 +1,9 @@
+import { Fragment, useEffect, useId, useState } from 'react';
 import aaveLogo from '../assets/aavelogo.svg';
 import msLossLogo from '../assets/msloss-test.svg';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
+import { remainingTimeParts } from '../lib/claimLifecycle.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import TableTokenCell from './TableTokenCell.jsx';
@@ -57,12 +59,57 @@ export const COVERED_PROTOCOL_ROWS = [
   },
 ];
 
-export default function CoveredProtocolsTable({ onFileClaim, fileClaimUnavailableReason = '' }) {
+const ZERO_ROOT = `0x${'00'.repeat(32)}`;
+
+function timedLabel(label, deadline, nowMilliseconds) {
+  const { daysLeft, hoursLeft } = remainingTimeParts(deadline, nowMilliseconds);
+  return `${label} (${daysLeft}d ${hoursLeft}h left)`;
+}
+
+function incidentActionLabel(incident, nowMilliseconds) {
+  const deadline = Number(incident.phaseDeadlineMilliseconds);
+  const phaseWindow = Number(incident.phaseWindowMilliseconds);
+  if (!Number.isFinite(deadline) || !Number.isFinite(phaseWindow)) return 'File Claim';
+
+  if (String(incident.root).toLowerCase() === ZERO_ROOT) {
+    if (nowMilliseconds <= deadline) return timedLabel('Claim Open', deadline, nowMilliseconds);
+    if (nowMilliseconds <= deadline + phaseWindow) {
+      return timedLabel('Settle Claims', deadline + phaseWindow, nowMilliseconds);
+    }
+    return 'Finalise Payout';
+  }
+  if (nowMilliseconds <= deadline) return timedLabel('Settle & Dispute', deadline, nowMilliseconds);
+  if (nowMilliseconds <= deadline + phaseWindow) {
+    return timedLabel('Finalise Payout', deadline + phaseWindow, nowMilliseconds);
+  }
+  return 'Finalise Payout';
+}
+
+export default function CoveredProtocolsTable({
+  onFileClaim,
+  fileClaimUnavailableReason = '',
+  incident = null,
+  nowMilliseconds = Date.now(),
+}) {
+  const warningId = useId();
+  const [warningRowId, setWarningRowId] = useState('');
+
+  useEffect(() => {
+    setWarningRowId('');
+  }, [fileClaimUnavailableReason]);
+
   return (
-    <table
-      className="cover-table covered-protocols-table covered-protocols-table--claims"
-      aria-label="Insured tokens"
-    >
+    <Fragment>
+      {warningRowId ? (
+        <p id={warningId} className="covered-protocols-warning" role="alert">
+          {fileClaimUnavailableReason}
+        </p>
+      ) : null}
+      <div className="landing-table-shell">
+        <table
+          className="cover-table covered-protocols-table covered-protocols-table--claims"
+          aria-label="Insured tokens"
+        >
       <thead>
         <tr>
           <th scope="col">
@@ -81,28 +128,45 @@ export default function CoveredProtocolsTable({ onFileClaim, fileClaimUnavailabl
               </InfoTooltip>
             </span>
           </th>
-          <th scope="col" className="table-action-cell covered-protocols-action-cell">File Claim</th>
+          <th scope="col" className="table-action-cell covered-protocols-action-cell">Claim</th>
         </tr>
       </thead>
       <tbody>
-        {COVERED_PROTOCOL_ROWS.map((row) => (
+        {COVERED_PROTOCOL_ROWS.map((row) => {
+          const actionLabel = row.id === incident?.tokenId
+            ? incidentActionLabel(incident, nowMilliseconds)
+            : 'File Claim';
+          const actionAriaLabel = actionLabel === 'File Claim'
+            ? `File claim for ${row.id}`
+            : `${actionLabel} for ${row.id}`;
+          return (
           <tr key={row.id}>
             <td><TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell></td>
             <td>{row.reimbursement}</td>
             <td className="table-action-cell covered-protocols-action-cell">
               <AvailabilityAction
-                className="dashboard-action-button dashboard-table-action-button"
+                className={`dashboard-action-button dashboard-table-action-button${actionLabel === 'File Claim' ? '' : ' dashboard-table-action-button--claim-status'}`}
                 type="button"
-                onClick={() => onFileClaim?.(row)}
-                aria-label={`File claim for ${row.id}`}
-                unavailableReason={fileClaimUnavailableReason}
+                onClick={() => {
+                  if (fileClaimUnavailableReason) {
+                    setWarningRowId(row.id);
+                    return;
+                  }
+                  setWarningRowId('');
+                  onFileClaim?.(row);
+                }}
+                aria-label={actionAriaLabel}
+                aria-describedby={warningRowId === row.id ? warningId : undefined}
               >
-                file claim
+                {actionLabel}
               </AvailabilityAction>
             </td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
-    </table>
+        </table>
+      </div>
+    </Fragment>
   );
 }

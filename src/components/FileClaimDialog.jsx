@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { claimLifecycle } from '../lib/claimLifecycle.js';
 import { displayAvailableBalance } from '../lib/displayAvailableBalance.js';
 import { tokenAmountExceedsBalance } from '../lib/tokenAmount.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
@@ -6,6 +7,13 @@ import InfoTooltip from './InfoTooltip.jsx';
 
 function normalizedDecimal(value) {
   return String(value || '0').replace(/,/g, '').trim();
+}
+
+function insuranceScoreInputValue(value) {
+  const normalized = String(value ?? '').replace(/,/g, '').trim();
+  const decimalIndex = normalized.indexOf('.');
+  if (decimalIndex < 0) return normalized;
+  return `${normalized.slice(0, decimalIndex)}.${normalized.slice(decimalIndex + 1, decimalIndex + 3)}`;
 }
 
 function isPositiveDecimal(value) {
@@ -17,9 +25,40 @@ function defaultTokenAmount(available) {
   return isPositiveDecimal(available) ? '1' : '';
 }
 
-function ClaimDialogCloseButton({ onClose }) {
+function proposedSharePercentage(value, existingTotal) {
+  const input = normalizedDecimal(value);
+  const total = normalizedDecimal(existingTotal);
+  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(input)
+      || !/^(?:\d+\.?\d*|\.\d+)$/.test(total)) return '0.0%';
+
+  const inputFraction = input.split('.')[1]?.length || 0;
+  const totalFraction = total.split('.')[1]?.length || 0;
+  const decimals = Math.max(inputFraction, totalFraction);
+  const scaled = (decimal) => {
+    const [whole = '0', fraction = ''] = decimal.split('.');
+    return BigInt(`${whole || '0'}${fraction.padEnd(decimals, '0')}`);
+  };
+  const inputAmount = scaled(input);
+  const combinedTotal = inputAmount + scaled(total);
+  if (combinedTotal === 0n) return '0.0%';
+  const tenths = (inputAmount * 1_000n) / combinedTotal;
+  return `${tenths / 10n}.${tenths % 10n}%`;
+}
+
+function timeLeftLabel(daysLeft, hoursLeft) {
+  const days = `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
+  const hours = `${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'}`;
+  return `${days} ${hours} left`;
+}
+
+function ClaimDialogCloseButton({ activeClaim, onClose }) {
   return (
-    <button className="app-dialog-close" type="button" aria-label="Close file claim" onClick={onClose}>
+    <button
+      className="app-dialog-close file-claim-dialog-close"
+      type="button"
+      aria-label={activeClaim ? 'Close claim status' : 'Close file claim'}
+      onClick={onClose}
+    >
       ×
     </button>
   );
@@ -32,6 +71,7 @@ export default function FileClaimDialog({
   availableBoosters = '0',
   claimBond = '10 USD8',
   claimBondAvailable = '0',
+  claimTotals = { insuredTokenAmount: '0', scoreCommitted: '0' },
   maxIncidentAgeHours = 144,
   requiresIncidentTime = true,
   claimStatus = null,
@@ -40,6 +80,7 @@ export default function FileClaimDialog({
   statusTone = 'neutral',
   onClearStatus,
   onClose,
+  onCancel,
   onSubmit,
 }) {
   const tokenOptions = insuredTokens.length > 0
@@ -47,7 +88,7 @@ export default function FileClaimDialog({
     : [{ id: token, symbol: token, balance: '0' }];
   const selectedToken = tokenOptions.find((option) => option.id === token || option.symbol === token) || tokenOptions[0];
   const [amount, setAmount] = useState(() => defaultTokenAmount(selectedToken.balance));
-  const [scoreToSpend, setScoreToSpend] = useState(() => normalizedDecimal(availableScore));
+  const [scoreToSpend, setScoreToSpend] = useState(() => insuranceScoreInputValue(availableScore));
   const [boosterAmount, setBoosterAmount] = useState('0');
   const [incidentAgeHours, setIncidentAgeHours] = useState(24);
 
@@ -66,11 +107,31 @@ export default function FileClaimDialog({
     || (!isPositiveDecimal(amount) ? `Enter the ${selectedToken.symbol} amount you want to claim for.` : '')
     || (!isPositiveDecimal(scoreToSpend) ? 'Enter the insurance score you want to spend.' : '');
   const activeClaim = Boolean(claimStatus?.id);
-  const daysLeft = Number.isFinite(claimStatus?.daysLeft) ? Math.max(0, Math.ceil(claimStatus.daysLeft)) : null;
+  const claimIncident = claimStatus?.incident;
+  const proposedTokenClaimPercentage = proposedSharePercentage(
+    amount,
+    claimTotals.insuredTokenAmount,
+  );
+  const proposedScoreCommitmentPercentage = proposedSharePercentage(
+    scoreToSpend,
+    claimTotals.scoreCommitted,
+  );
+  const [statusNowMilliseconds, setStatusNowMilliseconds] = useState(Date.now());
+  const liveClaimStatus = activeClaim && claimIncident
+    ? { ...claimStatus, ...claimLifecycle(claimIncident, statusNowMilliseconds) }
+    : claimStatus;
 
   useEffect(() => {
-    setScoreToSpend(availableScoreValue);
+    setScoreToSpend(insuranceScoreInputValue(availableScoreValue));
   }, [availableScoreValue]);
+
+  useEffect(() => {
+    if (!activeClaim || !claimIncident) return undefined;
+    const update = () => setStatusNowMilliseconds(Date.now());
+    update();
+    const timer = window.setInterval(update, 60_000);
+    return () => window.clearInterval(timer);
+  }, [activeClaim, claimIncident]);
 
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -84,26 +145,76 @@ export default function FileClaimDialog({
     <div className="usd8-dialog-backdrop file-claim-dialog-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className="usd8-dialog file-claim-dialog" role="dialog" aria-modal="true" aria-label={`File claim for ${selectedToken.symbol}`}>
-        <ClaimDialogCloseButton onClose={onClose} />
+      <section
+        className={`usd8-dialog file-claim-dialog${activeClaim ? ' file-claim-dialog--status' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${activeClaim ? 'Claim Status' : 'File claim'} for ${selectedToken.symbol}`}
+      >
+        <ClaimDialogCloseButton activeClaim={activeClaim} onClose={onClose} />
         <h2
           className="file-claim-title"
-          aria-label={`${activeClaim ? 'Claim Status' : 'File a Claim'} for ${selectedToken.symbol}`}
+          aria-label={activeClaim ? 'Claim Status' : `File a Claim for ${selectedToken.symbol}`}
         >
-          {selectedToken.iconSrc ? <img src={selectedToken.iconSrc} alt={selectedToken.symbol} /> : null}
-          <span>{activeClaim ? 'Claim Status' : 'File a Claim'} for {selectedToken.symbol}</span>
+          {!activeClaim && selectedToken.iconSrc ? <img src={selectedToken.iconSrc} alt={selectedToken.symbol} /> : null}
+          <span>{activeClaim ? 'Claim Status' : `File a Claim for ${selectedToken.symbol}`}</span>
         </h2>
 
         {activeClaim ? (
           <section className="file-claim-status" aria-live="polite">
-            <div className="file-claim-status-main">
-              <p>Claim ID</p>
-              <strong>{claimStatus.id}</strong>
-              <p>Current status</p>
-              <strong>{claimStatus.stage}</strong>
+            <div className="claim-status-metrics">
+              <div>
+                <span>Insured Token</span>
+                <strong>{liveClaimStatus.insuredTokenAmount} {selectedToken.symbol}</strong>
+                <small>{liveClaimStatus.insuredTokenClaimPercentage} of all token claims</small>
+              </div>
+              <div><span>Claim Bond</span><strong>{liveClaimStatus.bondAmount} USD8</strong></div>
+              <div>
+                <span>Insurance score to spend</span>
+                <strong>{liveClaimStatus.scoreToSpend}</strong>
+                <small>{liveClaimStatus.scoreCommitmentPercentage} of all score committed</small>
+              </div>
+              <div><span>Booster to spend</span><strong>{liveClaimStatus.boosterAmount}</strong></div>
             </div>
-            {daysLeft !== null ? (
-              <footer className="file-claim-days-left">{daysLeft} {daysLeft === 1 ? 'day' : 'days'} left</footer>
+            <span className="claim-status-timeline-label">Status</span>
+            <div className="claim-status-timeline" aria-label={`Current stage: ${liveClaimStatus.stage}`}>
+              {[
+                ['Claim Open', `${liveClaimStatus.phaseWindowDays || 3} days`],
+                ['Settle & Dispute', `${liveClaimStatus.phaseWindowDays || 3}-${(liveClaimStatus.phaseWindowDays || 3) * 2} days`],
+                ['Finalise Payout', `${liveClaimStatus.phaseWindowDays || 3} days`],
+              ].map(([label, duration], index) => (
+                <div className={index === liveClaimStatus.stageIndex ? 'claim-status-step claim-status-step--active' : 'claim-status-step'} key={label}>
+                  <span
+                    className="claim-status-step-bar"
+                    role={index === liveClaimStatus.stageIndex ? 'progressbar' : undefined}
+                    aria-label={index === liveClaimStatus.stageIndex ? `${label} progress` : undefined}
+                    aria-valuemin={index === liveClaimStatus.stageIndex ? 0 : undefined}
+                    aria-valuemax={index === liveClaimStatus.stageIndex ? 100 : undefined}
+                    aria-valuenow={index === liveClaimStatus.stageIndex ? liveClaimStatus.progressPercent : undefined}
+                    aria-valuetext={index === liveClaimStatus.stageIndex
+                      ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft)
+                      : undefined}
+                    style={index === liveClaimStatus.stageIndex
+                      ? { '--claim-progress': `${liveClaimStatus.progressPercent}%` }
+                      : undefined}
+                  />
+                  <strong>{label}</strong>
+                  <small>{index === liveClaimStatus.stageIndex
+                    ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft)
+                    : duration}</small>
+                </div>
+              ))}
+            </div>
+            {liveClaimStatus.cancellable ? (
+              <div className="claim-status-actions">
+                <button className="usd8-dialog-submit" type="button" onClick={onCancel}>Cancel Claim</button>
+                {statusMessage ? (
+                  <small className={`usd8-dialog-status${statusTone === 'warning' ? ' usd8-dialog-status--warning' : ''}`} role={statusTone === 'loading' ? 'status' : 'alert'}>
+                    {statusTone === 'loading' ? <span className="usd8-dialog-status-spinner" aria-hidden="true" /> : null}
+                    {statusMessage}
+                  </small>
+                ) : null}
+              </div>
             ) : null}
           </section>
         ) : (
@@ -142,8 +253,9 @@ export default function FileClaimDialog({
                     aria-label={`Use full ${selectedToken.symbol} balance ${selectedToken.balance}`}
                     onClick={() => setAmount(String(selectedToken.balance).replace(/,/g, ''))}
                   >
-                    {displayAvailableBalance(selectedToken.balance)} available
+                    {displayAvailableBalance(selectedToken.balance)}
                   </button>
+                  <span> available. {proposedTokenClaimPercentage} of all token claims so far.</span>
                 </small>
               </div>
 
@@ -171,24 +283,22 @@ export default function FileClaimDialog({
                   inputMode="decimal"
                   pattern="[0-9,]*[.]?[0-9]*"
                   type="text"
-                  disabled={!hasAvailableScore}
                   value={scoreToSpend}
                   onChange={(event) => {
                     onClearStatus?.();
-                    setScoreToSpend(event.target.value.replace(/,/g, ''));
+                    setScoreToSpend(insuranceScoreInputValue(event.target.value));
                   }}
                 />
                 <small>
-                  {hasAvailableScore ? (
-                    <button
-                      className="usd8-dialog-available"
-                      type="button"
-                      aria-label={`Use full insurance score ${availableScore}`}
-                      onClick={() => setScoreToSpend(availableScoreValue)}
-                    >
-                      {displayAvailableBalance(availableScore)} available
-                    </button>
-                  ) : <span>No available insurance score to spend.</span>}
+                  <button
+                    className="usd8-dialog-available"
+                    type="button"
+                    aria-label={`Use full insurance score ${availableScore}`}
+                    onClick={() => setScoreToSpend(insuranceScoreInputValue(availableScoreValue))}
+                  >
+                    {displayAvailableBalance(availableScore)}
+                  </button>
+                  <span> available. {proposedScoreCommitmentPercentage} of all score committed so far.</span>
                 </small>
               </div>
 
@@ -219,8 +329,9 @@ export default function FileClaimDialog({
                     aria-label={`Use all boosters ${availableBoosters}`}
                     onClick={() => setBoosterAmount(String(availableBoosters).replace(/,/g, ''))}
                   >
-                    {displayAvailableBalance(availableBoosters)} available
+                    {displayAvailableBalance(availableBoosters)}
                   </button>
+                  <span> available</span>
                 </small>
               </div>
 
@@ -260,7 +371,7 @@ export default function FileClaimDialog({
                 unavailableReason={claimUnavailableReason}
                 warningResetKey={`${selectedToken.id}:${amount}:${scoreToSpend}:${boosterAmount}:${incidentAgeHours}`}
               >
-                file claim
+                File Claim
               </AvailabilityAction>
               {statusMessage ? (
                 <small

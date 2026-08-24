@@ -237,23 +237,25 @@ describe('USD8 landing navigation', () => {
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).not.toHaveTextContent('1,234.5678');
   });
 
-  it('floors scores to one decimal without abbreviating thousands or millions', () => {
+  it('floors scores to one decimal and groups thousands without abbreviating them', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
         score={{
           grossEarnedScore: '7123.99',
           availableScore: '7123456.99',
-          usd8Score: '7.699',
-          sUsd8Score: '0',
+          usd8Score: '7123.699',
+          sUsd8Score: '1234567.899',
         }}
       />,
     );
 
-    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('7123.9');
-    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('7123456.9');
+    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('7,123.9');
+    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('7,123,456.9');
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('7.6');
+    const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
+    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('7,123.6');
+    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('1,234,567.8');
   });
 
   it('advances total, available, USD8, and sUSD8 score locally every second', () => {
@@ -280,17 +282,17 @@ describe('USD8 landing navigation', () => {
     const available = screen.getByText('Available Score').parentElement;
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    expect(total).toHaveTextContent('128600.0');
-    expect(available).toHaveTextContent('96400.0');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84200.0');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44400.0');
+    expect(total).toHaveTextContent('128,600.0');
+    expect(available).toHaveTextContent('96,400.0');
+    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84,200.0');
+    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44,400.0');
 
     act(() => vi.advanceTimersByTime(1_000));
 
-    expect(total).toHaveTextContent('128600.2');
-    expect(available).toHaveTextContent('96400.1');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84200.1');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44400.1');
+    expect(total).toHaveTextContent('128,600.2');
+    expect(available).toHaveTextContent('96,400.1');
+    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84,200.1');
+    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44,400.1');
   });
 
 
@@ -420,9 +422,68 @@ describe('Free insurance table', () => {
 
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(within(table).getByText('Max Coverage')).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Claim' })).toBeInTheDocument();
     expect(within(table).getAllByRole('button', { name: /file claim/i }).length).toBeGreaterThan(0);
     expect(within(table).queryByText('Address')).not.toBeInTheDocument();
     expect(within(table).queryByText(/0x[a-f0-9]{40}/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the active token claim phase and live days remaining on its action', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2027-01-15T00:00:00Z'));
+    const now = Date.now();
+
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        incident={{
+          tokenId: 'test-msloss',
+          phaseDeadlineMilliseconds: now + (2 * 24 + 23) * 60 * 60 * 1_000,
+          phaseWindowMilliseconds: 3 * 24 * 60 * 60 * 1_000,
+          root: `0x${'00'.repeat(32)}`,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Claim Open (2d 23h left) for test-msloss' }))
+      .toHaveTextContent('Claim Open (2d 23h left)');
+    expect(screen.getAllByRole('button', { name: /file claim for/i })).toHaveLength(5);
+    expect(screen.getAllByRole('button', { name: /file claim for/i }).every((button) => button.textContent === 'File Claim')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Claim Open (2d 23h left) for test-msloss' }))
+      .toHaveClass('dashboard-table-action-button--claim-status');
+  });
+
+  it('moves the active token action through settlement and payout phases', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2027-01-15T00:00:00Z'));
+    const now = Date.now();
+    const common = {
+      tokenId: 'test-msloss',
+      phaseWindowMilliseconds: 3 * 24 * 60 * 60 * 1_000,
+    };
+    const { rerender } = render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        incident={{
+          ...common,
+          phaseDeadlineMilliseconds: now - 24 * 60 * 60 * 1_000,
+          root: `0x${'00'.repeat(32)}`,
+        }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Settle Claims (2d 0h left) for test-msloss' })).toBeInTheDocument();
+
+    rerender(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        incident={{
+          ...common,
+          phaseDeadlineMilliseconds: now - 24 * 60 * 60 * 1_000,
+          root: `0x${'11'.repeat(32)}`,
+        }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Finalise Payout (2d 0h left) for test-msloss' })).toBeInTheDocument();
   });
 
   it('omits Lido stETH from the insured-token list', () => {

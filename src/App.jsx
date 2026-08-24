@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
-import { parseUnits } from 'viem';
+import { parseUnits, zeroAddress } from 'viem';
 import { useAccount, useChainId, useDisconnect, useWriteContract } from 'wagmi';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './components/AvailabilityAction.jsx';
 import { COVERED_PROTOCOL_ROWS } from './components/CoveredProtocolsTable.jsx';
@@ -16,12 +16,15 @@ import { useLivePoolEarnings } from './lib/livePoolEarnings.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
 import { getNetwork, getProtocolNetwork } from './lib/networkConfig.js';
 import { claimApiConfigured, prepareIncidentOpen } from './lib/claimApi.js';
+import { claimLifecycle } from './lib/claimLifecycle.js';
 import { fetchInsuranceScore } from './lib/scoreApi.js';
 import { tokenAmountExceedsBalance } from './lib/tokenAmount.js';
 import { walletConnectorConfigured } from './lib/walletConnector.js';
 
 const EMPTY_CHAIN_DATA = {
   activeIncidentId: '0',
+  incident: null,
+  claim: null,
   scoreBalances: null,
   balances: {
     usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', insuredTokens: {},
@@ -92,6 +95,12 @@ function tokenAmountValidationReason(raw, available, token, action) {
   return tokenAmountExceedsBalance(normalized, available)
     ? `The ${token} amount exceeds your available balance.`
     : '';
+}
+
+function groupedDecimal(value) {
+  const [whole, fraction] = String(value ?? '0').split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return fraction === undefined ? grouped : `${grouped}.${fraction}`;
 }
 
 function scoreWithTokenBreakdown(score, contracts) {
@@ -165,22 +174,12 @@ const claimWriteAbi = [
     ],
     outputs: [{ name: 'claimId', type: 'uint256' }],
   },
+  { type: 'function', name: 'cancelClaim', stateMutability: 'nonpayable', inputs: [], outputs: [] },
 ];
 
 function DialogCloseButton({ label, onClose }) {
   return (
     <button className="app-dialog-close" type="button" aria-label={label} onClick={onClose}>×</button>
-  );
-}
-
-function NoticeDialog({ message, onClose }) {
-  return (
-    <div className="app-notice-backdrop">
-      <section className="app-notice-dialog" role="alertdialog" aria-modal="true" aria-label="Notice">
-        <DialogCloseButton label="Close notice" onClose={onClose} />
-        <p>{message}</p>
-      </section>
-    </div>
   );
 }
 
@@ -514,7 +513,6 @@ export default function App() {
   const [chainData, setChainData] = useState(EMPTY_CHAIN_DATA);
   const [chainDataStatus, setChainDataStatus] = useState('idle');
   const [savingsVault, setSavingsVault] = useState(EMPTY_SAVINGS_VAULT);
-  const [notice, setNotice] = useState('');
   const [usd8Action, setUsd8Action] = useState(null);
   const [usd8Status, setUsd8Status] = useState('');
   const [poolAction, setPoolAction] = useState(null);
@@ -538,7 +536,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!connected || !activeNetwork) {
+    if (!activeNetwork) {
       setScore(null);
       setScoreStatus('idle');
       setScoreRefreshCompletedKey('');
@@ -549,7 +547,7 @@ export default function App() {
 
     const controller = new AbortController();
     setScoreRefreshCompletedKey('');
-    if (activeNetwork.scoreAvailable) {
+    if (connected && activeNetwork.scoreAvailable) {
       setScoreStatus('loading');
       fetchInsuranceScore(address, { chainId: activeNetwork.id, signal: controller.signal })
         .then((nextScore) => {
@@ -559,7 +557,6 @@ export default function App() {
         .catch((error) => {
           if (error.name !== 'AbortError') {
             setScoreStatus('error');
-            setNotice('Insurance Score is temporarily unavailable.');
           }
         });
     } else {
@@ -569,7 +566,7 @@ export default function App() {
 
     if (protocolNetwork) {
       setChainDataStatus('loading');
-      fetchLandingChainData(address, protocolNetwork.id)
+      fetchLandingChainData(connected ? address : zeroAddress, protocolNetwork.id)
         .then((nextChainData) => {
           setChainData(nextChainData);
           setChainDataStatus('ready');
@@ -624,7 +621,6 @@ export default function App() {
 
   async function connect() {
     if (!walletConnectorConfigured) return;
-    setNotice('');
     setConnecting(true);
     try {
       await open({ view: 'Connect' });
@@ -635,7 +631,6 @@ export default function App() {
 
   async function disconnect() {
     await disconnectAsync();
-    setNotice('');
   }
 
   async function refreshChainData() {
@@ -647,7 +642,7 @@ export default function App() {
     return protocolNetwork;
   }
 
-  async function submitTransaction(request, pendingMessage, setStatus = setNotice) {
+  async function submitTransaction(request, pendingMessage, setStatus) {
     const network = requireProtocolNetwork();
     const client = publicClientFor(network.id);
     setStatus(pendingMessage);
@@ -655,7 +650,7 @@ export default function App() {
     const gas = estimatedGas + estimatedGas / 2n;
     const hash = await writeContractAsync({ chainId: network.id, ...request, gas });
     if (!hash) throw new Error('Transaction cancelled in your wallet.');
-    setStatus(`Transaction submitted: ${hash.slice(0, 10)}…`);
+    setStatus(`Transaction submitted: ${hash.slice(0, 10)}…${hash.slice(-4)}`);
     const receipt = await client.waitForTransactionReceipt({ hash });
     if (receipt.status !== 'success') throw new Error('Transaction reverted.');
     await refreshChainData();
@@ -865,6 +860,24 @@ export default function App() {
     }
   }
 
+  async function cancelClaim() {
+    try {
+      const network = requireProtocolNetwork();
+      setClaimStatusIsWarning(false);
+      await submitTransaction({
+        address: network.contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'cancelClaim',
+        args: [],
+      }, 'Confirm claim cancellation in your wallet.', setClaimStatus);
+      setClaimToken(null);
+      setClaimStatus('');
+    } catch (error) {
+      setClaimStatusIsWarning(true);
+      setClaimStatus(error?.shortMessage || error?.message || 'Claim cancellation failed.');
+    }
+  }
+
   function openUsd8Action(action) {
     if (!connected || !protocolNetwork) return;
     setUsd8Status('');
@@ -936,6 +949,20 @@ export default function App() {
       || (scoreNeedsBalanceRefresh && scoreRefreshCompletedKey !== currentScoreRefreshKey))
     ? 'loading'
     : scoreStatus;
+  const selectedClaimStatus = claimToken
+    && chainData.claim
+    && chainData.incident?.tokenId === claimToken.id
+    ? {
+      ...chainData.claim,
+      ...claimLifecycle(chainData.incident),
+      incident: chainData.incident,
+      insuredTokenAmount: groupedDecimal(chainData.claim.insuredTokenAmount),
+      bondAmount: groupedDecimal(chainData.claim.bondAmount),
+      boosterAmount: groupedDecimal(chainData.claim.boosterAmount),
+      scoreToSpend: groupedDecimal(chainData.claim.scoreToSpend),
+      phaseWindowDays: Math.max(1, Math.ceil(chainData.incident.phaseWindowMilliseconds / 86_400_000)),
+    }
+    : null;
 
   return (
     <>
@@ -955,12 +982,12 @@ export default function App() {
         balances={connected ? chainData.balances : EMPTY_CHAIN_DATA.balances}
         savingsVault={savingsVault}
         pool={chainData.pool}
+        incident={chainData.incident}
         onFileClaim={fileClaimAction}
         fileClaimUnavailableReason={connected ? protocolUnavailableReason : CONNECT_WALLET_REASON}
         onPoolAction={openPoolAction}
         onUsd8Action={openUsd8Action}
       />
-      {notice ? <NoticeDialog message={notice} onClose={() => setNotice('')} /> : null}
       {connected && claimToken ? (
         <FileClaimDialog
           token={claimToken.id}
@@ -979,8 +1006,13 @@ export default function App() {
           availableBoosters="0"
           claimBond="10 USD8"
           claimBondAvailable={chainData.balances.usd8}
+          claimTotals={{
+            insuredTokenAmount: chainData.incident?.totalInsuredTokenClaims || '0',
+            scoreCommitted: chainData.incident?.totalScoreCommitted || '0',
+          }}
           maxIncidentAgeHours={144}
           requiresIncidentTime={!chainData.activeIncidentId || chainData.activeIncidentId === '0'}
+          claimStatus={selectedClaimStatus}
           submitUnavailableReason={!protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
             ? `${claimToken.symbol} is not enabled for claims on ${protocolNetwork?.name || 'the selected network'}.`
             : (claimSubmitting
@@ -1002,6 +1034,7 @@ export default function App() {
             setClaimStatusIsWarning(false);
             setClaimToken(null);
           }}
+          onCancel={cancelClaim}
           onSubmit={submitClaim}
         />
       ) : null}

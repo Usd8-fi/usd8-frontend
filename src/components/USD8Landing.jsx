@@ -44,7 +44,7 @@ function formatScore(value, decimals = 1) {
 
   const [whole, fraction = ''] = raw.split('.');
   const integer = BigInt(whole);
-  return `${integer}.${fraction.slice(0, decimals).padEnd(decimals, '0')}`;
+  return `${integer.toLocaleString('en-US')}.${fraction.slice(0, decimals).padEnd(decimals, '0')}`;
 }
 
 const SCORE_DECIMALS = 18;
@@ -248,12 +248,21 @@ function AssetCard({
   );
 }
 
-function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
+function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault, incident, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreLoading = scoreStatus === 'loading';
   const liveScore = useLiveScore(score);
   const totalScore = liveScore?.grossEarnedScore;
   const availableScore = liveScore?.availableScore;
   const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
+  const [nowMilliseconds, setNowMilliseconds] = useState(Date.now());
+
+  useEffect(() => {
+    if (!incident) return undefined;
+    const update = () => setNowMilliseconds(Date.now());
+    update();
+    const timer = window.setInterval(update, 60_000);
+    return () => window.clearInterval(timer);
+  }, [incident]);
 
   return (
     <main className="landing-page free-insurance-page">
@@ -332,8 +341,13 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
             </strong>
           </div>
         </div>
-        <div className="landing-table-shell">
-          <CoveredProtocolsTable onFileClaim={onFileClaim} fileClaimUnavailableReason={fileClaimUnavailableReason || walletUnavailableReason} />
+        <div className="covered-protocols-table-area">
+          <CoveredProtocolsTable
+            onFileClaim={onFileClaim}
+            fileClaimUnavailableReason={fileClaimUnavailableReason || walletUnavailableReason}
+            incident={incident}
+            nowMilliseconds={nowMilliseconds}
+          />
         </div>
       </section>
     </main>
@@ -432,6 +446,7 @@ export default function USD8Landing({
   balances = {},
   savingsVault = {},
   pool = {},
+  incident = null,
   onFileClaim,
   fileClaimUnavailableReason = '',
   onPoolAction,
@@ -470,6 +485,7 @@ export default function USD8Landing({
           scoreStatus={scoreStatus}
           balances={balances}
           savingsVault={savingsVault}
+          incident={incident}
           onFileClaim={onFileClaim}
           fileClaimUnavailableReason={fileClaimUnavailableReason}
           onUsd8Action={onUsd8Action}

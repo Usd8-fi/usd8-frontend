@@ -27,7 +27,7 @@ const NETWORKS = Object.freeze({
     chain: sepolia,
     scoreAvailable: true,
     protocolAvailable: true,
-    rpcUrl: import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com',
+    rpcUrls: [import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com'],
     contracts: SEPOLIA_CONTRACTS,
   }),
   [mainnet.id]: Object.freeze({
@@ -36,6 +36,10 @@ const NETWORKS = Object.freeze({
     chain: mainnet,
     scoreAvailable: false,
     protocolAvailable: false,
+    rpcUrls: [
+      import.meta.env.VITE_MAINNET_RPC_URL,
+      'https://ethereum-rpc.publicnode.com',
+    ].filter(Boolean),
   }),
 });
 
