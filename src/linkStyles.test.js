@@ -81,7 +81,7 @@ describe('shared text-link styling', () => {
   cursor: pointer;
 }`);
     expect(appStyles).toMatch(/\.usd8-dialog-form \{\s+margin-top: 72px;/);
-    expect(appStyles).toMatch(/\.usd8-dialog-submit-row--withdraw \{[\s\S]*?margin-top: 48px;/);
+    expect(appStyles).toMatch(/\.usd8-dialog-submit-row--withdraw \{[\s\S]*?margin-top: 72px;/);
     expect(sharedStyles).toContain(`.landing-product-tab,
 .landing-footer-links .site-nav-link,
 .sidebar .chapter a {

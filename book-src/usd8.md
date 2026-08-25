@@ -23,8 +23,10 @@ Low risk defi users - hold or yield with USD8 to get free defi insurance for a r
 
 High apy seekers with high risk appetite - deposit into USD8's Cover Pools for high APY while backing the Defi insurance.
 
-## Open-sourced
-This Docs aims to explain USD8 in simple terms. USD8 is fully open-sourced, for technical details and code implementation, visit our [Github repo](https://github.com/Usd8-fi/usd8-core).
+## Onchain + Open-sourced
+USD8 system has onchain and offchain two parts, all codes open-sourced. Onchain part follows general Defi practice with sensitive settings through a time lock. Offchain part uses a TEE with open-sourced algorithms for computation and results are verifiable by anyone. 
+
+This Doc aims to explain USD8 in simple terms. For technical details and code implementation, visit our [Github repo](https://github.com/Usd8-fi/usd8-core).
 
 ## Contact
 You can reach us through the following channels

@@ -44,13 +44,13 @@ We adapted this model and made it crypto native, to provide the last missing pie
 
 ## The Insurance
 
-USD8 offers coverage to DeFi users based on their USD8 usage history, covering a range of DeFi protocols vetted by the USD8 team. The more you use USD8, the more you are covered. If a hack occurs in any covered DeFi protocol, users can claim coverage (up to 80% value) with their covered LP token.
+USD8 offers [free insurance](./defi-insurance.md) to DeFi users according to their insurance score based on USD8 usage history, covering a range of DeFi tokens vetted by our team and third party security partners. The more you use USD8, the more you are covered. If any insured Defi token drops significantly(currently 20%), users can claim up to 80% value back.
 
-E.g., if Aave USDC market is hacked and 1 aUSDC drops to 0.3 USDC, users can claim up to 0.8 USDC with their aUSDC.
+E.g., if Aave USDC market is hacked and 1 aUSDC drops to 0.3 USDC, users can claim up to 0.8 USDC in value with their aUSDC.
 
-The actual coverage depends on 3 factors - the user's USD8 history, how many other users are also claiming, and the Cover Pool size.
+The actual payout depends the user's USD8 history vs other claimers, and the Cover Pool size.
 
-The coverage funds come from USD8's [Cover Pool](cover-pools.md), a public vault with different asset types, incentivized by USD8's revenue. Any LPs depositing into this vault will get stable coin yield in USD8, however assets in the Cover Pool might be deployed to cover any potential losses.
+Payouts come from USD8's [Cover Pools](cover-pools.md) which are public vaults with different asset types, incentivized by USD8's treasury revenue. Any LPs depositing into Cover Pools will get stable coin yield in USD8, however assets in the Cover Pool might be deployed to cover any potential losses.
 
 This insurance system is exciting because:
 
@@ -66,4 +66,4 @@ This insurance system is exciting because:
 
 Since USD8 sits on a pile of hacked LP tokens after users claim, this puts USD8 in a unique position with significant financial incentives to recover these funds. USD8 will be cultivating a [White Hat Economy](white-hat-economy.md) as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds — read more on the [White Hat Economy](white-hat-economy.md) page.
 
-This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, potentially leads to perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.
+This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, leading to a perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.

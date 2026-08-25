@@ -255,7 +255,7 @@ export default function FileClaimDialog({
                   >
                     {displayAvailableBalance(selectedToken.balance)}
                   </button>
-                  <span> available. {proposedTokenClaimPercentage} of all token claims so far.</span>
+                  <span> available. {amount || '0'} {selectedToken.symbol} is {proposedTokenClaimPercentage} of all token claims atm.</span>
                 </small>
               </div>
 
@@ -298,7 +298,7 @@ export default function FileClaimDialog({
                   >
                     {displayAvailableBalance(availableScore)}
                   </button>
-                  <span> available. {proposedScoreCommitmentPercentage} of all score committed so far.</span>
+                  <span> available. {scoreToSpend || '0'} is {proposedScoreCommitmentPercentage} of all score committed atm.</span>
                 </small>
               </div>
 

@@ -200,6 +200,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pool.apy).toBe('—');
     expect(data.pool.capacityUncapped).toBe(false);
     expect(data.pool.assets).toBe('10');
+    expect(data.pool.remainingDepositCapacity).toBe('90');
     expect(data.scoreBalances).toEqual({
       usd8: '25000000000000000000',
       savings: '4000000000000000000',

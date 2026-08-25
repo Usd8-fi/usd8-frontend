@@ -72,8 +72,6 @@ We welcome community contributions across mechanism design, partnerships, market
 
 ## Who is behind USD8?
 
-<img src="../assets/my_avatar.png" width="100px" />
-
-Hi my name is Rick, I am the core dev behind USD8, during the day I work as a Security Researcher. You can reach out to me via x - [@codephobic](https://x.com/codephobic) or email rick[at]usd8.fi.
+USD8 is built by [@codephobic](https://x.com/codephobic) - a Security Researcher at OpenZeppelin.
   
 

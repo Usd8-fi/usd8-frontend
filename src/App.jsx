@@ -33,6 +33,8 @@ const EMPTY_CHAIN_DATA = {
     apy: '34%',
     tvl: '$122.2K',
     capacityPercent: 50,
+    capacityUncapped: false,
+    remainingDepositCapacity: '0',
     deposit: '0',
     availableForCooldown: '0',
     availableForWithdraw: '0',
@@ -271,8 +273,9 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
                   aria-label={`Use full ${inputToken} balance ${availableBalance}`}
                   onClick={() => setAmount(availableBalance.replace(/,/g, ''))}
                 >
-                  {displayAvailableBalance(availableBalance)} available
+                  {displayAvailableBalance(availableBalance)}
                 </button>
+                <span> available</span>
               </small>
             </label>
 
@@ -304,6 +307,9 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
 function PoolActionDialog({
   mode,
   coverAssetBalance,
+  activeIncidentId,
+  capacityUncapped,
+  remainingDepositCapacity,
   poolShareBalance,
   availableForCooldown,
   availableForWithdraw,
@@ -328,22 +334,50 @@ function PoolActionDialog({
   const withdrawAvailable = availableForWithdraw ?? '0';
   const cooldownBalance = inCooldown ?? '0';
   const [currentTimeMilliseconds, setCurrentTimeMilliseconds] = useState(Date.now());
+  const incidentActive = String(activeIncidentId || '0') !== '0';
+  const cooldownElapsed = Number(cooldownEndsAtMilliseconds) > 0
+    && currentTimeMilliseconds >= Number(cooldownEndsAtMilliseconds);
+  const cooldownCompleteWaitingForClaims = incidentActive
+    && cooldownElapsed
+    && Boolean(defaultTokenAmount(cooldownBalance));
   const cooldownTiming = defaultTokenAmount(cooldownBalance)
+    && !cooldownCompleteWaitingForClaims
     ? cooldownReadyLabel(cooldownEndsAtMilliseconds, currentTimeMilliseconds)
     : '';
+  const displayedWithdrawAvailable = cooldownCompleteWaitingForClaims ? cooldownBalance : withdrawAvailable;
+  const displayedCooldownBalance = cooldownCompleteWaitingForClaims ? '0' : cooldownBalance;
   const hasWithdrawAvailable = !/^0(?:\.0+)?$/.test(String(withdrawAvailable).replace(/,/g, ''));
+  const existingWithdrawalRequestReason = 'Please finish the existing withdrawal request before starting a new one.';
   const cooldownUnavailableReason = withdrawing && defaultTokenAmount(cooldownBalance)
-    ? 'A cover-pool cooldown request is already active.'
+    ? existingWithdrawalRequestReason
     : (withdrawing && hasWithdrawAvailable
-      ? 'Complete your existing cover-pool withdrawal before starting another cooldown.'
+      ? existingWithdrawalRequestReason
       : '');
   const actionUnavailableReason = submitUnavailableReason
     || (withdrawingEarnings && !hasEarnings ? 'No earnings to withdraw.' : '');
+  const tokenValidationReason = !withdrawingEarnings
+    ? tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown')
+    : '';
+  const activeIncidentDepositReason = depositing && incidentActive
+    ? `Deposits are temporarily unavailable while insurance incident #${activeIncidentId} is active. Try again after the incident is finalized.`
+    : '';
+  const activeIncidentWithdrawReason = withdrawing
+    && cooldownCompleteWaitingForClaims
+    ? 'Waiting for claims to finish'
+    : '';
+  const capacityDepositReason = depositing
+    && !capacityUncapped
+    && !tokenValidationReason
+    && tokenAmountExceedsBalance(amount, remainingDepositCapacity)
+    ? (defaultTokenAmount(remainingDepositCapacity)
+      ? `This deposit exceeds the cover pool's remaining capacity. You can deposit up to ${remainingDepositCapacity} wstETH.`
+      : 'The cover pool is full and cannot accept additional wstETH deposits.')
+    : '';
   const amountUnavailableReason = actionUnavailableReason
     || cooldownUnavailableReason
-    || (!withdrawingEarnings
-      ? tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown')
-      : '');
+    || activeIncidentDepositReason
+    || tokenValidationReason
+    || capacityDepositReason;
 
   useEffect(() => {
     setAmount(defaultTokenAmount(available));
@@ -422,27 +456,37 @@ function PoolActionDialog({
                   }}
                 />
                 {mode === 'withdraw' ? (
-                  <small className="usd8-dialog-withdrawal-availability">
+                  <small className="usd8-dialog-pool-availability usd8-dialog-withdrawal-availability">
                     <button
                       className="usd8-dialog-available"
                       type="button"
                       aria-label={`Use full ${inputToken} balance ${available}`}
                       onClick={() => setAmount(available.replace(/,/g, ''))}
                     >
-                      {displayAvailableBalance(available)} available
-                    </button>. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized.{' '}
+                      {displayAvailableBalance(available)}
+                    </button>
+                    <span> available</span>. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized.{' '}
                     <a href={`${DOCS_BASE_URL}cover-pools.html`}>Learn More</a>.
                   </small>
                 ) : (
-                  <small>
+                  <small className="usd8-dialog-pool-availability">
                     <button
                       className="usd8-dialog-available"
                       type="button"
                       aria-label={`Use full ${inputToken} balance ${available}`}
                       onClick={() => setAmount(available.replace(/,/g, ''))}
                     >
-                      {displayAvailableBalance(available)} available
+                      {displayAvailableBalance(available)}
                     </button>
+                    <span> available</span>
+                    {depositing && !capacityUncapped && remainingDepositCapacity !== '' ? (
+                      <>
+                        .{' '}
+                        <span className="usd8-dialog-pool-capacity">
+                          {remainingDepositCapacity} wstETH left in pool limit
+                        </span>
+                      </>
+                    ) : null}
                   </small>
                 )}
               </label>
@@ -463,13 +507,16 @@ function PoolActionDialog({
                 </AvailabilityAction>
                 {statusAction === 'startCooldown' ? <TransactionStatus message={statusMessage} /> : null}
                 <small className="usd8-dialog-withdraw-balances">
-                  {withdrawAvailable} available for withdraw, {cooldownBalance} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
+                  {displayedWithdrawAvailable} available for withdraw{cooldownCompleteWaitingForClaims ? ' after claims are finalized' : ''}, {' '}
+                  {displayedCooldownBalance} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
                 </small>
                 <AvailabilityAction
                   className="usd8-dialog-submit"
                   type="button"
                   onClick={() => onSubmit('withdraw', '')}
-                  unavailableReason={actionUnavailableReason || (!hasWithdrawAvailable ? 'No cover-pool withdrawal is available yet.' : '')}
+                  unavailableReason={actionUnavailableReason
+                    || activeIncidentWithdrawReason
+                    || (!hasWithdrawAvailable ? 'No cover-pool withdrawal is available yet.' : '')}
                 >
                   Withdraw
                 </AvailabilityAction>
@@ -1061,6 +1108,9 @@ export default function App() {
         <PoolActionDialog
           mode={poolAction}
           coverAssetBalance={chainData.balances.coverAsset}
+          activeIncidentId={chainData.activeIncidentId}
+          capacityUncapped={chainData.pool.capacityUncapped}
+          remainingDepositCapacity={chainData.pool.remainingDepositCapacity}
           poolShareBalance={chainData.balances.poolShares}
           availableForCooldown={chainData.pool.availableForCooldown}
           availableForWithdraw={chainData.pool.availableForWithdraw}

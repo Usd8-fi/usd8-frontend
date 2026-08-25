@@ -358,9 +358,9 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
-    expect(screen.getByRole('button', { name: 'About 30-day reward APR' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About 30-day earnings APR' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
-      name: 'USD8 rewards accrued over the past 30 days, annualized against average pool value.',
+      name: 'USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.',
     })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About your earnings' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {

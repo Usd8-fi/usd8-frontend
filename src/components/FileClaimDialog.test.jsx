@@ -7,6 +7,13 @@ import FileClaimDialog from './FileClaimDialog.jsx';
 const appStyles = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
 describe('FileClaimDialog', () => {
+  it('uses the input-row gap above every popup final action', () => {
+    expect(appStyles).toMatch(/\.usd8-dialog-submit-row \{[^}]*margin-top: 72px;/);
+    expect(appStyles).toMatch(/\.usd8-dialog-submit-row--withdraw \{[^}]*margin-top: 72px;/);
+    expect(appStyles).toMatch(/\.file-claim-submit-row \{[^}]*margin-top: 72px;/);
+    expect(appStyles).toMatch(/\.claim-status-actions \{[^}]*padding-top: 72px;/);
+  });
+
   it('keeps the modal internally scrollable when the browser is shorter than the form', () => {
     expect(appStyles).toMatch(/\.file-claim-dialog \{[\s\S]*max-height: calc\(100vh - 56px\);[\s\S]*overflow-y: auto;/);
   });
@@ -56,7 +63,9 @@ describe('FileClaimDialog', () => {
     const available = screen.getByRole('button', { name: 'Use full sGHO balance 345.123456' });
     expect(available).toHaveTextContent('345.12');
     expect(available).not.toHaveTextContent('available');
-    expect(available.closest('small')).toHaveTextContent('345.12 available. 100.0% of all token claims so far.');
+    expect(available.closest('small')).toHaveTextContent(
+      '345.12 available. 1 sGHO is 100.0% of all token claims atm.',
+    );
     fireEvent.click(available);
     expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(345.123456);
   });
@@ -121,10 +130,14 @@ describe('FileClaimDialog', () => {
     expect(appStyles).toContain('width: 282px;');
     const tokenAvailable = screen.getByRole('button', { name: 'Use full sGHO balance 345' });
     expect(tokenAvailable).toHaveTextContent(/^345$/);
-    expect(tokenAvailable.closest('small')).toHaveTextContent('345 available. 0.0% of all token claims so far.');
+    expect(tokenAvailable.closest('small')).toHaveTextContent(
+      '345 available. 1 sGHO is 0.0% of all token claims atm.',
+    );
     const scoreAvailable = screen.getByRole('button', { name: 'Use full insurance score 2344322' });
     expect(scoreAvailable).toHaveTextContent(/^2344322$/);
-    expect(scoreAvailable.closest('small')).toHaveTextContent('2344322 available. 2.5% of all score committed so far.');
+    expect(scoreAvailable.closest('small')).toHaveTextContent(
+      '2344322 available. 2344322 is 2.5% of all score committed atm.',
+    );
     fireEvent.click(scoreAvailable);
     expect(screen.getByLabelText('Insurance score to spend')).toHaveValue('2344322');
     const boosterAvailable = screen.getByRole('button', { name: 'Use all boosters 12' });
@@ -148,7 +161,9 @@ describe('FileClaimDialog', () => {
     fireEvent.change(incidentAge, { target: { value: '48' } });
 
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '345' } });
-    expect(tokenAvailable.closest('small')).toHaveTextContent('345 available. 3.4% of all token claims so far.');
+    expect(tokenAvailable.closest('small')).toHaveTextContent(
+      '345 available. 345 sGHO is 3.4% of all token claims atm.',
+    );
     fireEvent.submit(screen.getByRole('button', { name: 'File Claim' }).closest('form'));
     expect(onSubmit).toHaveBeenCalledWith({
       token: 'aave-sgho',

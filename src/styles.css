@@ -953,9 +953,9 @@ a:focus-visible {
   font: inherit;
 }
 
-.usd8-dialog-amount .usd8-dialog-withdrawal-availability {
+.usd8-dialog-amount .usd8-dialog-pool-availability {
   display: block;
-  width: min(830px, calc(100vw - 88px));
+  width: min(814px, calc(100vw - 160px));
   line-height: 2.2;
 }
 
@@ -963,8 +963,15 @@ a:focus-visible {
   padding: 0;
   border: 0;
   background: transparent;
+  color: inherit;
   font: inherit;
   cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.usd8-dialog-pool-capacity {
+  color: #666;
 }
 
 .usd8-dialog-arrow {
@@ -1024,7 +1031,7 @@ a:focus-visible {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  margin-top: 48px;
+  margin-top: 72px;
   row-gap: 30px;
 }
 
@@ -1195,7 +1202,7 @@ a:focus-visible {
 }
 
 .file-claim-submit-row {
-  margin-top: 48px;
+  margin-top: 72px;
 }
 
 .file-claim-dialog-form .usd8-dialog-submit {
@@ -1288,7 +1295,7 @@ a:focus-visible {
   align-items: center;
   gap: 18px;
   margin-top: auto;
-  padding-top: 48px;
+  padding-top: 72px;
 }
 
 .claim-status-actions .usd8-dialog-submit {
@@ -1556,6 +1563,10 @@ a:focus-visible {
   .usd8-dialog-flow {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .usd8-dialog-amount .usd8-dialog-pool-availability {
+    width: 100%;
   }
 
   .usd8-dialog-arrow {

@@ -570,6 +570,9 @@ export async function fetchLandingChainData(account, chainId) {
       tvl: formattedUsd(totalAssets, wstEthUsdPrice, wstEthUsdDecimals),
       capacityPercent: Math.min(100, capacityPercent),
       capacityUncapped: depositCap === zero,
+      remainingDepositCapacity: depositCap === zero
+        ? ''
+        : formatted(depositCap > totalAssets ? depositCap - totalAssets : zero),
       assets: formatted(totalAssets),
       deposit: formatted(depositedAssets),
       availableForCooldown: formatted(poolShares, Number(shareDecimals)),

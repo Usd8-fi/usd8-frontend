@@ -464,7 +464,9 @@ describe('App', () => {
     let dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
     expect(within(dialog).getByLabelText('USDC amount')).toHaveValue(1);
     const mintAvailable = within(dialog).getByRole('button', { name: 'Use full USDC balance 10.123456' });
-    expect(mintAvailable).toHaveTextContent('10.12 available');
+    expect(mintAvailable).toHaveTextContent('10.12');
+    expect(mintAvailable).not.toHaveTextContent('available');
+    expect(mintAvailable.parentElement).toHaveTextContent('10.12 available');
     fireEvent.click(mintAvailable);
     expect(within(dialog).getByLabelText('USDC amount')).toHaveValue(10.123456);
 
@@ -472,7 +474,9 @@ describe('App', () => {
     dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
     expect(within(dialog).getByLabelText('USD8 amount')).toHaveValue(1);
     const redeemAvailable = within(dialog).getByRole('button', { name: 'Use full USD8 balance 25.987654321' });
-    expect(redeemAvailable).toHaveTextContent('25.98 available');
+    expect(redeemAvailable).toHaveTextContent('25.98');
+    expect(redeemAvailable).not.toHaveTextContent('available');
+    expect(redeemAvailable.parentElement).toHaveTextContent('25.98 available');
     fireEvent.click(redeemAvailable);
     expect(within(dialog).getByLabelText('USD8 amount')).toHaveValue(25.987654321);
   });
@@ -586,7 +590,8 @@ describe('App', () => {
     expect(within(dialog).queryByText('Pool shares')).not.toBeInTheDocument();
     expect(within(dialog).queryByText('→')).not.toBeInTheDocument();
     const depositAvailable = within(dialog).getByRole('button', { name: 'Use full wstETH balance 3.258765' });
-    expect(depositAvailable).toHaveTextContent('3.25 available');
+    expect(depositAvailable).toHaveTextContent(/^3.25$/);
+    expect(depositAvailable.parentElement).toHaveTextContent('3.25 available');
     fireEvent.click(depositAvailable);
     expect(within(dialog).getByLabelText('wstETH amount')).toHaveValue(3.258765);
 
@@ -635,13 +640,105 @@ describe('App', () => {
     expect(availabilityTooltip(submit)).toHaveTextContent('The wstETH amount exceeds your available balance.');
   });
 
-  it('labels the cover-pool return as trailing reward APR and explains its calculation', () => {
+  it('explains that an active incident temporarily blocks cover-pool deposits', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0', coverAsset: '3', poolShares: '0' },
+      pool: {
+        apy: '—', tvl: '—', capacityPercent: 23.01, capacityUncapped: false,
+        remainingDepositCapacity: '76.99', deposit: '0', earnings: '0', hasEarnings: false,
+      },
+      activeIncidentId: '1',
+    });
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'deposit' }));
+    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth cover pool' });
+    const poolCapacity = within(dialog).getByText('76.99 wstETH left in pool limit');
+    expect(poolCapacity).toHaveClass('usd8-dialog-pool-capacity');
+    expect(poolCapacity.parentElement).toHaveClass('usd8-dialog-pool-availability');
+    const available = within(dialog).getByRole('button', { name: 'Use full wstETH balance 3' });
+    expect(available).toHaveTextContent('3');
+    expect(available).not.toHaveTextContent('available');
+    expect(available.parentElement).toHaveTextContent('3 available. 76.99 wstETH left in pool limit');
+    const submit = within(dialog).getByRole('button', { name: 'deposit' });
+    fireEvent.click(submit);
+
+    expect(availabilityTooltip(submit)).toHaveTextContent(
+      'Deposits are temporarily unavailable while insurance incident #1 is active. Try again after the incident is finalized.',
+    );
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
+  it('explains when a completed cooldown is waiting for active incident claims', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0', coverAsset: '3', poolShares: '0' },
+      pool: {
+        apy: '—', tvl: '—', capacityPercent: 23.01, deposit: '0', earnings: '0', hasEarnings: false,
+        availableForCooldown: '0', availableForWithdraw: '0', inCooldown: '4',
+        cooldownEndsAtMilliseconds: Date.now() - 60_000,
+      },
+      activeIncidentId: '1',
+    });
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'withdraw' }));
+    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth cover pool' });
+
+    expect(within(dialog).getByText(
+      '4 available for withdraw after claims are finalized, 0 in cooldown.',
+    )).toBeInTheDocument();
+    const startCooldown = within(dialog).getByRole('button', { name: 'start cooldown' });
+    fireEvent.click(startCooldown);
+    expect(availabilityTooltip(startCooldown)).toHaveTextContent(
+      'Please finish the existing withdrawal request before starting a new one.',
+    );
+    const withdraw = within(dialog).getAllByRole('button', { name: 'Withdraw' })[1];
+    fireEvent.click(withdraw);
+    expect(availabilityTooltip(withdraw)).toHaveTextContent('Waiting for claims to finish');
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
+  it('explains when a deposit exceeds the cover pool remaining capacity', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0', coverAsset: '3', poolShares: '0' },
+      pool: {
+        apy: '—', tvl: '—', capacityPercent: 99.5, capacityUncapped: false,
+        remainingDepositCapacity: '0.5', deposit: '0', earnings: '0', hasEarnings: false,
+      },
+      activeIncidentId: '0',
+    });
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'deposit' }));
+    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth cover pool' });
+    const submit = within(dialog).getByRole('button', { name: 'deposit' });
+    fireEvent.click(submit);
+
+    expect(availabilityTooltip(submit)).toHaveTextContent(
+      "This deposit exceeds the cover pool's remaining capacity. You can deposit up to 0.5 wstETH.",
+    );
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
+  it('labels the cover-pool return as trailing earnings APR and explains its calculation', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
-    expect(screen.getByText('30D Reward APR')).toBeInTheDocument();
-    expect(screen.getByText('USD8 rewards accrued over the past 30 days, annualized against average pool value.')).toBeInTheDocument();
+    expect(screen.getByText('30D Earnings APR')).toBeInTheDocument();
+    expect(screen.getByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.')).toBeInTheDocument();
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {
@@ -769,13 +866,16 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(screen.getByRole('button', { name: 'withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Manage wstEth cover pool' });
-    expect(within(dialog).getByRole('button', { name: 'Use full USD8-cp-wstETH balance 19' }))
-      .toHaveTextContent('19 available');
+    const available = within(dialog).getByRole('button', { name: 'Use full USD8-cp-wstETH balance 19' });
+    expect(available).toHaveTextContent(/^19$/);
+    expect(available.parentElement).toHaveTextContent('19 available');
     expect(within(dialog).getByText('0 available for withdraw, 1 in cooldown — ready in 6 days.')).toBeInTheDocument();
     const submit = within(dialog).getByRole('button', { name: 'start cooldown' });
     fireEvent.click(submit);
 
-    expect(availabilityTooltip(submit)).toHaveTextContent('A cover-pool cooldown request is already active.');
+    expect(availabilityTooltip(submit)).toHaveTextContent(
+      'Please finish the existing withdrawal request before starting a new one.',
+    );
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 

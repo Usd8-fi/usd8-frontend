@@ -387,9 +387,9 @@ function CoverPoolsPage({ wallet, pool, onPoolAction }) {
           <div className="cover-pool-metrics">
             <div>
               <span className="metric-label-with-help">
-                30D Reward APR
-                <InfoTooltip ariaLabel="About 30-day reward APR">
-                  USD8 rewards accrued over the past 30 days, annualized against average pool value.
+                30D Earnings APR
+                <InfoTooltip ariaLabel="About 30-day earnings APR">
+                  USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.
                 </InfoTooltip>
               </span>
               <strong>{displayValue(pool.apy, '—')}</strong>
