@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-620b42a6.js";
+            window.path_to_searchindex_js = "searchindex-545dfd97.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-7654ae6c.js"></script>
@@ -183,7 +183,7 @@
 <ul>
 <li>accepts a specific token as deposit e.g. wstEth</li>
 <li>pays an APY in USD8 funded by USD8’s treasury yield</li>
-<li>capped size</li>
+<li>has capped size</li>
 </ul>
 <div class="example-box">
   Warning - Cover Pool asset will be used to cover claims if any insured token suffers a price drop &gt;= 20%.
@@ -199,10 +199,10 @@
 </ul>
 <h2 id="withdraw"><a class="header" href="#withdraw">Withdraw</a></h2>
 <p>Withdraw has a 7 day cool down window, can be requested at anytime when there are no active claims.</p>
-<p>If new claims are made during this time, cool down can be extended for another 9-12 days during beta (6-9 days after beta) from the first claim.</p>
+<p>If new claims are made during this time, withdraw process is then paused till the incident is resolved which can be another 9-12 days during beta (6-9 days after beta) from the first claim. During this time all assets in cool down are still exposed to the insurance claim payouts.</p>
 <p>Assets in cool down do not gain yield and are still covering claims. Assets are withdrawable after cool down at anytime, they do not cover any claims nor gain yield anymore.</p>
 <h2 id="payout-limit"><a class="header" href="#payout-limit">Payout Limit</a></h2>
-<p>There is a limit for each payout from Cover Pool, currently set at 50%, meaning max payout of each incident is capped at 50% size of the current Cover Pool.</p>
+<p>There is a limit for the total payout for each incident from the Cover Pool, currently set at 50%, meaning max payout of each incident is capped at 50% size of the current Cover Pool.</p>
 
                     </main>
 
