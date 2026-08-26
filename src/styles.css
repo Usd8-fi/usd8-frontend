@@ -1115,7 +1115,7 @@ a:focus-visible {
 
 .file-claim-form-grid {
   display: grid;
-  grid-template-columns: 350px 160px;
+  grid-template-columns: 350px minmax(160px, 1fr);
   column-gap: 64px;
   row-gap: 72px;
   align-items: start;
@@ -1185,6 +1185,10 @@ a:focus-visible {
   color: var(--gold);
   font-size: 28px;
   line-height: 1;
+}
+
+.file-claim-field--bond small {
+  white-space: nowrap;
 }
 
 .file-claim-field--incident {

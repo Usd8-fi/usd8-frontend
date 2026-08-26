@@ -2,7 +2,22 @@ import { getAddress, isAddress, isHex, size } from 'viem';
 
 const DEFAULT_CLAIM_API_URL = 'https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com';
 
-export const CLAIM_API_BASE_URL = (import.meta.env.VITE_CLAIM_API_URL || DEFAULT_CLAIM_API_URL).replace(/\/$/, '');
+function claimApiBaseUrl() {
+  const configuredUrl = import.meta.env.VITE_CLAIM_API_URL;
+  if (import.meta.env.MODE === 'production' && configuredUrl) {
+    try {
+      const hostname = new URL(configuredUrl).hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+        return DEFAULT_CLAIM_API_URL;
+      }
+    } catch {
+      // Preserve the configured value so requests fail closed with a visible error.
+    }
+  }
+  return configuredUrl || DEFAULT_CLAIM_API_URL;
+}
+
+export const CLAIM_API_BASE_URL = claimApiBaseUrl().replace(/\/$/, '');
 export const claimApiConfigured = Boolean(CLAIM_API_BASE_URL);
 
 const JOB_ID_PATTERN = /^[0-9a-f]{64}$/;

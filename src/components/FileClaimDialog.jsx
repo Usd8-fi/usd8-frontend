@@ -29,7 +29,7 @@ function proposedSharePercentage(value, existingTotal) {
   const input = normalizedDecimal(value);
   const total = normalizedDecimal(existingTotal);
   if (!/^(?:\d+\.?\d*|\.\d+)$/.test(input)
-      || !/^(?:\d+\.?\d*|\.\d+)$/.test(total)) return '0.0%';
+      || !/^(?:\d+\.?\d*|\.\d+)$/.test(total)) return '0%';
 
   const inputFraction = input.split('.')[1]?.length || 0;
   const totalFraction = total.split('.')[1]?.length || 0;
@@ -40,9 +40,9 @@ function proposedSharePercentage(value, existingTotal) {
   };
   const inputAmount = scaled(input);
   const combinedTotal = inputAmount + scaled(total);
-  if (combinedTotal === 0n) return '0.0%';
-  const tenths = (inputAmount * 1_000n) / combinedTotal;
-  return `${tenths / 10n}.${tenths % 10n}%`;
+  if (combinedTotal === 0n) return '0%';
+  const roundedPercentage = (inputAmount * 100n + combinedTotal / 2n) / combinedTotal;
+  return `${roundedPercentage}%`;
 }
 
 function timeLeftLabel(daysLeft, hoursLeft) {
@@ -255,7 +255,7 @@ export default function FileClaimDialog({
                   >
                     {displayAvailableBalance(selectedToken.balance)}
                   </button>
-                  <span> available. {amount || '0'} {selectedToken.symbol} is {proposedTokenClaimPercentage} of all token claims atm.</span>
+                  <span> available. {amount || '0'} {selectedToken.symbol} will be {proposedTokenClaimPercentage} of all token claims atm.</span>
                 </small>
               </div>
 
@@ -298,7 +298,7 @@ export default function FileClaimDialog({
                   >
                     {displayAvailableBalance(availableScore)}
                   </button>
-                  <span> available. {scoreToSpend || '0'} is {proposedScoreCommitmentPercentage} of all score committed atm.</span>
+                  <span> available. {scoreToSpend || '0'} will be {proposedScoreCommitmentPercentage} of all score committed atm.</span>
                 </small>
               </div>
 

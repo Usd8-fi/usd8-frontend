@@ -72,6 +72,6 @@ We welcome community contributions across mechanism design, partnerships, market
 
 ## Who is behind USD8?
 
-USD8 is built by [@codephobic](https://x.com/codephobic) - a Security Researcher at OpenZeppelin.
+USD8 is built by [@codephobic](https://x.com/codephobic) - a Security Researcher with over 7 years experience auditing top Defi protocols and L2s. 
   
 

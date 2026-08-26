@@ -18,6 +18,16 @@ afterEach(() => {
 });
 
 describe('prepareIncidentOpen', () => {
+  it('never embeds a loopback claim API in a production build', async () => {
+    vi.resetModules();
+    vi.stubEnv('MODE', 'production');
+    vi.stubEnv('VITE_CLAIM_API_URL', 'http://127.0.0.1:8788');
+
+    const { CLAIM_API_BASE_URL } = await import('./claimApi.js');
+
+    expect(CLAIM_API_BASE_URL).toBe('https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com');
+  });
+
   it('explains when the precheck finds no qualifying price drop', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
       error: 'PRICE_DROP_NOT_DETECTED',

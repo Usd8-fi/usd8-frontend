@@ -64,7 +64,7 @@ describe('FileClaimDialog', () => {
     expect(available).toHaveTextContent('345.12');
     expect(available).not.toHaveTextContent('available');
     expect(available.closest('small')).toHaveTextContent(
-      '345.12 available. 1 sGHO is 100.0% of all token claims atm.',
+      '345.12 available. 1 sGHO will be 100% of all token claims atm.',
     );
     fireEvent.click(available);
     expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(345.123456);
@@ -84,7 +84,7 @@ describe('FileClaimDialog', () => {
     expect(screen.getByLabelText('Insured sGHO amount').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
     expect(screen.getByLabelText('Insurance score to spend').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
     expect(screen.getByLabelText('Boosters to burn').closest('.file-claim-field')).toHaveClass('file-claim-field--compact');
-    expect(appStyles).toMatch(/\.file-claim-form-grid \{[\s\S]*grid-template-columns: 350px 160px;[\s\S]*column-gap: 64px;/);
+    expect(appStyles).toMatch(/\.file-claim-form-grid \{[\s\S]*grid-template-columns: 350px minmax\(160px, 1fr\);[\s\S]*column-gap: 64px;/);
     expect(appStyles).toMatch(/\.file-claim-field--primary input \{\s*width: 282px;/);
     expect(appStyles).toMatch(/\.file-claim-field--compact input \{\s*width: 160px;/);
     expect(appStyles).toMatch(/\.file-claim-title img \{[\s\S]*width: 34px;[\s\S]*height: 34px;/);
@@ -126,17 +126,19 @@ describe('FileClaimDialog', () => {
     const claimBondAvailable = claimBondField.querySelector('small');
     expect(claimBondAvailable).toHaveTextContent('12.45 available');
     expect(within(claimBondAvailable).queryByRole('button')).not.toBeInTheDocument();
+    expect(appStyles).toMatch(/\.file-claim-form-grid \{[^}]*grid-template-columns: 350px minmax\(160px, 1fr\);/);
+    expect(appStyles).toMatch(/\.file-claim-field--bond small \{[^}]*white-space: nowrap;/);
     expect(appStyles).toContain('.file-claim-field--primary input');
     expect(appStyles).toContain('width: 282px;');
     const tokenAvailable = screen.getByRole('button', { name: 'Use full sGHO balance 345' });
     expect(tokenAvailable).toHaveTextContent(/^345$/);
     expect(tokenAvailable.closest('small')).toHaveTextContent(
-      '345 available. 1 sGHO is 0.0% of all token claims atm.',
+      '345 available. 1 sGHO will be 0% of all token claims atm.',
     );
     const scoreAvailable = screen.getByRole('button', { name: 'Use full insurance score 2344322' });
     expect(scoreAvailable).toHaveTextContent(/^2344322$/);
     expect(scoreAvailable.closest('small')).toHaveTextContent(
-      '2344322 available. 2344322 is 2.5% of all score committed atm.',
+      '2344322 available. 2344322 will be 3% of all score committed atm.',
     );
     fireEvent.click(scoreAvailable);
     expect(screen.getByLabelText('Insurance score to spend')).toHaveValue('2344322');
@@ -162,7 +164,7 @@ describe('FileClaimDialog', () => {
 
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '345' } });
     expect(tokenAvailable.closest('small')).toHaveTextContent(
-      '345 available. 345 sGHO is 3.4% of all token claims atm.',
+      '345 available. 345 sGHO will be 3% of all token claims atm.',
     );
     fireEvent.submit(screen.getByRole('button', { name: 'File Claim' }).closest('form'));
     expect(onSubmit).toHaveBeenCalledWith({
