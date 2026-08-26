@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
-import { parseUnits, zeroAddress } from 'viem';
+import { formatUnits, parseUnits, zeroAddress } from 'viem';
 import { useAccount, useChainId, useDisconnect, useWriteContract } from 'wagmi';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './components/AvailabilityAction.jsx';
 import { COVERED_PROTOCOL_ROWS } from './components/CoveredProtocolsTable.jsx';
@@ -26,6 +26,9 @@ const EMPTY_CHAIN_DATA = {
   incident: null,
   claim: null,
   scoreBalances: null,
+  scoreRatesPerSecond: null,
+  scoreBalanceChangeTimestampMilliseconds: null,
+  scoreBalancesSnapshotTimestampMilliseconds: 0,
   balances: {
     usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', insuredTokens: {},
   },
@@ -137,6 +140,87 @@ function scoreBalanceRefreshKey(score, scoreBalances, contracts, chainId, addres
   if (!scoredTokenBalancesChanged(score, scoreBalances, contracts)) return '';
   const tokenBalances = score.tokenScores.map((item) => `${item.token}:${item.balance}`).join('|');
   return [chainId, address.toLowerCase(), tokenBalances, scoreBalances.usd8, scoreBalances.savings].join(':');
+}
+
+function advanceScoreValue(value, rate, elapsedMilliseconds) {
+  const elapsed = BigInt(Math.max(0, Math.floor(elapsedMilliseconds)));
+  return formatUnits(
+    parseUnits(value || '0', 18) + parseUnits(rate || '0', 18) * elapsed / 1_000n,
+    18,
+  );
+}
+
+function scoreWithCurrentBalanceRates(
+  score,
+  rates,
+  balanceChangeTimestamps,
+  snapshotTimestampMilliseconds,
+) {
+  if (!score) return score;
+  const usd8Rate = rates?.usd8 || '0';
+  const savingsRate = rates?.savings || '0';
+  if (!Number.isSafeInteger(snapshotTimestampMilliseconds)
+    || snapshotTimestampMilliseconds <= 0) {
+    return {
+      ...score,
+      snapshotTimestampMilliseconds: Date.now(),
+      grossScorePerSecond: formatUnits(parseUnits(usd8Rate, 18) + parseUnits(savingsRate, 18), 18),
+      usd8ScorePerSecond: usd8Rate,
+      sUsd8ScorePerSecond: savingsRate,
+    };
+  }
+  const authoritativeTimestampMilliseconds = Number(
+    score.snapshotTimestampMilliseconds ?? Number(score.snapshotTimestamp || 0) * 1_000,
+  );
+  const tokenScore = (token, baseValue, oldRate, currentRate) => {
+    const balanceChangeTimestamp = Number(
+      balanceChangeTimestamps?.[token] || snapshotTimestampMilliseconds,
+    );
+    if (!Number.isSafeInteger(authoritativeTimestampMilliseconds)
+      || authoritativeTimestampMilliseconds <= 0) {
+      return advanceScoreValue(
+        baseValue,
+        currentRate,
+        snapshotTimestampMilliseconds - balanceChangeTimestamp,
+      );
+    }
+    const oldRateEnd = Math.min(
+      snapshotTimestampMilliseconds,
+      Math.max(authoritativeTimestampMilliseconds, balanceChangeTimestamp),
+    );
+    const afterOldRate = advanceScoreValue(
+      baseValue,
+      oldRate,
+      oldRateEnd - authoritativeTimestampMilliseconds,
+    );
+    return advanceScoreValue(
+      afterOldRate,
+      currentRate,
+      snapshotTimestampMilliseconds - Math.max(authoritativeTimestampMilliseconds, balanceChangeTimestamp),
+    );
+  };
+  const usd8Score = tokenScore('usd8', score.usd8Score, score.usd8ScorePerSecond, usd8Rate);
+  const savingsScore = tokenScore('savings', score.sUsd8Score, score.sUsd8ScorePerSecond, savingsRate);
+  return {
+    ...score,
+    snapshotTimestampMilliseconds,
+    grossEarnedScore: formatUnits(parseUnits(usd8Score, 18) + parseUnits(savingsScore, 18), 18),
+    grossScorePerSecond: formatUnits(parseUnits(usd8Rate, 18) + parseUnits(savingsRate, 18), 18),
+    usd8Score,
+    usd8ScorePerSecond: usd8Rate,
+    sUsd8Score: savingsScore,
+    sUsd8ScorePerSecond: savingsRate,
+  };
+}
+
+function hasCurrentBalanceScoreRate(rates) {
+  return ['usd8', 'savings'].some((token) => {
+    try {
+      return parseUnits(rates?.[token] || '0', 18) > 0n;
+    } catch {
+      return false;
+    }
+  });
 }
 
 const poolWriteAbi = [
@@ -986,16 +1070,38 @@ export default function App() {
     && scoreStatus === 'ready'
     && chainDataStatus === 'ready'
     && scoredTokenBalancesChanged(score, chainData.scoreBalances, activeNetwork?.contracts);
+  const canSimulateCurrentScore = connected
+    && chainDataStatus === 'ready'
+    && chainData.scoreBalancesSnapshotTimestampMilliseconds > 0
+    && hasCurrentBalanceScoreRate(chainData.scoreRatesPerSecond);
   const currentScoreRefreshKey = scoreNeedsBalanceRefresh
     ? scoreBalanceRefreshKey(score, chainData.scoreBalances, activeNetwork.contracts, activeNetwork.id, address)
     : '';
-  const displayedScoreStatus = connected
+  const displayedScoreStatus = canSimulateCurrentScore && scoreStatus !== 'ready'
+    ? 'ready'
+    : connected
     && scoreStatus === 'ready'
     && protocolNetwork
     && (chainDataStatus === 'loading'
       || (scoreNeedsBalanceRefresh && scoreRefreshCompletedKey !== currentScoreRefreshKey))
     ? 'loading'
     : scoreStatus;
+  const displayedScore = scoreNeedsBalanceRefresh
+    && scoreRefreshCompletedKey === currentScoreRefreshKey
+    ? scoreWithCurrentBalanceRates(
+      score,
+      chainData.scoreRatesPerSecond,
+      chainData.scoreBalanceChangeTimestampMilliseconds,
+      chainData.scoreBalancesSnapshotTimestampMilliseconds,
+    )
+    : canSimulateCurrentScore && scoreStatus !== 'ready'
+      ? scoreWithCurrentBalanceRates(
+        EMPTY_SCORE,
+        chainData.scoreRatesPerSecond,
+        chainData.scoreBalanceChangeTimestampMilliseconds,
+        chainData.scoreBalancesSnapshotTimestampMilliseconds,
+      )
+    : score;
   const selectedClaimStatus = claimToken
     && chainData.claim
     && chainData.incident?.tokenId === claimToken.id
@@ -1024,7 +1130,7 @@ export default function App() {
           onConnect: connect,
           onDisconnect: disconnect,
         }}
-        score={connected ? score : EMPTY_SCORE}
+        score={connected ? displayedScore : EMPTY_SCORE}
         scoreStatus={connected ? displayedScoreStatus : 'ready'}
         balances={connected ? chainData.balances : EMPTY_CHAIN_DATA.balances}
         savingsVault={savingsVault}

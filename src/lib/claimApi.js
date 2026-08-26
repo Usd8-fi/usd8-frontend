@@ -4,7 +4,7 @@ const DEFAULT_CLAIM_API_URL = 'https://wmzdww7bxb.execute-api.eu-central-1.amazo
 
 function claimApiBaseUrl() {
   const configuredUrl = import.meta.env.VITE_CLAIM_API_URL;
-  if (import.meta.env.MODE === 'production' && configuredUrl) {
+  if (configuredUrl) {
     try {
       const hostname = new URL(configuredUrl).hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {

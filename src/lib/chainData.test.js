@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   multicall: vi.fn(),
   readContract: vi.fn(),
   getLogs: vi.fn(),
+  getBlock: vi.fn(),
   http: vi.fn(),
   fallback: vi.fn(),
 }));
@@ -16,6 +17,7 @@ vi.mock('viem', async (importOriginal) => {
       multicall: mocks.multicall,
       readContract: mocks.readContract,
       getLogs: mocks.getLogs,
+      getBlock: mocks.getBlock,
     })),
     http: mocks.http,
     fallback: mocks.fallback,
@@ -95,6 +97,7 @@ describe('fetchLandingChainData', () => {
     mocks.multicall.mockReset();
     mocks.readContract.mockReset();
     mocks.getLogs.mockReset();
+    mocks.getBlock.mockReset();
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('history unavailable')));
   });
 
@@ -120,7 +123,9 @@ describe('fetchLandingChainData', () => {
       [12_000_000_000_000_000_000_000n, 1_800_000_000n],
       345_000_000_000_000_000_000n,
       678_000_000_000_000_000_000n,
-        5_000_000_000_000_000_000_000n,
+      5_000_000_000_000_000_000_000n,
+      [{ fromBlock: 1n, rate: 138_888_888_888_889n }],
+      [{ fromBlock: 1n, rate: 13_888_888_888_889n }],
       ])
       .mockResolvedValueOnce([[
         '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
@@ -151,7 +156,7 @@ describe('fetchLandingChainData', () => {
       }
       throw new Error(`Unexpected read: ${functionName}`);
     });
-    mocks.getLogs.mockResolvedValue([
+    const claimLogs = [
       {
         eventName: 'ClaimRegistered',
         args: {
@@ -192,7 +197,13 @@ describe('fetchLandingChainData', () => {
           user: '0x0000000000000000000000000000000000000003',
         },
       },
-    ]);
+    ];
+    mocks.getLogs.mockImplementation(({ event }) => (
+      event?.name === 'Transfer'
+        ? Promise.resolve([{ blockNumber: 123n, logIndex: 1 }])
+        : Promise.resolve(claimLogs)
+    ));
+    mocks.getBlock.mockResolvedValue({ timestamp: 1_800_000_100n });
 
     const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
 
@@ -205,6 +216,15 @@ describe('fetchLandingChainData', () => {
       usd8: '25000000000000000000',
       savings: '4000000000000000000',
     });
+    expect(data.scoreRatesPerSecond).toEqual({
+      usd8: '0.000289351851851852',
+      savings: '0.000004629629629629',
+    });
+    expect(data.scoreBalanceChangeTimestampMilliseconds).toEqual({
+      usd8: 1_800_000_100_000,
+      savings: 1_800_000_100_000,
+    });
+    expect(Number.isSafeInteger(data.scoreBalancesSnapshotTimestampMilliseconds)).toBe(true);
     expect(data.balances.savings).toBe('4');
     expect(data.balances.savingsAssets).toBe('4.2');
     expect(data.balances.insuredTokens).toEqual({
@@ -246,7 +266,8 @@ describe('fetchLandingChainData', () => {
       scoreCommitmentPercentage: '2.5%',
       resolved: false,
     });
-    expect(mocks.getLogs).toHaveBeenCalledTimes(1);
+    expect(mocks.getLogs).toHaveBeenCalledTimes(5);
+    expect(mocks.getBlock).toHaveBeenCalledTimes(2);
   });
 
   it('loads incident claim totals for a wallet that has not filed a claim', async () => {
@@ -254,7 +275,7 @@ describe('fetchLandingChainData', () => {
       .mockResolvedValueOnce([
         0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 21, 0n,
         [1n, 2_000_000_000_00n, 0n, 0n, 1n], 8, 7n, 0n, 0n, 0n,
-        [0n, 0n], 0n, 0n, 0n,
+        [0n, 0n], 0n, 0n, 0n, [], [],
       ])
       .mockResolvedValueOnce([[
         '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',

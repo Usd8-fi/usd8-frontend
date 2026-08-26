@@ -367,7 +367,51 @@ describe('App', () => {
     );
   });
 
-  it('stops score loading when a refreshed finalized snapshot still trails a new balance', async () => {
+  it('does not keep simulating score from a stale nonzero balance after the refreshed balance is zero', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    const staleScore = {
+      snapshotTimestamp: Math.floor(Date.now() / 1_000),
+      grossEarnedScore: '100',
+      grossScorePerSecond: '1',
+      availableScore: '50',
+      maturingScorePerSecond: '0',
+      tokenScores: [
+        {
+          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          balance: '20000000000000000000',
+          grossEarnedScore: '100',
+          grossScorePerSecond: '1',
+        },
+        {
+          token: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
+          balance: '0',
+          grossEarnedScore: '0',
+          grossScorePerSecond: '0',
+        },
+      ],
+    };
+    mocks.fetchInsuranceScore.mockResolvedValue(staleScore);
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '0', usd8: '0', savings: '0', coverAsset: '0', poolShares: '0' },
+      scoreBalances: { usd8: '0', savings: '0' },
+      pool: { apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false },
+      activeIncidentId: '0',
+    });
+
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalledTimes(2));
+    const total = screen.getByText('Total Insurance Score').parentElement;
+    await waitFor(() => expect(within(total).queryByRole('status', { name: 'Loading insurance score' })).not.toBeInTheDocument());
+    const scoreAfterRefresh = total.textContent;
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1_100));
+
+    expect(total).toHaveTextContent(scoreAfterRefresh);
+  });
+
+  it('starts a provisional score simulation from the current balance while finalization trails', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     const finalizedScore = {
@@ -397,6 +441,8 @@ describe('App', () => {
     mocks.fetchLandingChainData.mockResolvedValueOnce({
       balances: { usdc: '0', usd8: '5000', savings: '0', coverAsset: '0', poolShares: '0' },
       scoreBalances: { usd8: '5000000000000000000000', savings: '0' },
+      scoreRatesPerSecond: { usd8: '1', savings: '0' },
+      scoreBalancesSnapshotTimestampMilliseconds: Date.now(),
       pool: { apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false },
       activeIncidentId: '0',
     });
@@ -407,6 +453,37 @@ describe('App', () => {
     const total = screen.getByText('Total Insurance Score').parentElement;
     await waitFor(() => expect(within(total).queryByRole('status', { name: 'Loading insurance score' })).not.toBeInTheDocument());
     expect(total).toHaveTextContent('0.0');
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1_100));
+
+    expect(total).not.toHaveTextContent('0.0');
+  });
+
+  it('starts a provisional score simulation when the finalized score API is unavailable', async () => {
+    mocks.account.address = '0x8ca72D405CFa5128f2623AAB437A8741c57983a7';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockRejectedValue(new Error('Insurance Score is temporarily unavailable'));
+    const mintTimestampMilliseconds = Date.now() - 60_000;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '0', usd8: '1000', savings: '0', coverAsset: '0', poolShares: '0' },
+      scoreBalances: { usd8: '1000000000000000000000', savings: '0' },
+      scoreRatesPerSecond: { usd8: '1', savings: '0' },
+      scoreBalanceChangeTimestampMilliseconds: { usd8: mintTimestampMilliseconds, savings: 0 },
+      scoreBalancesSnapshotTimestampMilliseconds: Date.now(),
+      pool: { apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false },
+      activeIncidentId: '0',
+    });
+
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalledTimes(1));
+    const total = screen.getByText('Total Insurance Score').parentElement;
+    await waitFor(() => expect(within(total).queryByRole('status', { name: 'Loading insurance score' })).not.toBeInTheDocument());
+    expect(total).toHaveTextContent('60.0');
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1_100));
+
+    expect(total).toHaveTextContent('61.0');
   });
 
   it('does not query an unconfigured score or Sepolia protocol contracts when the wallet is on Ethereum', async () => {

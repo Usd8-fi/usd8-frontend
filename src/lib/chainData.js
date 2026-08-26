@@ -5,6 +5,8 @@ const clients = new Map();
 const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
 const SEPOLIA_BLOCKSCOUT_URL = 'https://eth-sepolia.blockscout.com/api/v2';
 const trailingAprCache = new Map();
+const SCORE_SCALE = 10n ** 18n;
+const SEPOLIA_BLOCK_SECONDS = 12n;
 
 function protocolUnavailableError(chainId) {
   const network = getNetwork(chainId);
@@ -57,7 +59,77 @@ export const erc20Abi = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  {
+    type: 'event',
+    name: 'Transfer',
+    inputs: [
+      { indexed: true, name: 'from', type: 'address' },
+      { indexed: true, name: 'to', type: 'address' },
+      { indexed: false, name: 'value', type: 'uint256' },
+    ],
+  },
 ];
+
+const erc20TransferEvent = erc20Abi.find((item) => item.type === 'event' && item.name === 'Transfer');
+
+const registryScoreAbi = [{
+  type: 'function',
+  name: 'getScoredRateHistory',
+  stateMutability: 'view',
+  inputs: [{ name: 'token', type: 'address' }],
+  outputs: [{
+    name: '',
+    type: 'tuple[]',
+    components: [
+      { name: 'fromBlock', type: 'uint64' },
+      { name: 'rate', type: 'uint128' },
+    ],
+  }],
+}];
+
+function currentScorePerSecond(balance, rateHistory) {
+  const rate = rateHistory.at(-1)?.rate ?? 0n;
+  return balance * rate / SCORE_SCALE / SEPOLIA_BLOCK_SECONDS;
+}
+
+async function latestBalanceChangeTimestampMilliseconds(
+  client,
+  token,
+  account,
+  fromBlock,
+  fallbackTimestampMilliseconds,
+) {
+  try {
+    const [sent, received] = await Promise.all([
+      client.getLogs({
+        address: token,
+        event: erc20TransferEvent,
+        args: { from: account },
+        fromBlock,
+        toBlock: 'latest',
+      }),
+      client.getLogs({
+        address: token,
+        event: erc20TransferEvent,
+        args: { to: account },
+        fromBlock,
+        toBlock: 'latest',
+      }),
+    ]);
+    const latest = [...sent, ...received]
+      .filter((log) => typeof log.blockNumber === 'bigint')
+      .sort((left, right) => (
+        left.blockNumber === right.blockNumber
+          ? Number(right.logIndex ?? 0) - Number(left.logIndex ?? 0)
+          : left.blockNumber > right.blockNumber ? -1 : 1
+      ))[0];
+    if (!latest) return fallbackTimestampMilliseconds;
+    const block = await client.getBlock({ blockNumber: latest.blockNumber });
+    return Number(block.timestamp) * 1_000;
+  } catch {
+    return fallbackTimestampMilliseconds;
+  }
+}
 
 export const poolAbi = [
   ...erc20Abi,
@@ -426,12 +498,35 @@ export async function fetchLandingChainData(account, chainId) {
     { address: contracts.insuredTokens['aave-sgho'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
     { address: contracts.insuredTokens['sky-susds'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
     { address: contracts.insuredTokens['test-msloss'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+    { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.usd8] },
+    { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.savingsVault] },
   ];
 
-  const [usdc, usd8, savings, coverAsset, poolShares, totalAssets, depositCap, earnings, shareDecimals, rewardRate, [, wstEthUsdPrice], wstEthUsdDecimals, activeIncidentId, totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch], sGho, sUsds, msloss] = await client.multicall({
+  const [usdc, usd8, savings, coverAsset, poolShares, totalAssets, depositCap, earnings, shareDecimals, rewardRate, [, wstEthUsdPrice], wstEthUsdDecimals, activeIncidentId, totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch], sGho, sUsds, msloss, usd8ScoreRates, savingsScoreRates] = await client.multicall({
     contracts: calls,
     allowFailure: false,
   });
+  const scoreBalancesSnapshotTimestampMilliseconds = Date.now();
+  const [usd8BalanceChangeTimestamp, savingsBalanceChangeTimestamp] = await Promise.all([
+    usd8 === zero
+      ? 0
+      : latestBalanceChangeTimestampMilliseconds(
+        client,
+        contracts.usd8,
+        account,
+        usd8ScoreRates[0]?.fromBlock ?? 0n,
+        scoreBalancesSnapshotTimestampMilliseconds,
+      ),
+    savings === zero
+      ? 0
+      : latestBalanceChangeTimestampMilliseconds(
+        client,
+        contracts.savingsVault,
+        account,
+        savingsScoreRates[0]?.fromBlock ?? 0n,
+        scoreBalancesSnapshotTimestampMilliseconds,
+      ),
+  ]);
 
   const savingsAssets = savings === zero
     ? zero
@@ -552,6 +647,15 @@ export async function fetchLandingChainData(account, chainId) {
       usd8: usd8.toString(),
       savings: savings.toString(),
     },
+    scoreRatesPerSecond: {
+      usd8: formatUnits(currentScorePerSecond(usd8, usd8ScoreRates), 18),
+      savings: formatUnits(currentScorePerSecond(savings, savingsScoreRates), 18),
+    },
+    scoreBalanceChangeTimestampMilliseconds: {
+      usd8: usd8BalanceChangeTimestamp,
+      savings: savingsBalanceChangeTimestamp,
+    },
+    scoreBalancesSnapshotTimestampMilliseconds,
     balances: {
       usdc: formatted(usdc, 6),
       usd8: formatted(usd8),

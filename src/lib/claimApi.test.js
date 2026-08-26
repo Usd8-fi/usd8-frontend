@@ -18,9 +18,9 @@ afterEach(() => {
 });
 
 describe('prepareIncidentOpen', () => {
-  it('never embeds a loopback claim API in a production build', async () => {
+  it.each(['production', 'development'])('never embeds a loopback claim API in a %s frontend build', async (mode) => {
     vi.resetModules();
-    vi.stubEnv('MODE', 'production');
+    vi.stubEnv('MODE', mode);
     vi.stubEnv('VITE_CLAIM_API_URL', 'http://127.0.0.1:8788');
 
     const { CLAIM_API_BASE_URL } = await import('./claimApi.js');
