@@ -98,16 +98,34 @@ describe('USD8 landing navigation', () => {
     ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('defaults to Defi Insurance and exposes only the two product links', () => {
+  it('defaults to Defi Insurance and exposes all three product tabs', () => {
     render(<USD8Landing wallet={wallet} />);
 
     const nav = screen.getByRole('navigation', { name: 'USD8 products' });
     const tabs = within(nav).getAllByRole('button');
-    expect(tabs).toHaveLength(2);
+    expect(tabs).toHaveLength(3);
     expect(tabs[0]).toHaveTextContent('Defi Insurance');
     expect(tabs[0]).toHaveAttribute('aria-current', 'page');
     expect(tabs[1]).toHaveTextContent('Cover Pools');
+    expect(tabs[2]).toHaveTextContent('White Hat Economy');
     expect(screen.getByRole('heading', { name: 'Defi Insurance' })).toBeInTheDocument();
+  });
+
+  it('shows the future White Hat Economy message', () => {
+    render(<USD8Landing wallet={wallet} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'White Hat Economy' }));
+
+    expect(screen.getByRole('heading', { name: 'White Hat Economy' })).toBeInTheDocument();
+    const learnMoreLink = screen.getByRole('link', { name: 'Learn more' });
+    expect(learnMoreLink.parentElement).toHaveTextContent(
+      'The White Hat Economy will launch in the future, once USD8 holds a meaningful amount of insured tokens acquired through the claims process. Learn more.',
+    );
+    expect(learnMoreLink).toHaveAttribute(
+      'href',
+      './docs/white-hat-economy.html',
+    );
+    expect(screen.getByRole('button', { name: 'White Hat Economy' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('advances cover-pool earnings locally until the reward period ends', () => {

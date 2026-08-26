@@ -42,8 +42,8 @@ vi.mock('./lib/chainData.js', () => ({
   },
   SEPOLIA_CONTRACTS: {
     usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
-    usd8: '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
-    treasury: '0x26f85ec30a753451d218f4dc526f696d2d805097',
+    usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+    treasury: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
   },
 }));
 
@@ -260,12 +260,12 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
+          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
           grossEarnedScore: '8',
           grossScorePerSecond: '0',
         },
         {
-          token: '0x830e05aa59f71d5f2977c8089fad14c0e6ad1440',
+          token: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
           grossEarnedScore: '4',
           grossScorePerSecond: '0',
         },
@@ -293,13 +293,13 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
+          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
           balance: '20000000000000000000',
           grossEarnedScore: '60',
           grossScorePerSecond: '0',
         },
         {
-          token: '0x830e05aa59f71d5f2977c8089fad14c0e6ad1440',
+          token: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
           balance: '0',
           grossEarnedScore: '40',
           grossScorePerSecond: '0',
@@ -335,13 +335,13 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
+          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
           balance: '20000000000000000000',
           grossEarnedScore: '8',
           grossScorePerSecond: '0',
         },
         {
-          token: '0x830e05aa59f71d5f2977c8089fad14c0e6ad1440',
+          token: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
           balance: '0',
           grossEarnedScore: '4',
           grossScorePerSecond: '0',
@@ -378,13 +378,13 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
+          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
           balance: '0',
           grossEarnedScore: '0',
           grossScorePerSecond: '0',
         },
         {
-          token: '0x830e05aa59f71d5f2977c8089fad14c0e6ad1440',
+          token: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
           balance: '0',
           grossEarnedScore: '0',
           grossScorePerSecond: '0',
@@ -969,11 +969,11 @@ describe('App', () => {
       chainId: 11155111,
       address: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
       functionName: 'approve',
-      args: ['0x26f85ec30a753451d218f4dc526f696d2d805097', 1_500_000n],
+      args: ['0x2a722ed12982623dff64dc0adba40e734a5f59c3', 1_500_000n],
     }));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(2, expect.objectContaining({
       chainId: 11155111,
-      address: '0x26f85ec30a753451d218f4dc526f696d2d805097',
+      address: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
       functionName: 'mintUSD8',
       args: [1_500_000n],
       gas: 150_000n,
@@ -998,12 +998,12 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.readContract).toHaveBeenCalledWith(expect.objectContaining({
-      address: '0x26f85ec30a753451d218f4dc526f696d2d805097',
+      address: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
       functionName: 'usd8ToUsdcRate',
     }));
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
       chainId: 11155111,
-      address: '0x26f85ec30a753451d218f4dc526f696d2d805097',
+      address: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
       functionName: 'redeemUSD8',
       args: [1_500_000_000_000_000_000n, 1_500_000n],
     }));
@@ -1095,20 +1095,20 @@ describe('App', () => {
     approval.resolve('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
 
     await waitFor(() => expect(mocks.prepareIncidentOpen).toHaveBeenCalledWith(
-      '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
+      '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
       expect.objectContaining({
         chainId: 11155111,
-        registry: '0x7d09c1e9ee03350a177c2a542e90285b55e8a218',
-        defiInsurance: '0xc74439a7a3d5db8a48766a5fc2d200bd2858026d',
+        registry: '0xb34d92cd05005df36050370433819597a9bac693',
+        defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',
       }),
     ));
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
     expect(mocks.writeContractAsync).toHaveBeenLastCalledWith(expect.objectContaining({
       chainId: 11155111,
-      address: '0xc74439a7a3d5db8a48766a5fc2d200bd2858026d',
+      address: '0x4e346ccd0a46d51ebae6810d653791982968d502',
       functionName: 'fileClaim',
       args: [
-        '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
+        '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
         1_000_000_000_000_000_000n,
         128_600_000_000_000_000_000_000n,
         0n,
@@ -1178,7 +1178,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
       chainId: 11155111,
-      address: '0xc74439a7a3d5db8a48766A5fc2d200bd2858026d'.toLowerCase(),
+      address: '0x4e346ccd0a46d51ebae6810d653791982968d502'.toLowerCase(),
       functionName: 'cancelClaim',
       args: [],
       gas: 150_000n,

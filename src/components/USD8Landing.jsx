@@ -11,6 +11,7 @@ import InfoTooltip from './InfoTooltip.jsx';
 const PRODUCTS = {
   insurance: 'Defi Insurance',
   pools: 'Cover Pools',
+  whiteHat: 'White Hat Economy',
 };
 const ACTIVE_PRODUCT_STORAGE_KEY = 'usd8-active-product';
 
@@ -439,6 +440,18 @@ function CoverPoolsPage({ wallet, pool, onPoolAction }) {
   );
 }
 
+function WhiteHatEconomyPage() {
+  return (
+    <main className="landing-page white-hat-economy-page">
+      <h1 className="sr-only">White Hat Economy</h1>
+      <p className="white-hat-economy-message">
+        The White Hat Economy will launch in the future, once USD8 holds a meaningful amount of insured tokens acquired through the claims process.{' '}
+        <a href={docsUrl('white-hat-economy.html')}>Learn more</a>.
+      </p>
+    </main>
+  );
+}
+
 export default function USD8Landing({
   wallet = {},
   score = null,
@@ -490,8 +503,10 @@ export default function USD8Landing({
           fileClaimUnavailableReason={fileClaimUnavailableReason}
           onUsd8Action={onUsd8Action}
         />
-      ) : (
+      ) : activeProduct === 'pools' ? (
         <CoverPoolsPage wallet={wallet} pool={livePool} onPoolAction={onPoolAction} />
+      ) : (
+        <WhiteHatEconomyPage />
       )}
 
       <SiteFooter />
