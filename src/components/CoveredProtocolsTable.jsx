@@ -15,7 +15,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: usd8Logo,
     token: 'USD8',
     address: 'TBD',
-    reimbursement: '80%',
   },
   {
     id: 'susd8',
@@ -23,7 +22,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: sUsd8Logo,
     token: <>USD8 Protected<br />Savings sUSD8</>,
     address: 'TBD',
-    reimbursement: '80%',
   },
   {
     id: 'aave-sgho',
@@ -31,7 +29,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: aaveLogo,
     token: <>Aave Savings Gho<br />sGHO</>,
     address: <>0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d<br />impl 0x50f9d4e28309303f0cdcac8af0b569e8b75ab857</>,
-    reimbursement: '80%',
   },
   {
     id: 'curve-scrvusd',
@@ -39,7 +36,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: 'https://cdn.jsdelivr.net/gh/curvefi/curve-assets/branding/logo.png',
     token: <>Curve Savings<br />scrvUSD</>,
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
-    reimbursement: '80%',
   },
   {
     id: 'sky-susds',
@@ -47,7 +43,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: 'https://assets.coingecko.com/coins/images/39925/large/sky.jpg',
     token: 'Sky Savings sUSDS',
     address: <>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br />impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</>,
-    reimbursement: '80%',
   },
   {
     id: 'test-msloss',
@@ -55,7 +50,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: msLossLogo,
     token: <>Sepolia Test Loss<br />msLOSS</>,
     address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
-    reimbursement: '80%',
   },
 ];
 
@@ -85,10 +79,23 @@ function incidentActionLabel(incident, nowMilliseconds) {
   return 'Finalise Payout';
 }
 
+function formatCoverageBps(value) {
+  try {
+    const basisPoints = BigInt(value);
+    if (basisPoints < 0n || basisPoints > 10_000n) return '—';
+    const whole = basisPoints / 100n;
+    const fraction = String(basisPoints % 100n).padStart(2, '0').replace(/0+$/, '');
+    return `${whole}${fraction ? `.${fraction}` : ''}%`;
+  } catch {
+    return '—';
+  }
+}
+
 export default function CoveredProtocolsTable({
   onFileClaim,
   fileClaimUnavailableReason = '',
   incident = null,
+  insuredTokenStates = {},
   nowMilliseconds = Date.now(),
 }) {
   const warningId = useId();
@@ -97,6 +104,10 @@ export default function CoveredProtocolsTable({
   useEffect(() => {
     setWarningRowId('');
   }, [fileClaimUnavailableReason]);
+
+  const displayedRows = COVERED_PROTOCOL_ROWS.filter((row) => (
+    insuredTokenStates[row.id]?.enabled || row.id === incident?.tokenId
+  ));
 
   return (
     <Fragment>
@@ -124,7 +135,7 @@ export default function CoveredProtocolsTable({
             <span className="table-heading-with-help">
               Max Coverage
               <InfoTooltip ariaLabel="About max coverage" className="dashboard-help--table">
-                Maximum reimbursement possible: 80% of the insured token&apos;s underlying value. Actual payout depends on the user&apos;s insurance score and cover pool limits.
+                Current onchain maximum reimbursement for each listed token. Actual payout depends on the user&apos;s insurance score and cover pool limits.
               </InfoTooltip>
             </span>
           </th>
@@ -132,7 +143,11 @@ export default function CoveredProtocolsTable({
         </tr>
       </thead>
       <tbody>
-        {COVERED_PROTOCOL_ROWS.map((row) => {
+        {displayedRows.map((row) => {
+          const insuranceState = insuredTokenStates?.[row.id];
+          const reimbursement = insuranceState?.enabled
+            ? formatCoverageBps(insuranceState.maxCoverageBps)
+            : '—';
           const actionLabel = row.id === incident?.tokenId
             ? incidentActionLabel(incident, nowMilliseconds)
             : 'File Claim';
@@ -142,7 +157,7 @@ export default function CoveredProtocolsTable({
           return (
           <tr key={row.id}>
             <td><TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell></td>
-            <td>{row.reimbursement}</td>
+            <td>{reimbursement}</td>
             <td className="table-action-cell covered-protocols-action-cell">
               <AvailabilityAction
                 className={`dashboard-action-button dashboard-table-action-button${actionLabel === 'File Claim' ? '' : ' dashboard-table-action-button--claim-status'}`}

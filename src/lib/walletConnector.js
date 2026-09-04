@@ -4,11 +4,11 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 
 const PLACEHOLDER_PROJECT_IDS = new Set(['', 'YOUR_REOWN_PROJECT_ID']);
 const DEFAULT_REOWN_PROJECT_ID = '0a6111479b9c06dc90f816d4138a6c4e';
-export const reownProjectId = String(import.meta.env.VITE_REOWN_PROJECT_ID || DEFAULT_REOWN_PROJECT_ID).trim();
+const reownProjectId = String(import.meta.env.VITE_REOWN_PROJECT_ID || DEFAULT_REOWN_PROJECT_ID).trim();
 export const walletConnectorConfigured = Boolean(reownProjectId) && !PLACEHOLDER_PROJECT_IDS.has(reownProjectId);
-export const walletNetworks = [sepolia, mainnet];
+const walletNetworks = [sepolia, mainnet];
 
-export const wagmiAdapter = walletConnectorConfigured
+const wagmiAdapter = walletConnectorConfigured
   ? new WagmiAdapter({
       networks: walletNetworks,
       projectId: reownProjectId,

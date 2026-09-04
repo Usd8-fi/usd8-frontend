@@ -234,7 +234,7 @@ a:focus-visible {
   position: relative;
   display: flex;
   align-items: stretch;
-  gap: 0;
+  gap: 1px;
   margin: 65px 0 0;
 }
 
@@ -270,6 +270,12 @@ a:focus-visible {
 .landing-page {
   flex: 1 0 auto;
   min-height: 0;
+}
+
+.landing-data-error {
+  margin: 24px 0 0;
+  color: #e00000;
+  line-height: 1.4;
 }
 
 .white-hat-economy-message {
@@ -312,7 +318,7 @@ a:focus-visible {
   line-height: 1.15;
 }
 
-.insurance-score-spinner {
+.usd8-spinner {
   display: inline-block;
   width: 0.76em;
   height: 0.76em;
@@ -320,15 +326,15 @@ a:focus-visible {
   border-top-color: var(--gold);
   border-radius: 50%;
   vertical-align: 0.02em;
-  animation: insurance-score-spin 700ms linear infinite;
+  animation: usd8-spin 700ms linear infinite;
 }
 
-@keyframes insurance-score-spin {
+@keyframes usd8-spin {
   to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .insurance-score-spinner { animation: none; }
+  .usd8-spinner { animation: none; }
 }
 
 .insurance-assets {
@@ -443,9 +449,7 @@ a:focus-visible {
 .covered-protocols-warning {
   margin: 0 0 12px;
   color: #e00000;
-  font: inherit;
   line-height: 1.4;
-  white-space: nowrap;
 }
 
 .landing-shell .covered-protocols-table {
@@ -512,21 +516,54 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+/* Every small note — field hints, status lines, validation warnings — is one size. */
+.usd8-dialog-amount small,
+.usd8-dialog-output small,
+.usd8-dialog-withdraw-balances,
+.file-claim-field small,
+.file-claim-requirement,
+.file-claim-weight,
+.usd8-dialog-status,
+.landing-data-error,
+.action-validation-warning,
+.covered-protocols-warning,
+.claim-status-metrics small,
+.claim-status-step small {
+  font: inherit;
+  font-size: 13px;
+}
+
+/* ...and every button-adjacent message takes its own line beneath the button,
+   so placement never depends on how long the text happens to be. */
+.action-validation-warning,
+.usd8-dialog-status,
+.file-claim-weight {
+  flex-basis: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The shell may shrink, but its button never does — the message beside it wraps instead. */
 .action-button-shell {
   position: relative;
   display: inline-flex;
   align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   width: max-content;
+  min-width: 0;
+  max-width: 100%;
   gap: 14px;
 }
 
-.action-validation-warning {
+.action-button-shell > button {
   flex: 0 0 auto;
+}
+
+.action-validation-warning {
   color: #e00000;
-  font: inherit;
   line-height: 1.4;
   text-align: left;
-  white-space: nowrap;
 }
 
 .dashboard-help {
@@ -954,24 +991,12 @@ a:focus-visible {
 .usd8-dialog-amount small {
   margin: 22px 0 0 2px;
   color: #666;
-  font: inherit;
 }
 
 .usd8-dialog-amount .usd8-dialog-pool-availability {
   display: block;
   width: min(814px, calc(100vw - 160px));
   line-height: 2.2;
-}
-
-.usd8-dialog-available {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 .usd8-dialog-pool-capacity {
@@ -1005,12 +1030,13 @@ a:focus-visible {
 .usd8-dialog-output small {
   margin: 22px 0 0 2px;
   color: #666;
-  font: inherit;
 }
 
 .usd8-dialog-submit {
+  flex: 0 0 auto;
   min-width: 80px;
   min-height: 59px;
+  white-space: nowrap;
   margin-top: 108px;
   padding: 0 20px;
   border: 1px solid var(--gold-soft);
@@ -1023,6 +1049,7 @@ a:focus-visible {
 .usd8-dialog-submit-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 24px;
   margin-top: 72px;
 }
@@ -1043,34 +1070,18 @@ a:focus-visible {
   grid-column: 1 / -1;
   margin-top: 70px;
   color: #666;
-  font: inherit;
 }
 
 .usd8-dialog-status {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 9px;
   color: #666;
-  font: inherit;
   line-height: 1.4;
 }
 
 .usd8-dialog-status--warning {
   color: #e00000;
-}
-
-.usd8-dialog-status-spinner {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  border: 2px solid #666;
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: insurance-score-spin 700ms linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .usd8-dialog-status-spinner { animation: none; }
 }
 
 .usd8-dialog-submit:hover,
@@ -1103,6 +1114,13 @@ a:focus-visible {
   font: inherit;
   font-size: 24px;
   line-height: 1.25;
+}
+
+.file-claim-requirement {
+  margin: 10px 0 0;
+  color: #fff;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .file-claim-title img {
@@ -1171,7 +1189,6 @@ a:focus-visible {
 .file-claim-field small {
   margin: 16px 0 0 2px;
   color: #666;
-  font: inherit;
 }
 
 .file-claim-field--primary input {
@@ -1195,19 +1212,6 @@ a:focus-visible {
   white-space: nowrap;
 }
 
-.file-claim-field--incident {
-  grid-column: 1 / -1;
-}
-
-.file-claim-field--incident select {
-  width: 282px;
-}
-
-.file-claim-tee-note {
-  margin: 48px 0 0;
-  color: #666;
-  line-height: 1.5;
-}
 
 .file-claim-submit-row {
   margin-top: 72px;
@@ -1215,6 +1219,10 @@ a:focus-visible {
 
 .file-claim-dialog-form .usd8-dialog-submit {
   margin-top: 0;
+}
+
+.file-claim-weight {
+  color: #666;
 }
 
 .file-claim-status {
@@ -1253,7 +1261,31 @@ a:focus-visible {
 .claim-status-metrics small {
   margin-top: -10px;
   color: #666;
+}
+
+.claim-status-payout-summary {
+  display: grid;
+  grid-template-columns: 320px 180px;
+  column-gap: 48px;
+  margin-top: 72px;
+}
+
+.claim-status-payout-summary div,
+.claim-status-payout-details {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.claim-status-payout-summary strong,
+.claim-status-payout-details strong {
+  color: var(--gold);
   font: inherit;
+  font-size: 28px;
+}
+
+.claim-status-payout-details {
+  margin-top: 72px;
 }
 
 .claim-status-timeline-label {
@@ -1280,7 +1312,8 @@ a:focus-visible {
   background: #686868;
 }
 
-.claim-status-step--active .claim-status-step-bar {
+.claim-status-step--active .claim-status-step-bar,
+.claim-status-step--complete .claim-status-step-bar {
   background: linear-gradient(
     to right,
     var(--gold) var(--claim-progress, 0%),
@@ -1295,12 +1328,12 @@ a:focus-visible {
 
 .claim-status-step small {
   color: #666;
-  font: inherit;
 }
 
 .claim-status-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 18px;
   margin-top: auto;
   padding-top: 72px;
@@ -1535,18 +1568,6 @@ a:focus-visible {
     margin-top: 54px;
   }
 
-  .file-claim-field--incident {
-    grid-column: auto;
-  }
-
-  .file-claim-field--incident .metric-label-with-help {
-    white-space: normal;
-  }
-
-  .file-claim-field--incident select {
-    width: 100%;
-  }
-
   .file-claim-field--primary input,
   .file-claim-field--compact input {
     width: 100%;
@@ -1556,10 +1577,7 @@ a:focus-visible {
     margin-top: 54px;
   }
 
-  .file-claim-status-main span {
-    grid-column: auto;
-  }
-
+  
   .usd8-dialog-tab {
     min-width: 0;
   }

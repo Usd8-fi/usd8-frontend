@@ -4,15 +4,13 @@ const DAY_MILLISECONDS = 24 * HOUR_MILLISECONDS;
 
 export function remainingTimeParts(deadline, nowMilliseconds) {
   const remaining = Math.max(0, deadline - nowMilliseconds);
-  const totalHours = Math.floor(remaining / HOUR_MILLISECONDS);
+  const totalHours = remaining > 0 && remaining < HOUR_MILLISECONDS
+    ? 1
+    : Math.floor(remaining / HOUR_MILLISECONDS);
   return {
     daysLeft: Math.floor(totalHours / 24),
     hoursLeft: totalHours % 24,
   };
-}
-
-export function wholeDaysRemaining(deadline, nowMilliseconds) {
-  return remainingTimeParts(deadline, nowMilliseconds).daysLeft;
 }
 
 function progressPercent(start, end, nowMilliseconds) {
@@ -28,6 +26,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
 
   if (!Number.isFinite(deadline) || !Number.isFinite(phaseWindow)) {
     return {
+      state: 'unavailable',
       stage: 'Claim Open',
       stageIndex: 0,
       daysLeft: 0,
@@ -38,6 +37,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   }
   if (!hasRoot && nowMilliseconds <= deadline) {
     return {
+      state: 'claim-open',
       stage: 'Claim Open',
       stageIndex: 0,
       ...remainingTimeParts(deadline, nowMilliseconds),
@@ -45,29 +45,50 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
       cancellable: true,
     };
   }
-  if (!hasRoot) {
+  if (!hasRoot && nowMilliseconds <= deadline + phaseWindow) {
     return {
-      stage: 'Settle & Dispute',
+      state: 'settlement-open',
+      stage: 'Settle Open',
       stageIndex: 1,
       ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
       progressPercent: progressPercent(deadline, deadline + phaseWindow, nowMilliseconds),
       cancellable: false,
     };
   }
+  if (!hasRoot) {
+    return {
+      state: 'settlement-expired',
+      stage: 'Not Settled',
+      stageIndex: 1,
+      ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
+      progressPercent: 100,
+      cancellable: false,
+    };
+  }
   if (nowMilliseconds <= deadline) {
     return {
-      stage: 'Settle & Dispute',
+      state: 'settlement-pending',
+      stage: 'Settled',
       stageIndex: 1,
       ...remainingTimeParts(deadline, nowMilliseconds),
       progressPercent: progressPercent(deadline - phaseWindow, deadline, nowMilliseconds),
       cancellable: false,
     };
   }
-  return {
-    stage: 'Finalise Payout',
+  if (nowMilliseconds <= deadline + phaseWindow) return {
+    state: 'payout-open',
+    stage: 'Payout Open',
     stageIndex: 2,
     ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
     progressPercent: progressPercent(deadline, deadline + phaseWindow, nowMilliseconds),
+    cancellable: false,
+  };
+  return {
+    state: 'payout-expired',
+    stage: 'Payout Closed',
+    stageIndex: 2,
+    ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
+    progressPercent: 100,
     cancellable: false,
   };
 }

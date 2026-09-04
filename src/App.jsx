@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { formatUnits, parseUnits, zeroAddress } from 'viem';
 import { useAccount, useChainId, useDisconnect, useWriteContract } from 'wagmi';
@@ -6,16 +6,20 @@ import AvailabilityAction, { CONNECT_WALLET_REASON } from './components/Availabi
 import { COVERED_PROTOCOL_ROWS } from './components/CoveredProtocolsTable.jsx';
 import FileClaimDialog from './components/FileClaimDialog.jsx';
 import USD8Landing from './components/USD8Landing.jsx';
-import {
-  erc20Abi,
-  fetchLandingChainData,
-  publicClientFor,
-} from './lib/chainData.js';
+import LoadingSpinner from './components/LoadingSpinner.jsx';
+import { fetchLandingChainData, publicClientFor } from './lib/chainData.js';
+import { erc1155Abi, erc20Abi, registryBoosterAbi } from './lib/abis.js';
+import { formatUsdWad, groupDecimalString, percentOfWad } from './lib/units.js';
 import { displayAvailableBalance } from './lib/displayAvailableBalance.js';
 import { useLivePoolEarnings } from './lib/livePoolEarnings.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
 import { getNetwork, getProtocolNetwork } from './lib/networkConfig.js';
-import { claimApiConfigured, prepareIncidentOpen } from './lib/claimApi.js';
+import {
+  claimApiConfigured,
+  matchesSettlementContext,
+  prepareIncidentOpen,
+  prepareSettlement,
+} from './lib/claimApi.js';
 import { claimLifecycle } from './lib/claimLifecycle.js';
 import { fetchInsuranceScore } from './lib/scoreApi.js';
 import { tokenAmountExceedsBalance } from './lib/tokenAmount.js';
@@ -25,6 +29,7 @@ const EMPTY_CHAIN_DATA = {
   activeIncidentId: '0',
   incident: null,
   claim: null,
+  insurance: { tokens: {} },
   scoreBalances: null,
   scoreRatesPerSecond: null,
   scoreBalanceChangeTimestampMilliseconds: null,
@@ -32,21 +37,7 @@ const EMPTY_CHAIN_DATA = {
   balances: {
     usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', insuredTokens: {},
   },
-  pool: {
-    apy: '34%',
-    tvl: '$122.2K',
-    capacityPercent: 50,
-    capacityUncapped: false,
-    remainingDepositCapacity: '0',
-    deposit: '0',
-    availableForCooldown: '0',
-    availableForWithdraw: '0',
-    inCooldown: '0',
-    cooldownEndsAtMilliseconds: 0,
-    earnings: '0',
-    hasEarnings: false,
-    shareDecimals: 21,
-  },
+  pools: [],
 };
 const EMPTY_SAVINGS_VAULT = { balance: '—', apy: '—' };
 const CLAIM_TOKEN_ROWS = COVERED_PROTOCOL_ROWS;
@@ -65,7 +56,9 @@ const DOCS_BASE_URL = './docs/';
 
 function defaultTokenAmount(available) {
   const normalized = String(available ?? '').replace(/,/g, '').trim();
-  return /^(?:\d+\.?\d*|\.\d+)$/.test(normalized) && Number(normalized) > 0 ? '1' : '';
+  return /^(?:\d+\.?\d*|\.\d+)$/.test(normalized) && /[1-9]/.test(normalized)
+    ? normalized
+    : '';
 }
 
 function cooldownReadyLabel(endsAtMilliseconds, nowMilliseconds) {
@@ -102,10 +95,49 @@ function tokenAmountValidationReason(raw, available, token, action) {
     : '';
 }
 
-function groupedDecimal(value) {
-  const [whole, fraction] = String(value ?? '0').split('.');
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return fraction === undefined ? grouped : `${grouped}.${fraction}`;
+function formattedPayoutAmount(amount, decimals) {
+  const displayedDecimals = Math.min(decimals, 4);
+  const discardedScale = 10n ** BigInt(decimals - displayedDecimals);
+  const rounded = discardedScale === 1n
+    ? amount
+    : (amount + discardedScale / 2n) / discardedScale;
+  const displayedScale = 10n ** BigInt(displayedDecimals);
+  const whole = rounded / displayedScale;
+  const fraction = String(rounded % displayedScale)
+    .padStart(displayedDecimals, '0')
+    .replace(/0+$/, '');
+  return fraction ? `${groupDecimalString(whole)}.${fraction}` : groupDecimalString(whole);
+}
+
+export function settlementPayoutDetails(amounts, poolOrder, payoutAssets = {}) {
+  return amounts.map((amount, index) => {
+    const asset = poolOrder[index];
+    const metadata = payoutAssets[asset?.toLowerCase()];
+    return {
+      amount: metadata
+        ? formattedPayoutAmount(amount, metadata.decimals)
+        : groupDecimalString(amount),
+      symbol: metadata?.symbol || `base units of ${asset || 'unknown asset'}`,
+      usd: '',
+    };
+  });
+}
+
+function normalizedAddressOrder(addresses) {
+  return Array.isArray(addresses) ? addresses.map((address) => String(address).toLowerCase()) : [];
+}
+
+export function matchesSettlementTopology(settlement, incident) {
+  const settlementPools = normalizedAddressOrder(settlement?.poolAddrs);
+  const settlementAssets = normalizedAddressOrder(settlement?.poolOrder);
+  const incidentPools = normalizedAddressOrder(incident?.poolAddrs);
+  const incidentAssets = normalizedAddressOrder(incident?.poolOrder);
+  return incidentPools.length > 0
+    && incidentAssets.length === incidentPools.length
+    && settlementPools.length === incidentPools.length
+    && settlementAssets.length === incidentAssets.length
+    && settlementPools.every((address, index) => address === incidentPools[index])
+    && settlementAssets.every((address, index) => address === incidentAssets[index]);
 }
 
 function scoreWithTokenBreakdown(score, contracts) {
@@ -231,12 +263,6 @@ const poolWriteAbi = [
   { type: 'function', name: 'exitRequests', stateMutability: 'view', inputs: [{ name: 'user', type: 'address' }], outputs: [{ name: 'shares', type: 'uint256' }, { name: 'exitEpoch', type: 'uint64' }] },
 ];
 
-const approveAbi = [
-  ...erc20Abi,
-  { type: 'function', name: 'allowance', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
-  { type: 'function', name: 'approve', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
-];
-
 const treasuryWriteAbi = [
   { type: 'function', name: 'mintUSD8', stateMutability: 'nonpayable', inputs: [{ name: 'usdcAmount', type: 'uint256' }], outputs: [] },
   { type: 'function', name: 'redeemUSD8', stateMutability: 'nonpayable', inputs: [{ name: 'usd8Amount', type: 'uint256' }, { name: 'minUsdcOut', type: 'uint256' }], outputs: [] },
@@ -244,6 +270,33 @@ const treasuryWriteAbi = [
 ];
 
 const claimWriteAbi = [
+  { type: 'error', name: 'ZeroAmount', inputs: [] },
+  { type: 'error', name: 'InvalidReferenceBlock', inputs: [{ name: 'referenceBlock', type: 'uint64' }] },
+  { type: 'error', name: 'InsuredTokenNotApproved', inputs: [{ name: 'insuredToken', type: 'address' }] },
+  {
+    type: 'error', name: 'ClaimWindowClosed',
+    inputs: [{ name: 'insuredToken', type: 'address' }, { name: 'claimDeadline', type: 'uint64' }],
+  },
+  { type: 'error', name: 'DuplicateClaim', inputs: [{ name: 'incidentId', type: 'uint256' }] },
+  { type: 'error', name: 'IncidentFinalizing', inputs: [{ name: 'incidentId', type: 'uint256' }] },
+  {
+    type: 'error', name: 'IncidentTokenMismatch',
+    inputs: [
+      { name: 'incidentId', type: 'uint256' },
+      { name: 'expectedToken', type: 'address' },
+      { name: 'suppliedToken', type: 'address' },
+    ],
+  },
+  { type: 'error', name: 'UnexpectedOpenAttestation', inputs: [] },
+  { type: 'error', name: 'UnauthorizedOpenSigner', inputs: [{ name: 'recovered', type: 'address' }] },
+  { type: 'error', name: 'DefiInsuranceNotRegistered', inputs: [] },
+  { type: 'error', name: 'ECDSAInvalidSignatureLength', inputs: [{ name: 'length', type: 'uint256' }] },
+  { type: 'error', name: 'SafeERC20FailedOperation', inputs: [{ name: 'token', type: 'address' }] },
+  {
+    type: 'error', name: 'ERC1155MissingApprovalForAll',
+    inputs: [{ name: 'operator', type: 'address' }, { name: 'owner', type: 'address' }],
+  },
+  { type: 'function', name: 'isInsuredToken', stateMutability: 'view', inputs: [{ name: 'insuredToken', type: 'address' }], outputs: [{ name: 'listed', type: 'bool' }] },
   { type: 'function', name: 'activeIncidentId', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
   { type: 'function', name: 'claimBondAmount', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint128' }] },
   {
@@ -261,6 +314,19 @@ const claimWriteAbi = [
     outputs: [{ name: 'claimId', type: 'uint256' }],
   },
   { type: 'function', name: 'cancelClaim', stateMutability: 'nonpayable', inputs: [], outputs: [] },
+  {
+    type: 'function', name: 'settleIncident', stateMutability: 'nonpayable',
+    inputs: [{ name: 'root', type: 'bytes32' }, { name: 'poolPayouts', type: 'uint256[]' }, { name: 'signature', type: 'bytes' }], outputs: [],
+  },
+  {
+    type: 'function', name: 'finalizeClaim', stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'claimId', type: 'uint256' }, { name: 'acceptPayout', type: 'bool' },
+      { name: 'amounts', type: 'uint256[]' }, { name: 'scoreSpent', type: 'uint256' },
+      { name: 'boostedScore', type: 'uint256' }, { name: 'eligibleAmount', type: 'uint256' },
+      { name: 'proof', type: 'bytes32[]' },
+    ], outputs: [],
+  },
 ];
 
 function DialogCloseButton({ label, onClose }) {
@@ -269,25 +335,38 @@ function DialogCloseButton({ label, onClose }) {
   );
 }
 
+// Anything the user has to wait on spins. Terminal confirmations and errors
+// are absent from this list and stay static.
+const WAITING_STATUS_PREFIXES = [
+  'Checking ',
+  'Loading ',
+  'Preparing ',
+  'Verifying ',
+  'Transaction submitted:',
+];
+
 function isWaitingStatus(message) {
   return message.includes('in your wallet.')
-    || message.startsWith('Checking ')
-    || message.startsWith('Verifying ')
-    || message.startsWith('Transaction submitted:');
+    || WAITING_STATUS_PREFIXES.some((prefix) => message.startsWith(prefix));
 }
 
-function TransactionStatus({ message }) {
+function TransactionStatus({ message, failed = false }) {
   if (!message) return null;
-  const waiting = isWaitingStatus(message);
+  const waiting = !failed && isWaitingStatus(message);
   return (
-    <small className="usd8-dialog-status" role="status" aria-label="Transaction status" aria-live="polite">
-      {waiting ? <span className="usd8-dialog-status-spinner" aria-hidden="true" /> : null}
+    <small
+      className={`usd8-dialog-status${failed ? ' usd8-dialog-status--warning' : ''}`}
+      role={failed ? 'alert' : 'status'}
+      aria-label="Transaction status"
+      aria-live="polite"
+    >
+      {waiting ? <LoadingSpinner /> : null}
       {message}
     </small>
   );
 }
 
-function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInputChange, onModeChange, onClose, onSubmit, submitUnavailableReason = '' }) {
+function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, statusFailed = false, onInputChange, onModeChange, onClose, onSubmit, submitUnavailableReason = '' }) {
   const minting = mode === 'mint';
   const inputToken = minting ? 'USDC' : 'USD8';
   const outputToken = minting ? 'USD8' : 'USDC';
@@ -350,17 +429,7 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
                   onInputChange?.();
                 }}
               />
-              <small>
-                <button
-                  className="usd8-dialog-available"
-                  type="button"
-                  aria-label={`Use full ${inputToken} balance ${availableBalance}`}
-                  onClick={() => setAmount(availableBalance.replace(/,/g, ''))}
-                >
-                  {displayAvailableBalance(availableBalance)}
-                </button>
-                <span> available</span>
-              </small>
+              <small>{displayAvailableBalance(availableBalance)} available</small>
             </label>
 
             <span className="usd8-dialog-arrow" aria-hidden="true">→</span>
@@ -380,7 +449,7 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
             >
               {mode}
             </AvailabilityAction>
-            <TransactionStatus message={statusMessage} />
+            <TransactionStatus message={statusMessage} failed={statusFailed} />
           </div>
         </form>
       </section>
@@ -390,6 +459,9 @@ function Usd8ActionDialog({ mode, usdcBalance, usd8Balance, statusMessage, onInp
 
 function PoolActionDialog({
   mode,
+  poolName = 'cover pool',
+  assetSymbol = '',
+  shareSymbol = '',
   coverAssetBalance,
   activeIncidentId,
   capacityUncapped,
@@ -402,6 +474,7 @@ function PoolActionDialog({
   earnings,
   hasEarnings,
   statusMessage,
+  statusFailed = false,
   statusAction,
   onInputChange,
   onModeChange,
@@ -412,7 +485,7 @@ function PoolActionDialog({
   const withdrawingEarnings = mode === 'claimReward';
   const depositing = mode === 'deposit';
   const withdrawing = mode === 'withdraw';
-  const inputToken = depositing ? 'wstETH' : 'USD8-cp-wstETH';
+  const inputToken = depositing ? assetSymbol : shareSymbol;
   const available = depositing ? coverAssetBalance : availableForCooldown ?? poolShareBalance;
   const [amount, setAmount] = useState(() => defaultTokenAmount(available));
   const withdrawAvailable = availableForWithdraw ?? '0';
@@ -454,8 +527,8 @@ function PoolActionDialog({
     && !tokenValidationReason
     && tokenAmountExceedsBalance(amount, remainingDepositCapacity)
     ? (defaultTokenAmount(remainingDepositCapacity)
-      ? `This deposit exceeds the cover pool's remaining capacity. You can deposit up to ${remainingDepositCapacity} wstETH.`
-      : 'The cover pool is full and cannot accept additional wstETH deposits.')
+      ? `This deposit exceeds the cover pool's remaining capacity. You can deposit up to ${remainingDepositCapacity} ${assetSymbol}.`
+      : `The cover pool is full and cannot accept additional ${assetSymbol} deposits.`)
     : '';
   const amountUnavailableReason = actionUnavailableReason
     || cooldownUnavailableReason
@@ -485,9 +558,9 @@ function PoolActionDialog({
     <div className="usd8-dialog-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className="usd8-dialog" role="dialog" aria-modal="true" aria-label="Manage wstEth cover pool">
+      <section className="usd8-dialog" role="dialog" aria-modal="true" aria-label={`Manage ${poolName}`}>
         <DialogCloseButton label="Close cover pool actions" onClose={onClose} />
-        <nav className="usd8-dialog-tabs usd8-dialog-tabs--pool" aria-label="wstEth pool action">
+        <nav className="usd8-dialog-tabs usd8-dialog-tabs--pool" aria-label={`${poolName} action`}>
           <button
             className={mode === 'deposit' ? 'usd8-dialog-tab usd8-dialog-tab--active' : 'usd8-dialog-tab'}
             type="button"
@@ -541,33 +614,17 @@ function PoolActionDialog({
                 />
                 {mode === 'withdraw' ? (
                   <small className="usd8-dialog-pool-availability usd8-dialog-withdrawal-availability">
-                    <button
-                      className="usd8-dialog-available"
-                      type="button"
-                      aria-label={`Use full ${inputToken} balance ${available}`}
-                      onClick={() => setAmount(available.replace(/,/g, ''))}
-                    >
-                      {displayAvailableBalance(available)}
-                    </button>
-                    <span> available</span>. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized.{' '}
+                    {displayAvailableBalance(available)} available. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized.{' '}
                     <a href={`${DOCS_BASE_URL}cover-pools.html`}>Learn More</a>.
                   </small>
                 ) : (
                   <small className="usd8-dialog-pool-availability">
-                    <button
-                      className="usd8-dialog-available"
-                      type="button"
-                      aria-label={`Use full ${inputToken} balance ${available}`}
-                      onClick={() => setAmount(available.replace(/,/g, ''))}
-                    >
-                      {displayAvailableBalance(available)}
-                    </button>
-                    <span> available</span>
+                    {displayAvailableBalance(available)} available
                     {depositing && !capacityUncapped && remainingDepositCapacity !== '' ? (
                       <>
                         .{' '}
                         <span className="usd8-dialog-pool-capacity">
-                          {remainingDepositCapacity} wstETH left in pool limit
+                          {remainingDepositCapacity} {assetSymbol} left in pool limit
                         </span>
                       </>
                     ) : null}
@@ -589,7 +646,7 @@ function PoolActionDialog({
                 >
                   start cooldown
                 </AvailabilityAction>
-                {statusAction === 'startCooldown' ? <TransactionStatus message={statusMessage} /> : null}
+                {statusAction === 'startCooldown' ? <TransactionStatus message={statusMessage} failed={statusFailed} /> : null}
                 <small className="usd8-dialog-withdraw-balances">
                   {displayedWithdrawAvailable} available for withdraw{cooldownCompleteWaitingForClaims ? ' after claims are finalized' : ''}, {' '}
                   {displayedCooldownBalance} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
@@ -604,7 +661,7 @@ function PoolActionDialog({
                 >
                   Withdraw
                 </AvailabilityAction>
-                {statusAction === 'withdraw' ? <TransactionStatus message={statusMessage} /> : null}
+                {statusAction === 'withdraw' ? <TransactionStatus message={statusMessage} failed={statusFailed} /> : null}
               </>
             ) : (
               <AvailabilityAction
@@ -616,7 +673,7 @@ function PoolActionDialog({
                 {withdrawingEarnings ? 'withdraw earnings' : mode}
               </AvailabilityAction>
             )}
-            {!withdrawing ? <TransactionStatus message={statusMessage} /> : null}
+            {!withdrawing ? <TransactionStatus message={statusMessage} failed={statusFailed} /> : null}
           </div>
         </form>
       </section>
@@ -633,6 +690,11 @@ export default function App() {
   const connected = isConnected && Boolean(address);
   const activeNetwork = getNetwork(chainId);
   const protocolNetwork = getProtocolNetwork(chainId);
+  const walletScopeKey = [
+    chainId,
+    connected ? address.toLowerCase() : zeroAddress,
+    protocolNetwork?.contracts.defiInsurance?.toLowerCase() || '',
+  ].join(':');
   const protocolUnavailableReason = connected && !protocolNetwork
     ? `USD8 is not deployed on ${activeNetwork?.name || 'this network'}.`
     : '';
@@ -643,18 +705,60 @@ export default function App() {
   const [scoreRefreshCompletedKey, setScoreRefreshCompletedKey] = useState('');
   const [chainData, setChainData] = useState(EMPTY_CHAIN_DATA);
   const [chainDataStatus, setChainDataStatus] = useState('idle');
+  const [dataError, setDataError] = useState('');
+  const chainDataRequestGeneration = useRef(0);
   const [savingsVault, setSavingsVault] = useState(EMPTY_SAVINGS_VAULT);
   const [usd8Action, setUsd8Action] = useState(null);
   const [usd8Status, setUsd8Status] = useState('');
+  const [usd8StatusFailed, setUsd8StatusFailed] = useState(false);
   const [poolAction, setPoolAction] = useState(null);
+  const [poolActionId, setPoolActionId] = useState('');
   const [poolStatus, setPoolStatus] = useState('');
+  const [poolStatusFailed, setPoolStatusFailed] = useState(false);
   const [poolStatusAction, setPoolStatusAction] = useState('');
-  const [claimToken, setClaimToken] = useState(null);
+  const [claimSelection, setClaimToken] = useState(null);
+  const claimToken = claimSelection?.walletScopeKey === walletScopeKey
+    ? claimSelection.token
+    : null;
   const [claimStatus, setClaimStatus] = useState('');
   const [claimStatusIsWarning, setClaimStatusIsWarning] = useState(false);
   const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const [claimSettlement, setClaimSettlement] = useState(null);
   const claimAbortController = useRef(null);
-  const livePool = useLivePoolEarnings(chainData.pool);
+  const walletScopeRef = useRef(walletScopeKey);
+  walletScopeRef.current = walletScopeKey;
+  const claimContextKey = [
+    walletScopeKey,
+    chainData.incident?.id || '',
+    chainData.claim?.id || '',
+    chainData.incident?.root?.toLowerCase() || '',
+    normalizedAddressOrder(chainData.incident?.poolAddrs).join(','),
+    normalizedAddressOrder(chainData.incident?.poolOrder).join(','),
+  ].join(':');
+  const claimContextRef = useRef(claimContextKey);
+  claimContextRef.current = claimContextKey;
+
+  useLayoutEffect(() => {
+    chainDataRequestGeneration.current += 1;
+    claimAbortController.current?.abort();
+    claimAbortController.current = null;
+    setScore(null);
+    setScoreStatus(connected && activeNetwork?.scoreAvailable ? 'loading' : 'idle');
+    setScoreRefreshCompletedKey('');
+    setChainData(EMPTY_CHAIN_DATA);
+    setChainDataStatus(protocolNetwork ? 'loading' : 'idle');
+    setDataError('');
+    setClaimToken(null);
+    setClaimSettlement(null);
+    setClaimStatus('');
+    setClaimStatusIsWarning(false);
+    setClaimSubmitting(false);
+    setUsd8Action(null);
+    setUsd8Status('');
+    setPoolAction(null);
+    setPoolStatus('');
+    setPoolStatusAction('');
+  }, [walletScopeKey]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -667,6 +771,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const requestGeneration = ++chainDataRequestGeneration.current;
+    const requestedWalletScope = walletScopeKey;
     if (!activeNetwork) {
       setScore(null);
       setScoreStatus('idle');
@@ -682,12 +788,17 @@ export default function App() {
       setScoreStatus('loading');
       fetchInsuranceScore(address, { chainId: activeNetwork.id, signal: controller.signal })
         .then((nextScore) => {
+          if (requestGeneration !== chainDataRequestGeneration.current
+              || walletScopeRef.current !== requestedWalletScope) return;
           setScore(scoreWithTokenBreakdown(nextScore, activeNetwork.contracts));
           setScoreStatus('ready');
         })
         .catch((error) => {
-          if (error.name !== 'AbortError') {
+          if (requestGeneration === chainDataRequestGeneration.current
+              && walletScopeRef.current === requestedWalletScope
+              && error.name !== 'AbortError') {
             setScoreStatus('error');
+            setDataError(error?.message || 'Insurance Score is unavailable.');
           }
         });
     } else {
@@ -697,14 +808,27 @@ export default function App() {
 
     if (protocolNetwork) {
       setChainDataStatus('loading');
-      fetchLandingChainData(connected ? address : zeroAddress, protocolNetwork.id)
+      fetchLandingChainData(connected ? address : zeroAddress, protocolNetwork.id, {
+        signal: controller.signal,
+        onPartial: (partial) => {
+          if (requestGeneration !== chainDataRequestGeneration.current
+              || walletScopeRef.current !== requestedWalletScope) return;
+          setChainData(partial);
+          setChainDataStatus('partial');
+        },
+      })
         .then((nextChainData) => {
+          if (requestGeneration !== chainDataRequestGeneration.current
+              || walletScopeRef.current !== requestedWalletScope) return;
           setChainData(nextChainData);
           setChainDataStatus('ready');
         })
-        .catch(() => {
+        .catch((error) => {
+          if (requestGeneration !== chainDataRequestGeneration.current
+              || walletScopeRef.current !== requestedWalletScope) return;
           setChainData(EMPTY_CHAIN_DATA);
           setChainDataStatus('error');
+          setDataError(error?.shortMessage || error?.message || 'Could not load onchain data.');
         });
     } else {
       setChainData(EMPTY_CHAIN_DATA);
@@ -713,6 +837,44 @@ export default function App() {
 
     return () => controller.abort();
   }, [address, chainId, connected]);
+
+  useEffect(() => {
+    const root = chainData.incident?.root;
+    if (!claimToken || !chainData.claim || !protocolNetwork || !root || claimStatusIsWarning
+        || root === `0x${'00'.repeat(32)}`
+        || (claimSettlement?.contextKey === claimContextKey
+          && matchesSettlementContext(claimSettlement, chainData.incident.id, root)
+          && matchesSettlementTopology(claimSettlement.value, chainData.incident))) return undefined;
+    const requestedContextKey = claimContextKey;
+    const controller = new AbortController();
+    setClaimStatusIsWarning(false);
+    setClaimStatus('Loading proof-backed payout details.');
+    prepareSettlement(chainData.incident.id, {
+      chainId: protocolNetwork.id,
+      registry: protocolNetwork.contracts.registry,
+      defiInsurance: protocolNetwork.contracts.defiInsurance,
+      expectedRoot: root,
+      expectedPoolAddrs: chainData.incident.poolAddrs,
+      expectedPoolOrder: chainData.incident.poolOrder,
+      signal: controller.signal,
+    }).then((value) => {
+      if (controller.signal.aborted || claimContextRef.current !== requestedContextKey) return;
+      setClaimSettlement({
+        contextKey: requestedContextKey,
+        incidentId: chainData.incident.id,
+        claimId: chainData.claim.id,
+        root,
+        value,
+      });
+      setClaimStatus('');
+    }).catch((error) => {
+      if (claimContextRef.current === requestedContextKey && error?.name !== 'AbortError') {
+        setClaimStatusIsWarning(true);
+        setClaimStatus(error?.message || 'Payout details are temporarily unavailable.');
+      }
+    });
+    return () => controller.abort();
+  }, [claimToken, claimContextKey, protocolNetwork, claimSettlement?.contextKey, claimStatusIsWarning]);
 
   useEffect(() => {
     if (!connected || !activeNetwork?.scoreAvailable || scoreStatus !== 'ready') {
@@ -736,19 +898,33 @@ export default function App() {
     scoreRefreshAttempt.current = refreshKey;
     setScoreRefreshCompletedKey('');
 
+    const requestedWalletScope = walletScopeKey;
     const controller = new AbortController();
     fetchInsuranceScore(address, {
       chainId: activeNetwork.id,
       refresh: true,
       signal: controller.signal,
     })
-      .then((nextScore) => setScore(scoreWithTokenBreakdown(nextScore, activeNetwork.contracts)))
-      .catch((error) => {
-        if (error.name !== 'AbortError') console.warn('Insurance Score refresh failed', error);
+      .then((nextScore) => {
+        if (walletScopeRef.current !== requestedWalletScope
+            || scoreRefreshAttempt.current !== refreshKey) return;
+        setScore(scoreWithTokenBreakdown(nextScore, activeNetwork.contracts));
       })
-      .finally(() => setScoreRefreshCompletedKey(refreshKey));
+      .catch((error) => {
+        if (walletScopeRef.current === requestedWalletScope
+            && scoreRefreshAttempt.current === refreshKey
+            && error.name !== 'AbortError') {
+          console.warn('Insurance Score refresh failed', error);
+        }
+      })
+      .finally(() => {
+        if (walletScopeRef.current === requestedWalletScope
+            && scoreRefreshAttempt.current === refreshKey) {
+          setScoreRefreshCompletedKey(refreshKey);
+        }
+      });
     return () => controller.abort();
-  }, [address, connected, activeNetwork, chainData.scoreBalances, score, scoreStatus]);
+  }, [address, connected, activeNetwork, chainData.scoreBalances, score, scoreStatus, walletScopeKey]);
 
   async function connect() {
     if (!walletConnectorConfigured) return;
@@ -764,8 +940,64 @@ export default function App() {
     await disconnectAsync();
   }
 
-  async function refreshChainData() {
-    if (address && protocolNetwork) setChainData(await fetchLandingChainData(address, protocolNetwork.id));
+  function assertCurrentWalletScope(expectedWalletScope = walletScopeKey) {
+    if (walletScopeRef.current === expectedWalletScope) return;
+    const error = new Error('Wallet account or network changed. Review the current state and try again.');
+    error.name = 'WalletScopeChangedError';
+    throw error;
+  }
+
+  async function refreshChainData(expectedWalletScope = walletScopeKey) {
+    assertCurrentWalletScope(expectedWalletScope);
+    if (!address || !protocolNetwork) return;
+    const clearInsuranceTokens = () => setChainData((current) => ({
+      ...current,
+      insurance: { ...current.insurance, tokens: {} },
+    }));
+    clearInsuranceTokens();
+    setChainDataStatus('loading');
+    try {
+      const nextChainData = await fetchLandingChainData(address, protocolNetwork.id);
+      if (walletScopeRef.current !== expectedWalletScope) return;
+      setChainData(nextChainData);
+      setChainDataStatus('ready');
+      return nextChainData;
+    } catch (error) {
+      if (walletScopeRef.current === expectedWalletScope) {
+        clearInsuranceTokens();
+        setChainDataStatus('error');
+      }
+      throw error;
+    }
+  }
+
+  // Pools come from config, so their cards render immediately; the chain read
+  // only fills in the numbers.
+  const displayedPools = chainData.pools?.length
+    ? chainData.pools
+    : (protocolNetwork?.contracts.coverPools || []).map((pool) => ({
+      ...pool,
+      assetBalance: '0',
+      apy: null,
+      tvl: null,
+      capacityPercent: null,
+      capacityUncapped: false,
+      deposit: '0',
+      earnings: '0',
+      hasEarnings: false,
+      shareDecimals: 21,
+    }));
+  const activePool = chainData.pools?.find((pool) => pool.id === poolActionId)
+    || chainData.pools?.[0]
+    || null;
+
+  const livePoolAction = useLivePoolEarnings(activePool || {}) || {};
+
+  function selectedPool(network) {
+    const pool = network.contracts.coverPools.find((entry) => entry.id === poolActionId)
+      || network.contracts.coverPools[0];
+    if (!pool) throw new Error('No cover pool is configured on this network.');
+    return pool;
   }
 
   function requireProtocolNetwork() {
@@ -773,42 +1005,58 @@ export default function App() {
     return protocolNetwork;
   }
 
-  async function submitTransaction(request, pendingMessage, setStatus) {
+  async function submitTransaction(
+    request,
+    pendingMessage,
+    setStatus,
+    expectedWalletScope = walletScopeKey,
+    simulateBeforeSubmit = false,
+  ) {
+    assertCurrentWalletScope(expectedWalletScope);
     const network = requireProtocolNetwork();
     const client = publicClientFor(network.id);
     setStatus(pendingMessage);
-    const estimatedGas = await client.estimateContractGas({ account: address, ...request });
+    let preparedRequest = request;
+    if (simulateBeforeSubmit) {
+      const simulation = await client.simulateContract({ account: address, ...request });
+      assertCurrentWalletScope(expectedWalletScope);
+      preparedRequest = simulation.request;
+    }
+    const estimatedGas = await client.estimateContractGas({ account: address, ...preparedRequest });
+    assertCurrentWalletScope(expectedWalletScope);
     const gas = estimatedGas + estimatedGas / 2n;
-    const hash = await writeContractAsync({ chainId: network.id, ...request, gas });
+    const hash = await writeContractAsync({ account: address, chainId: network.id, ...preparedRequest, gas });
     if (!hash) throw new Error('Transaction cancelled in your wallet.');
-    setStatus(`Transaction submitted: ${hash.slice(0, 10)}…${hash.slice(-4)}`);
+    if (walletScopeRef.current === expectedWalletScope) {
+      setStatus(`Transaction submitted: ${hash.slice(0, 10)}…${hash.slice(-4)}`);
+    }
     const receipt = await client.waitForTransactionReceipt({ hash });
     if (receipt.status !== 'success') throw new Error('Transaction reverted.');
-    await refreshChainData();
+    if (walletScopeRef.current === expectedWalletScope) await refreshChainData(expectedWalletScope);
   }
 
   async function depositToPool(raw) {
     const network = requireProtocolNetwork();
     const client = publicClientFor(network.id);
-    const { contracts } = network;
+    const pool = selectedPool(network);
     const amount = parseTokenAmount(raw, 18);
     if (amount <= 0n) throw new Error('Deposit amount must be positive.');
     const allowance = await client.readContract({
-      address: contracts.coverAsset,
-      abi: approveAbi,
+      address: pool.asset,
+      abi: erc20Abi,
       functionName: 'allowance',
-      args: [address, contracts.coverPool],
+      args: [address, pool.address],
     });
     if (allowance < amount) {
       await submitTransaction({
-        address: contracts.coverAsset,
-        abi: approveAbi,
+        address: pool.asset,
+        abi: erc20Abi,
         functionName: 'approve',
-        args: [contracts.coverPool, amount],
-      }, 'Approve wstETH in your wallet.', setPoolStatus);
+        args: [pool.address, amount],
+      }, `Approve ${pool.assetSymbol} in your wallet.`, setPoolStatus);
     }
     await submitTransaction({
-      address: contracts.coverPool,
+      address: pool.address,
       abi: poolWriteAbi,
       functionName: 'deposit',
       args: [amount, address],
@@ -819,11 +1067,11 @@ export default function App() {
 
   async function startPoolCooldown(raw) {
     const network = requireProtocolNetwork();
-    const { contracts } = network;
-    const shares = parseTokenAmount(raw, chainData.pool.shareDecimals);
+    const pool = selectedPool(network);
+    const shares = parseTokenAmount(raw, activePool?.shareDecimals ?? 21);
     if (shares <= 0n) throw new Error('Cooldown share amount must be positive.');
     await submitTransaction({
-      address: contracts.coverPool,
+      address: pool.address,
       abi: poolWriteAbi,
       functionName: 'requestRedeem',
       args: [shares],
@@ -835,7 +1083,7 @@ export default function App() {
   async function completePoolWithdrawal() {
     const network = requireProtocolNetwork();
     await submitTransaction({
-      address: network.contracts.coverPool,
+      address: selectedPool(network).address,
       abi: poolWriteAbi,
       functionName: 'completeRedeem',
       args: [address],
@@ -847,7 +1095,7 @@ export default function App() {
   async function claimPoolRewards() {
     const network = requireProtocolNetwork();
     await submitTransaction({
-      address: network.contracts.coverPool,
+      address: selectedPool(network).address,
       abi: poolWriteAbi,
       functionName: 'claimReward',
       args: [],
@@ -856,22 +1104,26 @@ export default function App() {
     return true;
   }
 
-  function openPoolAction(action) {
+  function openPoolAction(action, poolId) {
     if (!connected || !protocolNetwork) return;
     setPoolStatus('');
+    setPoolStatusFailed(false);
     setPoolStatusAction('');
+    setPoolActionId(poolId);
     setPoolAction(action);
   }
 
   async function submitPoolAction(action, raw) {
     try {
       setPoolStatus('');
+      setPoolStatusFailed(false);
       setPoolStatusAction(action);
       if (action === 'deposit') await depositToPool(raw);
       else if (action === 'startCooldown') await startPoolCooldown(raw);
       else if (action === 'withdraw') await completePoolWithdrawal();
       else if (action === 'claimReward') await claimPoolRewards();
     } catch (error) {
+      setPoolStatusFailed(true);
       setPoolStatus(error?.shortMessage || error?.message || 'Transaction failed.');
     }
   }
@@ -880,13 +1132,27 @@ export default function App() {
     if (!connected) return;
     setClaimStatus('');
     setClaimStatusIsWarning(false);
-    setClaimToken(row);
+    setClaimToken({ walletScopeKey, token: row });
   }
 
   async function submitClaim({ token, amount: rawAmount, scoreToSpend: rawScore, boosterAmount: rawBoosters }) {
     if (claimSubmitting) return;
+    const expectedWalletScope = walletScopeKey;
+    assertCurrentWalletScope(expectedWalletScope);
     const controller = new AbortController();
     claimAbortController.current = controller;
+    const assertCurrentClaimOperation = () => {
+      assertCurrentWalletScope(expectedWalletScope);
+      if (controller.signal.aborted || claimAbortController.current !== controller) {
+        const error = new Error('Wallet account or network changed.');
+        error.name = 'AbortError';
+        throw error;
+      }
+    };
+    const setCurrentClaimStatus = (message) => {
+      assertCurrentClaimOperation();
+      setClaimStatus(message);
+    };
     setClaimSubmitting(true);
     setClaimStatusIsWarning(false);
     setClaimStatus('Checking current incident and claim requirements.');
@@ -896,6 +1162,20 @@ export default function App() {
       const client = publicClientFor(network.id);
       const insuredToken = contracts.insuredTokens?.[token];
       if (!insuredToken) throw new Error('This token is not enabled for claims on the selected network.');
+      const claimTokenSymbol = CLAIM_TOKEN_ROWS.find((row) => row.id === token)?.symbol || token;
+      const ensureCurrentlyInsured = async () => {
+        const listed = await client.readContract({
+          address: contracts.defiInsurance,
+          abi: claimWriteAbi,
+          functionName: 'isInsuredToken',
+          args: [insuredToken],
+        });
+        if (listed !== true) {
+          throw new Error(`${claimTokenSymbol} is no longer enabled for new claims on ${network.name}.`);
+        }
+      };
+      await ensureCurrentlyInsured();
+      assertCurrentClaimOperation();
 
       const insuredTokenAmount = parseTokenAmount(rawAmount, 18);
       const scoreToSpend = parseTokenAmount(rawScore, 18);
@@ -903,18 +1183,19 @@ export default function App() {
       const boosterAmount = BigInt(rawBoosters);
       if (insuredTokenAmount <= 0n) throw new Error('Insured token amount must be positive.');
       if (scoreToSpend <= 0n) throw new Error('Insurance score to spend must be positive.');
-      if (boosterAmount !== 0n) throw new Error('Booster claims are not connected yet.');
 
       let activeIncidentId = await client.readContract({
         address: contracts.defiInsurance,
         abi: claimWriteAbi,
         functionName: 'activeIncidentId',
       });
+      assertCurrentClaimOperation();
       const claimBondAmount = await client.readContract({
         address: contracts.defiInsurance,
         abi: claimWriteAbi,
         functionName: 'claimBondAmount',
       });
+      assertCurrentClaimOperation();
       const usd8Balance = parseTokenAmount(String(chainData.balances.usd8).replace(/,/g, ''), 18);
       const usd8Required = insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
         ? insuredTokenAmount + claimBondAmount
@@ -924,49 +1205,99 @@ export default function App() {
           ? 'Insufficient USD8 balance for the insured amount and claim bond.'
           : 'Insufficient USD8 balance for the claim bond.');
       }
+      let referenceBlock = 0n;
+      let signature = '0x';
+      let authorization = null;
+      const prepareFirstIncident = async () => {
+        setCurrentClaimStatus('Verifying incident in the TEE. First claim may take several minutes.');
+        return prepareIncidentOpen(insuredToken, {
+          chainId: network.id,
+          registry: contracts.registry,
+          defiInsurance: contracts.defiInsurance,
+          signal: controller.signal,
+        });
+      };
       const approvals = insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
         ? [[contracts.usd8, insuredTokenAmount + claimBondAmount]]
         : [
           [insuredToken, insuredTokenAmount],
           [contracts.usd8, claimBondAmount],
         ];
+      // Do not launch approval side effects from a stale landing snapshot.
+      await ensureCurrentlyInsured();
+      assertCurrentClaimOperation();
       for (const [approvalToken, requiredAmount] of approvals) {
         const allowance = await client.readContract({
           address: approvalToken,
-          abi: approveAbi,
+          abi: erc20Abi,
           functionName: 'allowance',
           args: [address, contracts.defiInsurance],
         });
+        assertCurrentClaimOperation();
         if (allowance < requiredAmount) {
           await submitTransaction({
             address: approvalToken,
-            abi: approveAbi,
+            abi: erc20Abi,
             functionName: 'approve',
             args: [contracts.defiInsurance, requiredAmount],
-          }, 'Approve token in your wallet.', setClaimStatus);
+          }, 'Approve token in your wallet.', setCurrentClaimStatus, expectedWalletScope);
+          assertCurrentClaimOperation();
         }
       }
 
+      if (boosterAmount > 0n) {
+        const [boosterCollection, boosterTokenId] = await client.readContract({
+          address: contracts.registry,
+          abi: registryBoosterAbi,
+          functionName: 'boosterConfig',
+        });
+        assertCurrentClaimOperation();
+        if (boosterCollection === zeroAddress) throw new Error('Boosters are not enabled for claims.');
+        const currentBoosterBalance = await client.readContract({
+          address: boosterCollection,
+          abi: erc1155Abi,
+          functionName: 'balanceOf',
+          args: [address, boosterTokenId],
+        });
+        assertCurrentClaimOperation();
+        if (currentBoosterBalance < boosterAmount) throw new Error('Insufficient Booster balance.');
+        const boostersApproved = await client.readContract({
+          address: boosterCollection,
+          abi: erc1155Abi,
+          functionName: 'isApprovedForAll',
+          args: [address, contracts.defiInsurance],
+        });
+        assertCurrentClaimOperation();
+        if (!boostersApproved) {
+          await submitTransaction({
+            address: boosterCollection,
+            abi: erc1155Abi,
+            functionName: 'setApprovalForAll',
+            args: [contracts.defiInsurance, true],
+          }, 'Approve Boosters in your wallet.', setCurrentClaimStatus, expectedWalletScope);
+          assertCurrentClaimOperation();
+        }
+      }
+
+      // Opening authorizations are block-bounded. Obtain one only after every
+      // prerequisite approval is confirmed so wallet latency cannot age it out.
+      await ensureCurrentlyInsured();
+      assertCurrentClaimOperation();
       activeIncidentId = await client.readContract({
         address: contracts.defiInsurance,
         abi: claimWriteAbi,
         functionName: 'activeIncidentId',
       });
-      let referenceBlock = 0n;
-      let signature = '0x';
+      assertCurrentClaimOperation();
       if (activeIncidentId === 0n) {
-        setClaimStatus('Verifying incident in the TEE. First claim may take several minutes.');
-        const authorization = await prepareIncidentOpen(insuredToken, {
-          chainId: network.id,
-          registry: contracts.registry,
-          defiInsurance: contracts.defiInsurance,
-          signal: controller.signal,
-        });
+        if (!authorization) authorization = await prepareFirstIncident();
+        assertCurrentClaimOperation();
         activeIncidentId = await client.readContract({
           address: contracts.defiInsurance,
           abi: claimWriteAbi,
           functionName: 'activeIncidentId',
         });
+        assertCurrentClaimOperation();
         if (activeIncidentId === 0n) {
           referenceBlock = authorization.referenceBlock;
           signature = authorization.signature;
@@ -978,34 +1309,176 @@ export default function App() {
         abi: claimWriteAbi,
         functionName: 'fileClaim',
         args: [insuredToken, insuredTokenAmount, scoreToSpend, boosterAmount, referenceBlock, signature],
-      }, 'Confirm the claim in your wallet.', setClaimStatus);
-      setClaimStatus(`Claim confirmed on ${network.name}.`);
+      }, 'Confirm the claim in your wallet.', setCurrentClaimStatus, expectedWalletScope, true);
+      assertCurrentClaimOperation();
+      if (walletScopeRef.current === expectedWalletScope) {
+        setClaimStatus(`Claim confirmed on ${network.name}.`);
+      }
     } catch (error) {
-      if (error?.name !== 'AbortError') {
+      if (claimAbortController.current === controller
+        && walletScopeRef.current === expectedWalletScope
+        && error?.name !== 'AbortError') {
         setClaimStatusIsWarning(true);
         setClaimStatus(error?.shortMessage || error?.message || 'Claim submission failed.');
       }
     } finally {
-      if (claimAbortController.current === controller) claimAbortController.current = null;
-      setClaimSubmitting(false);
+      if (claimAbortController.current === controller) {
+        claimAbortController.current = null;
+        if (walletScopeRef.current === expectedWalletScope) setClaimSubmitting(false);
+      }
     }
   }
 
   async function cancelClaim() {
+    const expectedWalletScope = walletScopeKey;
     try {
+      assertCurrentWalletScope(expectedWalletScope);
       const network = requireProtocolNetwork();
+      const initialClaimId = chainData.claim?.id;
+      const initialIncidentId = chainData.incident?.id;
       setClaimStatusIsWarning(false);
+      const latestChainData = await refreshChainData(expectedWalletScope);
+      const latestClaim = latestChainData?.claim;
+      if (!latestClaim) throw new Error('This account no longer has an unresolved claim to cancel.');
+      if (latestClaim.resolved) throw new Error('This claim has already been resolved.');
+      if (latestClaim.id !== initialClaimId || latestChainData.incident?.id !== initialIncidentId) {
+        throw new Error('The active claim changed. Review the current claim before cancelling.');
+      }
+      if (claimLifecycle(latestChainData.incident).state !== 'claim-open') {
+        throw new Error('This claim can no longer be cancelled. Review its current lifecycle state.');
+      }
+      assertCurrentWalletScope(expectedWalletScope);
       await submitTransaction({
         address: network.contracts.defiInsurance,
         abi: claimWriteAbi,
         functionName: 'cancelClaim',
         args: [],
-      }, 'Confirm claim cancellation in your wallet.', setClaimStatus);
+      }, 'Confirm claim cancellation in your wallet.', setClaimStatus, expectedWalletScope);
+      if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimToken(null);
       setClaimStatus('');
     } catch (error) {
+      if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimStatusIsWarning(true);
       setClaimStatus(error?.shortMessage || error?.message || 'Claim cancellation failed.');
+    }
+  }
+
+  async function settlementArtifact() {
+    const requestedContextKey = claimContextKey;
+    if (claimSettlement?.contextKey === requestedContextKey
+        && matchesSettlementContext(claimSettlement, chainData.incident?.id, chainData.incident?.root)
+        && matchesSettlementTopology(claimSettlement.value, chainData.incident)) {
+      return claimSettlement.value;
+    }
+    const network = requireProtocolNetwork();
+    const value = await prepareSettlement(chainData.incident.id, {
+      chainId: network.id,
+      registry: network.contracts.registry,
+      defiInsurance: network.contracts.defiInsurance,
+      expectedRoot: chainData.incident.root,
+      expectedPoolAddrs: chainData.incident.poolAddrs,
+      expectedPoolOrder: chainData.incident.poolOrder,
+    });
+    if (claimContextRef.current !== requestedContextKey) {
+      const error = new Error('Wallet account or claim changed while payout details were loading.');
+      error.name = 'AbortError';
+      throw error;
+    }
+    setClaimSettlement({
+      contextKey: requestedContextKey,
+      incidentId: chainData.incident.id,
+      claimId: chainData.claim.id,
+      root: chainData.incident.root,
+      value,
+    });
+    return value;
+  }
+
+  async function settleClaim() {
+    const expectedWalletScope = walletScopeKey;
+    try {
+      assertCurrentWalletScope(expectedWalletScope);
+      const network = requireProtocolNetwork();
+      const initialIncidentId = chainData.incident?.id;
+      const initialRoot = chainData.incident?.root;
+      setClaimStatusIsWarning(false);
+      setClaimStatus('Preparing the TEE settlement. This may take several minutes.');
+      const settlement = await settlementArtifact();
+      const latestChainData = await refreshChainData(expectedWalletScope);
+      const latestIncident = latestChainData?.incident;
+      if (latestIncident?.id !== initialIncidentId
+          || latestIncident?.root?.toLowerCase() !== initialRoot?.toLowerCase()
+          || claimLifecycle(latestIncident).state !== 'settlement-open'
+          || !matchesSettlementTopology(settlement, latestIncident)) {
+        throw new Error('The incident settlement state changed while the settlement was prepared.');
+      }
+      assertCurrentWalletScope(expectedWalletScope);
+      await submitTransaction({
+        address: network.contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'settleIncident',
+        args: [settlement.root, settlement.poolPayouts, settlement.signature],
+      }, 'Confirm claim settlement in your wallet.', setClaimStatus, expectedWalletScope);
+      if (walletScopeRef.current === expectedWalletScope) {
+        setClaimStatus(`Settlement confirmed on ${network.name}.`);
+      }
+    } catch (error) {
+      if (walletScopeRef.current !== expectedWalletScope) return;
+      setClaimStatusIsWarning(true);
+      setClaimStatus(error?.shortMessage || error?.message || 'Claim settlement failed.');
+    }
+  }
+
+  async function finalizeCurrentClaim(acceptPayout) {
+    const expectedWalletScope = walletScopeKey;
+    try {
+      assertCurrentWalletScope(expectedWalletScope);
+      const network = requireProtocolNetwork();
+      const initialClaimId = chainData.claim?.id;
+      const initialIncidentId = chainData.incident?.id;
+      const initialRoot = chainData.incident?.root;
+      const lifecycle = claimLifecycle(chainData.incident);
+      setClaimStatusIsWarning(false);
+      const settlement = lifecycle.state === 'payout-open' || lifecycle.state === 'payout-expired'
+        ? await settlementArtifact()
+        : null;
+      const latestChainData = await refreshChainData(expectedWalletScope);
+      const latestClaim = latestChainData?.claim;
+      const latestIncident = latestChainData?.incident;
+      if (!latestClaim) throw new Error('This account no longer has an unresolved claim to finalize.');
+      if (latestClaim.resolved) throw new Error('This claim has already been resolved.');
+      if (latestClaim.id !== initialClaimId || latestIncident?.id !== initialIncidentId) {
+        throw new Error('The active claim changed while payout details were loading. Review the current claim and try again.');
+      }
+
+      const latestLifecycle = claimLifecycle(latestIncident);
+      let row = null;
+      if (lifecycle.state === 'payout-open' || lifecycle.state === 'payout-expired') {
+        if (latestIncident.root?.toLowerCase() !== initialRoot?.toLowerCase()
+            || (latestLifecycle.state !== 'payout-open' && latestLifecycle.state !== 'payout-expired')
+            || !matchesSettlementTopology(settlement, latestIncident)) {
+          throw new Error('The payout state changed while details were loading. Review the current claim and try again.');
+        }
+        row = settlement.rows.find((candidate) => candidate.claimId === latestClaim.id);
+        if (!row) throw new Error('The settlement does not contain this claim.');
+      }
+      assertCurrentWalletScope(expectedWalletScope);
+      await submitTransaction({
+        address: network.contracts.defiInsurance,
+        abi: claimWriteAbi,
+        functionName: 'finalizeClaim',
+        args: row
+          ? [BigInt(latestClaim.id), acceptPayout, row.amounts, row.scoreSpent, row.boostedScore, row.eligibleAmount, row.proof]
+          : [BigInt(latestClaim.id), false, [], 0n, 0n, 0n, []],
+      }, acceptPayout ? 'Confirm payout acceptance in your wallet.' : 'Confirm token return in your wallet.', setClaimStatus, expectedWalletScope);
+      if (walletScopeRef.current !== expectedWalletScope) return;
+      setClaimToken(null);
+      setClaimStatus('');
+    } catch (error) {
+      if (walletScopeRef.current !== expectedWalletScope) return;
+      setClaimStatusIsWarning(true);
+      setClaimStatus(error?.shortMessage || error?.message || 'Claim finalization failed.');
     }
   }
 
@@ -1018,6 +1491,7 @@ export default function App() {
   async function submitUsd8Action(action, raw) {
     try {
       setUsd8Status('');
+      setUsd8StatusFailed(false);
       const network = requireProtocolNetwork();
       const client = publicClientFor(network.id);
       const { contracts } = network;
@@ -1042,14 +1516,14 @@ export default function App() {
 
       const allowance = await client.readContract({
         address: contracts.usdc,
-        abi: approveAbi,
+        abi: erc20Abi,
         functionName: 'allowance',
         args: [address, contracts.treasury],
       });
       if (allowance < amount) {
         await submitTransaction({
           address: contracts.usdc,
-          abi: approveAbi,
+          abi: erc20Abi,
           functionName: 'approve',
           args: [contracts.treasury, amount],
         }, 'Approve USDC in your wallet.', setUsd8Status);
@@ -1062,6 +1536,7 @@ export default function App() {
       }, 'Confirm the USD8 mint in your wallet.', setUsd8Status);
       setUsd8Status(`Mint confirmed on ${network.name}.`);
     } catch (error) {
+      setUsd8StatusFailed(true);
       setUsd8Status(error?.shortMessage || error?.message || 'Transaction failed.');
     }
   }
@@ -1080,12 +1555,24 @@ export default function App() {
   const displayedScoreStatus = canSimulateCurrentScore && scoreStatus !== 'ready'
     ? 'ready'
     : connected
-    && scoreStatus === 'ready'
     && protocolNetwork
     && (chainDataStatus === 'loading'
-      || (scoreNeedsBalanceRefresh && scoreRefreshCompletedKey !== currentScoreRefreshKey))
+      || (scoreStatus === 'ready'
+        && scoreNeedsBalanceRefresh
+        && scoreRefreshCompletedKey !== currentScoreRefreshKey))
     ? 'loading'
     : scoreStatus;
+  const scoreStatusForDisplay = connected
+    && activeNetwork?.scoreAvailable
+    && displayedScoreStatus === 'idle'
+    ? 'loading'
+    : displayedScoreStatus;
+  const balancesLoading = connected
+    && Boolean(protocolNetwork)
+    && chainDataStatus === 'loading';
+  const poolLoading = Boolean(protocolNetwork)
+    && chainDataStatus !== 'ready'
+    && chainDataStatus !== 'error';
   const displayedScore = scoreNeedsBalanceRefresh
     && scoreRefreshCompletedKey === currentScoreRefreshKey
     ? scoreWithCurrentBalanceRates(
@@ -1102,20 +1589,54 @@ export default function App() {
         chainData.scoreBalancesSnapshotTimestampMilliseconds,
       )
     : score;
+  const selectedSettlementRow = chainData.claim
+      && claimSettlement?.contextKey === claimContextKey
+      && matchesSettlementContext(claimSettlement, chainData.incident?.id, chainData.incident?.root)
+      && matchesSettlementTopology(claimSettlement.value, chainData.incident)
+    ? claimSettlement.value.rows.find((row) => row.claimId === chainData.claim.id)
+    : null;
+  // A resolved claim needs no action, and a settled incident delists its token, so
+  // the row should disappear rather than keep offering a payout button.
+  const unresolvedClaim = chainData.claim && !chainData.claim.resolved ? chainData.claim : null;
+  // Only a claim of your own that is already resolved removes the row; with no
+  // claim the incident stays visible so anyone can still see or join it.
+  const actionableIncident = chainData.claim?.resolved ? null : chainData.incident;
+
+  // The settlement artifact is still being fetched, so the payout figures are
+  // unknown rather than unavailable.
+  const payoutLoading = Boolean(unresolvedClaim)
+    && !selectedSettlementRow
+    && !claimStatusIsWarning;
   const selectedClaimStatus = claimToken
-    && chainData.claim
+    && unresolvedClaim
     && chainData.incident?.tokenId === claimToken.id
     ? {
-      ...chainData.claim,
+      ...unresolvedClaim,
       ...claimLifecycle(chainData.incident),
       incident: chainData.incident,
-      insuredTokenAmount: groupedDecimal(chainData.claim.insuredTokenAmount),
-      bondAmount: groupedDecimal(chainData.claim.bondAmount),
-      boosterAmount: groupedDecimal(chainData.claim.boosterAmount),
-      scoreToSpend: groupedDecimal(chainData.claim.scoreToSpend),
+      insuredTokenAmount: groupDecimalString(chainData.claim.insuredTokenAmount),
+      bondAmount: groupDecimalString(chainData.claim.bondAmount),
+      boosterAmount: groupDecimalString(chainData.claim.boosterAmount),
+      scoreToSpend: groupDecimalString(chainData.claim.scoreToSpend),
       phaseWindowDays: Math.max(1, Math.ceil(chainData.incident.phaseWindowMilliseconds / 86_400_000)),
+      payoutUsd: selectedSettlementRow?.payoutUsd === undefined
+        ? null
+        : formatUsdWad(selectedSettlementRow.payoutUsd),
+      payoutVsLoss: selectedSettlementRow?.payoutUsd === undefined
+        || !selectedSettlementRow?.lossUsd
+        ? null
+        : percentOfWad(selectedSettlementRow.payoutUsd, selectedSettlementRow.lossUsd),
+      payoutDetails: settlementPayoutDetails(
+        selectedSettlementRow?.amounts || [],
+        claimSettlement?.value?.poolOrder || [],
+        protocolNetwork?.payoutAssets,
+      ),
     }
     : null;
+  const insuredTokenStates = chainData.insurance?.tokens || {};
+  const currentClaimTokenRows = CLAIM_TOKEN_ROWS.filter((row) => (
+    insuredTokenStates[row.id]?.enabled || row.id === actionableIncident?.tokenId
+  ));
 
   return (
     <>
@@ -1131,11 +1652,15 @@ export default function App() {
           onDisconnect: disconnect,
         }}
         score={connected ? displayedScore : EMPTY_SCORE}
-        scoreStatus={connected ? displayedScoreStatus : 'ready'}
+        scoreStatus={connected ? scoreStatusForDisplay : 'ready'}
         balances={connected ? chainData.balances : EMPTY_CHAIN_DATA.balances}
+        balancesLoading={balancesLoading}
         savingsVault={savingsVault}
-        pool={chainData.pool}
-        incident={chainData.incident}
+        pools={displayedPools}
+        poolLoading={poolLoading}
+        dataError={dataError}
+        incident={actionableIncident}
+        insuredTokenStates={insuredTokenStates}
         onFileClaim={fileClaimAction}
         fileClaimUnavailableReason={connected ? protocolUnavailableReason : CONNECT_WALLET_REASON}
         onPoolAction={openPoolAction}
@@ -1144,7 +1669,7 @@ export default function App() {
       {connected && claimToken ? (
         <FileClaimDialog
           token={claimToken.id}
-          insuredTokens={CLAIM_TOKEN_ROWS.map((row) => ({
+          insuredTokens={currentClaimTokenRows.map((row) => ({
             id: row.id,
             symbol: row.symbol,
             iconSrc: row.iconSrc,
@@ -1156,17 +1681,15 @@ export default function App() {
                 : chainData.balances.insuredTokens?.[row.id] || '0',
           }))}
           availableScore={score?.availableScore || '0'}
-          availableBoosters="0"
+          availableBoosters={chainData.balances.boosters || '0'}
           claimBond="10 USD8"
           claimBondAvailable={chainData.balances.usd8}
-          claimTotals={{
-            insuredTokenAmount: chainData.incident?.totalInsuredTokenClaims || '0',
-            scoreCommitted: chainData.incident?.totalScoreCommitted || '0',
-          }}
-          maxIncidentAgeHours={144}
-          requiresIncidentTime={!chainData.activeIncidentId || chainData.activeIncidentId === '0'}
+          claimTotals={{ scoreCommitted: chainData.incident?.totalScoreCommitted || '0' }}
+          boosterBoostBps={chainData.incident?.boosterBoostBps || 0}
           claimStatus={selectedClaimStatus}
+          payoutLoading={payoutLoading}
           submitUnavailableReason={!protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
+            || !insuredTokenStates[claimToken.id]?.enabled
             ? `${claimToken.symbol} is not enabled for claims on ${protocolNetwork?.name || 'the selected network'}.`
             : (claimSubmitting
               ? 'Claim preparation is in progress.'
@@ -1188,6 +1711,10 @@ export default function App() {
             setClaimToken(null);
           }}
           onCancel={cancelClaim}
+          onSettle={settleClaim}
+          onReturnTokens={() => finalizeCurrentClaim(false)}
+          onAcceptPayout={() => finalizeCurrentClaim(true)}
+          onCancelPayout={() => finalizeCurrentClaim(false)}
           onSubmit={submitClaim}
         />
       ) : null}
@@ -1197,6 +1724,7 @@ export default function App() {
           usdcBalance={chainData.balances.usdc}
           usd8Balance={chainData.balances.usd8}
           statusMessage={usd8Status}
+          statusFailed={usd8StatusFailed}
           onInputChange={() => setUsd8Status('')}
           onModeChange={(action) => {
             setUsd8Status('');
@@ -1213,18 +1741,22 @@ export default function App() {
       {connected && poolAction ? (
         <PoolActionDialog
           mode={poolAction}
-          coverAssetBalance={chainData.balances.coverAsset}
+          poolName={activePool?.name || 'cover pool'}
+          assetSymbol={activePool?.assetSymbol || ''}
+          shareSymbol={activePool?.shareSymbol || ''}
+          coverAssetBalance={activePool?.assetBalance || '0'}
           activeIncidentId={chainData.activeIncidentId}
-          capacityUncapped={chainData.pool.capacityUncapped}
-          remainingDepositCapacity={chainData.pool.remainingDepositCapacity}
-          poolShareBalance={chainData.balances.poolShares}
-          availableForCooldown={chainData.pool.availableForCooldown}
-          availableForWithdraw={chainData.pool.availableForWithdraw}
-          inCooldown={chainData.pool.inCooldown}
-          cooldownEndsAtMilliseconds={chainData.pool.cooldownEndsAtMilliseconds}
-          earnings={livePool.earnings}
-          hasEarnings={livePool.hasEarnings}
+          capacityUncapped={activePool?.capacityUncapped}
+          remainingDepositCapacity={activePool?.remainingDepositCapacity}
+          poolShareBalance={activePool?.availableForCooldown || '0'}
+          availableForCooldown={activePool?.availableForCooldown}
+          availableForWithdraw={activePool?.availableForWithdraw}
+          inCooldown={activePool?.inCooldown}
+          cooldownEndsAtMilliseconds={activePool?.cooldownEndsAtMilliseconds}
+          earnings={livePoolAction.earnings}
+          hasEarnings={livePoolAction.hasEarnings}
           statusMessage={poolStatus}
+          statusFailed={poolStatusFailed}
           statusAction={poolStatusAction}
           onInputChange={() => {
             setPoolStatus('');

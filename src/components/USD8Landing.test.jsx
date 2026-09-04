@@ -21,6 +21,21 @@ function availabilityTooltip(button) {
   return document.getElementById(button.getAttribute('aria-describedby'));
 }
 
+const POOLS = [{
+  id: 'wsteth',
+  name: 'wstEth Cover Pool',
+  assetSymbol: 'wstETH',
+  shareSymbol: 'USD8-cp-wstETH',
+  apy: '—',
+  tvl: '—',
+  capacityPercent: 0,
+  capacityUncapped: false,
+  assets: '0',
+  deposit: '0',
+  earnings: '0',
+  hasEarnings: false,
+}];
+
 describe('USD8 landing navigation', () => {
   it('shows the connected network beside the shortened wallet address', () => {
     render(
@@ -31,6 +46,7 @@ describe('USD8 landing navigation', () => {
           connected: true,
           networkName: 'Sepolia',
         }}
+        pools={POOLS}
       />,
     );
 
@@ -38,7 +54,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('shows the USD8.fi header wordmark and the shared footer links', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     expect(within(screen.getByRole('link', { name: 'USD8 home' })).getByText('USD8.fi')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'beta' })).toHaveAttribute(
@@ -99,7 +115,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('defaults to Defi Insurance and exposes all three product tabs', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const nav = screen.getByRole('navigation', { name: 'USD8 products' });
     const tabs = within(nav).getAllByRole('button');
@@ -112,7 +128,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('shows the future White Hat Economy message', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'White Hat Economy' }));
 
@@ -134,14 +150,19 @@ describe('USD8 landing navigation', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
-        pool={{
+        pools={POOLS}
+        pools={[{
+          id: 'wsteth',
+          name: 'wstEth Cover Pool',
+          assetSymbol: 'wstETH',
+          shareSymbol: 'USD8-cp-wstETH',
           earnings: '1',
           earningsExact: '1',
           earningsPerSecond: '0.00002',
           earningsSnapshotTimestampMilliseconds: 20_000,
           earningsPeriodFinishMilliseconds: 22_000,
           hasEarnings: true,
-        }}
+        }]}
       />,
     );
 
@@ -157,7 +178,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('switches to the cover-pool design without navigating away', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
@@ -167,19 +188,19 @@ describe('USD8 landing navigation', () => {
   });
 
   it('restores the selected product after a refresh', () => {
-    const { unmount } = render(<USD8Landing wallet={wallet} />);
+    const { unmount } = render(<USD8Landing wallet={wallet} pools={POOLS} />);
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     expect(window.localStorage.getItem('usd8-active-product')).toBe('pools');
 
     unmount();
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cover Pools' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('uses the wstETH artwork on the cover-pool card', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
@@ -187,7 +208,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('uses the wide cover-pool layout with capacity beside the headline metrics', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
@@ -205,9 +226,11 @@ describe('USD8 landing navigation', () => {
     render(
       <USD8Landing
         wallet={wallet}
+        pools={POOLS}
         onUsd8Action={onUsd8Action}
         onFileClaim={onFileClaim}
         onPoolAction={onPoolAction}
+        insuredTokenStates={{ usd8: { enabled: true, maxCoverageBps: '8000' } }}
       />,
     );
 
@@ -235,7 +258,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('shows zero for disconnected wallet scores', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     for (const label of screen.getAllByText('Score earned')) {
       expect(label.nextElementSibling).toHaveTextContent('0');
@@ -246,19 +269,21 @@ describe('USD8 landing navigation', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         balances={{ usd8: '1,234.5678', savings: '0' }}
       />,
     );
 
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
-    expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('1,235');
-    expect(within(usd8Card).getByText('Your Balance').nextElementSibling).not.toHaveTextContent('1,234.5678');
+    expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('1235');
+    expect(within(usd8Card).getByText('Your Balance').nextElementSibling).not.toHaveTextContent('1234.5678');
   });
 
   it('floors scores to one decimal and groups thousands without abbreviating them', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         score={{
           grossEarnedScore: '7123.99',
           availableScore: '7123456.99',
@@ -268,12 +293,12 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('7,123.9');
-    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('7,123,456.9');
+    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('7123.9');
+    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('7123456.9');
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('7,123.6');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('1,234,567.8');
+    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('7123.6');
+    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('1234567.8');
   });
 
   it('advances total, available, USD8, and sUSD8 score locally every second', () => {
@@ -282,6 +307,7 @@ describe('USD8 landing navigation', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         score={{
           snapshotTimestamp: 20,
           grossEarnedScore: '128600',
@@ -300,17 +326,17 @@ describe('USD8 landing navigation', () => {
     const available = screen.getByText('Available Score').parentElement;
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    expect(total).toHaveTextContent('128,600.0');
-    expect(available).toHaveTextContent('96,400.0');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84,200.0');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44,400.0');
+    expect(total).toHaveTextContent('128600.0');
+    expect(available).toHaveTextContent('96400.0');
+    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84200.0');
+    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44400.0');
 
     act(() => vi.advanceTimersByTime(1_000));
 
-    expect(total).toHaveTextContent('128,600.2');
-    expect(available).toHaveTextContent('96,400.1');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84,200.1');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44,400.1');
+    expect(total).toHaveTextContent('128600.2');
+    expect(available).toHaveTextContent('96400.1');
+    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84200.1');
+    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44400.1');
   });
 
 
@@ -320,6 +346,7 @@ describe('USD8 landing navigation', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         score={{
           snapshotTimestamp: 20,
           grossEarnedScore: '12.9',
@@ -354,7 +381,7 @@ describe('USD8 landing navigation', () => {
   });
 
   it('explains score and pool metrics with question-mark tooltips', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     expect(screen.getByRole('button', { name: 'About total insurance score' })).toHaveTextContent('?');
     const scoreRateHelp = screen.getAllByRole('button', { name: 'About score rate' });
@@ -376,36 +403,72 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
-    expect(screen.getByRole('button', { name: 'About 30-day earnings APR' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About 30-day earnings APR for wstEth Cover Pool' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
       name: 'USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.',
     })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'About your earnings' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About your earnings in wstEth Cover Pool' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
       name: 'Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.',
     })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'About capacity filled' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About capacity filled for wstEth Cover Pool' })).toHaveTextContent('?');
   });
 });
 
 describe('Free insurance table', () => {
-  it('shows max coverage as 80% and explains the payout limits', () => {
-    render(<USD8Landing wallet={wallet} />);
+  it('renders only currently listed tokens and uses exact onchain coverage BPS', () => {
+    render(
+      <USD8Landing
+        wallet={wallet}
+        pools={POOLS}
+        insuredTokenStates={{
+          usd8: { enabled: true, maxCoverageBps: '7550' },
+          'test-msloss': { enabled: false, maxCoverageBps: '0' },
+        }}
+      />,
+    );
+
+    const table = screen.getByRole('table', { name: 'Insured tokens' });
+    expect(within(table).getByRole('button', { name: 'File claim for usd8' })).toBeInTheDocument();
+    expect(within(table).getByText('75.5%')).toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'File claim for test-msloss' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'File claim for curve-scrvusd' })).not.toBeInTheDocument();
+  });
+
+  it('retains a delisted active-incident token for claim finalization without inventing coverage', () => {
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
+        insuredTokenStates={{ 'test-msloss': { enabled: false, maxCoverageBps: '0' } }}
+        incident={{
+          tokenId: 'test-msloss',
+          phaseDeadlineMilliseconds: Date.now() + 86_400_000,
+          phaseWindowMilliseconds: 86_400_000,
+          root: `0x${'11'.repeat(32)}`,
+        }}
+      />,
+    );
+
+    const action = screen.getByRole('button', { name: /for test-msloss$/i });
+    expect(action.closest('tr')).toHaveTextContent('—');
+  });
+
+  it('fails closed instead of showing static coverage when insurance state is missing', () => {
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(screen.getByRole('button', { name: 'About insured token' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About max coverage' })).toBeInTheDocument();
     expect(screen.getByText(/asset eligible for a claim after a covered loss incident/i)).toBeInTheDocument();
-    expect(within(table).getAllByText('80%')).toHaveLength(6);
-    const testTokenRow = within(table).getByRole('button', { name: 'File claim for test-msloss' }).closest('tr');
-    expect(testTokenRow).toHaveTextContent('Sepolia Test LossmsLOSS');
-    expect(testTokenRow.querySelector('.table-token-icon')).toHaveAttribute('src');
-    expect(screen.getByText(/maximum reimbursement possible: 80% of the insured token's underlying value/i)).toBeInTheDocument();
+    expect(within(table).queryAllByText('80%')).toHaveLength(0);
+    expect(within(table).queryByRole('button', { name: /file claim for/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/current onchain maximum reimbursement for each listed token/i)).toBeInTheDocument();
     expect(screen.getByText(/actual payout depends on the user's insurance score and cover pool limits/i)).toBeInTheDocument();
   });
 
   it('uses the insured-token sUSD8 artwork for the savings vault card', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(savingsCard.querySelector('img')).toHaveAttribute('src', sUsd8Logo);
@@ -415,6 +478,7 @@ describe('Free insurance table', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         balances={{ savings: '42.5', savingsAssets: '45.25' }}
         savingsVault={{ balance: '$76.94M', apy: '3.24%' }}
       />,
@@ -436,7 +500,13 @@ describe('Free insurance table', () => {
   });
 
   it('reuses the insured-token rows without exposing contract addresses', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(
+      <USD8Landing
+        wallet={wallet}
+        pools={POOLS}
+        insuredTokenStates={{ usd8: { enabled: true, maxCoverageBps: '8000' } }}
+      />,
+    );
 
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(within(table).getByText('Max Coverage')).toBeInTheDocument();
@@ -454,6 +524,7 @@ describe('Free insurance table', () => {
     render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         incident={{
           tokenId: 'test-msloss',
           phaseDeadlineMilliseconds: now + (2 * 24 + 23) * 60 * 60 * 1_000,
@@ -465,8 +536,7 @@ describe('Free insurance table', () => {
 
     expect(screen.getByRole('button', { name: 'Claim Open (2d 23h left) for test-msloss' }))
       .toHaveTextContent('Claim Open (2d 23h left)');
-    expect(screen.getAllByRole('button', { name: /file claim for/i })).toHaveLength(5);
-    expect(screen.getAllByRole('button', { name: /file claim for/i }).every((button) => button.textContent === 'File Claim')).toBe(true);
+    expect(screen.queryByRole('button', { name: /file claim for/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Claim Open (2d 23h left) for test-msloss' }))
       .toHaveClass('dashboard-table-action-button--claim-status');
   });
@@ -482,6 +552,7 @@ describe('Free insurance table', () => {
     const { rerender } = render(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         incident={{
           ...common,
           phaseDeadlineMilliseconds: now - 24 * 60 * 60 * 1_000,
@@ -494,6 +565,7 @@ describe('Free insurance table', () => {
     rerender(
       <USD8Landing
         wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
         incident={{
           ...common,
           phaseDeadlineMilliseconds: now - 24 * 60 * 60 * 1_000,
@@ -505,7 +577,7 @@ describe('Free insurance table', () => {
   });
 
   it('omits Lido stETH from the insured-token list', () => {
-    render(<USD8Landing wallet={wallet} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(within(table).queryByText('Lido stETH')).not.toBeInTheDocument();

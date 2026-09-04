@@ -4,6 +4,8 @@ import { displayAvailableBalance } from '../lib/displayAvailableBalance.js';
 import { tokenAmountExceedsBalance } from '../lib/tokenAmount.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
+import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
+import { boostedScore, wadUnits, formatWad } from '../lib/units.js';
 
 function normalizedDecimal(value) {
   return String(value || '0').replace(/,/g, '').trim();
@@ -22,27 +24,19 @@ function isPositiveDecimal(value) {
 }
 
 function defaultTokenAmount(available) {
-  return isPositiveDecimal(available) ? '1' : '';
+  const normalized = normalizedDecimal(available);
+  return isPositiveDecimal(normalized) ? normalized : '';
 }
 
-function proposedSharePercentage(value, existingTotal) {
-  const input = normalizedDecimal(value);
-  const total = normalizedDecimal(existingTotal);
-  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(input)
-      || !/^(?:\d+\.?\d*|\.\d+)$/.test(total)) return '0%';
+function defaultBoosterAmount(available) {
+  const normalized = normalizedDecimal(available);
+  return /^\d+$/.test(normalized) ? normalized : '0';
+}
 
-  const inputFraction = input.split('.')[1]?.length || 0;
-  const totalFraction = total.split('.')[1]?.length || 0;
-  const decimals = Math.max(inputFraction, totalFraction);
-  const scaled = (decimal) => {
-    const [whole = '0', fraction = ''] = decimal.split('.');
-    return BigInt(`${whole || '0'}${fraction.padEnd(decimals, '0')}`);
-  };
-  const inputAmount = scaled(input);
-  const combinedTotal = inputAmount + scaled(total);
-  if (combinedTotal === 0n) return '0%';
-  const roundedPercentage = (inputAmount * 100n + combinedTotal / 2n) / combinedTotal;
-  return `${roundedPercentage}%`;
+function sharePercentage(mine, existingTotal) {
+  const combined = mine + existingTotal;
+  if (combined === 0n) return '0%';
+  return `${(mine * 100n + combined / 2n) / combined}%`;
 }
 
 function timeLeftLabel(daysLeft, hoursLeft) {
@@ -71,16 +65,20 @@ export default function FileClaimDialog({
   availableBoosters = '0',
   claimBond = '10 USD8',
   claimBondAvailable = '0',
-  claimTotals = { insuredTokenAmount: '0', scoreCommitted: '0' },
-  maxIncidentAgeHours = 144,
-  requiresIncidentTime = true,
+  claimTotals = { scoreCommitted: '0' },
+  boosterBoostBps = 0,
   claimStatus = null,
+  payoutLoading = false,
   submitUnavailableReason = '',
   statusMessage = '',
   statusTone = 'neutral',
   onClearStatus,
   onClose,
   onCancel,
+  onSettle,
+  onReturnTokens,
+  onAcceptPayout,
+  onCancelPayout,
   onSubmit,
 }) {
   const tokenOptions = insuredTokens.length > 0
@@ -89,14 +87,7 @@ export default function FileClaimDialog({
   const selectedToken = tokenOptions.find((option) => option.id === token || option.symbol === token) || tokenOptions[0];
   const [amount, setAmount] = useState(() => defaultTokenAmount(selectedToken.balance));
   const [scoreToSpend, setScoreToSpend] = useState(() => insuranceScoreInputValue(availableScore));
-  const [boosterAmount, setBoosterAmount] = useState('0');
-  const [incidentAgeHours, setIncidentAgeHours] = useState(24);
-
-  const incidentAgeLimit = Math.max(1, Math.floor(Number(maxIncidentAgeHours) || 1));
-  const incidentDayOptions = Array.from(
-    { length: Math.floor(incidentAgeLimit / 24) },
-    (_, index) => ({ days: index + 1, hours: (index + 1) * 24 }),
-  );
+  const [boosterAmount, setBoosterAmount] = useState(() => defaultBoosterAmount(availableBoosters));
   const availableScoreValue = normalizedDecimal(availableScore);
   const hasAvailableScore = isPositiveDecimal(availableScoreValue);
   const claimUnavailableReason = submitUnavailableReason
@@ -107,19 +98,34 @@ export default function FileClaimDialog({
     || (!isPositiveDecimal(amount) ? `Enter the ${selectedToken.symbol} amount you want to claim for.` : '')
     || (!isPositiveDecimal(scoreToSpend) ? 'Enter the insurance score you want to spend.' : '');
   const activeClaim = Boolean(claimStatus?.id);
+  const boosterCount = normalizedDecimal(boosterAmount);
+  const effectiveScoreUnits = boostedScore(
+    wadUnits(scoreToSpend),
+    /^\d+$/.test(boosterCount) ? BigInt(boosterCount) : 0n,
+    boosterBoostBps,
+  );
+  const effectiveScoreShare = sharePercentage(effectiveScoreUnits, wadUnits(claimTotals.scoreCommitted));
   const claimIncident = claimStatus?.incident;
-  const proposedTokenClaimPercentage = proposedSharePercentage(
-    amount,
-    claimTotals.insuredTokenAmount,
-  );
-  const proposedScoreCommitmentPercentage = proposedSharePercentage(
-    scoreToSpend,
-    claimTotals.scoreCommitted,
-  );
   const [statusNowMilliseconds, setStatusNowMilliseconds] = useState(Date.now());
   const liveClaimStatus = activeClaim && claimIncident
     ? { ...claimStatus, ...claimLifecycle(claimIncident, statusNowMilliseconds) }
     : claimStatus;
+  const timelineLabels = {
+    'claim-open': ['Claim Open', 'Settle', 'Payout'],
+    'settlement-open': ['Claim Closed', 'Settle Open', 'Payout'],
+    'settlement-expired': ['Claim Closed', 'Not Settled', 'Payout'],
+    'settlement-pending': ['Claim Closed', 'Settled', 'Payout'],
+    'payout-open': ['Claim Closed', 'Settled', 'Payout Open'],
+    'payout-expired': ['Claim Closed', 'Settled', 'Payout Closed'],
+  }[liveClaimStatus?.state] || ['Claim Open', 'Settle', 'Payout'];
+  const showPayout = liveClaimStatus?.state === 'payout-open' || liveClaimStatus?.state === 'payout-expired';
+  const actionButtons = activeClaim ? {
+    'claim-open': [['Cancel Claim', onCancel]],
+    'settlement-open': [['Settle Claim', onSettle]],
+    'settlement-expired': [['Return Tokens', onReturnTokens]],
+    'payout-open': [['Accept Payout', onAcceptPayout], ['Cancel Payout and Return Tokens', onCancelPayout]],
+    'payout-expired': [['Cancel Payout and Return Tokens', onCancelPayout]],
+  }[liveClaimStatus?.state] || [] : [];
 
   useEffect(() => {
     setScoreToSpend(insuranceScoreInputValue(availableScoreValue));
@@ -154,11 +160,18 @@ export default function FileClaimDialog({
         <ClaimDialogCloseButton activeClaim={activeClaim} onClose={onClose} />
         <h2
           className="file-claim-title"
-          aria-label={activeClaim ? 'Claim Status' : `File a Claim for ${selectedToken.symbol}`}
+          aria-label={activeClaim ? 'Your Claim Status' : `File a Claim for ${selectedToken.symbol}`}
         >
           {!activeClaim && selectedToken.iconSrc ? <img src={selectedToken.iconSrc} alt={selectedToken.symbol} /> : null}
-          <span>{activeClaim ? 'Claim Status' : `File a Claim for ${selectedToken.symbol}`}</span>
+          <span>{activeClaim ? 'Your Claim Status' : `File a Claim for ${selectedToken.symbol}`}</span>
         </h2>
+        {!activeClaim ? (
+          <p className="file-claim-requirement">
+            {selectedToken.symbol} must lose more than 20% of its value against its underlying,
+            measured between its TWAP price immediately before and after the drop.{' '}
+            <a href="./docs/defi-insurance.html">learn more</a>.
+          </p>
+        ) : null}
 
         {activeClaim ? (
           <section className="file-claim-status" aria-live="polite">
@@ -166,7 +179,6 @@ export default function FileClaimDialog({
               <div>
                 <span>Insured Token</span>
                 <strong>{liveClaimStatus.insuredTokenAmount} {selectedToken.symbol}</strong>
-                <small>{liveClaimStatus.insuredTokenClaimPercentage} of all token claims</small>
               </div>
               <div><span>Claim Bond</span><strong>{liveClaimStatus.bondAmount} USD8</strong></div>
               <div>
@@ -176,41 +188,84 @@ export default function FileClaimDialog({
               </div>
               <div><span>Booster to spend</span><strong>{liveClaimStatus.boosterAmount}</strong></div>
             </div>
+            {showPayout ? (
+              <>
+                <div className="claim-status-payout-summary">
+                  <div>
+                    <span>Total Payout USD value</span>
+                    <strong>
+                      <MetricValue
+                        loading={payoutLoading}
+                        value={liveClaimStatus.payoutUsd}
+                        label="Loading payout value"
+                      />
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Payout vs Loss value</span>
+                    <strong>
+                      <MetricValue
+                        loading={payoutLoading}
+                        value={liveClaimStatus.payoutVsLoss}
+                        label="Loading payout comparison"
+                      />
+                    </strong>
+                  </div>
+                </div>
+                <div className="claim-status-payout-details">
+                  <span>Payout Details</span>
+                  {payoutLoading && (liveClaimStatus.payoutDetails || []).length === 0
+                    ? <LoadingSpinner label="Loading payout details" />
+                    : null}
+                  {(liveClaimStatus.payoutDetails || []).map((detail) => (
+                    <strong key={`${detail.symbol}:${detail.amount}`}>{detail.amount} {detail.symbol}{detail.usd ? ` (${detail.usd})` : ''}</strong>
+                  ))}
+                </div>
+              </>
+            ) : null}
             <span className="claim-status-timeline-label">Status</span>
             <div className="claim-status-timeline" aria-label={`Current stage: ${liveClaimStatus.stage}`}>
-              {[
-                ['Claim Open', `${liveClaimStatus.phaseWindowDays || 3} days`],
-                ['Settle & Dispute', `${liveClaimStatus.phaseWindowDays || 3}-${(liveClaimStatus.phaseWindowDays || 3) * 2} days`],
-                ['Finalise Payout', `${liveClaimStatus.phaseWindowDays || 3} days`],
-              ].map(([label, duration], index) => (
-                <div className={index === liveClaimStatus.stageIndex ? 'claim-status-step claim-status-step--active' : 'claim-status-step'} key={label}>
+              {timelineLabels.map((label, index) => {
+                const active = index === liveClaimStatus.stageIndex;
+                // Stages behind the current one have run to completion: fill the
+                // bar and show no time remaining instead of their nominal length.
+                const complete = index < liveClaimStatus.stageIndex;
+                const duration = index === 1
+                  ? `${liveClaimStatus.phaseWindowDays || 3}-${(liveClaimStatus.phaseWindowDays || 3) * 2} days`
+                  : `${liveClaimStatus.phaseWindowDays || 3} days`;
+                const progressPercent = active ? liveClaimStatus.progressPercent : 100;
+                return (
+                <div className={`claim-status-step${active ? ' claim-status-step--active' : ''}${complete ? ' claim-status-step--complete' : ''}`} key={label}>
                   <span
                     className="claim-status-step-bar"
-                    role={index === liveClaimStatus.stageIndex ? 'progressbar' : undefined}
-                    aria-label={index === liveClaimStatus.stageIndex ? `${label} progress` : undefined}
-                    aria-valuemin={index === liveClaimStatus.stageIndex ? 0 : undefined}
-                    aria-valuemax={index === liveClaimStatus.stageIndex ? 100 : undefined}
-                    aria-valuenow={index === liveClaimStatus.stageIndex ? liveClaimStatus.progressPercent : undefined}
-                    aria-valuetext={index === liveClaimStatus.stageIndex
+                    role={active || complete ? 'progressbar' : undefined}
+                    aria-label={active || complete ? `${label} progress` : undefined}
+                    aria-valuemin={active || complete ? 0 : undefined}
+                    aria-valuemax={active || complete ? 100 : undefined}
+                    aria-valuenow={active || complete ? progressPercent : undefined}
+                    aria-valuetext={active
                       ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft)
-                      : undefined}
-                    style={index === liveClaimStatus.stageIndex
-                      ? { '--claim-progress': `${liveClaimStatus.progressPercent}%` }
+                      : complete ? timeLeftLabel(0, 0) : undefined}
+                    style={active || complete
+                      ? { '--claim-progress': `${progressPercent}%` }
                       : undefined}
                   />
                   <strong>{label}</strong>
-                  <small>{index === liveClaimStatus.stageIndex
+                  <small>{active
                     ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft)
-                    : duration}</small>
+                    : complete ? timeLeftLabel(0, 0) : duration}</small>
                 </div>
-              ))}
+                );
+              })}
             </div>
-            {liveClaimStatus.cancellable ? (
+            {actionButtons.length > 0 || statusMessage ? (
               <div className="claim-status-actions">
-                <button className="usd8-dialog-submit" type="button" onClick={onCancel}>Cancel Claim</button>
+                {actionButtons.map(([label, action]) => (
+                  <button className="usd8-dialog-submit" type="button" onClick={action} key={label}>{label}</button>
+                ))}
                 {statusMessage ? (
                   <small className={`usd8-dialog-status${statusTone === 'warning' ? ' usd8-dialog-status--warning' : ''}`} role={statusTone === 'loading' ? 'status' : 'alert'}>
-                    {statusTone === 'loading' ? <span className="usd8-dialog-status-spinner" aria-hidden="true" /> : null}
+                    {statusTone === 'loading' ? <LoadingSpinner /> : null}
                     {statusMessage}
                   </small>
                 ) : null}
@@ -226,7 +281,6 @@ export default function FileClaimDialog({
                 amount,
                 scoreToSpend,
                 boosterAmount,
-                incidentAgeHours: requiresIncidentTime ? incidentAgeHours : null,
               });
             }
           }}>
@@ -247,15 +301,7 @@ export default function FileClaimDialog({
                   }}
                 />
                 <small>
-                  <button
-                    className="usd8-dialog-available"
-                    type="button"
-                    aria-label={`Use full ${selectedToken.symbol} balance ${selectedToken.balance}`}
-                    onClick={() => setAmount(String(selectedToken.balance).replace(/,/g, ''))}
-                  >
-                    {displayAvailableBalance(selectedToken.balance)}
-                  </button>
-                  <span> available. {amount || '0'} {selectedToken.symbol} will be {proposedTokenClaimPercentage} of all token claims atm.</span>
+                  {displayAvailableBalance(selectedToken.balance)} available.
                 </small>
               </div>
 
@@ -289,24 +335,14 @@ export default function FileClaimDialog({
                     setScoreToSpend(insuranceScoreInputValue(event.target.value));
                   }}
                 />
-                <small>
-                  <button
-                    className="usd8-dialog-available"
-                    type="button"
-                    aria-label={`Use full insurance score ${availableScore}`}
-                    onClick={() => setScoreToSpend(insuranceScoreInputValue(availableScoreValue))}
-                  >
-                    {displayAvailableBalance(availableScore)}
-                  </button>
-                  <span> available. {scoreToSpend || '0'} will be {proposedScoreCommitmentPercentage} of all score committed atm.</span>
-                </small>
+                <small>{displayAvailableBalance(availableScore)} available</small>
               </div>
 
               <div className="file-claim-field file-claim-field--compact">
                 <span className="metric-label-with-help">
                   <label htmlFor="file-claim-boosters">Boosters to burn</label>
                   <InfoTooltip ariaLabel="About boosters to burn" className="dashboard-help--align-right" floating>
-                    Optional Booster units escrowed with the claim and consumed only if an eligible boosted payout is accepted.
+                    Optional. Each Booster will boost the final insurance score by 1%. Unused Boosters will be returned.
                   </InfoTooltip>
                 </span>
                 <input
@@ -322,46 +358,9 @@ export default function FileClaimDialog({
                     setBoosterAmount(event.target.value);
                   }}
                 />
-                <small>
-                  <button
-                    className="usd8-dialog-available"
-                    type="button"
-                    aria-label={`Use all boosters ${availableBoosters}`}
-                    onClick={() => setBoosterAmount(String(availableBoosters).replace(/,/g, ''))}
-                  >
-                    {displayAvailableBalance(availableBoosters)}
-                  </button>
-                  <span> available</span>
-                </small>
+                <small>{displayAvailableBalance(availableBoosters)} available</small>
               </div>
 
-              {requiresIncidentTime ? (
-                <div className="file-claim-field file-claim-field--incident">
-                  <span className="metric-label-with-help">
-                    <label htmlFor="file-claim-incident-age">Roughly when price dropped 20% against its underlying</label>
-                    <InfoTooltip ariaLabel="About incident time" floating>
-                      Choose the approximate start of the loss. Claims can only be made for qualifying drops within the past six days. The TEE verifies finalized prices and selects the eligible reference block within the protocol's 43,200-block lookback.
-                    </InfoTooltip>
-                  </span>
-                  <select
-                    id="file-claim-incident-age"
-                    aria-label="Approximate incident age"
-                    value={incidentAgeHours}
-                    onChange={(event) => {
-                      onClearStatus?.();
-                      setIncidentAgeHours(Number(event.target.value));
-                    }}
-                  >
-                    {incidentDayOptions.length > 0 ? (
-                      <optgroup label="Days ago">
-                        {incidentDayOptions.map(({ days, hours }) => (
-                          <option key={hours} value={hours}>{days} {days === 1 ? 'day' : 'days'} ago</option>
-                        ))}
-                      </optgroup>
-                    ) : null}
-                  </select>
-                </div>
-              ) : null}
             </div>
 
             <div className="usd8-dialog-submit-row file-claim-submit-row">
@@ -369,17 +368,22 @@ export default function FileClaimDialog({
                 className="usd8-dialog-submit"
                 type="submit"
                 unavailableReason={claimUnavailableReason}
-                warningResetKey={`${selectedToken.id}:${amount}:${scoreToSpend}:${boosterAmount}:${incidentAgeHours}`}
+                warningResetKey={`${selectedToken.id}:${amount}:${scoreToSpend}:${boosterAmount}`}
               >
                 File Claim
               </AvailabilityAction>
+              <small className="file-claim-weight">
+                Total insurance score to spend: {formatWad(effectiveScoreUnits, 2, { trim: true })}
+                {boosterCount !== '0' ? ` (incl. ${boosterCount} booster${boosterCount === '1' ? '' : 's'})` : ''}
+                {' '}— {effectiveScoreShare} of all score committed atm.
+              </small>
               {statusMessage ? (
                 <small
                   className={`usd8-dialog-status${statusTone === 'warning' ? ' usd8-dialog-status--warning' : ''}`}
                   role={statusTone === 'loading' ? 'status' : 'alert'}
                   aria-label="Claim submission status"
                 >
-                  {statusTone === 'loading' ? <span className="usd8-dialog-status-spinner" aria-hidden="true" /> : null}
+                  {statusTone === 'loading' ? <LoadingSpinner /> : null}
                   {statusMessage}
                 </small>
               ) : null}

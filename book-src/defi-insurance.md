@@ -22,7 +22,7 @@ Claim is a 3-step process combine both onchain and offchain(TEE) process, it tak
 ### 1 File a Claim
 
 Anyone can file a claim if
-1. an insured token's adjacent 24hr TWAP prices dropped >=20% in the past 1-6 days.
+1. an insured token's adjacent 24hr TWAP prices dropped >20% in the past 1-6 days.
 2. claimer has insurance score available to spend (min 7 days old)
 3. claimer held the insured token for min 7 days before the price drop
 

@@ -6,11 +6,19 @@ const SEPOLIA_CONTRACTS = Object.freeze({
   usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
   treasury: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
   savingsVault: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
-  coverPool: '0x55cb69271da9937d0cb3c548409fd3f77586df79',
-  coverAsset: '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa',
-  coverAssetUsdOracle: '0x00e79afb10a84d153803f00e73900803179d594e',
+  // Registry order. Each entry is rendered as its own cover-pool card.
+  coverPools: Object.freeze([
+    Object.freeze({
+      id: 'wsteth',
+      name: 'wstEth Cover Pool',
+      address: '0x55cb69271da9937d0cb3c548409fd3f77586df79',
+      asset: '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa',
+      assetSymbol: 'wstETH',
+      shareSymbol: 'USD8-cp-wstETH',
+      usdOracle: '0x00e79afb10a84d153803f00e73900803179d594e',
+    }),
+  ]),
   defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',
-  booster: '0xc0012770848fcd350ab11906e93ba9fdfda19f4c',
   insuredTokens: Object.freeze({
     usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
     susd8: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
@@ -20,6 +28,12 @@ const SEPOLIA_CONTRACTS = Object.freeze({
   }),
 });
 
+// Keep metadata for retired payout assets so historical claims remain readable.
+const SEPOLIA_PAYOUT_ASSETS = Object.freeze({
+  '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': Object.freeze({ symbol: 'wstETH', decimals: 18 }),
+  '0xbbd327336d5135e146312dd16f2491c1e6ce8822': Object.freeze({ symbol: 'mGHO-CP', decimals: 18 }),
+});
+
 const NETWORKS = Object.freeze({
   [sepolia.id]: Object.freeze({
     id: sepolia.id,
@@ -27,8 +41,10 @@ const NETWORKS = Object.freeze({
     chain: sepolia,
     scoreAvailable: true,
     protocolAvailable: true,
-    rpcUrls: [import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com'],
+    blockTimeSeconds: 12,
+    rpcUrl: import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://rpc.sepolia.ethpandaops.io',
     contracts: SEPOLIA_CONTRACTS,
+    payoutAssets: SEPOLIA_PAYOUT_ASSETS,
   }),
   [mainnet.id]: Object.freeze({
     id: mainnet.id,
@@ -36,10 +52,7 @@ const NETWORKS = Object.freeze({
     chain: mainnet,
     scoreAvailable: false,
     protocolAvailable: false,
-    rpcUrls: [
-      import.meta.env.VITE_MAINNET_RPC_URL,
-      'https://ethereum-rpc.publicnode.com',
-    ].filter(Boolean),
+    rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || 'https://eth.drpc.org',
   }),
 });
 

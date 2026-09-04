@@ -3,10 +3,12 @@ import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
+import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
 import { MORPHO_VAULT_URL } from '../lib/morphoApi.js';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './AvailabilityAction.jsx';
 import CoveredProtocolsTable from './CoveredProtocolsTable.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
+import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
 
 const PRODUCTS = {
   insurance: 'Defi Insurance',
@@ -31,49 +33,14 @@ function displayValue(value, fallback = '0') {
   return value === null || value === undefined || value === '' ? fallback : value;
 }
 
-function formatWholeBalance(value) {
-  const raw = String(displayValue(value)).replaceAll(',', '');
-  if (!/^\d+(?:\.\d+)?$/.test(raw)) return displayValue(value);
-  const [whole, fraction = ''] = raw.split('.');
-  const rounded = BigInt(whole) + (fraction[0] >= '5' ? 1n : 0n);
-  return rounded.toLocaleString('en-US');
-}
+const formatWholeBalance = (value) => groupDecimalString(displayValue(value), { decimals: 0 });
+const formatScore = (value, decimals = 1) => groupDecimalString(value, { decimals });
 
-function formatScore(value, decimals = 1) {
-  const raw = String(value);
-  if (!/^\d+(?:\.\d+)?$/.test(raw)) return raw;
-
-  const [whole, fraction = ''] = raw.split('.');
-  const integer = BigInt(whole);
-  return `${integer.toLocaleString('en-US')}.${fraction.slice(0, decimals).padEnd(decimals, '0')}`;
-}
-
-const SCORE_DECIMALS = 18;
-const SCORE_SCALE = 10n ** BigInt(SCORE_DECIMALS);
-
-function scoreUnits(value) {
-  const raw = String(value ?? '0');
-  if (!/^\d+(?:\.\d+)?$/.test(raw)) return 0n;
-  const [whole, fraction = ''] = raw.split('.');
-  return BigInt(whole) * SCORE_SCALE
-    + BigInt(fraction.slice(0, SCORE_DECIMALS).padEnd(SCORE_DECIMALS, '0'));
-}
-
-function scoreDisplayDecimals(rate) {
-  const rateUnits = scoreUnits(rate);
-  if (rateUnits === 0n) return 1;
-  for (let decimals = 1; decimals <= 4; decimals += 1) {
-    if (rateUnits * (10n ** BigInt(decimals)) >= SCORE_SCALE) return decimals;
-  }
-  return 4;
-}
-
-function liveScoreValue(base, rate, elapsedMilliseconds) {
-  const units = scoreUnits(base)
-    + scoreUnits(rate) * BigInt(elapsedMilliseconds) / 1_000n;
-  const fraction = String(units % SCORE_SCALE).padStart(SCORE_DECIMALS, '0');
-  return `${units / SCORE_SCALE}.${fraction}`;
-}
+const scoreRateDecimals = (rate) => rateDecimals(rate, { max: 4, whenZero: 1 });
+const liveScoreValue = (base, rate, elapsedMilliseconds) => formatWad(
+  wadUnits(base) + wadUnits(rate) * BigInt(elapsedMilliseconds) / 1_000n,
+  18,
+);
 
 function useLiveScore(score) {
   const [now, setNow] = useState(Date.now());
@@ -110,7 +77,7 @@ function useLiveScore(score) {
 
 function ScoreValue({ loading, value, decimals = 1 }) {
   if (loading) {
-    return <span className="insurance-score-spinner" role="status" aria-label="Loading insurance score" />;
+    return <LoadingSpinner label="Loading insurance score" />;
   }
   return value === null || value === undefined || value === '' ? displayValue(value) : formatScore(value, decimals);
 }
@@ -190,9 +157,11 @@ function AssetCard({
   iconSrc = usd8Logo,
   balance,
   balanceLabel = 'Your Balance',
+  balanceLoading = false,
   wholeBalance = false,
   score,
   scoreDecimals = 1,
+  scoreLoading = false,
   scoreRate,
   scoreRateHelp = 'Insurance score earned per eligible token held per day.',
   apy,
@@ -229,7 +198,11 @@ function AssetCard({
       <div className="insurance-asset-values">
         <div>
           <span>{balanceLabel}</span>
-          <strong>{wholeBalance ? formatWholeBalance(balance) : displayValue(balance)}</strong>
+          <strong>
+            {balanceLoading
+              ? <LoadingSpinner label="Loading wallet balance" />
+              : wholeBalance ? formatWholeBalance(balance) : displayValue(balance)}
+          </strong>
         </div>
         {apy !== undefined ? (
           <div>
@@ -241,7 +214,7 @@ function AssetCard({
 
       <div className="insurance-asset-score">
         <span>Score earned</span>
-        <strong><ScoreValue value={score} decimals={scoreDecimals} /></strong>
+        <strong><ScoreValue loading={scoreLoading} value={score} decimals={scoreDecimals} /></strong>
       </div>
 
       <div className="insurance-asset-actions">{children}</div>
@@ -249,7 +222,7 @@ function AssetCard({
   );
 }
 
-function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault, incident, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
+function FreeInsurancePage({ wallet, score, scoreStatus, balances, balancesLoading, savingsVault, incident, insuredTokenStates, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreLoading = scoreStatus === 'loading';
   const liveScore = useLiveScore(score);
   const totalScore = liveScore?.grossEarnedScore;
@@ -281,7 +254,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
             <ScoreValue
               loading={scoreLoading}
               value={totalScore}
-              decimals={scoreDisplayDecimals(score?.grossScorePerSecond)}
+              decimals={scoreRateDecimals(score?.grossScorePerSecond)}
             />
           </strong>
         </div>
@@ -291,9 +264,11 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
         <AssetCard
           title="USD8"
           balance={balances.usd8}
+          balanceLoading={balancesLoading}
           wholeBalance
           score={liveScore?.usd8Score}
-          scoreDecimals={scoreDisplayDecimals(score?.usd8ScorePerSecond)}
+          scoreDecimals={scoreRateDecimals(score?.usd8ScorePerSecond)}
+          scoreLoading={scoreLoading}
           scoreRate="1 per USD8 per day"
           scoreRateHelp="You get 1 score per day for every USD8 you hold. Rewarded every block."
         >
@@ -310,9 +285,11 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
           iconSrc={sUsd8Logo}
           balance={balances.savingsAssets}
           balanceLabel="Your Deposit (USD8)"
+          balanceLoading={balancesLoading}
           wholeBalance
           score={liveScore?.sUsd8Score}
-          scoreDecimals={scoreDisplayDecimals(score?.sUsd8ScorePerSecond)}
+          scoreDecimals={scoreRateDecimals(score?.sUsd8ScorePerSecond)}
+          scoreLoading={scoreLoading}
           scoreRate="0.1 per sUSD8 per day"
           scoreRateHelp="You get 0.1 score per day for every sUSD8 you hold. Rewarded every block."
           apy={savingsVault.apy}
@@ -337,7 +314,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
               <ScoreValue
                 loading={scoreLoading}
                 value={availableScore}
-                decimals={scoreDisplayDecimals(score?.maturingScorePerSecond)}
+                decimals={scoreRateDecimals(score?.maturingScorePerSecond)}
               />
             </strong>
           </div>
@@ -347,6 +324,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, savingsVault,
             onFileClaim={onFileClaim}
             fileClaimUnavailableReason={fileClaimUnavailableReason || walletUnavailableReason}
             incident={incident}
+            insuredTokenStates={insuredTokenStates}
             nowMilliseconds={nowMilliseconds}
           />
         </div>
@@ -367,7 +345,74 @@ function CapacityBar({ value = 0, uncapped = false, assets = '0' }) {
   );
 }
 
-function CoverPoolsPage({ wallet, pool, onPoolAction }) {
+function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolAction }) {
+  const livePool = useLivePoolEarnings(pool);
+  return (
+    <section className="cover-pool-card" aria-label={pool.name}>
+      <header>
+        <img src={coverWsteth} alt="" />
+        <h2>{pool.name}</h2>
+      </header>
+
+      <div className="cover-pool-overview">
+        <div className="cover-pool-metrics">
+          <div>
+            <span className="metric-label-with-help">
+              30D Earnings APR
+              <InfoTooltip ariaLabel={`About 30-day earnings APR for ${pool.name}`}>
+                USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.
+              </InfoTooltip>
+            </span>
+            <strong><MetricValue loading={poolLoading} value={livePool.apy} label="Loading pool data" /></strong>
+          </div>
+          <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={livePool.tvl} label="Loading pool data" /></strong></div>
+        </div>
+
+        <div className="cover-pool-capacity-metric">
+          <span className="metric-label-with-help">
+            Capacity Filled
+            <InfoTooltip ariaLabel={`About capacity filled for ${pool.name}`}>
+              {pool.capacityUncapped
+                ? 'Current pool deposits. This pool has no deposit cap.'
+                : 'Percentage of the pool\'s deposit capacity currently in use.'}
+            </InfoTooltip>
+          </span>
+          {poolLoading && pool.capacityPercent === null
+            ? <LoadingSpinner label="Loading pool capacity" />
+            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} />}
+        </div>
+      </div>
+
+      <div className="cover-pool-account">
+        <div><span>Your deposit</span><strong>{displayValue(pool.deposit)} {pool.assetSymbol}</strong></div>
+        <div>
+          <span className="metric-label-with-help">
+            Your Earnings
+            <InfoTooltip ariaLabel={`About your earnings in ${pool.name}`} className="dashboard-help--align-right">
+              Earnings are paid in USD8, not {pool.assetSymbol}. Earnings are not exposed to insurance claims and can be withdrawn at any time.
+            </InfoTooltip>
+          </span>
+          <strong>{displayValue(livePool.earnings)} USD8</strong>
+        </div>
+      </div>
+
+      <div className="cover-pool-actions">
+        {['deposit', 'withdraw', 'claimReward'].map((action) => (
+          <AvailabilityAction
+            key={action}
+            type="button"
+            onClick={() => onPoolAction?.(action, pool.id)}
+            unavailableReason={walletUnavailableReason}
+          >
+            {action === 'claimReward' ? 'withdraw earnings' : action}
+          </AvailabilityAction>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CoverPoolsPage({ wallet, pools = [], poolLoading = false, onPoolAction }) {
   const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
 
   return (
@@ -378,64 +423,15 @@ function CoverPoolsPage({ wallet, pool, onPoolAction }) {
         <a href={docsUrl('cover-pools.html')}>risk involved</a>.
       </p>
 
-      <section className="cover-pool-card">
-        <header>
-          <img src={coverWsteth} alt="" />
-          <h2>wstEth Cover Pool</h2>
-        </header>
-
-        <div className="cover-pool-overview">
-          <div className="cover-pool-metrics">
-            <div>
-              <span className="metric-label-with-help">
-                30D Earnings APR
-                <InfoTooltip ariaLabel="About 30-day earnings APR">
-                  USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.
-                </InfoTooltip>
-              </span>
-              <strong>{displayValue(pool.apy, '—')}</strong>
-            </div>
-            <div><span>TVL</span><strong>{displayValue(pool.tvl, '—')}</strong></div>
-          </div>
-
-          <div className="cover-pool-capacity-metric">
-            <span className="metric-label-with-help">
-              Capacity Filled
-              <InfoTooltip ariaLabel="About capacity filled">
-                {pool.capacityUncapped
-                  ? 'Current pool deposits. This pool has no deposit cap.'
-                  : 'Percentage of the pool\'s deposit capacity currently in use.'}
-              </InfoTooltip>
-            </span>
-            <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} />
-          </div>
-        </div>
-
-        <div className="cover-pool-account">
-          <div><span>Your deposit</span><strong>{displayValue(pool.deposit)} wstEth</strong></div>
-          <div>
-            <span className="metric-label-with-help">
-              Your Earnings
-              <InfoTooltip ariaLabel="About your earnings" className="dashboard-help--align-right">
-                Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.
-              </InfoTooltip>
-            </span>
-            <strong>{displayValue(pool.earnings)} USD8</strong>
-          </div>
-        </div>
-
-        <div className="cover-pool-actions">
-          <AvailabilityAction type="button" onClick={() => onPoolAction?.('deposit')} unavailableReason={walletUnavailableReason}>
-            deposit
-          </AvailabilityAction>
-          <AvailabilityAction type="button" onClick={() => onPoolAction?.('withdraw')} unavailableReason={walletUnavailableReason}>
-            withdraw
-          </AvailabilityAction>
-          <AvailabilityAction type="button" onClick={() => onPoolAction?.('claimReward')} unavailableReason={walletUnavailableReason}>
-            withdraw earnings
-          </AvailabilityAction>
-        </div>
-      </section>
+      {pools.map((pool) => (
+        <CoverPoolCard
+          key={pool.id}
+          pool={pool}
+          poolLoading={poolLoading}
+          walletUnavailableReason={walletUnavailableReason}
+          onPoolAction={onPoolAction}
+        />
+      ))}
     </main>
   );
 }
@@ -457,16 +453,19 @@ export default function USD8Landing({
   score = null,
   scoreStatus = 'idle',
   balances = {},
+  balancesLoading = false,
   savingsVault = {},
-  pool = {},
+  pools = [],
+  poolLoading = false,
+  dataError = '',
   incident = null,
+  insuredTokenStates = {},
   onFileClaim,
   fileClaimUnavailableReason = '',
   onPoolAction,
   onUsd8Action,
 }) {
   const [activeProduct, setActiveProduct] = useState(storedProduct);
-  const livePool = useLivePoolEarnings(pool);
 
   useEffect(() => {
     try {
@@ -491,20 +490,26 @@ export default function USD8Landing({
 
       <ProductTabs activeProduct={activeProduct} onChange={setActiveProduct} />
 
+      {dataError ? (
+        <p className="landing-data-error" role="alert">{dataError}</p>
+      ) : null}
+
       {activeProduct === 'insurance' ? (
         <FreeInsurancePage
           wallet={wallet}
           score={score}
           scoreStatus={scoreStatus}
           balances={balances}
+          balancesLoading={balancesLoading}
           savingsVault={savingsVault}
           incident={incident}
+          insuredTokenStates={insuredTokenStates}
           onFileClaim={onFileClaim}
           fileClaimUnavailableReason={fileClaimUnavailableReason}
           onUsd8Action={onUsd8Action}
         />
       ) : activeProduct === 'pools' ? (
-        <CoverPoolsPage wallet={wallet} pool={livePool} onPoolAction={onPoolAction} />
+        <CoverPoolsPage wallet={wallet} pools={pools} poolLoading={poolLoading} onPoolAction={onPoolAction} />
       ) : (
         <WhiteHatEconomyPage />
       )}

@@ -1,6 +1,6 @@
 import { formatUnits, getAddress, isAddress } from 'viem';
 
-export const SCORE_API_BASE_URL = (
+const SCORE_API_BASE_URL = (
   import.meta.env.VITE_SCORE_API_URL
   || 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com'
 ).replace(/\/$/, '');
