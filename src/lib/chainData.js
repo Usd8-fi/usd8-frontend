@@ -50,6 +50,14 @@ export { SEPOLIA_CONTRACTS };
 
 const erc20TransferEvent = erc20Abi.find((item) => item.type === 'event' && item.name === 'Transfer');
 
+const registryScoreSpentAbi = [{
+  type: 'function',
+  name: 'scoreSpent',
+  stateMutability: 'view',
+  inputs: [{ name: 'account', type: 'address' }],
+  outputs: [{ name: '', type: 'uint256' }],
+}];
+
 const registryScoreAbi = [{
   type: 'function',
   name: 'getScoredRateHistory',
@@ -604,7 +612,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   const zero = 0n;
   const insuredTokenEntries = Object.entries(contracts.insuredTokens);
   const coverPools = contracts.coverPools;
-  const FIXED_READS = 11;
+  const FIXED_READS = 12;
   const POOL_READS = 13;
   // Fixed account/protocol reads first, then a fixed-width block per cover pool
   // so adding a pool cannot shift the earlier positions.
@@ -620,6 +628,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.savingsVault] },
     { address: contracts.registry, abi: registryBoosterAbi, functionName: 'boosterConfig' },
     { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'nextIncidentId' },
+    { address: contracts.registry, abi: registryScoreSpentAbi, functionName: 'scoreSpent', args: [account] },
     ...coverPools.flatMap((pool) => [
       { address: pool.asset, abi: erc20Abi, functionName: 'balanceOf', args: [account] },
       { address: pool.address, abi: poolAbi, functionName: 'balanceOf', args: [account] },
@@ -663,7 +672,8 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   ]);
   throwIfRequestAborted(signal);
   const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
-    usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId] = landingValues.slice(0, FIXED_READS);
+    usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
+    onchainScoreSpent] = landingValues.slice(0, FIXED_READS);
   const poolReads = coverPools.map((config, index) => {
     const [assetBalance, shares, totalAssets, depositCap, earned, shareDecimals, rewardRate,
       totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch],
@@ -797,6 +807,9 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     claim: null,
     insurance: { tokens: insuranceTokens },
     scoreBalances: { usd8: usd8.toString(), savings: savings.toString() },
+    // The score snapshot lags a spend until it finalizes, so the app compares
+    // this against the snapshot's own scoreSpent to know when to re-fetch.
+    scoreSpent: onchainScoreSpent.toString(),
     scoreRatesPerSecond: {
       usd8: formatUnits(currentScorePerSecond(usd8, usd8ScoreRates), 18),
       savings: formatUnits(currentScorePerSecond(savings, savingsScoreRates), 18),

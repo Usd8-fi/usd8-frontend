@@ -2490,4 +2490,43 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByRole('button', { name: /for test-msloss/ })).toBeNull());
   });
+
+  it('re-fetches the score when a spend lands, even though no balance moved', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    const balances = { usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' };
+    // Snapshot predates the spend; the chain already records 2000 spent.
+    const stale = {
+      chainId: '11155111',
+      snapshotTimestamp: 1,
+      grossEarnedScore: '8931',
+      maturedGrossEarnedScore: '8931',
+      scoreSpent: '0',
+      availableScore: '8931',
+      grossScorePerSecond: '0',
+      maturingScorePerSecond: '0',
+      tokenScores: [
+        { token: '0xa5B32853235619B5e9AF364A40c0c6386Dbd6055', balance: '0', grossEarnedScore: '0', grossScorePerSecond: '0' },
+        { token: '0x7989B3EB6faD27e404b07433eBD265657359F4AB', balance: '0', grossEarnedScore: '0', grossScorePerSecond: '0' },
+      ],
+    };
+    mocks.fetchInsuranceScore.mockResolvedValueOnce(stale)
+      .mockResolvedValue({ ...stale, scoreSpent: '2000', availableScore: '6931' });
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances,
+      pools: [coverPoolFixture()],
+      activeIncidentId: '0',
+      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      scoreBalances: { usd8: '0', savings: '0' },
+      scoreSpent: '2000000000000000000000',
+    });
+
+    render(<App />);
+
+    // Token balances are unchanged, so only the spend can have triggered this.
+    await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalledTimes(2));
+    expect(mocks.fetchInsuranceScore.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ refresh: true }),
+    );
+  });
 });

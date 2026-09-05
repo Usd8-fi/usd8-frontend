@@ -168,10 +168,33 @@ function scoredTokenBalancesChanged(score, scoreBalances, contracts) {
   });
 }
 
-function scoreBalanceRefreshKey(score, scoreBalances, contracts, chainId, address) {
-  if (!scoredTokenBalancesChanged(score, scoreBalances, contracts)) return '';
-  const tokenBalances = score.tokenScores.map((item) => `${item.token}:${item.balance}`).join('|');
-  return [chainId, address.toLowerCase(), tokenBalances, scoreBalances.usd8, scoreBalances.savings].join(':');
+// Accepting a payout spends score without moving any token balance, so the
+// snapshot also has to be re-fetched when onchain scoreSpent moves past it.
+function scoreSpentChanged(score, onchainScoreSpent) {
+  if (typeof onchainScoreSpent !== 'string' || typeof score?.scoreSpent !== 'string') return false;
+  try {
+    return parseUnits(score.scoreSpent, 18) !== BigInt(onchainScoreSpent);
+  } catch {
+    return false;
+  }
+}
+
+function scoreSnapshotStale(score, chainData, contracts) {
+  return scoredTokenBalancesChanged(score, chainData?.scoreBalances, contracts)
+    || scoreSpentChanged(score, chainData?.scoreSpent);
+}
+
+function scoreBalanceRefreshKey(score, chainData, contracts, chainId, address) {
+  if (!scoreSnapshotStale(score, chainData, contracts)) return '';
+  const tokenBalances = (score.tokenScores || []).map((item) => `${item.token}:${item.balance}`).join('|');
+  return [
+    chainId,
+    address.toLowerCase(),
+    tokenBalances,
+    chainData.scoreBalances?.usd8,
+    chainData.scoreBalances?.savings,
+    chainData.scoreSpent,
+  ].join(':');
 }
 
 function advanceScoreValue(value, rate, elapsedMilliseconds) {
@@ -884,7 +907,7 @@ export default function App() {
     }
     const refreshKey = scoreBalanceRefreshKey(
       score,
-      chainData.scoreBalances,
+      chainData,
       activeNetwork.contracts,
       activeNetwork.id,
       address,
@@ -1544,13 +1567,13 @@ export default function App() {
   const scoreNeedsBalanceRefresh = connected
     && scoreStatus === 'ready'
     && chainDataStatus === 'ready'
-    && scoredTokenBalancesChanged(score, chainData.scoreBalances, activeNetwork?.contracts);
+    && scoreSnapshotStale(score, chainData, activeNetwork?.contracts);
   const canSimulateCurrentScore = connected
     && chainDataStatus === 'ready'
     && chainData.scoreBalancesSnapshotTimestampMilliseconds > 0
     && hasCurrentBalanceScoreRate(chainData.scoreRatesPerSecond);
   const currentScoreRefreshKey = scoreNeedsBalanceRefresh
-    ? scoreBalanceRefreshKey(score, chainData.scoreBalances, activeNetwork.contracts, activeNetwork.id, address)
+    ? scoreBalanceRefreshKey(score, chainData, activeNetwork.contracts, activeNetwork.id, address)
     : '';
   const displayedScoreStatus = canSimulateCurrentScore && scoreStatus !== 'ready'
     ? 'ready'

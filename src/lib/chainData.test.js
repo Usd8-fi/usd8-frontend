@@ -154,13 +154,13 @@ const EMPTY_POOL = {
 const landingSnapshot = ({
   usdc = 0n, usd8 = 0n, savings = 0n, activeIncidentId = 0n,
   sGho = 0n, sUsds = 0n, msloss = 0n,
-  usd8Rates = [], savingsRates = [], nextIncidentId = 7n,
+  usd8Rates = [], savingsRates = [], nextIncidentId = 7n, scoreSpent = 0n,
   pools = [{}],
   insurance = [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(8_000),
     insuredTokenConfig(8_000), insuredTokenConfig(8_000), insuredTokenConfig(8_000)],
 } = {}) => [
   usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
-  usd8Rates, savingsRates, BOOSTER_POLICY, nextIncidentId,
+  usd8Rates, savingsRates, BOOSTER_POLICY, nextIncidentId, scoreSpent,
   ...pools.flatMap((overrides) => {
     const pool = { ...EMPTY_POOL, ...overrides };
     return [
