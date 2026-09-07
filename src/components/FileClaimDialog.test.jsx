@@ -59,7 +59,7 @@ describe('FileClaimDialog', () => {
     expect(within(title).getByRole('img', { name: 'sGHO' })).toHaveAttribute('src', '/sgho.svg');
     expect(screen.queryByRole('combobox', { name: 'Insured token' })).not.toBeInTheDocument();
     expect(screen.getByText('sGHO Amount')).toBeInTheDocument();
-    expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(345.123456);
+    expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue('345.123456');
     expect(screen.queryByRole('button', { name: /Use full sGHO balance/ })).not.toBeInTheDocument();
     // Loss size is a personal cap, not a share of anything, so no percentage is offered.
     expect(screen.getByText(/345.12 available/).closest('small')).toHaveTextContent(
@@ -151,15 +151,15 @@ describe('FileClaimDialog', () => {
     expect(appStyles).toContain('.file-claim-field--primary input');
     expect(appStyles).toContain('width: 282px;');
     expect(screen.queryByRole('button', { name: /Use full sGHO balance/ })).not.toBeInTheDocument();
-    expect(screen.getByText(/345 available/).closest('small')).toHaveTextContent(
-      '345 available.',
+    expect(screen.getByText(/345.00 available/).closest('small')).toHaveTextContent(
+      '345.00 available.',
     );
     expect(screen.queryByRole('button', { name: /Use full insurance score/ })).not.toBeInTheDocument();
-    expect(screen.getByText(/2344322 available/).closest('small')).toHaveTextContent(
-      '2344322 available',
+    expect(screen.getByText(/2344322.00 available/).closest('small')).toHaveTextContent(
+      '2344322.00 available',
     );
     expect(screen.queryByRole('button', { name: /Use all boosters/ })).not.toBeInTheDocument();
-    expect(screen.getByText('12 available')).toBeInTheDocument();
+    expect(screen.getByText('12.00 available')).toBeInTheDocument();
 
     expect(screen.queryByRole('combobox', { name: 'Approximate incident age' })).not.toBeInTheDocument();
 
@@ -221,7 +221,7 @@ describe('FileClaimDialog', () => {
 
     const submit = screen.getByRole('button', { name: 'File Claim' });
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '' } });
-    expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue(null);
+    expect(screen.getByLabelText('Insured sGHO amount')).toHaveValue('');
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(document.getElementById(submit.getAttribute('aria-describedby')))
@@ -250,7 +250,7 @@ describe('FileClaimDialog', () => {
       .toHaveTextContent('The sGHO amount exceeds your available balance.');
   });
 
-  it('shows claim submission failures beside the button and clears them when the user edits an input', () => {
+  it('shows claim submission failures in the shared toast and clears them when the user edits an input', () => {
     const onClearStatus = vi.fn();
     render(
       <FileClaimDialog
@@ -267,9 +267,9 @@ describe('FileClaimDialog', () => {
 
     const submit = screen.getByRole('button', { name: 'File Claim' });
     const warning = screen.getByRole('alert');
-    expect(submit.closest('.file-claim-submit-row')).toContainElement(warning);
+    expect(submit.closest('.file-claim-submit-row')).not.toContainElement(warning);
     expect(warning).toHaveTextContent('No qualifying 20% price drop was detected.');
-    expect(warning).toHaveClass('usd8-dialog-status--warning');
+    expect(warning).toHaveClass('wallet-notice');
 
     fireEvent.change(screen.getByLabelText('Insured sGHO amount'), { target: { value: '2' } });
     expect(onClearStatus).toHaveBeenCalledOnce();
@@ -503,7 +503,7 @@ describe('FileClaimDialog', () => {
       'Total insurance score to spend: 1050 (incl. 5 boosters) — 10% of all score committed atm.',
     );
     // The score field itself no longer carries a share.
-    expect(screen.getByText(/1000 available/).closest('small'))
+    expect(screen.getByText(/1000.00 available/).closest('small'))
       .not.toHaveTextContent('of all score committed');
     // Loss size is never expressed as a share.
     expect(screen.queryByText(/of all token claims/)).toBeNull();

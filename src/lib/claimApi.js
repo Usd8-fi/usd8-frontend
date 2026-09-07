@@ -2,32 +2,9 @@ import {
   concatHex, encodeAbiParameters, getAddress, isAddress, isHex, keccak256, size,
 } from 'viem';
 
-const DEFAULT_CLAIM_API_URL = 'https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com';
-
-function claimApiBaseUrl() {
-  const configuredUrl = import.meta.env.VITE_CLAIM_API_URL;
-  if (configuredUrl) {
-    try {
-      const hostname = new URL(configuredUrl).hostname;
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
-        return DEFAULT_CLAIM_API_URL;
-      }
-    } catch {
-      // Preserve the configured value so requests fail closed with a visible error.
-    }
-  }
-  return configuredUrl || DEFAULT_CLAIM_API_URL;
-}
-
-export const CLAIM_API_BASE_URL = claimApiBaseUrl().replace(/\/$/, '');
-export const claimApiConfigured = Boolean(CLAIM_API_BASE_URL);
-
-export function matchesSettlementContext(settlement, incidentId, root) {
-  return settlement?.incidentId === String(incidentId)
-    && typeof settlement.root === 'string'
-    && typeof root === 'string'
-    && settlement.root.toLowerCase() === root.toLowerCase();
-}
+import { CLAIM_API_BASE_URL, claimApiConfigured } from './claimContext.js';
+export { CLAIM_API_BASE_URL, claimApiConfigured, matchesSettlementContext } from './claimContext.js';
+import { cachedData, checkAbort, queryClient } from './dataCache.js';
 
 const JOB_ID_PATTERN = /^[0-9a-f]{64}$/;
 const DEFAULT_POLL_INTERVAL_MS = 3_000;
@@ -87,13 +64,12 @@ function validJobId(value) {
 }
 
 function wait(milliseconds, signal) {
-  if (milliseconds === 0) return Promise.resolve();
+  checkAbort(signal);
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(resolve, milliseconds);
-    signal?.addEventListener('abort', () => {
-      clearTimeout(timeout);
-      reject(new DOMException('The operation was aborted.', 'AbortError'));
-    }, { once: true });
+    const done = () => { signal?.removeEventListener('abort', abort); resolve(); };
+    const timer = setTimeout(done, milliseconds);
+    const abort = () => { clearTimeout(timer); signal?.removeEventListener('abort', abort); reject(new DOMException('The operation was aborted.', 'AbortError')); };
+    signal?.addEventListener('abort', abort, { once: true });
   });
 }
 
@@ -111,7 +87,18 @@ async function fetchWithRateLimitRetry(url, options, {
   signal,
 }) {
   while (true) {
-    const response = await fetch(url, options);
+    checkAbort(signal);
+    const timeout = AbortSignal.timeout(Math.max(1, Math.min(15_000, deadline - Date.now())));
+    let response;
+    try {
+      response = await fetch(url, { ...options, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+    } catch (error) {
+      checkAbort(signal);
+      if (timeout.aborted || error?.name === 'TimeoutError') {
+        throw new Error('The claim verification service took too long to respond. Please try again.', { cause: error });
+      }
+      throw new Error('Could not reach the claim verification service. Check your connection and try again.', { cause: error });
+    }
     if (response.status !== 429) return response;
     const remainingMilliseconds = deadline - Date.now();
     if (remainingMilliseconds <= 0) throw apiError(429);
@@ -240,7 +227,7 @@ async function downloadedTerminal(download, expectedJobId, signal) {
     credentials: 'omit',
     redirect: 'error',
     referrerPolicy: 'no-referrer',
-    signal,
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
   });
   if (!response.ok || !response.body) throw new Error('Claim settlement download failed.');
   const contentLength = response.headers.get('content-length');
@@ -385,7 +372,7 @@ function validateSettlement(payload, expected) {
   };
 }
 
-export async function prepareSettlement(incidentId, {
+async function prepareSettlementUncached(incidentId, {
   chainId,
   registry,
   defiInsurance,
@@ -579,4 +566,21 @@ export async function prepareIncidentOpen(insuredToken, {
     await wait(pollIntervalMs, signal);
   }
   throw new Error('Claim verification timed out. Please try again.');
+}
+
+// Only verified artifacts with an immutable onchain root are reusable. Job
+// creation and mutable pre-settlement results always follow the original path.
+export async function prepareSettlement(incidentId, options = {}) {
+  const { expectedRoot, signal } = options;
+  if (!expectedRoot || expectedRoot.toLowerCase() === ZERO_ROOT) return prepareSettlementUncached(incidentId, options);
+  const key = ['settlement', options.chainId, String(options.registry).toLowerCase(),
+    String(options.defiInsurance).toLowerCase(), String(incidentId), expectedRoot.toLowerCase(),
+    ...(options.expectedPoolAddrs || []).map(value => String(value).toLowerCase()), '|',
+    ...(options.expectedPoolOrder || []).map(value => String(value).toLowerCase())];
+  const result = await cachedData(key, ({ signal: querySignal }) => prepareSettlementUncached(incidentId, { ...options, signal: querySignal }), { signal, staleTime: Infinity });
+  const artifacts = queryClient.getQueryCache().findAll({ queryKey: ['settlement'] }).sort((a, b) => a.state.dataUpdatedAt - b.state.dataUpdatedAt);
+  for (const old of artifacts.slice(0, Math.max(0, artifacts.length - 12))) {
+    if (old.state.fetchStatus !== 'fetching') queryClient.removeQueries({ queryKey: old.queryKey, exact: true });
+  }
+  return result;
 }

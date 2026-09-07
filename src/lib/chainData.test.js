@@ -15,7 +15,10 @@ vi.mock('viem', async (importOriginal) => {
   return {
     ...actual,
     createPublicClient: vi.fn(() => ({
-      multicall: mocks.multicall,
+      multicall: async (request) => {
+        const result = await mocks.multicall(request);
+        return request.allowFailure ? result.map(value => ({ status: 'success', result: value })) : result;
+      },
       readContract: mocks.readContract,
       getLogs: mocks.getLogs,
       getBlock: mocks.getBlock,
@@ -30,6 +33,8 @@ import {
   calculateTrailingRewardApr,
   fetchBoosterBalance,
   fetchLandingChainData,
+  fetchLandingAnalytics,
+  fetchScoreHistory,
   fetchLogsInChunks,
   rpcTransportFor,
 } from './chainData.js';
@@ -43,7 +48,7 @@ function insuredTokenConfig(maxCoverageBps) {
   };
 }
 
-const BOOSTER_POLICY = ['0x0000000000000000000000000000000000000000', 0n, 100];
+const BOOSTER_POLICY = ['0xc0012770848fcd350ab11906e93ba9fdfda19f4c', 1n, 100];
 const INCIDENT_POOL_A = '0x55cb69271da9937d0cb3c548409fd3f77586df79';
 const INCIDENT_POOL_B = '0x8917f4c377dd0e5bd4909d8a00b508f38c0f3f4f';
 const INCIDENT_ASSET_A = '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa';
@@ -176,17 +181,48 @@ describe('fetchLandingChainData', () => {
   beforeEach(() => {
     mocks.multicall.mockReset();
     mocks.readContract.mockReset();
-    mocks.readContract.mockResolvedValue([
-      '0x0000000000000000000000000000000000000000',
-      0n,
-      0n,
-    ]);
+    mocks.readContract.mockResolvedValue(0n);
     mocks.getLogs.mockReset();
     mocks.getBlock.mockReset();
     mocks.getBlockNumber.mockReset();
     // Claim-log reads are chunked against a concrete head block.
     mocks.getBlockNumber.mockResolvedValue(115_430_000n);
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('history unavailable')));
+  });
+
+  it('makes no account-specific reads for anonymous visitors', async () => {
+    mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
+      if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
+      if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8000n;
+      if (call.functionName === 'getScoredRateHistory') return [];
+      if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+      if (call.functionName === 'latestRoundData') return [1n, 2000_00000000n, 0n, 0n, 1n];
+      if (call.functionName === 'nextIncidentId') return 500n;
+      return 0n;
+    }));
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000000', 11155111);
+    const calls = mocks.multicall.mock.calls.flatMap(([request]) => request.contracts);
+    expect(calls.some(call => call.args?.includes('0x0000000000000000000000000000000000000000'))).toBe(false);
+    expect(calls.some(call => ['scoreSpent', 'earned', 'exitRequests', 'claims', 'claimIdByIncidentAndUser'].includes(call.functionName))).toBe(false);
+    expect(data.claim).toBe(null);
+  });
+
+  it('publishes balances and the current incident before historical claim logs finish', async () => {
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({ usdc: 10_000_000n, activeIncidentId: 7n }))
+      .mockResolvedValueOnce([['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 259_200n, 0n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    let finishLogs;
+    mocks.getLogs.mockImplementation(() => new Promise(resolve => { finishLogs = resolve; }));
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    const partial = vi.fn();
+    const request = fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111, { onPartial: partial });
+    // Wait for the log call, without ever resolving it during the critical read.
+    await vi.waitFor(() => expect(mocks.getLogs).toHaveBeenCalled());
+    expect(partial.mock.calls[0][0].balances.usdc).toBe('10');
+    expect(partial.mock.calls.at(-1)[0]).toMatchObject({ incidentReady: true, incident: { id: '7' } });
+    // The fixture spans one bounded RPC chunk.
+    finishLogs([]);
+    await request;
   });
 
   it('fails closed when token coverage exceeds the contract-reported claimant cap', async () => {
@@ -226,11 +262,12 @@ describe('fetchLandingChainData', () => {
         insurance: [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(7_500),
           insuredTokenConfig(6_000), insuredTokenConfig(5_050), insuredTokenConfig(8_000)],
       }))
-      // derived batch: convertToAssets(savings), convertToAssets(shares), exitEpochs
+      // derived batch: savings assets, active pool assets, exit receipt, pending pool assets
       .mockResolvedValueOnce([
         4_200_000_000_000_000_000n,
         2_123_456_789_012_345_678n,
         [12_000_000_000_000_000_000_000n, 0n, 0n, 0n],
+        6_000_000_000_000_000_000n,
       ])
       .mockResolvedValueOnce([[
         '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
@@ -331,6 +368,10 @@ describe('fetchLandingChainData', () => {
     mocks.getBlock.mockResolvedValue({ timestamp: 1_800_000_100n });
 
     const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    const analytics = await fetchLandingAnalytics(data, '', 11155111);
+    data.pools = data.pools.map((pool, i) => ({ ...pool, ...analytics.pools[i] }));
+    const history = await fetchScoreHistory(data, '0x0000000000000000000000000000000000000001', 11155111);
+    if (history) data.scoreBalanceChangeTimestampMilliseconds = history;
 
     expect(data.pools[0].tvl).toBe('$20K');
     expect(data.pools[0].apy).toBe('—');
@@ -410,6 +451,9 @@ describe('fetchLandingChainData', () => {
     expect(data.pools[0].availableForCooldown).toBe('2.1');
     expect(data.pools[0].availableForWithdraw).toBe('0');
     expect(data.pools[0].inCooldown).toBe('12');
+    expect(data.pools[0].availableForCooldownAssets).toBe('2.123456789012345678');
+    expect(data.pools[0].inCooldownAssets).toBe('6');
+    expect(data.pools[0].exitSettled).toBe(false);
     expect(data.pools[0].cooldownEndsAtMilliseconds).toBe(1_800_000_000_000);
     expect(data.activeIncidentId).toBe('7');
     expect(data.incident).toEqual({
@@ -444,7 +488,7 @@ describe('fetchLandingChainData', () => {
       resolved: false,
     });
     expect(mocks.getLogs).toHaveBeenCalledTimes(1);
-    expect(mocks.getBlock).not.toHaveBeenCalled();
+    expect(mocks.getBlock).toHaveBeenCalledWith({ blockNumber: 115_429_872n });
   });
 
   it('loads incident claim totals for a wallet that has not filed a claim', async () => {
@@ -474,6 +518,10 @@ describe('fetchLandingChainData', () => {
     }]);
 
     const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    const analytics = await fetchLandingAnalytics(data, '', 11155111);
+    data.pools = data.pools.map((pool, i) => ({ ...pool, ...analytics.pools[i] }));
+    const history = await fetchScoreHistory(data, '0x0000000000000000000000000000000000000001', 11155111);
+    if (history) data.scoreBalanceChangeTimestampMilliseconds = history;
 
     expect(data.claim).toBeNull();
     expect(data.incident).toEqual(expect.objectContaining({

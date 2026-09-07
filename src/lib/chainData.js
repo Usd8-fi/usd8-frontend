@@ -1,3 +1,11 @@
+import { exitAssetAmount } from './poolWithdrawal.js';
+import { historicalClaimIds as readHistoricalClaimIds } from './claimHistory.js';
+import { snapshotReads } from './snapshotReads.js';
+import { cachedData, checkAbort, protocolKey, queryClient } from './dataCache.js';
+import { fetchJson, mapLimited } from './requestUtils.js';
+import { fetchLogsInChunks, incrementalLogs, poolHistory } from './history.js';
+export { fetchLogsInChunks } from './history.js';
+import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimCancelledEvent } from './readAbis.js';
 import { createPublicClient, formatUnits, http, zeroAddress } from 'viem';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
@@ -8,7 +16,7 @@ export { erc20Abi };
 const clients = new Map();
 const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
 const SEPOLIA_BLOCKSCOUT_URL = 'https://eth-sepolia.blockscout.com/api/v2';
-const trailingAprCache = new Map();
+
 const SEPOLIA_BLOCK_SECONDS = 12n;
 const UNKNOWN_VALUE = '—';
 // Public Sepolia endpoints cap eth_getLogs spans — the default endpoint rejects
@@ -73,8 +81,8 @@ const registryScoreAbi = [{
   }],
 }];
 
-export async function fetchBoosterBalance(client, registry, account) {
-  const [collection, tokenId] = await client.readContract({
+export async function fetchBoosterBalance(client, registry, account, policy, blockNumber) {
+  const [collection, tokenId] = policy || await client.readContract({
     address: registry,
     abi: registryBoosterAbi,
     functionName: 'boosterConfig',
@@ -85,6 +93,7 @@ export async function fetchBoosterBalance(client, registry, account) {
     abi: erc1155Abi,
     functionName: 'balanceOf',
     args: [account, tokenId],
+    ...(blockNumber === undefined ? {} : { blockNumber }),
   });
 }
 
@@ -93,13 +102,11 @@ function currentScorePerSecond(balance, rateHistory) {
   return balance * rate / WAD / SEPOLIA_BLOCK_SECONDS;
 }
 
-async function latestIndexedBalanceChangeTimestampMilliseconds(token, account, fromBlock) {
+async function latestIndexedBalanceChangeTimestampMilliseconds(token, account, fromBlock, signal) {
   const url = new URL(`${SEPOLIA_BLOCKSCOUT_URL}/addresses/${account}/token-transfers`);
   url.searchParams.set('type', 'ERC-20');
   url.searchParams.set('token', token);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Blockscout token transfers failed (${response.status})`);
-  const payload = await response.json();
+  const payload = await fetchJson(url, { signal });
   const transfer = Array.isArray(payload?.items)
     ? payload.items.find((item) => (
       item?.token?.address_hash?.toLowerCase() === token.toLowerCase()
@@ -117,20 +124,26 @@ async function latestBalanceChangeTimestampMilliseconds(
   account,
   fromBlock,
   fallbackTimestampMilliseconds,
+  signal,
+  snapshotBlock,
 ) {
   try {
     const indexedTimestamp = await latestIndexedBalanceChangeTimestampMilliseconds(
       token,
       account,
       fromBlock,
+      signal,
     );
     if (indexedTimestamp !== null) return indexedTimestamp;
   } catch {
+    checkAbort(signal);
     // Fall through to RPC logs when the explorer index is unavailable or behind.
   }
   try {
-    let toBlock = await client.getBlockNumber();
-    while (toBlock >= fromBlock) {
+    let toBlock = snapshotBlock ?? await client.getBlockNumber();
+    let chunks = 0;
+    while (toBlock >= fromBlock && chunks++ < 12) {
+      checkAbort(signal);
       const chunkFromBlock = toBlock - fromBlock + 1n > LOG_QUERY_BLOCK_RANGE
         ? toBlock - LOG_QUERY_BLOCK_RANGE + 1n
         : fromBlock;
@@ -166,272 +179,15 @@ async function latestBalanceChangeTimestampMilliseconds(
     }
     return fallbackTimestampMilliseconds;
   } catch {
+    checkAbort(signal);
     return fallbackTimestampMilliseconds;
   }
 }
 
-/// Read logs across an arbitrary span in provider-safe chunks. An unchunked span
-/// is rejected outright by capped endpoints, which would otherwise be swallowed
-/// and reported as "no claims filed".
-export async function fetchLogsInChunks(client, request, fromBlock, toBlock) {
-  const ranges = [];
-  for (let start = fromBlock; start <= toBlock; start += LOG_QUERY_BLOCK_RANGE) {
-    const end = start + LOG_QUERY_BLOCK_RANGE - 1n;
-    ranges.push({ fromBlock: start, toBlock: end > toBlock ? toBlock : end });
-  }
-  const pages = await Promise.all(ranges.map((range) => client.getLogs({ ...request, ...range })));
-  return pages.flat();
-}
-
-const poolAbi = [
-  ...erc20Abi,
-  {
-    type: 'function',
-    name: 'asset',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-  },
-  {
-    type: 'function',
-    name: 'totalAssets',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'depositCap',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'convertToAssets',
-    stateMutability: 'view',
-    inputs: [{ name: 'shares', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'earned',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'rewardRate',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'periodFinish',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint64' }],
-  },
-  {
-    type: 'function',
-    name: 'exitRequests',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: 'shares', type: 'uint256' }, { name: 'exitEpoch', type: 'uint64' }],
-  },
-  {
-    type: 'function',
-    name: 'exitEpochs',
-    stateMutability: 'view',
-    inputs: [{ name: 'exitEpoch', type: 'uint64' }],
-    outputs: [
-      { name: 'totalShares', type: 'uint256' },
-      { name: 'totalAssets', type: 'uint256' },
-      { name: 'remainingShares', type: 'uint256' },
-      { name: 'remainingAssets', type: 'uint256' },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'Deposit',
-    inputs: [
-      { indexed: true, name: 'sender', type: 'address' },
-      { indexed: true, name: 'owner', type: 'address' },
-      { indexed: false, name: 'assets', type: 'uint256' },
-      { indexed: false, name: 'shares', type: 'uint256' },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'ExitEpochSettled',
-    inputs: [
-      { indexed: true, name: 'exitEpoch', type: 'uint64' },
-      { indexed: false, name: 'shares', type: 'uint256' },
-      { indexed: false, name: 'assets', type: 'uint256' },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'ClaimPaid',
-    inputs: [
-      { indexed: true, name: 'to', type: 'address' },
-      { indexed: false, name: 'amount', type: 'uint256' },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'RewardNotified',
-    inputs: [
-      { indexed: false, name: 'amount', type: 'uint256' },
-      { indexed: false, name: 'newRate', type: 'uint128' },
-      { indexed: false, name: 'newPeriodFinish', type: 'uint64' },
-    ],
-  },
-];
-
-const defiInsuranceAbi = [
-  {
-    type: 'function',
-    name: 'MAX_CLAIMANT_COVERAGE_BPS',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'getInsuredToken',
-    stateMutability: 'view',
-    inputs: [{ name: 'insuredToken', type: 'address' }],
-    outputs: [{
-      name: 'config',
-      type: 'tuple',
-      components: [
-        { name: 'maxCoverageBps', type: 'uint16' },
-        { name: 'underlyingPriceOracle', type: 'address' },
-        { name: 'underlyingConversionAddress', type: 'address' },
-        { name: 'underlyingConversionCallData', type: 'bytes' },
-      ],
-    }],
-  },
-  {
-    type: 'function',
-    name: 'activeIncidentId',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'nextIncidentId',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint64' }],
-  },
-  {
-    type: 'function',
-    name: 'incidents',
-    stateMutability: 'view',
-    inputs: [{ name: 'incidentId', type: 'uint256' }],
-    outputs: [
-      { name: 'insuredToken', type: 'address' },
-      { name: 'resolvedAt', type: 'uint64' },
-      { name: 'referenceBlock', type: 'uint64' },
-      { name: 'openBlock', type: 'uint64' },
-      { name: 'phaseDeadline', type: 'uint64' },
-      { name: 'root', type: 'bytes32' },
-      { name: 'unresolvedClaims', type: 'uint256' },
-      { name: 'claimSetHash', type: 'bytes32' },
-      { name: 'teePcrHash', type: 'bytes32' },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'incidentPhaseWindow',
-    stateMutability: 'view',
-    inputs: [{ name: 'incidentId', type: 'uint256' }],
-    outputs: [{ name: 'phaseWindow', type: 'uint64' }],
-  },
-  {
-    type: 'function',
-    name: 'incidentPools',
-    stateMutability: 'view',
-    inputs: [{ name: 'incidentId', type: 'uint256' }],
-    outputs: [{ name: 'pools', type: 'address[]' }],
-  },
-  {
-    type: 'function',
-    name: 'claimIdByIncidentAndUser',
-    stateMutability: 'view',
-    inputs: [{ name: 'incidentId', type: 'uint256' }, { name: 'account', type: 'address' }],
-    outputs: [{ name: 'claimId', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'claims',
-    stateMutability: 'view',
-    inputs: [{ name: 'claimId', type: 'uint256' }],
-    outputs: [
-      { name: 'user', type: 'address' },
-      { name: 'incidentId', type: 'uint64' },
-      { name: 'insuredTokenAmount', type: 'uint128' },
-      { name: 'boosterAmount', type: 'uint128' },
-      { name: 'bondAmount', type: 'uint128' },
-      { name: 'resolved', type: 'bool' },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'ClaimRegistered',
-    inputs: [
-      { indexed: true, name: 'claimId', type: 'uint256' },
-      { indexed: true, name: 'incidentId', type: 'uint256' },
-      { indexed: true, name: 'user', type: 'address' },
-      { indexed: false, name: 'insuredTokenAmount', type: 'uint128' },
-      { indexed: false, name: 'scoreToSpend', type: 'uint256' },
-      { indexed: false, name: 'boosterAmount', type: 'uint256' },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'ClaimCancelled',
-    inputs: [
-      { indexed: true, name: 'claimId', type: 'uint256' },
-      { indexed: true, name: 'user', type: 'address' },
-    ],
-  },
-];
-const claimRegisteredEvent = defiInsuranceAbi.find((item) => item.type === 'event' && item.name === 'ClaimRegistered');
-const claimCancelledEvent = defiInsuranceAbi.find((item) => item.type === 'event' && item.name === 'ClaimCancelled');
-
-const priceOracleAbi = [
-  {
-    type: 'function',
-    name: 'decimals',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint8' }],
-  },
-  {
-    type: 'function',
-    name: 'latestRoundData',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'roundId', type: 'uint80' },
-      { name: 'answer', type: 'int256' },
-      { name: 'startedAt', type: 'uint256' },
-      { name: 'updatedAt', type: 'uint256' },
-      { name: 'answeredInRound', type: 'uint80' },
-    ],
-  },
-];
-
-function formatted(value, decimals = 18, maximumFractionDigits = 4) {
-  const decimal = Number(formatUnits(value, decimals));
-  if (!Number.isFinite(decimal)) return '0';
-  return decimal.toLocaleString('en-US', { maximumFractionDigits, useGrouping: false });
+function formatted(value, decimals = 18, maximumFractionDigits = decimals) {
+  const [whole, fraction = ''] = formatUnits(value, decimals).split('.');
+  const visible = fraction.slice(0, maximumFractionDigits).replace(/0+$/, '');
+  return visible ? `${whole}.${visible}` : whole;
 }
 
 function insuranceCoverageCap(value) {
@@ -541,27 +297,11 @@ export function calculateTrailingRewardApr({
   })}%`;
 }
 
-async function fetchTrailingRewardApr(poolAddress, price, priceDecimals) {
-  const cacheKey = `${poolAddress}:${price}:${priceDecimals}`;
-  const cached = trailingAprCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < 60_000) return cached.value;
-
-  let nextUrl = `${SEPOLIA_BLOCKSCOUT_URL}/addresses/${poolAddress}/logs`;
-  const logs = [];
-  while (nextUrl) {
-    const response = await fetch(nextUrl);
-    if (!response.ok) throw new Error(`Cover pool history unavailable (${response.status})`);
-    const page = await response.json();
-    logs.push(...page.items);
-    if (!page.next_page_params) {
-      nextUrl = '';
-    } else {
-      const url = new URL(`${SEPOLIA_BLOCKSCOUT_URL}/addresses/${poolAddress}/logs`);
-      Object.entries(page.next_page_params).forEach(([key, value]) => url.searchParams.set(key, value));
-      nextUrl = url.toString();
-    }
-  }
-
+export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal } = {}) {
+  const network = getProtocolNetwork(chainId);
+  const logs = await cachedData(protocolKey(network, 'apr-history', poolAddress.toLowerCase()),
+    ({ signal: querySignal }) => poolHistory(publicClientFor(chainId), chainId, poolAddress, SEPOLIA_BLOCKSCOUT_URL, { signal: querySignal }),
+    { signal, staleTime: 5 * 60_000 });
   const valueOf = (log, name) => log.decoded?.parameters?.find((parameter) => parameter.name === name)?.value;
   const events = logs.flatMap((log) => {
     const timestamp = Math.floor(Date.parse(log.block_timestamp) / 1_000);
@@ -596,20 +336,24 @@ async function fetchTrailingRewardApr(poolAddress, price, priceDecimals) {
     currentAssetUsdPrice: price,
     priceDecimals,
   });
-  trailingAprCache.set(cacheKey, { timestamp: Date.now(), value });
   return value;
 }
 
 /// Resolves the full snapshot, but invokes `onPartial` with balances and pool
 /// figures as soon as they are known — before the Blockscout APR walk and the
 /// incident reads, which are far slower and not needed to render the wallet.
-export async function fetchLandingChainData(account, chainId, { signal, onPartial } = {}) {
+export async function fetchLandingChainData(account, chainId, { signal, onPartial, refresh = false, resources, minBlock } = {}) {
   const network = getProtocolNetwork(chainId);
   if (!network) throw protocolUnavailableError(chainId);
   throwIfRequestAborted(signal);
   const { contracts } = network;
   const client = publicClientFor(chainId);
   const zero = 0n;
+  const hasAccount = Boolean(account) && account.toLowerCase() !== zeroAddress;
+  account = hasAccount ? account.toLowerCase() : zeroAddress;
+  let blockNumber = await cachedData(protocolKey(network, 'block'), () => client.getBlockNumber({ cacheTime: 0 }), { signal, staleTime: refresh ? 0 : 15_000 });
+  if (minBlock !== undefined && blockNumber < minBlock) blockNumber = minBlock;
+  checkAbort(signal);
   const insuredTokenEntries = Object.entries(contracts.insuredTokens);
   const coverPools = contracts.coverPools;
   const FIXED_READS = 12;
@@ -660,16 +404,29 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     })),
   ];
 
-  const [
-    landingValues,
-    boosterBalance,
-  ] = await Promise.all([
-    client.multicall({
-      contracts: [...landingCalls, ...insuranceCalls],
-      allowFailure: false,
-    }),
-    fetchBoosterBalance(client, contracts.registry, account),
-  ]);
+  const allCalls = [...landingCalls, ...insuranceCalls];
+  const fixedResources = ['account-balances', 'account-balances', 'account-balances', 'head',
+    'account-balances', 'account-balances', 'account-balances', 'configuration', 'configuration', 'configuration', 'head', 'account-balances'];
+  const poolAccountOffsets = [0, 1, 4, 10];
+  const descriptors = allCalls.map((call, index) => {
+    let resource = index < FIXED_READS ? fixedResources[index] : 'configuration';
+    if (index >= FIXED_READS && index < landingCalls.length) {
+      const poolIndex = Math.floor((index - FIXED_READS) / POOL_READS);
+      const offset = (index - FIXED_READS) % POOL_READS;
+      resource = `${poolAccountOffsets.includes(offset) ? 'account-pool' : 'pool'}:${coverPools[poolIndex].id}`;
+    }
+    const fallback = call.functionName === 'exitRequests' ? [0n, 0n]
+      : call.functionName === 'latestRoundData' ? [0n, 0n, 0n, 0n, 0n]
+      : call.functionName === 'boosterConfig' ? [zeroAddress, 0n, 0n]
+      : call.functionName === 'getScoredRateHistory' ? [] : 0n;
+    return { call, resource, fallback, index };
+  });
+  const selected = descriptors.filter(entry => hasAccount || !entry.resource.startsWith('account'));
+  const readResult = await snapshotReads(client, network, selected, { account, signal, blockNumber, refresh, resources });
+  const landingValues = descriptors.map(entry => entry.fallback);
+  selected.forEach((entry, index) => { landingValues[entry.index] = readResult.values[index]; });
+  const resourceErrors = readResult.errors;
+  if (resourceErrors.head) throw new Error(resourceErrors.head);
   throwIfRequestAborted(signal);
   const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
     usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
@@ -700,35 +457,21 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     };
   });
   const [rawClaimantCoverageCapBps, ...insuranceValues] = landingValues.slice(landingCalls.length);
-  const claimantCoverageCapBps = insuranceCoverageCap(rawClaimantCoverageCapBps);
-  const insuranceTokens = Object.fromEntries(insuredTokenEntries.map(
-    ([tokenId, insuredToken], index) => [
-      tokenId,
-      insuranceTokenState(tokenId, insuredToken, insuranceValues[index], claimantCoverageCapBps),
-    ],
+  const insuranceTokens = resourceErrors.configuration ? {} : Object.fromEntries(insuredTokenEntries.map(
+    ([tokenId, insuredToken], index) => [tokenId, insuranceTokenState(tokenId, insuredToken, insuranceValues[index], insuranceCoverageCap(rawClaimantCoverageCapBps))],
   ));
   const scoreBalancesSnapshotTimestampMilliseconds = Date.now();
-  const [usd8BalanceChangeTimestamp, savingsBalanceChangeTimestamp] = await Promise.all([
-    usd8 === zero
-      ? 0
-      : latestBalanceChangeTimestampMilliseconds(
-        client,
-        contracts.usd8,
-        account,
-        usd8ScoreRates[0]?.fromBlock ?? 0n,
-        scoreBalancesSnapshotTimestampMilliseconds,
-      ),
-    savings === zero
-      ? 0
-      : latestBalanceChangeTimestampMilliseconds(
-        client,
-        contracts.savingsVault,
-        account,
-        savingsScoreRates[0]?.fromBlock ?? 0n,
-        scoreBalancesSnapshotTimestampMilliseconds,
-      ),
+  // Timestamp history is optional enrichment; never gate usable balances on it.
+  const usd8BalanceChangeTimestamp = usd8 === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
+  const savingsBalanceChangeTimestamp = savings === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
+  const [boosterBalance, claimBond] = await Promise.all([
+    hasAccount && !resourceErrors.configuration
+      ? cachedData(protocolKey(network, 'account-boosters', account, boosterPolicy[0], String(boosterPolicy[1])),
+        () => fetchBoosterBalance(client, contracts.registry, account, boosterPolicy, blockNumber), { signal, staleTime: refresh && (!resources || resources.includes('incident')) ? 0 : 15_000 })
+        .catch(error => { checkAbort(signal); resourceErrors.boosters = error.message; return null; }) : 0n,
+    cachedData(protocolKey(network, 'claim-bond'), () => client.readContract({ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimBondAmount', blockNumber }), { signal, staleTime: refresh ? 0 : 60_000 })
+      .catch(error => { checkAbort(signal); resourceErrors['claim-bond'] = error.message; return null; }),
   ]);
-  throwIfRequestAborted(signal);
 
   // Depend on balances from the multicall above but not on each other, so the
   // savings conversion and every pool's conversion/exit read resolve together.
@@ -743,19 +486,35 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       read.pendingExitShares === zero ? null : {
         address: read.config.address, abi: poolAbi, functionName: 'exitEpochs', args: [read.exitEpoch],
       },
+      read.pendingExitShares === zero ? null : {
+        address: read.config.address, abi: poolAbi, functionName: 'convertToAssets', args: [read.pendingExitShares],
+      },
     ]),
   ];
-  const derived = derivedCalls.some(Boolean)
-    ? await client.multicall({ contracts: derivedCalls.filter(Boolean), allowFailure: false })
-    : [];
+  const derivedDescriptors = derivedCalls.flatMap((call, index) => call ? [{ call,
+    resource: index === 0 ? 'account-savings-conversion' : `account-pool-derived:${coverPools[Math.floor((index - 1) / 3)].id}`,
+    fallback: call.functionName === 'exitEpochs' ? [0n, 0n, 0n, 0n] : 0n,
+  }] : []);
+  for (const descriptor of derivedDescriptors) descriptor.cacheScope = derivedDescriptors.filter(item => item.resource === descriptor.resource).map(item => item.call.args.map(String).join(',')).join('|');
+  const derivedResult = await snapshotReads(client, network, derivedDescriptors, { account, blockNumber, signal, refresh,
+    resources: resources?.flatMap(resource => resource === 'account-balances' ? [resource, 'account-savings-conversion']
+      : resource.startsWith('account-pool:') ? [resource, resource.replace('account-pool:', 'account-pool-derived:')] : [resource]),
+  });
+  Object.assign(resourceErrors, derivedResult.errors);
+  const derived = derivedResult.values;
   let derivedIndex = 0;
   const savingsAssets = savings === zero ? zero : derived[derivedIndex++];
 
   const pools = poolReads.map((read) => {
     const depositedAssets = read.shares === zero ? zero : derived[derivedIndex++];
-    const [, , remainingExitShares] = read.pendingExitShares === zero
+    const exitEpoch = read.pendingExitShares === zero
       ? [zero, zero, zero, zero]
       : derived[derivedIndex++];
+    const pendingEstimate = read.pendingExitShares === zero ? zero : derived[derivedIndex++];
+    const remainingExitShares = exitEpoch[2];
+    const exitAssets = read.pendingExitShares === zero ? zero : exitAssetAmount(read.pendingExitShares, exitEpoch,
+      read.pendingExitShares === read.totalSupply ? read.totalAssets : pendingEstimate);
+    const conversionUnavailable = Boolean(resourceErrors[`account-pool-derived:${read.config.id}`]);
     const exitMatured = Date.now() >= Number(read.exitEpoch) * 1_000;
     const exitAvailable = read.pendingExitShares > zero
       && (remainingExitShares > zero || (exitMatured && activeIncidentId === zero));
@@ -787,7 +546,12 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       assets: formatted(read.totalAssets),
       // Display only; two decimals keeps the card readable.
       deposit: formatted(depositedAssets, 18, 2),
-      availableForCooldown: formatted(read.shares, shareDecimals),
+      availableForCooldownAssets: conversionUnavailable ? null : formatUnits(depositedAssets, 18),
+      availableForWithdrawAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? exitAssets : zero, 18),
+      inCooldownAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? zero : exitAssets, 18),
+      exitSettled: remainingExitShares > zero,
+      withdrawalQuote: resourceErrors[`pool:${read.config.id}`] ? null : { totalAssets: read.totalAssets.toString(), totalSupply: read.totalSupply.toString() },
+      availableForCooldown: formatUnits(read.shares, shareDecimals),
       availableForWithdraw: formatted(exitAvailable ? read.pendingExitShares : zero, shareDecimals),
       inCooldown: formatted(exitAvailable ? zero : read.pendingExitShares, shareDecimals),
       cooldownEndsAtMilliseconds: read.pendingExitShares > zero ? Number(read.exitEpoch) * 1_000 : 0,
@@ -802,15 +566,19 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   });
 
   const snapshot = ({ pools: poolExtras, ...extra } = {}) => ({
+    blockNumber: blockNumber.toString(),
+    updatedAt: readResult.updatedAt,
+    resourceErrors,
+    scoreHistoryInputs: { usd8FromBlock: String(usd8ScoreRates[0]?.fromBlock ?? 0n), savingsFromBlock: String(savingsScoreRates[0]?.fromBlock ?? 0n) },
     activeIncidentId: activeIncidentId.toString(),
     incident: null,
     claim: null,
-    insurance: { tokens: insuranceTokens },
-    scoreBalances: { usd8: usd8.toString(), savings: savings.toString() },
+    insurance: { tokens: insuranceTokens, claimBond: claimBond === null ? null : formatted(claimBond) },
+    scoreBalances: resourceErrors['account-balances'] ? null : { usd8: usd8.toString(), savings: savings.toString() },
     // The score snapshot lags a spend until it finalizes, so the app compares
     // this against the snapshot's own scoreSpent to know when to re-fetch.
     scoreSpent: onchainScoreSpent.toString(),
-    scoreRatesPerSecond: {
+    scoreRatesPerSecond: resourceErrors['account-balances'] || resourceErrors.configuration ? null : {
       usd8: formatUnits(currentScorePerSecond(usd8, usd8ScoreRates), 18),
       savings: formatUnits(currentScorePerSecond(savings, savingsScoreRates), 18),
     },
@@ -819,69 +587,90 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       savings: savingsBalanceChangeTimestamp,
     },
     scoreBalancesSnapshotTimestampMilliseconds,
-    balances: {
+    balances: resourceErrors['account-balances'] ? { usdc: '—', usd8: '—', savings: '—', savingsAssets: '—', insuredTokens: {} } : {
       usdc: formatted(usdc, 6),
       usd8: formatted(usd8),
       savings: formatted(savings),
-      savingsAssets: formatted(savingsAssets),
+      savingsAssets: resourceErrors['account-savings-conversion'] ? '—' : formatted(savingsAssets),
       coverAsset: pools[0]?.assetBalance ?? '0',
       poolShares: pools[0]?.availableForCooldown ?? '0',
-      boosters: boosterBalance.toString(),
+      boosters: boosterBalance === null ? '—' : boosterBalance.toString(),
       insuredTokens: {
         'aave-sgho': formatted(sGho),
         'sky-susds': formatted(sUsds),
         'test-msloss': formatted(msloss),
       },
     },
-    pools: pools.map((pool, index) => ({ ...pool, ...poolExtras?.[index] })),
+    pools: pools.map((pool, index) => ({ ...pool,
+      usdPrice: poolReads[index].assetUsdPrice.toString(), priceDecimals: Number(poolReads[index].assetUsdDecimals),
+      ...(resourceErrors[`pool:${pool.id}`] ? { tvl: null, capacityPercent: null, apy: '—', dataUnavailable: true } : {}),
+      ...(resourceErrors[`account-pool:${pool.id}`] || resourceErrors[`account-pool-derived:${pool.id}`] ? { deposit: '—', earnings: '—', assetBalance: '—', dataUnavailable: true } : {}),
+      ...poolExtras?.[index] })),
     ...extra,
   });
   onPartial?.(snapshot());
 
-  // The APR walk is slow and independent of the incident reads below, so it runs
-  // alongside the head-block lookup those reads need.
-  const [poolAprs, headBlock] = await Promise.all([
-    Promise.all(poolReads.map((read) => fetchTrailingRewardApr(
-      read.config.address, read.assetUsdPrice, read.assetUsdDecimals,
-    ).catch(() => '—'))),
-    client.getBlockNumber(),
-  ]);
+  const headBlock = blockNumber;
   throwIfRequestAborted(signal);
 
+  const incidentKey = protocolKey(network, 'incident', account);
+  if (refresh && (!resources || resources.includes('incident'))) {
+    await queryClient.cancelQueries({ queryKey: incidentKey, exact: true });
+    await queryClient.invalidateQueries({ queryKey: incidentKey, exact: true, refetchType: 'none' });
+  }
+  const cachedIncident = queryClient.getQueryData(incidentKey);
+  const { incident, claim } = resources && !resources.includes('incident') && cachedIncident
+    ? cachedIncident : await cachedData(incidentKey, ({ signal: querySignal }) => readIncident({
+      client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy,
+      chainId, headBlock, blockNumber, signal: querySignal,
+      onIncident: extra => { if (!signal?.aborted) onPartial?.(snapshot({ ...extra, incidentReady: true })); },
+    }), { signal }).catch(error => {
+      checkAbort(signal);
+      resourceErrors.incident = error.shortMessage || error.message;
+      return { incident: null, claim: null };
+    });
+
+  throwIfRequestAborted(signal);
+
+  return snapshot({ incident, claim });
+}
+
+async function readIncident({ client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy, chainId, headBlock, blockNumber, signal, onIncident }) {
+  const zero = 0n;
   let incident = null;
   let claim = null;
   let displayedIncidentId = activeIncidentId;
   let historicalClaimId = zero;
   let historicalClaimState = null;
-  if (displayedIncidentId === zero) {
-    const historicalIncidentIds = Array.from(
-      { length: Math.max(0, Number(nextIncidentId - 1n)) },
-      (_, index) => BigInt(index + 1),
-    );
+  if (hasAccount && displayedIncidentId === zero) {
+    if (nextIncidentId > 10_001n) throw new Error('Claim history exceeds the supported range.');
+    const historicalIncidentIds = Array.from({ length: Math.max(0, Number(nextIncidentId - 1n)) }, (_, index) => BigInt(index + 1));
     if (historicalIncidentIds.length > 0) {
-      const historicalClaimIds = await client.multicall({
-        contracts: historicalIncidentIds.map((incidentId) => ({
+      const historicalClaimIds = await readHistoricalClaimIds(client, `${chainId}:${contracts.defiInsurance}:${account}`, nextIncidentId, blockNumber, ids => client.multicall({
+        contracts: ids.map((incidentId) => ({
           address: contracts.defiInsurance,
           abi: defiInsuranceAbi,
           functionName: 'claimIdByIncidentAndUser',
           args: [incidentId, account],
         })),
-        allowFailure: false,
-      });
+        allowFailure: false, blockNumber,
+      }), { signal });
       const candidates = historicalIncidentIds
         .map((incidentId, index) => ({ incidentId, claimId: historicalClaimIds[index] }))
         .filter(({ claimId }) => claimId !== zero)
         .reverse();
       if (candidates.length > 0) {
-        const candidateStates = await client.multicall({
-          contracts: candidates.map(({ claimId }) => ({
+        const candidateChunks = [];
+        for (let offset = 0; offset < candidates.length; offset += 128) candidateChunks.push(candidates.slice(offset, offset + 128));
+        const candidateStates = (await mapLimited(candidateChunks, chunk => client.multicall({
+          contracts: chunk.map(({ claimId }) => ({
             address: contracts.defiInsurance,
             abi: defiInsuranceAbi,
             functionName: 'claims',
             args: [claimId],
           })),
-          allowFailure: false,
-        });
+          allowFailure: false, blockNumber,
+        }), { signal, concurrency: 2 })).flat();
         const unresolvedIndex = candidateStates.findIndex((state) => state[5] === false);
         if (unresolvedIndex >= 0) {
           displayedIncidentId = candidates[unresolvedIndex].incidentId;
@@ -892,15 +681,18 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     }
   }
   if (displayedIncidentId !== zero) {
-    const [incidentState, phaseWindow, mappedClaimId, rawIncidentPools] = await client.multicall({
+    const incidentValues = await client.multicall({
       contracts: [
         { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidents', args: [displayedIncidentId] },
         { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPhaseWindow', args: [displayedIncidentId] },
-        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [displayedIncidentId, account] },
+        ...(hasAccount ? [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [displayedIncidentId, account] }] : []),
         { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPools', args: [displayedIncidentId] },
       ],
-      allowFailure: false,
+      allowFailure: false, blockNumber,
     });
+    const [incidentState, phaseWindow] = incidentValues;
+    const mappedClaimId = hasAccount ? incidentValues[2] : 0n;
+    const rawIncidentPools = incidentValues[hasAccount ? 3 : 2];
     const claimId = historicalClaimId === zero ? mappedClaimId : historicalClaimId;
     const poolAddrs = rawIncidentPools.map((pool) => String(pool).toLowerCase());
     if (poolAddrs.length === 0 || new Set(poolAddrs).size !== poolAddrs.length) {
@@ -912,7 +704,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
         abi: poolAbi,
         functionName: 'asset',
       })),
-      allowFailure: false,
+      allowFailure: false, blockNumber,
     })).map((asset) => String(asset).toLowerCase());
     throwIfRequestAborted(signal);
     if (poolOrder.length !== poolAddrs.length || new Set(poolOrder).size !== poolOrder.length) {
@@ -921,10 +713,43 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     const [tokenAddress, , , openBlock, phaseDeadline, root, unresolvedClaims] = incidentState;
     const tokenId = Object.entries(contracts.insuredTokens)
       .find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase())?.[0] || '';
-    const claimLogs = await fetchLogsInChunks(client, {
+    const boosterBoostBps = boosterPolicy[2] ?? 0;
+    incident = {
+      id: displayedIncidentId.toString(),
+      tokenId,
+      tokenAddress: tokenAddress.toLowerCase(),
+      phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
+      phaseWindowMilliseconds: Number(phaseWindow) * 1_000,
+      root,
+      unresolvedClaims: unresolvedClaims.toString(),
+      totalScoreCommitted: UNKNOWN_VALUE,
+      boosterBoostBps: Number(boosterBoostBps),
+      poolAddrs,
+      poolOrder,
+    };
+
+    if (claimId !== zero) {
+      const claimState = historicalClaimState || (await client.multicall({
+        contracts: [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId] }],
+        allowFailure: false, blockNumber,
+      }))[0];
+      const [, claimIncidentId, insuredTokenAmount, boosterAmount, bondAmount, resolved] = claimState;
+      claim = {
+        id: claimId.toString(),
+        incidentId: claimIncidentId.toString(),
+        insuredTokenAmount: formatted(insuredTokenAmount),
+        bondAmount: formatted(bondAmount),
+        boosterAmount: boosterAmount.toString(),
+        scoreToSpend: UNKNOWN_VALUE,
+        scoreCommitmentPercentage: UNKNOWN_VALUE,
+        resolved,
+      };
+    }
+    onIncident?.({ incident, claim });
+    const claimLogs = await incrementalLogs(client, `claims:${chainId}:${contracts.defiInsurance}:${displayedIncidentId}`, {
       address: contracts.defiInsurance,
       events: [claimRegisteredEvent, claimCancelledEvent],
-    }, openBlock, headBlock).catch(() => []);
+    }, openBlock, headBlock, { signal }).catch(() => { checkAbort(signal); return []; });
     const cancelledClaimIds = new Set(
       claimLogs
         .filter((log) => log.eventName === 'ClaimCancelled')
@@ -935,52 +760,40 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       && log.args.incidentId === displayedIncidentId
       && !cancelledClaimIds.has(log.args.claimId.toString())
     ));
-    const boosterBoostBps = boosterPolicy[2] ?? 0;
     const totalScoreCommitted = activeRegistrations.reduce(
       (total, log) => total + boostedScore(log.args.scoreToSpend, log.args.boosterAmount, boosterBoostBps),
       zero,
     );
-    incident = {
-      id: displayedIncidentId.toString(),
-      tokenId,
-      tokenAddress: tokenAddress.toLowerCase(),
-      phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
-      phaseWindowMilliseconds: Number(phaseWindow) * 1_000,
-      root,
-      unresolvedClaims: unresolvedClaims.toString(),
-      totalScoreCommitted: formatUnits(totalScoreCommitted, 18),
-      boosterBoostBps: Number(boosterBoostBps),
-      poolAddrs,
-      poolOrder,
-    };
-
-    if (claimId !== zero) {
-      const claimState = historicalClaimState || (await client.multicall({
-        contracts: [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId] }],
-        allowFailure: false,
-      }))[0];
-      const [, claimIncidentId, insuredTokenAmount, boosterAmount, bondAmount, resolved] = claimState;
-      const registration = activeRegistrations.find((log) => log.args.claimId === claimId);
-      // Score committed lives only in the registration event. Without it the
-      // amount is unknown — never zero — so fall back to the escrow the contract
-      // still reports rather than inventing a share of nothing.
-      const scoreToSpend = registration?.args?.scoreToSpend;
-      claim = {
-        id: claimId.toString(),
-        incidentId: claimIncidentId.toString(),
-        insuredTokenAmount: formatted(insuredTokenAmount),
-        bondAmount: formatted(bondAmount),
-        boosterAmount: boosterAmount.toString(),
-        scoreToSpend: scoreToSpend === undefined ? UNKNOWN_VALUE : formatted(scoreToSpend),
-        scoreCommitmentPercentage: scoreToSpend === undefined
-          ? UNKNOWN_VALUE
-          : claimPercentage(boostedScore(scoreToSpend, boosterAmount, boosterBoostBps), totalScoreCommitted),
-        resolved,
-      };
+    incident = { ...incident, totalScoreCommitted: claimLogs.length ? formatUnits(totalScoreCommitted, 18) : UNKNOWN_VALUE };
+    if (claim) {
+      const scoreToSpend = activeRegistrations.find(log => log.args.claimId === claimId)?.args.scoreToSpend;
+      claim = { ...claim, scoreToSpend: scoreToSpend === undefined ? UNKNOWN_VALUE : formatted(scoreToSpend),
+        scoreCommitmentPercentage: scoreToSpend === undefined ? UNKNOWN_VALUE : claimPercentage(boostedScore(scoreToSpend, BigInt(claim.boosterAmount), boosterBoostBps), totalScoreCommitted) };
     }
+
   }
 
-  throwIfRequestAborted(signal);
+  return { incident, claim };
+}
 
-  return snapshot({ incident, claim, pools: poolAprs.map((apy) => ({ apy })) });
+export async function fetchLandingAnalytics(snapshot, account, chainId, { signal } = {}) {
+  const pools = await Promise.all((snapshot.pools || []).map(async pool => ({ id: pool.id,
+    apy: pool.usdPrice === undefined ? pool.apy : await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal }).catch(error => { checkAbort(signal); return '—'; }),
+  })));
+  return { pools };
+}
+
+export async function fetchScoreHistory(snapshot, account, chainId, { signal } = {}) {
+  if (!account || account === zeroAddress || !snapshot.scoreHistoryInputs || !snapshot.scoreBalances) return null;
+  const network = getProtocolNetwork(chainId);
+  const timestamps = await Promise.all(['usd8', 'savings'].map(token => {
+    const balance = snapshot.scoreBalances[token];
+    if (balance === '0') return 0;
+    const address = token === 'usd8' ? network.contracts.usd8 : network.contracts.savingsVault;
+    return cachedData(protocolKey(network, 'score-history', account.toLowerCase(), address, balance),
+      ({ signal: querySignal }) => latestBalanceChangeTimestampMilliseconds(publicClientFor(chainId), address, account,
+        BigInt(snapshot.scoreHistoryInputs[`${token}FromBlock`]), snapshot.scoreBalancesSnapshotTimestampMilliseconds,
+        querySignal, BigInt(snapshot.blockNumber)), { signal, staleTime: 60_000 });
+  }));
+  return { usd8: timestamps[0], savings: timestamps[1] };
 }

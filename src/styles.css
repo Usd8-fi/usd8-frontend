@@ -172,8 +172,9 @@ a:focus-visible {
 .landing-beta-link:active,
 .landing-beta-link:hover,
 .landing-beta-link:focus-visible {
-  width: 55px;
-  height: 26px;
+  font-size: 12px;
+  width: 44px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -531,6 +532,12 @@ a:focus-visible {
 .claim-status-step small {
   font: inherit;
   font-size: 13px;
+}
+
+/* Inline links use the same typography as their surrounding small note. */
+small a,
+.file-claim-requirement a {
+  font: inherit;
 }
 
 /* ...and every button-adjacent message takes its own line beneath the button,
@@ -1628,7 +1635,95 @@ a:focus-visible {
     position: absolute;
     top: 36px;
     left: 70px;
-    width: 55px;
-    height: 26px;
+    width: 44px;
+    height: 22px;
   }
+}
+.usd8-transaction-banner { position: sticky; top: 0; z-index: 20; padding: 12px 20px; background: var(--panel); color: var(--text); border-bottom: 1px solid var(--gold-soft); font-size: .8125rem; overflow-wrap: anywhere; }
+.usd8-transaction-banner a, .usd8-transaction-banner button { color: var(--accent); text-decoration: underline; }
+.usd8-transaction-banner a:hover, .usd8-transaction-banner a:focus-visible, .usd8-transaction-banner button:hover, .usd8-transaction-banner button:focus-visible { color: var(--accent-hover); }
+.landing-data-error button { color: inherit; text-decoration: underline; }
+.usd8-transaction-banner button, .landing-data-error button { background: transparent; border: 0; cursor: pointer; font: inherit; }
+.landing-data-freshness { position: relative; top: 28px; z-index: 1; display: block; color: #454545; font-size: 11px; margin: 32px 0 0; }
+
+/* One toast surface. Only the border and icon distinguish warnings from status. */
+.wallet-notice {
+  --notice-accent: var(--accent);
+  position: fixed;
+  z-index: 2100;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(640px, calc(100% - 32px));
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto 44px;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--notice-accent);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--text);
+  font: 400 var(--font-body)/1.5 var(--font-family);
+  text-align: left;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .35);
+}
+.wallet-notice--warning { --notice-accent: #ef6b6b; }
+.wallet-notice-icon { display: flex; align-items: center; color: var(--notice-accent); }
+.wallet-notice-icon svg { display: block; width: 24px; height: 24px; }
+.wallet-notice-message { min-width: 0; overflow-wrap: anywhere; }
+.wallet-notice .wallet-notice-message p { margin: 0; color: var(--text); font: inherit; }
+.wallet-notice .wallet-notice-message small { display: block; margin-top: 8px; color: var(--text); font: inherit; }
+.wallet-notice .wallet-notice-message a { color: var(--accent); font: inherit; }
+.wallet-notice .wallet-notice-message a:hover,
+.wallet-notice .wallet-notice-message a:focus-visible { background: transparent; color: var(--accent-hover); text-decoration: underline; }
+.wallet-notice .wallet-notice-connect {
+  grid-column: 3;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 19px;
+  border: 2px solid var(--accent);
+  border-radius: 0;
+  background: var(--accent);
+  color: var(--link-inverse);
+  font: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.wallet-notice .wallet-notice-connect:not(:disabled):hover { background: var(--accent-hover); }
+.wallet-notice .wallet-notice-connect:disabled { opacity: .5; cursor: default; }
+.wallet-notice .wallet-notice-close {
+  position: static;
+  grid-column: 4;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+.wallet-notice .wallet-notice-close:hover { background: rgba(255, 255, 255, .16); }
+.wallet-notice button:focus-visible,
+.wallet-notice a:focus-visible { outline: 2px solid var(--notice-accent); outline-offset: 3px; }
+@media (max-width: 560px) {
+  .wallet-notice { grid-template-columns: 24px minmax(0, 1fr) 44px; }
+  .wallet-notice-icon { grid-column: 1; grid-row: 1; }
+  .wallet-notice-message { grid-column: 2; grid-row: 1; }
+  .wallet-notice .wallet-notice-close { grid-column: 3; grid-row: 1; }
+  .wallet-notice .wallet-notice-connect { grid-column: 2 / -1; grid-row: 2; justify-self: start; }
+}
+
+.usd8-dialog-flow--withdraw .usd8-dialog-withdrawal-availability {
+  width: 100%;
+  line-height: 1.5;
 }

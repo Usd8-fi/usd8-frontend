@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useState } from 'react';
+import { Fragment } from 'react';
 import aaveLogo from '../assets/aavelogo.svg';
 import msLossLogo from '../assets/msloss-test.svg';
 import sUsd8Logo from '../assets/sUSD8.svg';
@@ -98,24 +98,12 @@ export default function CoveredProtocolsTable({
   insuredTokenStates = {},
   nowMilliseconds = Date.now(),
 }) {
-  const warningId = useId();
-  const [warningRowId, setWarningRowId] = useState('');
-
-  useEffect(() => {
-    setWarningRowId('');
-  }, [fileClaimUnavailableReason]);
-
   const displayedRows = COVERED_PROTOCOL_ROWS.filter((row) => (
     insuredTokenStates[row.id]?.enabled || row.id === incident?.tokenId
   ));
 
   return (
     <Fragment>
-      {warningRowId ? (
-        <p id={warningId} className="covered-protocols-warning" role="alert">
-          {fileClaimUnavailableReason}
-        </p>
-      ) : null}
       <div className="landing-table-shell">
         <table
           className="cover-table covered-protocols-table covered-protocols-table--claims"
@@ -160,18 +148,11 @@ export default function CoveredProtocolsTable({
             <td>{reimbursement}</td>
             <td className="table-action-cell covered-protocols-action-cell">
               <AvailabilityAction
+                unavailableReason={fileClaimUnavailableReason}
                 className={`dashboard-action-button dashboard-table-action-button${actionLabel === 'File Claim' ? '' : ' dashboard-table-action-button--claim-status'}`}
                 type="button"
-                onClick={() => {
-                  if (fileClaimUnavailableReason) {
-                    setWarningRowId(row.id);
-                    return;
-                  }
-                  setWarningRowId('');
-                  onFileClaim?.(row);
-                }}
+                onClick={() => onFileClaim?.(row)}
                 aria-label={actionAriaLabel}
-                aria-describedby={warningRowId === row.id ? warningId : undefined}
               >
                 {actionLabel}
               </AvailabilityAction>

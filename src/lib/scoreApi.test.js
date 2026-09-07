@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchInsuranceScore } from './scoreApi.js';
+import { fetchInsuranceScore, scoreApiBaseUrl, DEFAULT_SCORE_API_URL } from './scoreApi.js';
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('fetchInsuranceScore', () => {
-  it('loads the public AWS score route and normalizes its string fields', async () => {
+  it('loads the local proxy score route and normalizes its string fields', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -42,7 +42,7 @@ describe('fetchInsuranceScore', () => {
     const result = await fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com/score/0x1111111111111111111111111111111111111111',
+      '/api/score/0x1111111111111111111111111111111111111111',
       expect.objectContaining({ headers: { accept: 'application/json' } }),
     );
     expect(result.availableScore).toBe('1');
@@ -96,7 +96,7 @@ describe('fetchInsuranceScore', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com/score/0x1111111111111111111111111111111111111111?refresh=1',
+      '/api/score/0x1111111111111111111111111111111111111111?refresh=1',
       expect.objectContaining({ cache: 'no-store' }),
     );
   });
@@ -109,5 +109,19 @@ describe('fetchInsuranceScore', () => {
 
     await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 }))
       .rejects.toThrow('Unexpected score API network');
+  });
+});
+
+
+describe('score API routing', () => {
+  it.each(['localhost', '127.0.0.1', '[::1]', '::1'])('uses the same-origin proxy on %s regardless of port', hostname => {
+    expect(scoreApiBaseUrl(hostname, '')).toBe('/api');
+  });
+  it('keeps the deployed website on the public API', () => {
+    expect(scoreApiBaseUrl('usd8.fi', '')).toBe(DEFAULT_SCORE_API_URL);
+    expect(scoreApiBaseUrl('localhost.example.com', '')).toBe(DEFAULT_SCORE_API_URL);
+  });
+  it('honors an explicitly configured endpoint', () => {
+    expect(scoreApiBaseUrl('localhost', 'https://score.example.com/')).toBe('https://score.example.com');
   });
 });

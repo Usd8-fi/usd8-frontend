@@ -1,11 +1,14 @@
 {
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "vite build && node scripts/postbuild.mjs && mdbook build",
-    "test": "NODE_ENV=test vitest run",
-    "preview": "vite preview --host 0.0.0.0",
+    "build": "npm run build:app && mdbook build",
+    "test": "NODE_ENV=test vitest run --configLoader native",
+    "preview": "vite preview --configLoader native --host 0.0.0.0",
     "deploy": "./deploy.sh",
-    "docs:serve": "mdbook serve --open"
+    "docs:serve": "mdbook serve --open",
+    "build:app": "vite build --configLoader native && node scripts/postbuild.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "check:wallet": "node scripts/check-wallet-dependencies.mjs"
   },
   "dependencies": {
     "@reown/appkit": "^1.8.20",
@@ -14,7 +17,7 @@
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "viem": "^2.51.3",
+    "viem": "2.54.6",
     "wagmi": "^3.6.16"
   },
   "devDependencies": {

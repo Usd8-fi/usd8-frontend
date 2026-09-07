@@ -1,9 +1,11 @@
 import { formatUnits, getAddress, isAddress } from 'viem';
 
-const SCORE_API_BASE_URL = (
-  import.meta.env.VITE_SCORE_API_URL
-  || 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com'
-).replace(/\/$/, '');
+export const DEFAULT_SCORE_API_URL = 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com';
+
+export function scoreApiBaseUrl(hostname = globalThis.location?.hostname, override = import.meta.env.VITE_SCORE_API_URL) {
+  if (override) return override.replace(/\/$/, '');
+  return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(hostname) ? '/api' : DEFAULT_SCORE_API_URL;
+}
 
 const SCORE_DECIMALS = 18;
 const LEGACY_SEPOLIA_CHAIN_ID = 11_155_111;
@@ -55,7 +57,7 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
   const scorePath = chainId === LEGACY_SEPOLIA_CHAIN_ID
     ? `/score/${canonicalAccount}`
     : `/score/${expectedChainId}/${canonicalAccount}`;
-  const response = await fetch(`${SCORE_API_BASE_URL}${scorePath}${refresh ? '?refresh=1' : ''}`, {
+  const response = await fetch(`${scoreApiBaseUrl()}${scorePath}${refresh ? '?refresh=1' : ''}`, {
     ...(refresh ? { cache: 'no-store' } : {}),
     headers: { accept: 'application/json' },
     signal,

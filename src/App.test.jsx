@@ -33,7 +33,10 @@ vi.mock('wagmi', () => ({
 vi.mock('./lib/chainData.js', () => ({
   erc20Abi: [],
   fetchLandingChainData: mocks.fetchLandingChainData,
+  fetchLandingAnalytics: async () => ({ pools: [] }),
+  fetchScoreHistory: async () => null,
   publicClientFor: () => ({
+    getBlockNumber: async () => 123n,
     estimateContractGas: mocks.estimateContractGas,
     simulateContract: mocks.simulateContract,
     readContract: mocks.readContract,
@@ -179,6 +182,12 @@ const coverPoolFixture = (overrides = {}) => ({
   earningsPeriodFinishMilliseconds: 0,
   hasEarnings: false,
   shareDecimals: 21,
+  // Default fixtures model a 1:1 asset/share rate; loss scenarios override these values.
+  availableForCooldownAssets: overrides.availableForCooldown ?? '0',
+  availableForWithdrawAssets: overrides.availableForWithdraw ?? '0',
+  inCooldownAssets: overrides.inCooldown ?? '0',
+  exitSettled: false,
+  withdrawalQuote: { totalAssets: '100000000000000000000', totalSupply: '100000000000000000000000' },
   ...overrides,
 });
 
@@ -195,7 +204,7 @@ describe('App', () => {
       balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '0', availableForCooldown: '0' })],
       activeIncidentId: '0',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.fetchMorphoVault.mockReset();
     mocks.fetchMorphoVault.mockResolvedValue({
@@ -269,7 +278,7 @@ describe('App', () => {
     expect(poolCard().getByLabelText('0% capacity filled')).toBeInTheDocument();
   });
 
-  it('explains a disconnected pool action beside the button after click', () => {
+  it('shows the shared wallet toast for a disconnected pool action', () => {
     const prompt = vi.spyOn(window, 'prompt').mockReturnValue(null);
     render(<App />);
 
@@ -278,12 +287,12 @@ describe('App', () => {
 
     expect(deposit).toBeEnabled();
     fireEvent.click(deposit);
-    expect(availabilityTooltip(deposit)).toHaveTextContent('Please connect your wallet first.');
+    expect(availabilityTooltip(deposit)).toHaveTextContent('Connect your wallet to continue.');
     expect(prompt).not.toHaveBeenCalled();
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
-  it('explains disconnected mint availability beside the button without opening a dialog', () => {
+  it('shows the shared wallet toast for disconnected minting without opening a dialog', () => {
     const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
     render(<App />);
 
@@ -291,12 +300,12 @@ describe('App', () => {
 
     expect(mint).toBeEnabled();
     fireEvent.click(mint);
-    expect(availabilityTooltip(mint)).toHaveTextContent('Please connect your wallet first.');
+    expect(availabilityTooltip(mint)).toHaveTextContent('Connect your wallet to continue.');
     expect(alert).not.toHaveBeenCalled();
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
-  it('shows one shared wallet warning above the claims table for every disconnected claim button', async () => {
+  it('reuses one wallet toast for every disconnected claim button', async () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
@@ -307,14 +316,15 @@ describe('App', () => {
     expect(firstClaim).toBeEnabled();
     fireEvent.click(firstClaim);
     const warning = screen.getByRole('alert');
-    expect(warning).toHaveTextContent('Please connect your wallet first.');
-    expect(warning.nextElementSibling).toContainElement(table);
+    expect(warning).toHaveTextContent('Connect your wallet to continue.');
+    expect(warning.parentElement).toBe(document.body);
+    expect(document.querySelector('.covered-protocols-warning')).toBeNull();
     expect(warning.closest('.landing-table-shell')).toBeNull();
     expect(table).not.toContainElement(warning);
 
     fireEvent.click(secondClaim);
     expect(screen.getAllByRole('alert')).toEqual([warning]);
-    expect(availabilityTooltip(secondClaim)).toBe(warning);
+    expect(warning).toContainElement(availabilityTooltip(secondClaim));
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
@@ -373,7 +383,7 @@ describe('App', () => {
     expect(screen.queryByText('...')).not.toBeInTheDocument();
   });
 
-  it('keeps all score values loading while chain score inputs are still fetching after a score API failure', async () => {
+  it('shows unknown available score while the remaining chain score inputs are still loading', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     const scoreRequest = deferred();
@@ -384,7 +394,8 @@ describe('App', () => {
 
     await act(async () => scoreRequest.reject(new Error('score unavailable')));
 
-    expect(screen.getAllByRole('status', { name: 'Loading insurance score' })).toHaveLength(4);
+    expect(screen.getAllByRole('status', { name: 'Loading insurance score' })).toHaveLength(3);
+    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('—');
     expect(screen.getAllByRole('status', { name: 'Loading wallet balance' })).toHaveLength(2);
   });
 
@@ -402,7 +413,7 @@ describe('App', () => {
       11155111,
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    expect(screen.getByRole('button', { name: /disconnect wallet/i })).toHaveTextContent('Sepolia');
+    expect(screen.getByRole('button', { name: /manage wallet/i })).toHaveTextContent('Sepolia');
   });
 
   it('ignores an older wallet snapshot when account requests resolve in reverse order', async () => {
@@ -416,7 +427,7 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '0', availableForCooldown: '0' })],
       activeIncidentId: '0',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.account.address = firstAccount;
     mocks.account.isConnected = true;
@@ -479,7 +490,7 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     };
     function ResolveDuringLayout({ resolve }) {
       useLayoutEffect(() => resolve?.(), [resolve]);
@@ -526,14 +537,14 @@ describe('App', () => {
           id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
           scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
         },
-        insurance: { tokens: LISTED_INSURANCE_TOKENS },
+        insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
       })
       .mockReturnValueOnce(secondRequest.promise);
     const { rerender } = render(<App />);
 
     const firstClaimButton = await screen.findByRole('button', { name: /Claim Open .* for test-msloss/ });
     fireEvent.click(firstClaimButton);
-    expect(screen.getByRole('dialog', { name: 'Claim Status for msLOSS' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' })).toBeInTheDocument();
 
     mocks.account.address = secondAccount;
     rerender(<App />);
@@ -564,12 +575,12 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     const { rerender } = render(<App />);
 
     fireEvent.click(await screen.findByRole('button', { name: /Claim Open .* for test-msloss/ }));
-    expect(screen.getByRole('dialog', { name: 'Claim Status for msLOSS' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' })).toBeInTheDocument();
 
     mocks.account.address = '';
     mocks.account.isConnected = false;
@@ -646,7 +657,7 @@ describe('App', () => {
         id: claimId, incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.account.address = firstAccount;
     mocks.account.isConnected = true;
@@ -706,7 +717,7 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     };
     mocks.fetchLandingChainData
       .mockResolvedValueOnce(accountChainData)
@@ -753,7 +764,7 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -811,7 +822,7 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -861,7 +872,7 @@ describe('App', () => {
         root: `0x${'00'.repeat(32)}`,
       },
       claim,
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     const unresolvedClaim = {
       id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
@@ -907,7 +918,7 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -961,7 +972,7 @@ describe('App', () => {
         id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '0',
         scoreToSpend: '100', insuredTokenClaimPercentage: '100%', scoreCommitmentPercentage: '100%', resolved: false,
       },
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -1294,7 +1305,7 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchMorphoVault).toHaveBeenCalled());
     expect(mocks.fetchInsuranceScore).not.toHaveBeenCalled();
     expect(mocks.fetchLandingChainData).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /disconnect wallet/i })).toHaveTextContent('Ethereum');
+    expect(screen.getByRole('button', { name: /manage wallet/i })).toHaveTextContent('Ethereum');
     const mint = screen.getByRole('button', { name: 'mint' });
     expect(mint).toBeEnabled();
     fireEvent.click(mint);
@@ -1338,13 +1349,13 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
     let dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
-    expect(within(dialog).getByLabelText('USDC amount')).toHaveValue(10.123456);
+    expect(within(dialog).getByLabelText('USDC amount')).toHaveValue('10.123456');
     expect(within(dialog).queryByRole('button', { name: /Use full USDC balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('10.12 available')).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem USD8' }));
     dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
-    expect(within(dialog).getByLabelText('USD8 amount')).toHaveValue(25.987654321);
+    expect(within(dialog).getByLabelText('USD8 amount')).toHaveValue('25.987654321');
     expect(within(dialog).queryByRole('button', { name: /Use full USD8 balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('25.98 available')).toBeInTheDocument();
   });
@@ -1375,7 +1386,7 @@ describe('App', () => {
     expect(availabilityTooltip(submit)).toHaveTextContent('The USD8 amount exceeds your available balance.');
   });
 
-  it('shows a red USD8 input warning after submit and clears it when editing', async () => {
+  it('shows a shared USD8 input warning after submit and clears it when editing', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     render(<App />);
@@ -1392,7 +1403,7 @@ describe('App', () => {
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('shows a red action-local warning for an invalid token amount', async () => {
+  it('shows a shared toast warning for an invalid token amount', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     render(<App />);
@@ -1451,7 +1462,7 @@ describe('App', () => {
     expect(within(dialog).getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Withdraw earnings' })).toBeInTheDocument();
     expect(within(dialog).getByLabelText('wstETH amount')).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('wstETH amount')).toHaveValue(3.258765);
+    expect(within(dialog).getByLabelText('wstETH amount')).toHaveValue('3.258765');
     expect(within(dialog).getByText('wstETH')).toBeInTheDocument();
     expect(within(dialog).queryByText('Pool shares')).not.toBeInTheDocument();
     expect(within(dialog).queryByText('→')).not.toBeInTheDocument();
@@ -1461,14 +1472,15 @@ describe('App', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
     dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue(2.198765);
-    expect(within(dialog).getByText('USD8-cp-wstETH')).toBeInTheDocument();
-    expect(within(dialog).queryByText('wstETH')).not.toBeInTheDocument();
-    expect(within(dialog).queryByText('→')).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('2.198765');
+    expect(within(dialog).getByText('Pool shares to redeem')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Estimated wstETH received')).toHaveTextContent('2.198765');
+    expect(within(dialog).queryByText('USD8-cp-wstETH')).not.toBeInTheDocument();
+    expect(within(dialog).queryByText('→')).toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: /Use full USD8-cp-wstETH balance/ })).not.toBeInTheDocument();
-    expect(within(dialog).getByText(/2.19 available/).closest('small')).toHaveTextContent('2.19 available. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized. Learn More.');
+    expect(within(dialog).getByText(/2.19 shares available/).closest('small')).toHaveTextContent('2.19 shares available. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized. Learn More.');
     expect(within(dialog).getByRole('button', { name: 'start cooldown' })).toBeInTheDocument();
-    expect(within(dialog).getByText('4 available for withdraw, 12 in cooldown.')).toBeInTheDocument();
+    expect(within(dialog).getByText('4.00 wstETH estimated for withdrawal, 12.00 wstETH in cooldown.')).toBeInTheDocument();
     expect(within(dialog).getAllByRole('button', { name: 'Withdraw' })).toHaveLength(2);
     expect(within(dialog).getByRole('link', { name: 'Learn More' })).toHaveAttribute(
       'href',
@@ -1477,7 +1489,7 @@ describe('App', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw earnings' }));
     dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
-    expect(within(dialog).getByText('7.5 USD8 available to withdraw')).toBeInTheDocument();
+    expect(within(dialog).getByText('7.50 USD8 available to withdraw')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'withdraw earnings' })).toBeInTheDocument();
   });
 
@@ -1520,8 +1532,8 @@ describe('App', () => {
     expect(poolCapacity).toHaveClass('usd8-dialog-pool-capacity');
     expect(poolCapacity.parentElement).toHaveClass('usd8-dialog-pool-availability');
     expect(within(dialog).queryByRole('button', { name: /Use full wstETH balance/ })).not.toBeInTheDocument();
-    expect(within(dialog).getByText(/3 available/).closest('small'))
-      .toHaveTextContent('3 available. 76.99 wstETH left in pool limit');
+    expect(within(dialog).getByText(/3.00 available/).closest('small'))
+      .toHaveTextContent('3.00 available. 76.99 wstETH left in pool limit');
     const submit = within(dialog).getByRole('button', { name: 'deposit' });
     fireEvent.click(submit);
 
@@ -1549,7 +1561,7 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
 
     expect(within(dialog).getByText(
-      '4 available for withdraw after claims are finalized, 0 in cooldown.',
+      '4.00 wstETH estimated for withdrawal after claims are finalized, 0.00 wstETH in cooldown.',
     )).toBeInTheDocument();
     const startCooldown = within(dialog).getByRole('button', { name: 'start cooldown' });
     fireEvent.click(startCooldown);
@@ -1635,7 +1647,7 @@ describe('App', () => {
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
-  it('clears covered-token rows when a post-transaction chain refresh fails', async () => {
+  it('preserves confirmed transactions and known data when their refresh fails', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData
@@ -1652,7 +1664,7 @@ describe('App', () => {
           phaseWindowMilliseconds: 86_400_000,
           root: `0x${'11'.repeat(32)}`,
         },
-        insurance: { tokens: LISTED_INSURANCE_TOKENS },
+        insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
       })
       .mockRejectedValueOnce(new Error('chain refresh unavailable'));
     mocks.writeContractAsync.mockResolvedValueOnce(
@@ -1669,8 +1681,11 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
     fireEvent.click(screen.getByRole('button', { name: 'Defi Insurance' }));
     const table = screen.getByRole('table', { name: 'Insured tokens' });
-    expect(within(table).queryByRole('button', { name: 'File claim for usd8' })).not.toBeInTheDocument();
-    expect(within(table).getByRole('button', { name: /for test-msloss$/i }).closest('tr')).toHaveTextContent('—');
+    expect(within(table).getByRole('button', { name: 'File claim for usd8' })).toBeInTheDocument();
+    expect(await screen.findByText(/Transaction confirmed/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View transaction' })).toHaveAttribute('href', expect.stringContaining('/tx/0xaaaa'));
+    expect(screen.getByRole('button', { name: 'Retry refresh' })).toBeInTheDocument();
+    expect(await within(dialog).findByRole('alert', { name: 'Transaction status' })).toHaveTextContent('Rewards claimed on Sepolia.');
   });
 
   it('submits a pool deposit from the dialog instead of using a browser prompt', async () => {
@@ -1724,6 +1739,7 @@ describe('App', () => {
     mocks.writeContractAsync.mockResolvedValueOnce(
       '0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
     );
+    mocks.readContract.mockImplementation(({ functionName }) => Promise.resolve(functionName === 'balanceOf' ? 2_100_000_000_000_000_000_000n : 2_100_000_000_000_000_000n));
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
@@ -1738,6 +1754,40 @@ describe('App', () => {
       functionName: 'requestRedeem',
       args: [2_100_000_000_000_000_000_000n],
     }));
+  });
+
+  it.each([
+    ['full balance', null, 1_000_000_000_000_000_000_000n, '0.498377'],
+    ['edited shares', '0.4', 400_000_000_000_000_000_000n, '0.199350'],
+  ])('shows the pool-loss estimate and submits exactly the %s', async (_, editedAmount, expectedShares, expectedOutput) => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: { usdc: '0', usd8: '0', savings: '0' },
+      pools: [coverPoolFixture({ availableForCooldown: '1', availableForCooldownAssets: '0.498377312974030960',
+        withdrawalQuote: { totalAssets: '31901131803467721787', totalSupply: '64010000000000000000000' } })],
+      activeIncidentId: '0',
+    });
+    mocks.readContract.mockImplementation(async ({ functionName }) => {
+      if (functionName === 'balanceOf') return 1_000_000_000_000_000_000_000n;
+      throw new Error(`Unexpected read ${functionName}`);
+    });
+    mocks.writeContractAsync.mockResolvedValue('0x' + 'ab'.repeat(32));
+    render(<App />);
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    const dialog = screen.getByRole('dialog');
+    const input = within(dialog).getByLabelText('USD8-cp-wstETH amount');
+    expect(input).toHaveValue('1');
+    expect(within(dialog).queryByRole('button', { name: /max/i })).not.toBeInTheDocument();
+    expect(within(dialog).getByText('→')).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('May decrease if the pool pays claims before your withdrawal settles.');
+    if (editedAmount) fireEvent.change(input, { target: { value: editedAmount } });
+    expect(within(dialog).getByLabelText('Estimated wstETH received')).toHaveTextContent(expectedOutput);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
+    await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({ functionName: 'requestRedeem', args: [expectedShares] })));
+    expect(mocks.readContract).not.toHaveBeenCalledWith(expect.objectContaining({ functionName: 'previewWithdraw' }));
   });
 
   it('prevents a second cooldown request while an exit request is active', async () => {
@@ -1756,9 +1806,9 @@ describe('App', () => {
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
     expect(within(dialog).queryByRole('button', { name: /Use full USD8-cp-wstETH balance/ })).not.toBeInTheDocument();
-    expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue(19);
-    expect(within(dialog).getByText(/19 available/).closest('small')).toHaveTextContent('19 available');
-    expect(within(dialog).getByText('0 available for withdraw, 1 in cooldown — ready in 6 days.')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('19');
+    expect(within(dialog).getByText(/19.00 shares available/).closest('small')).toHaveTextContent('19.00 shares available');
+    expect(within(dialog).getByText('0.00 wstETH estimated for withdrawal, 1.00 wstETH in cooldown — ready in 6 days.')).toBeInTheDocument();
     const submit = within(dialog).getByRole('button', { name: 'start cooldown' });
     fireEvent.click(submit);
 
@@ -1768,7 +1818,7 @@ describe('App', () => {
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 
-  it('shows a cooldown error next to the start cooldown button', async () => {
+  it('shows a cooldown error in the shared toast', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
@@ -1788,7 +1838,7 @@ describe('App', () => {
     const status = await within(dialog).findByRole('alert');
     expect(status).toHaveTextContent('Enter a USD8-cp-wstETH amount greater than zero to start cooldown.');
     expect(within(dialog).getByRole('button', { name: 'start cooldown' }).closest('.action-button-shell'))
-      .toContainElement(status);
+      .not.toContainElement(status);
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '1' } });
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
   });
@@ -1869,7 +1919,7 @@ describe('App', () => {
   it('redeems USD8 through the Sepolia Treasury with the quoted pro-rata minimum', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
-    mocks.readContract.mockResolvedValueOnce(1_000_000_000_000_000_000n);
+    mocks.readContract.mockResolvedValue(1_000_000_000_000_000_000n);
     mocks.writeContractAsync.mockResolvedValueOnce(
       '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
     );
@@ -1879,6 +1929,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
+    await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
@@ -1895,10 +1946,10 @@ describe('App', () => {
     expect(await screen.findByText('Redemption confirmed on Sepolia.')).toBeInTheDocument();
   });
 
-  it('shows wallet transaction progress beside the submit button through confirmation', async () => {
+  it('shows transaction progress and success in the shared toast', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
-    mocks.readContract.mockResolvedValueOnce(1_000_000_000_000_000_000n);
+    mocks.readContract.mockResolvedValue(1_000_000_000_000_000_000n);
     const walletApproval = deferred();
     const confirmation = deferred();
     mocks.writeContractAsync.mockReturnValueOnce(walletApproval.promise);
@@ -1909,13 +1960,15 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
+    await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     const submit = within(dialog).getByRole('button', { name: 'redeem' });
     fireEvent.click(submit);
 
     const status = await within(dialog).findByRole('status', { name: 'Transaction status' });
     expect(status).toHaveTextContent('Confirm the USD8 redemption in your wallet.');
     expect(status.querySelector('.usd8-spinner')).toBeInTheDocument();
-    expect(submit.closest('.usd8-dialog-submit-row')).toContainElement(status);
+    expect(submit.closest('.usd8-dialog-submit-row')).not.toContainElement(status);
+    expect(status).toHaveClass('wallet-notice');
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
 
     walletApproval.resolve('0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc1234');
@@ -1931,7 +1984,7 @@ describe('App', () => {
   it('shows a readable cancellation message when the wallet closes without a transaction hash', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
-    mocks.readContract.mockResolvedValueOnce(1_000_000_000_000_000_000n);
+    mocks.readContract.mockResolvedValue(1_000_000_000_000_000_000n);
     mocks.writeContractAsync.mockResolvedValueOnce(null);
     render(<App />);
 
@@ -1939,6 +1992,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
+    await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
 
     expect(await within(dialog).findByText('Transaction cancelled in your wallet.')).toBeInTheDocument();
@@ -1960,7 +2014,7 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '0', availableForCooldown: '0' })],
       activeIncidentId: '0',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     render(<App />);
 
@@ -1970,7 +2024,7 @@ describe('App', () => {
 
     expect(within(dialog).getByLabelText('Boosters to burn')).toHaveValue(100);
     expect(within(dialog).queryByRole('button', { name: /Use all boosters/ })).not.toBeInTheDocument();
-    expect(within(dialog).getByText('100 available')).toBeInTheDocument();
+    expect(within(dialog).getByText('100.00 available')).toBeInTheDocument();
   });
 
   it('approves and escrows the requested Booster amount before filing a claim', async () => {
@@ -1985,7 +2039,7 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
       activeIncidentId: '1',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.readContract.mockImplementation(({ functionName }) => {
       if (functionName === 'isInsuredToken') return Promise.resolve(true);
@@ -2027,6 +2081,80 @@ describe('App', () => {
         '0x',
       ],
     }));
+  });
+
+
+  it.each(['verification', 'requirements', 'receipt'])('identifies a claim %s failure without mislabelling the booster approval', async (failureStep) => {
+    const boosterCollection = '0xc0012770848fcd350ab11906e93ba9fdfda19f4c';
+    mocks.account.address = '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: {
+        usdc: '0', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0',
+        boosters: '5', insuredTokens: { 'test-msloss': '10' },
+      },
+      pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
+      activeIncidentId: '1',
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
+    let listingReads = 0;
+    mocks.prepareIncidentOpen.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    if (failureStep === 'receipt') mocks.waitForTransactionReceipt.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    mocks.readContract.mockImplementation(({ functionName }) => {
+      if (functionName === 'isInsuredToken') {
+        listingReads += 1;
+        if (failureStep === 'requirements' && listingReads === 3) return Promise.reject(new TypeError('Failed to fetch'));
+        return Promise.resolve(true);
+      }
+      if (functionName === 'activeIncidentId') return Promise.resolve(0n);
+      if (functionName === 'claimBondAmount') return Promise.resolve(10_000_000_000_000_000_000n);
+      if (functionName === 'allowance') return Promise.resolve(10_000_000_000_000_000_000n);
+      if (functionName === 'boosterConfig') return Promise.resolve([boosterCollection, 1n]);
+      if (functionName === 'balanceOf') return Promise.resolve(5n);
+      if (functionName === 'isApprovedForAll') return Promise.resolve(mocks.writeContractAsync.mock.calls.length > 0);
+      throw new Error(`Unexpected read: ${functionName}`);
+    });
+    mocks.writeContractAsync
+      .mockResolvedValueOnce('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+      .mockResolvedValueOnce('0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'File claim for test-msloss' }));
+    const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
+    fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
+    fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
+    fireEvent.change(within(dialog).getByLabelText('Boosters to burn'), { target: { value: '2' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
+
+
+    const notice = await within(dialog).findByRole('alert', { name: 'Claim submission status' });
+    expect(notice).toHaveTextContent('No claim transaction was submitted.');
+    expect(notice).not.toHaveTextContent('Failed to fetch');
+    expect(mocks.writeContractAsync).toHaveBeenCalledTimes(1);
+    if (failureStep === 'receipt') {
+      expect(notice).toHaveTextContent('Booster approval confirmation unavailable: The transaction was submitted, but its confirmation could not be checked.');
+      expect(within(notice).getByRole('link', { name: 'View transaction' })).toHaveAttribute('href',
+        'https://sepolia.etherscan.io/tx/0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+      expect(notice).not.toHaveTextContent('Booster approval confirmed.');
+    } else {
+      expect(notice).toHaveTextContent('Booster approval confirmed.');
+      expect(within(notice).queryByRole('link', { name: 'View transaction' })).not.toBeInTheDocument();
+      expect(notice).toHaveTextContent(failureStep === 'verification'
+        ? 'Claim verification failed: Could not reach the claim verification service.'
+        : 'Claim requirements check failed: Could not connect to the blockchain.');
+    }
+    if (failureStep === 'verification') {
+      mocks.prepareIncidentOpen.mockResolvedValueOnce({ referenceBlock: 12345678n, signature: `0x${'11'.repeat(65)}` });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
+      await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
+      expect(mocks.writeContractAsync).toHaveBeenLastCalledWith(expect.objectContaining({
+        functionName: 'fileClaim',
+        args: expect.arrayContaining([2n]),
+      }));
+      expect(await within(dialog).findByText('Claim confirmed on Sepolia.')).toBeInTheDocument();
+    }
   });
 
 
@@ -2116,7 +2244,7 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
       activeIncidentId: '0',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.readContract.mockImplementation(({ functionName }) => {
       if (functionName === 'isInsuredToken') return Promise.resolve(true);
@@ -2179,7 +2307,7 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
       activeIncidentId: '0',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.readContract.mockImplementation(({ functionName }) => {
       if (functionName === 'isInsuredToken') {
@@ -2243,7 +2371,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'File claim for usd8' }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
     fireEvent.change(within(dialog).getByLabelText('Insured USD8 amount'), { target: { value: '1' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
@@ -2377,7 +2505,7 @@ describe('App', () => {
       balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '0', availableForCooldown: '0' })],
       activeIncidentId: '7',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     render(<App />);
 
@@ -2394,7 +2522,7 @@ describe('App', () => {
       balances: { usdc: '0', usd8: '5', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '0', availableForCooldown: '0' })],
       activeIncidentId: '7',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.readContract.mockImplementation(({ functionName }) => {
       if (functionName === 'isInsuredToken') return Promise.resolve(true);
@@ -2441,7 +2569,7 @@ describe('App', () => {
 
     const status = await within(dialog).findByLabelText('Transaction status');
     await waitFor(() => expect(status).toHaveTextContent('Insufficient USDC allowance.'));
-    expect(status).toHaveClass('usd8-dialog-status--warning');
+    expect(status).toHaveClass('wallet-notice');
     expect(status).toHaveAttribute('role', 'alert');
     expect(status.querySelector('.usd8-spinner')).toBeNull();
   });
@@ -2516,7 +2644,7 @@ describe('App', () => {
       balances,
       pools: [coverPoolFixture()],
       activeIncidentId: '0',
-      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
       scoreBalances: { usd8: '0', savings: '0' },
       scoreSpent: '2000000000000000000000',
     });
@@ -2529,4 +2657,69 @@ describe('App', () => {
       expect.objectContaining({ refresh: true }),
     );
   });
+  it('blocks repeated submits across approval and mint and skips approval refreshes', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.readContract.mockResolvedValue(0n);
+    const approval = deferred();
+    mocks.waitForTransactionReceipt.mockReturnValueOnce(approval.promise).mockResolvedValue({ status: 'success', blockNumber: 99n });
+    mocks.writeContractAsync.mockResolvedValue('0x' + 'a'.repeat(64));
+    render(<App />);
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '1' } });
+    const submit = within(dialog).getByRole('button', { name: 'mint' });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
+    await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(1));
+    expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(1);
+    approval.resolve({ status: 'success', blockNumber: 98n });
+    expect(await within(dialog).findByText('Mint confirmed on Sepolia.')).toBeInTheDocument();
+    expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2);
+    expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2);
+    expect(mocks.fetchLandingChainData).toHaveBeenLastCalledWith(mocks.account.address, 11155111,
+      expect.objectContaining({ resources: ['account-balances'], minBlock: 99n, refresh: true }));
+  });
+
+  it('requires review of a changed redemption quote before sending a transaction', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.readContract.mockResolvedValueOnce(10n ** 18n).mockResolvedValue(800_000_000_000_000_000n);
+    mocks.writeContractAsync.mockResolvedValue('0x' + 'b'.repeat(64));
+    render(<App />);
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
+    await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
+    expect(await within(dialog).findByText(/redemption quote changed/)).toBeInTheDocument();
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+    expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.2');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
+    await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(1));
+    expect(mocks.writeContractAsync).toHaveBeenLastCalledWith(expect.objectContaining({ args: [1_500_000_000_000_000_000n, 1_200_000n] }));
+  });
+
+  it('keeps keyboard focus inside a dialog and returns it to its opener', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    render(<App />);
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    const opener = screen.getByRole('button', { name: 'mint' });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const first = within(dialog).getByRole('button', { name: 'Close mint and redeem' });
+    expect(first).toHaveFocus();
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+    expect(within(dialog).getByRole('button', { name: 'mint' })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement, { key: 'Tab' });
+    expect(first).toHaveFocus();
+    fireEvent.keyDown(first, { key: 'Escape' });
+    expect(opener).toHaveFocus();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
 });

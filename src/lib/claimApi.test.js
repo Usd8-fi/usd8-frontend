@@ -77,9 +77,31 @@ describe('prepareIncidentOpen', () => {
     vi.stubEnv('MODE', mode);
     vi.stubEnv('VITE_CLAIM_API_URL', 'http://127.0.0.1:8788');
 
-    const { CLAIM_API_BASE_URL } = await import('./claimApi.js');
+    const { claimApiBaseUrl } = await import('./claimContext.js');
 
-    expect(CLAIM_API_BASE_URL).toBe('https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com');
+    expect(claimApiBaseUrl('usd8.fi')).toBe('https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com');
+    expect(claimApiBaseUrl('127.0.0.1')).toBe('/api/claims');
+  });
+
+  it('uses the same-origin claim proxy on loopback hosts and the public API on the live site', async () => {
+    const { claimApiBaseUrl } = await import('./claimContext.js');
+    for (const hostname of ['localhost', '127.0.0.1', '[::1]', '::1']) {
+      expect(claimApiBaseUrl(hostname, '')).toBe('/api/claims');
+    }
+    expect(claimApiBaseUrl('usd8.fi', '')).toBe('https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com');
+    expect(claimApiBaseUrl('localhost', 'https://claims.example')).toBe('https://claims.example');
+  });
+
+  it.each([
+    [new TypeError('Failed to fetch'), 'Could not reach the claim verification service'],
+    [new DOMException('The operation timed out', 'TimeoutError'), 'The claim verification service took too long to respond'],
+  ])('explains claim service transport failures (%s)', async (failure, message) => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(failure));
+    const { prepareIncidentOpen } = await loadClaimApi();
+    await expect(prepareIncidentOpen(INSURED_TOKEN, {
+      chainId: 11155111, registry: REGISTRY, defiInsurance: DEFI_INSURANCE,
+    })).rejects.toThrow(message);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it('explains when the precheck finds no qualifying price drop', async () => {
@@ -294,6 +316,20 @@ describe('prepareSettlement', () => {
       `https://claims.example/settlements/11155111/${REGISTRY.toLowerCase()}/${DEFI_INSURANCE.toLowerCase()}/5/${SETTLEMENT_ROOT}`,
       expect.objectContaining({ method: 'GET', cache: 'no-store' }),
     );
+  });
+
+  it('reuses only verified immutable artifacts and fetches again when the root changes', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify(completedSettlementJob()), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { prepareSettlement } = await loadClaimApi();
+    const options = { ...SETTLEMENT_SNAPSHOT, chainId: 11155111, registry: REGISTRY, defiInsurance: DEFI_INSURANCE, expectedRoot: SETTLEMENT_ROOT };
+    const first = await prepareSettlement(5n, options);
+    expect(await prepareSettlement(5n, options)).toBe(first);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await expect(prepareSettlement(5n, { ...options, expectedRoot: '0x' + '22'.repeat(32) })).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await expect(prepareSettlement(5n, { ...options, expectedRoot: '0x' + '22'.repeat(32) })).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('derives omitted claim proofs from the complete root-bound row set', async () => {
@@ -580,20 +616,14 @@ describe('prepareSettlement', () => {
   });
 
   it('does not submit a retry when polling expires without a failed terminal', async () => {
-    vi.spyOn(Date, 'now')
-      .mockReturnValueOnce(1_000)
-      .mockReturnValueOnce(1_000)
-      .mockReturnValueOnce(1_000)
-      .mockReturnValue(1_001);
+    let now = 1_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         accepted: true,
         jobId: JOB_ID,
       }), { status: 202 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        jobId: JOB_ID,
-        status: 'pending',
-      }), { status: 200 }));
+      .mockImplementationOnce(() => { now = 1_001; return Promise.resolve(new Response(JSON.stringify({ jobId: JOB_ID, status: 'pending' }), { status: 200 })); });
     vi.stubGlobal('fetch', fetchMock);
     const { prepareSettlement } = await loadClaimApi();
 

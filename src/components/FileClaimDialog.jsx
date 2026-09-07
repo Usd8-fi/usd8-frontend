@@ -1,6 +1,8 @@
+import { NoticeMessage } from './WalletNotice.jsx';
+import { useDialogFocus } from './useDialogFocus.js';
 import { useEffect, useState } from 'react';
 import { claimLifecycle } from '../lib/claimLifecycle.js';
-import { displayAvailableBalance } from '../lib/displayAvailableBalance.js';
+import { decimalInputValue, displayAvailableBalance } from '../lib/displayAvailableBalance.js';
 import { tokenAmountExceedsBalance } from '../lib/tokenAmount.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
@@ -12,7 +14,8 @@ function normalizedDecimal(value) {
 }
 
 function insuranceScoreInputValue(value) {
-  const normalized = String(value ?? '').replace(/,/g, '').trim();
+  const normalized = String(value ?? '').trim();
+  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(normalized)) return normalized;
   const decimalIndex = normalized.indexOf('.');
   if (decimalIndex < 0) return normalized;
   return `${normalized.slice(0, decimalIndex)}.${normalized.slice(decimalIndex + 1, decimalIndex + 3)}`;
@@ -139,13 +142,7 @@ export default function FileClaimDialog({
     return () => window.clearInterval(timer);
   }, [activeClaim, claimIncident]);
 
-  useEffect(() => {
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
+  const dialogRef = useDialogFocus(onClose);
 
   return (
     <div className="usd8-dialog-backdrop file-claim-dialog-backdrop" onMouseDown={(event) => {
@@ -153,7 +150,7 @@ export default function FileClaimDialog({
     }}>
       <section
         className={`usd8-dialog file-claim-dialog${activeClaim ? ' file-claim-dialog--status' : ''}`}
-        role="dialog"
+        ref={dialogRef} tabIndex={-1} role="dialog"
         aria-modal="true"
         aria-label={`${activeClaim ? 'Claim Status' : 'File claim'} for ${selectedToken.symbol}`}
       >
@@ -264,10 +261,7 @@ export default function FileClaimDialog({
                   <button className="usd8-dialog-submit" type="button" onClick={action} key={label}>{label}</button>
                 ))}
                 {statusMessage ? (
-                  <small className={`usd8-dialog-status${statusTone === 'warning' ? ' usd8-dialog-status--warning' : ''}`} role={statusTone === 'loading' ? 'status' : 'alert'}>
-                    {statusTone === 'loading' ? <LoadingSpinner /> : null}
-                    {statusMessage}
-                  </small>
+                  <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label="Claim submission status" />
                 ) : null}
               </div>
             ) : null}
@@ -293,11 +287,11 @@ export default function FileClaimDialog({
                   inputMode="decimal"
                   min="0"
                   step="any"
-                  type="number"
+                  type="text"
                   value={amount}
                   onChange={(event) => {
                     onClearStatus?.();
-                    setAmount(event.target.value);
+                    setAmount(decimalInputValue(event.target.value));
                   }}
                 />
                 <small>
@@ -332,7 +326,7 @@ export default function FileClaimDialog({
                   value={scoreToSpend}
                   onChange={(event) => {
                     onClearStatus?.();
-                    setScoreToSpend(insuranceScoreInputValue(event.target.value));
+                    setScoreToSpend(insuranceScoreInputValue(decimalInputValue(event.target.value)));
                   }}
                 />
                 <small>{displayAvailableBalance(availableScore)} available</small>
@@ -378,14 +372,7 @@ export default function FileClaimDialog({
                 {' '}— {effectiveScoreShare} of all score committed atm.
               </small>
               {statusMessage ? (
-                <small
-                  className={`usd8-dialog-status${statusTone === 'warning' ? ' usd8-dialog-status--warning' : ''}`}
-                  role={statusTone === 'loading' ? 'status' : 'alert'}
-                  aria-label="Claim submission status"
-                >
-                  {statusTone === 'loading' ? <LoadingSpinner /> : null}
-                  {statusMessage}
-                </small>
+                <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label="Claim submission status" />
               ) : null}
             </div>
           </form>

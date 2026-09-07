@@ -1,3 +1,4 @@
+import WalletNoticeProvider, { NoticeMessage } from './WalletNotice.jsx';
 import { useEffect, useState } from 'react';
 import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
@@ -18,6 +19,8 @@ const PRODUCTS = {
 const ACTIVE_PRODUCT_STORAGE_KEY = 'usd8-active-product';
 
 function storedProduct() {
+  const route = window.location.hash.slice(1);
+  if (Object.hasOwn(PRODUCTS, route)) return route;
   try {
     const product = window.localStorage.getItem(ACTIVE_PRODUCT_STORAGE_KEY);
     return Object.hasOwn(PRODUCTS, product) ? product : 'insurance';
@@ -69,7 +72,7 @@ function useLiveScore(score) {
   return {
     ...score,
     grossEarnedScore: liveScoreValue(score.grossEarnedScore, score.grossScorePerSecond, elapsedMilliseconds),
-    availableScore: liveScoreValue(score.availableScore, score.maturingScorePerSecond, elapsedMilliseconds),
+    availableScore: score.availableScore == null ? null : liveScoreValue(score.availableScore, score.maturingScorePerSecond, elapsedMilliseconds),
     usd8Score: liveScoreValue(score.usd8Score, score.usd8ScorePerSecond, elapsedMilliseconds),
     sUsd8Score: liveScoreValue(score.sUsd8Score, score.sUsd8ScorePerSecond, elapsedMilliseconds),
   };
@@ -97,7 +100,7 @@ function WalletButton({ wallet }) {
       className="landing-wallet-button"
       type="button"
       onClick={connected ? onDisconnect : onConnect}
-      aria-label={connected ? `Disconnect wallet ${address}` : 'Connect wallet'}
+      aria-label={connected ? `Manage wallet ${address}` : 'Connect wallet'}
       unavailableReason={connected ? '' : connectUnavailableReason}
     >
       {connecting ? 'connecting...' : connected ? `${address.slice(0, 6)}...${address.slice(-4)}${networkName ? ` ${networkName}` : ''}` : 'connect wallet'}
@@ -123,7 +126,7 @@ function ProductTabs({ activeProduct, onChange }) {
   );
 }
 
-function SiteFooter() {
+function SiteFooter({ updatedAt }) {
   return (
     <footer className="landing-footer">
       <a className="landing-footer-logo" href="./" aria-label="USD8 footer home">
@@ -148,6 +151,7 @@ function SiteFooter() {
           <a className="site-nav-link" href={docsUrl('legal.html')}>Legal</a>
         </div>
       </nav>
+      {updatedAt ? <small className="landing-data-freshness">Data as of {new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small> : null}
     </footer>
   );
 }
@@ -222,7 +226,7 @@ function AssetCard({
   );
 }
 
-function FreeInsurancePage({ wallet, score, scoreStatus, balances, balancesLoading, savingsVault, incident, insuredTokenStates, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
+function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, incident, insuredTokenStates, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreLoading = scoreStatus === 'loading';
   const liveScore = useLiveScore(score);
   const totalScore = liveScore?.grossEarnedScore;
@@ -312,8 +316,8 @@ function FreeInsurancePage({ wallet, score, scoreStatus, balances, balancesLoadi
             </span>
             <strong>
               <ScoreValue
-                loading={scoreLoading}
-                value={availableScore}
+                loading={availableScoreLoading ?? scoreLoading}
+                value={availableScore ?? (wallet.connected ? '—' : '0')}
                 decimals={scoreRateDecimals(score?.maturingScorePerSecond)}
               />
             </strong>
@@ -452,12 +456,15 @@ export default function USD8Landing({
   wallet = {},
   score = null,
   scoreStatus = 'idle',
+  availableScoreLoading,
   balances = {},
   balancesLoading = false,
   savingsVault = {},
   pools = [],
   poolLoading = false,
   dataError = '',
+  onRetry,
+  updatedAt,
   incident = null,
   insuredTokenStates = {},
   onFileClaim,
@@ -468,6 +475,7 @@ export default function USD8Landing({
   const [activeProduct, setActiveProduct] = useState(storedProduct);
 
   useEffect(() => {
+    if (!Object.hasOwn(PRODUCTS, window.location.hash.slice(1))) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${activeProduct}`);
     try {
       window.localStorage.setItem(ACTIVE_PRODUCT_STORAGE_KEY, activeProduct);
     } catch {
@@ -475,7 +483,14 @@ export default function USD8Landing({
     }
   }, [activeProduct]);
 
+  useEffect(() => {
+    const change = () => setActiveProduct(storedProduct());
+    window.addEventListener('hashchange', change);
+    return () => window.removeEventListener('hashchange', change);
+  }, []);
+
   return (
+    <WalletNoticeProvider wallet={wallet}>
     <div className={`landing-shell landing-shell--${activeProduct}`}>
       <header className="landing-header">
         <div className="landing-brand-group">
@@ -486,12 +501,13 @@ export default function USD8Landing({
           <a className="landing-beta-link" href={docsUrl('faqs.html#whats-different-in-beta')}>beta</a>
         </div>
         <WalletButton wallet={wallet} />
+        {wallet.networkUnavailableReason && wallet.onSwitchNetwork ? <button type="button" className="landing-wallet-button" onClick={wallet.onSwitchNetwork}>Switch to Sepolia</button> : null}
       </header>
 
-      <ProductTabs activeProduct={activeProduct} onChange={setActiveProduct} />
+      <ProductTabs activeProduct={activeProduct} onChange={product => { window.location.hash = product; setActiveProduct(product); }} />
 
       {dataError ? (
-        <p className="landing-data-error" role="alert">{dataError}</p>
+        <NoticeMessage message={dataError} actionLabel={onRetry ? "Retry data" : undefined} onAction={onRetry} />
       ) : null}
 
       {activeProduct === 'insurance' ? (
@@ -499,6 +515,7 @@ export default function USD8Landing({
           wallet={wallet}
           score={score}
           scoreStatus={scoreStatus}
+          availableScoreLoading={availableScoreLoading}
           balances={balances}
           balancesLoading={balancesLoading}
           savingsVault={savingsVault}
@@ -514,7 +531,8 @@ export default function USD8Landing({
         <WhiteHatEconomyPage />
       )}
 
-      <SiteFooter />
+      <SiteFooter updatedAt={updatedAt} />
     </div>
+    </WalletNoticeProvider>
   );
 }

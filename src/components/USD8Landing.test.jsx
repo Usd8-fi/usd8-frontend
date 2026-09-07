@@ -50,7 +50,7 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /disconnect wallet/i })).toHaveTextContent('0x1234...5678 Sepolia');
+    expect(screen.getByRole('button', { name: /manage wallet/i })).toHaveTextContent('0x1234...5678 Sepolia');
   });
 
   it('shows the USD8.fi header wordmark and the shared footer links', () => {
@@ -240,7 +240,7 @@ describe('USD8 landing navigation', () => {
     for (const button of [mint, redeem, ...claimButtons]) {
       expect(button).toBeEnabled();
       fireEvent.click(button);
-      expect(availabilityTooltip(button)).toHaveTextContent('Please connect your wallet first.');
+      expect(availabilityTooltip(button)).toHaveTextContent('Connect your wallet to continue.');
     }
 
     expect(onUsd8Action).not.toHaveBeenCalled();
@@ -252,7 +252,7 @@ describe('USD8 landing navigation', () => {
       const button = screen.getByRole('button', { name: action });
       expect(button).toBeEnabled();
       fireEvent.click(button);
-      expect(availabilityTooltip(button)).toHaveTextContent('Please connect your wallet first.');
+      expect(availabilityTooltip(button)).toHaveTextContent('Connect your wallet to continue.');
     }
     expect(onPoolAction).not.toHaveBeenCalled();
   });

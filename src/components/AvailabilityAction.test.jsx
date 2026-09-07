@@ -27,7 +27,7 @@ describe('AvailabilityAction', () => {
     // Declared once, so the sizes cannot drift apart.
     expect(appStyles.match(/font-size: 13px;/g)).toHaveLength(1);
   });
-  it('keeps blocked actions clickable and shows the reason beside the button after click', () => {
+  it('keeps blocked actions clickable and shows the reason in the shared bottom toast after click', () => {
     const onClick = vi.fn();
     render(
       <AvailabilityAction type="button" unavailableReason="Amount exceeds your available balance." onClick={onClick}>
@@ -43,7 +43,8 @@ describe('AvailabilityAction', () => {
 
     expect(onClick).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent('Amount exceeds your available balance.');
-    expect(button.closest('.action-button-shell')).toContainElement(screen.getByRole('alert'));
+    expect(button.closest('.action-button-shell')).not.toContainElement(screen.getByRole('alert'));
+    expect(screen.getByRole('alert')).toHaveClass('wallet-notice');
   });
 
   it('clears a displayed warning when its reset key changes', () => {
