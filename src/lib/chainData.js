@@ -428,7 +428,14 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     return { call, resource, fallback, index };
   });
   const selected = descriptors.filter(entry => hasAccount || !entry.resource.startsWith('account'));
-  const readResult = await snapshotReads(client, network, selected, { account, signal, blockNumber, refresh, resources });
+  // Retrying the incident's archived settlement parameters also needs the
+  // current incident ID and configuration required to reconstruct that cache.
+  const requestedResources = resources?.includes('incident-settlement-params')
+    ? [...new Set([...resources, 'head', 'configuration'])]
+    : resources;
+  const readResult = await snapshotReads(client, network, selected, {
+    account, signal, blockNumber, refresh, resources: requestedResources,
+  });
   const landingValues = descriptors.map(entry => entry.fallback);
   selected.forEach((entry, index) => { landingValues[entry.index] = readResult.values[index]; });
   const resourceErrors = readResult.errors;
@@ -623,15 +630,19 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   throwIfRequestAborted(signal);
 
   const incidentKey = protocolKey(network, 'incident', account);
-  if (refresh && (!resources || resources.includes('incident'))) {
+  const incidentRequested = !resources
+    || resources.includes('incident')
+    || resources.includes('incident-settlement-params');
+  if (refresh && incidentRequested) {
     await queryClient.cancelQueries({ queryKey: incidentKey, exact: true });
     await queryClient.invalidateQueries({ queryKey: incidentKey, exact: true, refetchType: 'none' });
   }
   const cachedIncident = queryClient.getQueryData(incidentKey);
-  const { incident, claim } = resources && !resources.includes('incident') && cachedIncident
+  const { incident, claim } = resources && !incidentRequested && cachedIncident
     ? cachedIncident : await cachedData(incidentKey, ({ signal: querySignal }) => readIncident({
       client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy,
       chainId, headBlock, blockNumber, signal: querySignal,
+      onIncidentHoldingWindowError: error => { resourceErrors['incident-settlement-params'] = error.shortMessage || error.message; },
       onIncident: extra => { if (!signal?.aborted) onPartial?.(snapshot({ ...extra, incidentReady: true })); },
     }), { signal }).catch(error => {
       checkAbort(signal);
@@ -644,7 +655,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   return snapshot({ incident, claim });
 }
 
-async function readIncident({ client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy, chainId, headBlock, blockNumber, signal, onIncident }) {
+async function readIncident({ client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy, chainId, headBlock, blockNumber, signal, onIncident, onIncidentHoldingWindowError }) {
   const zero = 0n;
   let incident = null;
   let claim = null;
@@ -728,7 +739,7 @@ async function readIncident({ client, contracts, account, hasAccount, activeInci
       tokenId,
       tokenAddress: tokenAddress.toLowerCase(),
       minHoldingRequiredBlocks: await holdingWindowBlocks(client, contracts.defiInsurance, openBlock)
-        .catch(() => { checkAbort(signal); return null; }),
+        .catch(error => { checkAbort(signal); onIncidentHoldingWindowError?.(error); return null; }),
       phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
       phaseWindowMilliseconds: Number(phaseWindow) * 1_000,
       root,

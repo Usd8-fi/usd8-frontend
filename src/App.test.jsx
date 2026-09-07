@@ -234,6 +234,130 @@ describe('App', () => {
     mocks.writeContractAsync.mockReset();
   });
 
+  it('blocks claim filing while active-incident details are only partially loaded', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
+    const finalSnapshot = deferred();
+    const partial = {
+      balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', boosters: '0', insuredTokens: { 'test-msloss': '10' } },
+      pools: [coverPoolFixture()],
+      activeIncidentId: '1',
+      incident: null,
+      claim: null,
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10', minHoldingRequiredBlocks: '300' },
+      resourceErrors: {},
+    };
+    mocks.fetchLandingChainData.mockImplementation((account, chainId, { onPartial }) => {
+      setTimeout(() => onPartial(partial), 0);
+      return finalSnapshot.promise;
+    });
+    render(<App />);
+
+    const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
+    await waitFor(() => expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('25'));
+    const action = screen.getByRole('button', { name: 'File claim for test-msloss' });
+    fireEvent.click(action);
+    const dialog = await screen.findByRole('dialog', { name: 'File claim for msLOSS' });
+    const submit = within(dialog).getByRole('button', { name: 'File Claim' });
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Incident details are still loading. Refresh before filing a claim.');
+    expect(availabilityTooltip(submit)).toHaveTextContent('Incident details are still loading. Refresh before filing a claim.');
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+
+    await act(async () => finalSnapshot.resolve(partial));
+  });
+
+  it('blocks filing when a partial refresh retains a different historical incident', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
+    const historicalIncident = {
+      id: '1',
+      tokenId: 'usd8',
+      phaseDeadlineMilliseconds: Date.now() - 60_000,
+      phaseWindowMilliseconds: 60_000,
+      root: `0x${'11'.repeat(32)}`,
+    };
+    const initial = {
+      balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', boosters: '0', insuredTokens: { 'test-msloss': '10' } },
+      pools: [coverPoolFixture()],
+      activeIncidentId: '0',
+      incident: historicalIncident,
+      claim: null,
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10', minHoldingRequiredBlocks: '300' },
+      resourceErrors: {},
+    };
+    const refresh = deferred();
+    const partial = {
+      ...initial,
+      activeIncidentId: '2',
+      incident: null,
+      incidentReady: false,
+    };
+    mocks.fetchLandingChainData
+      .mockResolvedValueOnce(initial)
+      .mockImplementationOnce((account, chainId, { onPartial }) => {
+        onPartial(partial);
+        return refresh.promise;
+      });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'File claim for test-msloss' }));
+    const dialog = await screen.findByRole('dialog', { name: 'File claim for msLOSS' });
+    const submit = within(dialog).getByRole('button', { name: 'File Claim' });
+    window.dispatchEvent(new Event('focus'));
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(submit);
+    await waitFor(() => expect(availabilityTooltip(submit)).toHaveTextContent(
+      'Incident details are still loading. Refresh before filing a claim.',
+    ));
+    expect(mocks.readContract).not.toHaveBeenCalled();
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+
+    await act(async () => refresh.resolve(partial));
+  });
+
+  it('stops before approvals when the active incident changed since the loaded snapshot', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', boosters: '0', insuredTokens: { 'test-msloss': '10' } },
+      pools: [coverPoolFixture()],
+      activeIncidentId: '1',
+      incident: {
+        id: '1',
+        tokenId: 'test-msloss',
+        minHoldingRequiredBlocks: '300',
+        phaseDeadlineMilliseconds: Date.now() + 60_000,
+        phaseWindowMilliseconds: 60_000,
+        root: `0x${'00'.repeat(32)}`,
+      },
+      claim: null,
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10', minHoldingRequiredBlocks: '300' },
+      resourceErrors: {},
+    });
+    mocks.readContract.mockImplementation(({ functionName }) => {
+      if (functionName === 'isInsuredToken') return Promise.resolve(true);
+      if (functionName === 'activeIncidentId') return Promise.resolve(2n);
+      throw new Error(`Unexpected read: ${functionName}`);
+    });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Claim Open .* for test-msloss/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'File claim for msLOSS' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'The active incident changed. Refresh its details before filing a claim.',
+    );
+    expect(mocks.readContract).not.toHaveBeenCalledWith(expect.objectContaining({ functionName: 'claimBondAmount' }));
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
   it('loads the configured Morpho placeholder APY without replacing the disconnected wallet savings balance', async () => {
     render(<App />);
 
@@ -2248,6 +2372,11 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
       activeIncidentId: '1',
+      incident: {
+        id: '1', tokenId: 'test-msloss', minHoldingRequiredBlocks: '300',
+        phaseDeadlineMilliseconds: Date.now() + 60_000, phaseWindowMilliseconds: 60_000,
+        root: `0x${'00'.repeat(32)}`,
+      },
       insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.readContract.mockImplementation(({ functionName }) => {
@@ -2266,7 +2395,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'File claim for test-msloss' }));
+    fireEvent.click(screen.getByRole('button', { name: /Claim Open .* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
     fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
     fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
@@ -2319,6 +2448,11 @@ describe('App', () => {
       },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
       activeIncidentId: '1',
+      incident: {
+        id: '1', tokenId: 'test-msloss', minHoldingRequiredBlocks: '300',
+        phaseDeadlineMilliseconds: Date.now() + 60_000, phaseWindowMilliseconds: 60_000,
+        root: `0x${'00'.repeat(32)}`,
+      },
       insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     let listingReads = 0;
@@ -2344,7 +2478,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'File claim for test-msloss' }));
+    fireEvent.click(screen.getByRole('button', { name: /Claim Open .* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
     fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
     fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
@@ -2747,6 +2881,11 @@ describe('App', () => {
       balances: { usdc: '0', usd8: '5', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '0', availableForCooldown: '0' })],
       activeIncidentId: '7',
+      incident: {
+        id: '7', tokenId: 'test-msloss', minHoldingRequiredBlocks: '300',
+        phaseDeadlineMilliseconds: Date.now() + 60_000, phaseWindowMilliseconds: 60_000,
+        root: `0x${'00'.repeat(32)}`,
+      },
       insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
     });
     mocks.readContract.mockImplementation(({ functionName }) => {

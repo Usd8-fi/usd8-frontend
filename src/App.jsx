@@ -1206,6 +1206,9 @@ export default function App({ autoConnect = false }) {
 
   async function submitClaim({ token, amount: rawAmount, scoreToSpend: rawScore, boosterAmount: rawBoosters }) {
     if (claimSubmitting) return;
+    if (activeIncidentDetailsLoading) {
+      throw new Error('Incident details are still loading. Refresh before filing a claim.');
+    }
     const expectedWalletScope = walletScopeKey;
     assertCurrentWalletScope(expectedWalletScope);
     const controller = new AbortController();
@@ -1271,6 +1274,10 @@ export default function App({ autoConnect = false }) {
         functionName: 'activeIncidentId',
       });
       assertCurrentClaimOperation();
+      if (activeIncidentId !== 0n
+        && String(actionableIncident?.id ?? '') !== activeIncidentId.toString()) {
+        throw new Error('The active incident changed. Refresh its details before filing a claim.');
+      }
       const claimBondAmount = await client.readContract({
         address: contracts.defiInsurance,
         abi: claimWriteAbi,
@@ -1740,6 +1747,12 @@ export default function App({ autoConnect = false }) {
   const unresolvedClaim = chainData.claim && !chainData.claim.resolved ? chainData.claim : null;
   // Only a claim of your own that is already resolved removes the row; with no
   // claim the incident stays visible so anyone can still see or join it.
+  const activeIncidentDetailsLoading = Boolean(
+    chainDataStatus !== 'ready'
+      && chainData.activeIncidentId
+      && chainData.activeIncidentId !== '0'
+      && String(chainData.incident?.id ?? '') !== String(chainData.activeIncidentId),
+  );
   const actionableIncident = chainData.claim?.resolved ? null : chainData.incident;
 
   // The settlement artifact is still being fetched, so the payout figures are
@@ -1869,7 +1882,11 @@ export default function App({ autoConnect = false }) {
           claimStatus={selectedClaimStatus}
           incident={actionableIncident?.tokenId === claimToken.id ? actionableIncident : null}
           payoutLoading={payoutLoading}
-          submitUnavailableReason={(!score ? 'Insurance Score is unavailable. Retry to load it before filing a claim.' : '') || dataUnavailableFor(['configuration', 'account-balances', 'boosters', 'claim-bond', 'head', 'incident']) || ( !protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
+          submitUnavailableReason={(!score ? 'Insurance Score is unavailable. Retry to load it before filing a claim.' : '') || (activeIncidentDetailsLoading
+            ? 'Incident details are still loading. Refresh before filing a claim.'
+            : '') || (actionableIncident?.tokenId === claimToken.id && actionableIncident.minHoldingRequiredBlocks == null
+            ? 'Holding window is unavailable. Refresh before filing a claim.'
+            : '') || dataUnavailableFor(['configuration', 'account-balances', 'boosters', 'claim-bond', 'head', 'incident', 'incident-settlement-params']) || ( !protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
             || !insuredTokenStates[claimToken.id]?.enabled
             ? `${claimToken.symbol} is not enabled for claims on ${protocolNetwork?.name || 'the selected network'}.`
             : (operationBusy

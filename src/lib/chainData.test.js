@@ -210,6 +210,68 @@ describe('fetchLandingChainData', () => {
     ]);
   });
 
+  it('marks incident filing unavailable when the opening-block holding window cannot be read', async () => {
+    mocks.readContract.mockImplementation(({ functionName, blockNumber }) => {
+      if (functionName !== 'settlementParams') return Promise.resolve(0n);
+      return blockNumber === 100n
+        ? Promise.reject(new Error('archive holding window unavailable'))
+        : Promise.resolve([600n, 50400n, 10n]);
+    });
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce([['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 3600n, 0n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    mocks.getLogs.mockResolvedValue([]);
+
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+
+    expect(data.incident.minHoldingRequiredBlocks).toBe(null);
+    expect(data.resourceErrors['incident-settlement-params']).toBe('archive holding window unavailable');
+  });
+
+  it('invalidates the incident cache and recovers an opening-block holding-window retry', async () => {
+    let archiveAttempts = 0;
+    mocks.readContract.mockImplementation(({ functionName, blockNumber }) => {
+      if (functionName !== 'settlementParams') return Promise.resolve(0n);
+      if (blockNumber === 100n && archiveAttempts++ === 0) {
+        return Promise.reject(new Error('archive holding window unavailable'));
+      }
+      return Promise.resolve([600n, blockNumber === 100n ? 300n : 50400n, 10n]);
+    });
+    const incidentState = [['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 3600n, 0n, [INCIDENT_POOL_A]];
+    mocks.multicall
+      .mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce(incidentState)
+      .mockResolvedValueOnce([INCIDENT_ASSET_A])
+      .mockImplementationOnce(({ contracts }) => contracts.map(call => {
+        if (call.functionName === 'activeIncidentId') return 7n;
+        if (call.functionName === 'nextIncidentId') return 7n;
+        if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+        if (call.functionName === 'getScoredRateHistory') return [];
+        if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8_000n;
+        if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8_000);
+        if (call.functionName === 'latestRoundData') return [1n, 0n, 0n, 0n, 1n];
+        if (call.functionName === 'exitRequests') return [0n, 0n];
+        return 0n;
+      }))
+      .mockResolvedValueOnce(incidentState)
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    mocks.getLogs.mockResolvedValue([]);
+
+    const failed = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    expect(failed.incident.minHoldingRequiredBlocks).toBe(null);
+    expect(failed.resourceErrors['incident-settlement-params']).toBe('archive holding window unavailable');
+
+    const recovered = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111, {
+      refresh: true,
+      resources: ['incident-settlement-params'],
+    });
+    expect(recovered.incident.minHoldingRequiredBlocks).toBe('300');
+    expect(recovered.resourceErrors['incident-settlement-params']).toBeUndefined();
+    expect(archiveAttempts).toBe(2);
+  });
+
   it('makes no account-specific reads for anonymous visitors', async () => {
     mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
       if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
