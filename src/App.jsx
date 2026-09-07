@@ -1043,7 +1043,7 @@ export default function App({ autoConnect = false }) {
     pendingMessage,
     setStatus,
     expectedWalletScope = walletScopeKey,
-    simulateBeforeSubmit = false,
+    minBlock,
   ) {
     assertCurrentWalletScope(expectedWalletScope);
     const network = requireProtocolNetwork();
@@ -1051,16 +1051,17 @@ export default function App({ autoConnect = false }) {
     setTransaction({ phase: 'wallet', message: pendingMessage, chainId: network.id });
     setStatus(pendingMessage);
     try {
-    let preparedRequest = request;
-    if (simulateBeforeSubmit) {
-      const simulation = await client.simulateContract({ account: address, ...request });
+    let blockNumber;
+    if (minBlock !== undefined) {
+      // Pin the estimate after approvals without freezing it before TEE verification.
+      blockNumber = await client.getBlockNumber({ cacheTime: 0 });
       assertCurrentWalletScope(expectedWalletScope);
-      preparedRequest = simulation.request;
+      if (blockNumber < minBlock) blockNumber = minBlock;
     }
-    const estimatedGas = await client.estimateContractGas({ account: address, ...preparedRequest });
+    const estimatedGas = await client.estimateContractGas({ account: address, ...request, blockNumber });
     assertCurrentWalletScope(expectedWalletScope);
     const gas = estimatedGas + estimatedGas / 2n;
-    const hash = await writeContractAsync({ account: address, chainId: network.id, ...preparedRequest, gas });
+    const hash = await writeContractAsync({ account: address, chainId: network.id, ...request, gas });
     if (!hash) throw new Error('Transaction cancelled in your wallet.');
     if (walletScopeRef.current === expectedWalletScope) {
       setTransaction({ phase: 'pending', hash, chainId: network.id });
@@ -1085,6 +1086,7 @@ export default function App({ autoConnect = false }) {
         catch { if (walletScopeRef.current === expectedWalletScope) setTransaction({ phase: 'confirmed', hash, chainId: network.id, refreshError: true }); }
       }
     }
+    return receipt;
     } catch (error) {
       if (walletScopeRef.current === expectedWalletScope) setTransaction(previous => ({ ...previous, phase: 'failed', message: error.shortMessage || error.message }));
       throw error;
@@ -1214,9 +1216,11 @@ export default function App({ autoConnect = false }) {
       setClaimStatus(message);
     };
     let claimStep = 'requirements';
+    let minBlock = 0n;
     const confirmedApprovals = [];
-    const finishApproval = (label) => {
+    const finishApproval = (label, receipt) => {
       assertCurrentClaimOperation();
+      if (receipt.blockNumber > minBlock) minBlock = receipt.blockNumber;
       confirmedApprovals.push(label);
       claimStep = 'requirements';
       // An approval hash must not be attached to a later offchain failure.
@@ -1307,13 +1311,13 @@ export default function App({ autoConnect = false }) {
         assertCurrentClaimOperation();
         if (allowance < requiredAmount) {
           claimStep = 'token-approval';
-          await submitTransaction({
+          const receipt = await submitTransaction({
             address: approvalToken,
             abi: erc20Abi,
             functionName: 'approve',
             args: [contracts.defiInsurance, requiredAmount],
           }, 'Approve token in your wallet.', setCurrentClaimStatus, expectedWalletScope);
-          finishApproval('Token approval');
+          finishApproval('Token approval', receipt);
         }
       }
 
@@ -1342,13 +1346,13 @@ export default function App({ autoConnect = false }) {
         assertCurrentClaimOperation();
         if (!boostersApproved) {
           claimStep = 'booster-approval';
-          await submitTransaction({
+          const receipt = await submitTransaction({
             address: boosterCollection,
             abi: erc1155Abi,
             functionName: 'setApprovalForAll',
             args: [contracts.defiInsurance, true],
           }, 'Approve Boosters in your wallet.', setCurrentClaimStatus, expectedWalletScope);
-          finishApproval('Booster approval');
+          finishApproval('Booster approval', receipt);
         }
       }
 
@@ -1376,6 +1380,7 @@ export default function App({ autoConnect = false }) {
         if (activeIncidentId === 0n) {
           referenceBlock = authorization.referenceBlock;
           signature = authorization.signature;
+          if (referenceBlock >= minBlock) minBlock = referenceBlock + 1n;
         }
       }
 
@@ -1385,7 +1390,7 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'fileClaim',
         args: [insuredToken, insuredTokenAmount, scoreToSpend, boosterAmount, referenceBlock, signature],
-      }, 'Confirm the claim in your wallet.', setCurrentClaimStatus, expectedWalletScope, true);
+      }, 'Confirm the claim in your wallet.', setCurrentClaimStatus, expectedWalletScope, minBlock);
       assertCurrentClaimOperation();
       if (walletScopeRef.current === expectedWalletScope) {
         setClaimStatus(`Claim confirmed on ${network.name}.`);

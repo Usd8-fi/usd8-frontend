@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useLayoutEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ContractFunctionRevertedError, createPublicClient, custom, encodeErrorResult } from 'viem';
 import App, { matchesSettlementTopology, settlementPayoutDetails } from './App.jsx';
+import { claimWriteAbi } from './lib/writeAbis.js';
 
 const mocks = vi.hoisted(() => ({
   account: { address: '', isConnected: false },
@@ -11,8 +13,8 @@ const mocks = vi.hoisted(() => ({
   fetchMorphoVault: vi.fn(),
   prepareIncidentOpen: vi.fn(),
   prepareSettlement: vi.fn(),
+  getBlockNumber: vi.fn(),
   estimateContractGas: vi.fn(),
-  simulateContract: vi.fn(),
   readContract: vi.fn(),
   waitForTransactionReceipt: vi.fn(),
   writeContractAsync: vi.fn(),
@@ -36,9 +38,8 @@ vi.mock('./lib/chainData.js', () => ({
   fetchLandingAnalytics: async () => ({ pools: [] }),
   fetchScoreHistory: async () => null,
   publicClientFor: () => ({
-    getBlockNumber: async () => 123n,
+    getBlockNumber: mocks.getBlockNumber,
     estimateContractGas: mocks.estimateContractGas,
-    simulateContract: mocks.simulateContract,
     readContract: mocks.readContract,
     waitForTransactionReceipt: mocks.waitForTransactionReceipt,
   }),
@@ -219,17 +220,17 @@ describe('App', () => {
       signature: `0x${'11'.repeat(65)}`,
     });
     mocks.prepareSettlement.mockReset();
+    mocks.getBlockNumber.mockReset();
+    mocks.getBlockNumber.mockResolvedValue(123n);
     mocks.estimateContractGas.mockReset();
     mocks.estimateContractGas.mockResolvedValue(100_000n);
-    mocks.simulateContract.mockReset();
-    mocks.simulateContract.mockImplementation((request) => Promise.resolve({ request }));
     mocks.readContract.mockReset();
     mocks.readContract.mockImplementation(({ functionName }) => {
       if (functionName === 'isInsuredToken') return Promise.resolve(true);
       throw new Error(`Unexpected read: ${functionName}`);
     });
     mocks.waitForTransactionReceipt.mockReset();
-    mocks.waitForTransactionReceipt.mockResolvedValue({ status: 'success' });
+    mocks.waitForTransactionReceipt.mockResolvedValue({ status: 'success', blockNumber: 99n });
     mocks.writeContractAsync.mockReset();
   });
 
@@ -2027,10 +2028,30 @@ describe('App', () => {
     expect(within(dialog).getByText('100.00 available')).toBeInTheDocument();
   });
 
-  it('approves and escrows the requested Booster amount before filing a claim', async () => {
+  it.each([
+    ['lagging', 11652295n],
+    ['current', 11652300n],
+    ['reverting', 11652300n],
+  ])('approves Boosters and estimates the claim against a %s RPC', async (scenario, head) => {
     const boosterCollection = '0xc0012770848fcd350ab11906e93ba9fdfda19f4c';
     mocks.account.address = '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176';
     mocks.account.isConnected = true;
+    const approvalBlock = 11652296n;
+    mocks.getBlockNumber.mockResolvedValue(head);
+    mocks.waitForTransactionReceipt.mockResolvedValueOnce({ status: 'success', blockNumber: approvalBlock });
+    const rpc = createPublicClient({ transport: custom({ request: async ({ method, params }) => {
+      if (method !== 'eth_estimateGas') throw new Error(`Unexpected RPC: ${method}`);
+      if (scenario === 'reverting' || BigInt(params[1] || 0) < approvalBlock) {
+        throw Object.assign(new Error('execution reverted'), {
+          code: 3,
+          data: encodeErrorResult({ abi: claimWriteAbi, errorName: 'ERC1155MissingApprovalForAll',
+            args: ['0x4e346ccd0a46d51ebae6810d653791982968d502', mocks.account.address] }),
+        });
+      }
+      return '0x186a0';
+    } }, { retryCount: 0 }) });
+    mocks.estimateContractGas.mockImplementation(request => request.functionName === 'fileClaim'
+      ? rpc.estimateContractGas(request) : Promise.resolve(100_000n));
     mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
     mocks.fetchLandingChainData.mockResolvedValue({
       balances: {
@@ -2064,7 +2085,21 @@ describe('App', () => {
     fireEvent.change(within(dialog).getByLabelText('Boosters to burn'), { target: { value: '3' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
+    if (scenario === 'reverting') {
+      const notice = await within(dialog).findByRole('alert', { name: 'Claim submission status' });
+      expect(notice).toHaveTextContent('Claim transaction failed');
+      expect(mocks.writeContractAsync).toHaveBeenCalledTimes(1);
+      const error = await mocks.estimateContractGas.mock.results[1].value.catch(error => error);
+      expect(error.walk(cause => cause instanceof ContractFunctionRevertedError).data.errorName)
+        .toBe('ERC1155MissingApprovalForAll');
+      return;
+    }
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
+    expect(mocks.getBlockNumber).toHaveBeenCalledWith({ cacheTime: 0 });
+    expect(mocks.estimateContractGas).toHaveBeenLastCalledWith(expect.objectContaining({
+      functionName: 'fileClaim', blockNumber: head < approvalBlock ? approvalBlock : head,
+    }));
+    expect(mocks.writeContractAsync.mock.calls[1][0]).not.toHaveProperty('blockNumber');
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
       address: boosterCollection,
       functionName: 'setApprovalForAll',
@@ -2160,6 +2195,7 @@ describe('App', () => {
 
   it('prepares a first claim through the TEE service and submits its authorization onchain', async () => {
     const approval = deferred();
+    mocks.getBlockNumber.mockResolvedValue(12_345_680n);
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '128600' });
@@ -2205,9 +2241,10 @@ describe('App', () => {
       }),
     ));
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
-    expect(mocks.simulateContract).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.estimateContractGas).toHaveBeenCalledWith(expect.objectContaining({
       account: '0x0000000000000000000000000000000000000001',
       functionName: 'fileClaim',
+      blockNumber: 12_345_680n,
       abi: expect.arrayContaining([
         expect.objectContaining({ type: 'error', name: 'InvalidReferenceBlock' }),
         expect.objectContaining({ type: 'error', name: 'UnauthorizedOpenSigner' }),
