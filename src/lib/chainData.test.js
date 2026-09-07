@@ -190,6 +190,26 @@ describe('fetchLandingChainData', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('history unavailable')));
   });
 
+  it('reads the live holding window and pins incident guidance to its opening block', async () => {
+    mocks.readContract.mockImplementation(({ functionName, blockNumber }) =>
+      Promise.resolve(functionName === 'settlementParams' ? [600n, blockNumber === 100n ? 300n : 50400n, 10n] : 0n));
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce([['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 3600n, 0n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    mocks.getLogs.mockResolvedValue([]);
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    expect(data.insurance.minHoldingRequiredBlocks).toBe('50400');
+    expect(data.incident.minHoldingRequiredBlocks).toBe('300');
+    const reads = mocks.readContract.mock.calls.map(([call]) => call).filter(call => call.functionName === 'settlementParams');
+    expect(reads.map(call => call.blockNumber)).toEqual([200n, 100n]);
+    expect(reads[0].abi.find(item => item.name === 'settlementParams').outputs).toEqual([
+      { name: 'twapLookbackBlocks', type: 'uint64' },
+      { name: 'minHoldingRequired', type: 'uint64' },
+      { name: 'sampleStepBlocks', type: 'uint64' },
+    ]);
+  });
+
   it('makes no account-specific reads for anonymous visitors', async () => {
     mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
       if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
@@ -457,6 +477,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pools[0].cooldownEndsAtMilliseconds).toBe(1_800_000_000_000);
     expect(data.activeIncidentId).toBe('7');
     expect(data.incident).toEqual({
+      minHoldingRequiredBlocks: null,
       id: '7',
       tokenId: 'test-msloss',
       tokenAddress: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',

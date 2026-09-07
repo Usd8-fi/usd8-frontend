@@ -669,6 +669,7 @@ export default function App({ autoConnect = false }) {
   const [scoreStatus, setScoreStatus] = useState('idle');
   const [scoreError, setScoreError] = useState('');
   const [scoreRetry, setScoreRetry] = useState(0);
+  const scoreRetryForcesRefresh = useRef(false);
   const scoreRefreshAttempt = useRef('');
   const [scoreRefreshCompletedKey, setScoreRefreshCompletedKey] = useState('');
   const [chainData, setChainData] = useState(EMPTY_CHAIN_DATA);
@@ -777,7 +778,7 @@ export default function App({ autoConnect = false }) {
     const requestedWalletScope = walletScopeKey;
     setScoreStatus('loading');
     setScoreError('');
-    cachedInsuranceScore(address, { chainId: activeNetwork.id, signal: controller.signal, refresh: scoreRetry > 0 })
+    cachedInsuranceScore(address, { chainId: activeNetwork.id, signal: controller.signal, refresh: scoreRetryForcesRefresh.current })
       .then(nextScore => {
         if (controller.signal.aborted || walletScopeRef.current !== requestedWalletScope) return;
         setScore(scoreWithTokenBreakdown(nextScore, activeNetwork.contracts));
@@ -793,7 +794,13 @@ export default function App({ autoConnect = false }) {
 
   useEffect(() => {
     if (scoreStatus !== 'error') return;
-    const retry = () => { if (!document.hidden) setScoreRetry(value => value + 1); };
+    // Automatic recovery must reuse the daily snapshot: forcing a refresh re-runs the
+    // multi-second cold replay that failed in the first place.
+    const retry = () => {
+      if (document.hidden) return;
+      scoreRetryForcesRefresh.current = false;
+      setScoreRetry(value => value + 1);
+    };
     const timer = setInterval(retry, 30_000);
     window.addEventListener('online', retry);
     return () => { clearInterval(timer); window.removeEventListener('online', retry); };
@@ -1488,7 +1495,7 @@ export default function App({ autoConnect = false }) {
     setClaimSettlement({
       contextKey: requestedContextKey,
       incidentId: chainData.incident.id,
-      claimId: chainData.claim.id,
+      claimId: chainData.claim?.id ?? null,
       root: chainData.incident.root,
       value,
     });
@@ -1562,6 +1569,9 @@ export default function App({ autoConnect = false }) {
         }
         row = settlement.rows.find((candidate) => candidate.claimId === latestClaim.id);
         if (!row) throw new Error('The settlement does not contain this claim.');
+        if (row.eligibleBoosterAmount > BigInt(latestClaim.boosterAmount)) {
+          throw new Error('The settlement booster amount exceeds this claim\'s escrow.');
+        }
       }
       assertCurrentWalletScope(expectedWalletScope);
       await submitTransaction({
@@ -1569,8 +1579,8 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'finalizeClaim',
         args: row
-          ? [BigInt(latestClaim.id), acceptPayout, row.amounts, row.scoreSpent, row.boostedScore, row.eligibleAmount, row.proof]
-          : [BigInt(latestClaim.id), false, [], 0n, 0n, 0n, []],
+          ? [BigInt(latestClaim.id), acceptPayout, row.amounts, row.scoreSpent, row.boostedScore, row.eligibleAmount, row.eligibleBoosterAmount, row.proof]
+          : [BigInt(latestClaim.id), false, [], 0n, 0n, 0n, 0n, []],
       }, acceptPayout ? 'Confirm payout acceptance in your wallet.' : 'Confirm token return in your wallet.', setClaimStatus, expectedWalletScope);
       if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimToken(null);
@@ -1578,7 +1588,23 @@ export default function App({ autoConnect = false }) {
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimStatusIsWarning(true);
-      setClaimStatus(error?.shortMessage || error?.message || 'Claim finalization failed.');
+      const messages = {
+        FinalizeNotOpen: 'Payout acceptance is not open. Refresh the claim status to check the payout or token-return window.',
+        InvalidProof: 'The settlement proof is invalid. Refresh payout details before trying again.',
+        EligibleExceedsEscrow: 'The settlement eligibility exceeds the escrowed tokens or boosters. Refresh payout details before trying again.',
+        InvalidBoostedScore: 'The settlement payout weight does not match its eligible boosters. Refresh payout details before trying again.',
+        UnauthorizedClaim: 'This wallet cannot finalize this claim. Check the connected account and refresh.',
+        ClaimAlreadyResolved: 'This claim has already been resolved. Refresh the claim status.',
+        PayoutCapExceeded: 'The payout exceeds the pool’s remaining payout allowance. Refresh payout details before trying again.',
+      };
+      let reason;
+      const seen = new Set();
+      for (let cause = error; cause && !seen.has(cause); cause = cause.cause) {
+        seen.add(cause);
+        reason = messages[cause.data?.errorName];
+        if (reason) break;
+      }
+      setClaimStatus(reason || error?.shortMessage || error?.message || 'Claim finalization failed.');
     }
   }
 
@@ -1721,6 +1747,17 @@ export default function App({ autoConnect = false }) {
   const payoutLoading = Boolean(unresolvedClaim)
     && !selectedSettlementRow
     && !claimStatusIsWarning;
+  const boostersToBurn = selectedSettlementRow?.eligibleBoosterAmount !== undefined
+    && selectedSettlementRow.eligibleBoosterAmount <= BigInt(chainData.claim.boosterAmount)
+    ? (selectedSettlementRow.eligibleAmount > 0n && selectedSettlementRow.scoreSpent > 0n
+      ? selectedSettlementRow.eligibleBoosterAmount : 0n)
+    : null;
+  const settledScoreShare = selectedSettlementRow
+    ? percentOfWad(
+      selectedSettlementRow.boostedScore,
+      claimSettlement.value.rows.reduce((total, row) => total + row.boostedScore, 0n),
+    )
+    : null;
   const selectedClaimStatus = claimToken
     && unresolvedClaim
     && chainData.incident?.tokenId === claimToken.id
@@ -1731,8 +1768,18 @@ export default function App({ autoConnect = false }) {
       insuredTokenAmount: groupDecimalString(chainData.claim.insuredTokenAmount),
       bondAmount: groupDecimalString(chainData.claim.bondAmount),
       boosterAmount: groupDecimalString(chainData.claim.boosterAmount),
+      boostersToBurn: boostersToBurn === null ? null : groupDecimalString(boostersToBurn.toString()),
+      boostersToRefund: boostersToBurn === null
+        ? null : groupDecimalString((BigInt(chainData.claim.boosterAmount) - boostersToBurn).toString()),
       scoreToSpend: groupDecimalString(chainData.claim.scoreToSpend),
-      phaseWindowDays: Math.max(1, Math.ceil(chainData.incident.phaseWindowMilliseconds / 86_400_000)),
+      // Mirrors finalizeClaim's `eligible`: without it every payout branch is a no-op,
+      // the bond goes to the treasury, and accepting does nothing a decline would not.
+      payoutEligible: selectedSettlementRow
+        ? selectedSettlementRow.eligibleAmount > 0n && selectedSettlementRow.scoreSpent > 0n
+        : null,
+      // Once settled, weight by the enclave's boosted scores: ineligible claims are
+      // zeroed there, so the filed-claim total overstates the denominator.
+      scoreCommitmentPercentage: settledScoreShare || chainData.claim.scoreCommitmentPercentage,
       payoutUsd: selectedSettlementRow?.payoutUsd === undefined
         ? null
         : formatUsdWad(selectedSettlementRow.payoutUsd),
@@ -1763,7 +1810,10 @@ export default function App({ autoConnect = false }) {
         busy={operationBusy && transaction?.phase !== 'confirmed' && transaction?.phase !== 'failed'}
         href={transaction?.hash ? `${getNetwork(transaction.chainId)?.chain.blockExplorers?.default.url || 'https://sepolia.etherscan.io'}/tx/${transaction.hash}` : undefined}
       />
-      <NoticeMessage message={scoreError} actionLabel="Retry score" onAction={() => setScoreRetry(value => value + 1)} />
+      <NoticeMessage message={scoreError} actionLabel="Retry score" onAction={() => {
+        scoreRetryForcesRefresh.current = true;
+        setScoreRetry(value => value + 1);
+      }} />
       <USD8Landing
         wallet={{
           address,
@@ -1810,11 +1860,14 @@ export default function App({ autoConnect = false }) {
           }))}
           availableScore={score?.availableScore ?? '—'}
           availableBoosters={chainData.balances.boosters || '0'}
+          minHoldingRequiredBlocks={actionableIncident?.tokenId === claimToken.id
+            ? actionableIncident.minHoldingRequiredBlocks : chainData.insurance?.minHoldingRequiredBlocks}
           claimBond={chainData.insurance?.claimBond === undefined || chainData.insurance?.claimBond === null ? '— USD8' : `${chainData.insurance.claimBond} USD8`}
           claimBondAvailable={chainData.balances.usd8}
           claimTotals={{ scoreCommitted: chainData.incident?.totalScoreCommitted || '0' }}
           boosterBoostBps={chainData.incident?.boosterBoostBps || 0}
           claimStatus={selectedClaimStatus}
+          incident={actionableIncident?.tokenId === claimToken.id ? actionableIncident : null}
           payoutLoading={payoutLoading}
           submitUnavailableReason={(!score ? 'Insurance Score is unavailable. Retry to load it before filing a claim.' : '') || dataUnavailableFor(['configuration', 'account-balances', 'boosters', 'claim-bond', 'head', 'incident']) || ( !protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
             || !insuredTokenStates[claimToken.id]?.enabled

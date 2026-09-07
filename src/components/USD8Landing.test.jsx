@@ -158,7 +158,7 @@ describe('USD8 landing navigation', () => {
           shareSymbol: 'USD8-cp-wstETH',
           earnings: '1',
           earningsExact: '1',
-          earningsPerSecond: '0.00002',
+          earningsPerSecond: '0.2',
           earningsSnapshotTimestampMilliseconds: 20_000,
           earningsPeriodFinishMilliseconds: 22_000,
           hasEarnings: true,
@@ -168,13 +168,14 @@ describe('USD8 landing navigation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     const earnings = screen.getByText('Your Earnings').nextElementSibling;
-    expect(earnings).toHaveTextContent('1.00000 USD8');
+    expect(earnings).toHaveTextContent('1.0 USD8');
 
     act(() => vi.advanceTimersByTime(1_000));
-    expect(earnings).toHaveTextContent('1.00002 USD8');
+    expect(earnings).toHaveTextContent('1.2 USD8');
 
+    // The period ends 2s after the snapshot, so accrual stops there.
     act(() => vi.advanceTimersByTime(2_000));
-    expect(earnings).toHaveTextContent('1.00004 USD8');
+    expect(earnings).toHaveTextContent('1.4 USD8');
   });
 
   it('switches to the cover-pool design without navigating away', () => {
@@ -539,6 +540,15 @@ describe('Free insurance table', () => {
     expect(screen.queryByRole('button', { name: /file claim for/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Claim Open (2d 23h left) for test-msloss' }))
       .toHaveClass('dashboard-table-action-button--claim-status');
+  });
+
+  it('shows minutes rather than zero hours for accelerated incident phases', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2027-01-15T00:00:00Z'));
+    render(<USD8Landing wallet={{ ...wallet, connected: true }} pools={POOLS}
+      incident={{ tokenId: 'test-msloss', phaseWindowMilliseconds: 660_000,
+        phaseDeadlineMilliseconds: Date.now() + 660_000, root: `0x${'00'.repeat(32)}` }} />);
+    expect(screen.getByRole('button', { name: 'Claim Open (11m left) for test-msloss' })).toBeInTheDocument();
   });
 
   it('moves the active token action through settlement and payout phases', () => {

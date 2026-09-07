@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { formatWad, rateDecimals, wadUnits } from './units.js';
+import { formatWad, wadUnits } from './units.js';
+
+const EARNINGS_DECIMALS = 1;
 
 export function useLivePoolEarnings(pool) {
   const [now, setNow] = useState(Date.now());
@@ -34,7 +36,7 @@ export function useLivePoolEarnings(pool) {
 
   return {
     ...pool,
-    earnings: formatWad(earningsUnits, rateDecimals(pool.earningsPerSecond)),
+    earnings: formatWad(earningsUnits, EARNINGS_DECIMALS),
     hasEarnings: earningsUnits > 0n,
   };
 }

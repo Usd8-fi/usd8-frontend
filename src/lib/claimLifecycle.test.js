@@ -41,7 +41,7 @@ describe('claimLifecycle', () => {
     }, 5 * DAY)).toMatchObject({ state: 'payout-expired', stage: 'Payout Closed', stageIndex: 2, daysLeft: 0 });
   });
 
-  it('shows completed whole days while keeping the final partial hour visible', () => {
+  it('shows completed whole days and minutes for the final partial hour', () => {
     expect(claimLifecycle({
       phaseDeadlineMilliseconds: 3 * DAY,
       phaseWindowMilliseconds: 3 * DAY,
@@ -51,6 +51,6 @@ describe('claimLifecycle', () => {
       phaseDeadlineMilliseconds: 30 * 60 * 1_000,
       phaseWindowMilliseconds: DAY,
       root: ZERO_ROOT,
-    }, 0)).toMatchObject({ daysLeft: 0, hoursLeft: 1 });
+    }, 0)).toMatchObject({ daysLeft: 0, hoursLeft: 0, minutesLeft: 30 });
   });
 });

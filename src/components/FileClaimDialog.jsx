@@ -42,7 +42,11 @@ function sharePercentage(mine, existingTotal) {
   return `${(mine * 100n + combined / 2n) / combined}%`;
 }
 
-function timeLeftLabel(daysLeft, hoursLeft) {
+function timeLeftLabel(daysLeft, hoursLeft, minutesLeft) {
+  if (daysLeft === 0 && minutesLeft !== undefined) {
+    const hours = hoursLeft ? `${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'} ` : '';
+    return `${hours}${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`;
+  }
   const days = `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
   const hours = `${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'}`;
   return `${days} ${hours} left`;
@@ -70,7 +74,9 @@ export default function FileClaimDialog({
   claimBondAvailable = '0',
   claimTotals = { scoreCommitted: '0' },
   boosterBoostBps = 0,
+  minHoldingRequiredBlocks = null,
   claimStatus = null,
+  incident = null,
   payoutLoading = false,
   submitUnavailableReason = '',
   statusMessage = '',
@@ -108,11 +114,23 @@ export default function FileClaimDialog({
     boosterBoostBps,
   );
   const effectiveScoreShare = sharePercentage(effectiveScoreUnits, wadUnits(claimTotals.scoreCommitted));
-  const claimIncident = claimStatus?.incident;
+  const claimIncident = claimStatus?.incident || incident;
   const [statusNowMilliseconds, setStatusNowMilliseconds] = useState(Date.now());
-  const liveClaimStatus = activeClaim && claimIncident
-    ? { ...claimStatus, ...claimLifecycle(claimIncident, statusNowMilliseconds) }
-    : claimStatus;
+  const lifecycle = claimIncident ? claimLifecycle(claimIncident, statusNowMilliseconds) : null;
+  const liveClaimStatus = lifecycle ? { ...claimStatus, ...lifecycle } : claimStatus;
+  // Settlement is permissionless, so once filing closes the incident replaces the
+  // claim form for everyone, including accounts that never filed.
+  const showStatus = activeClaim
+    || Boolean(lifecycle && lifecycle.state !== 'claim-open' && lifecycle.state !== 'unavailable');
+  const statusTitle = activeClaim
+    ? 'Your Claim Status'
+    : showStatus ? 'Incident Status' : `File a Claim for ${selectedToken.symbol}`;
+  const holdingRequirement = minHoldingRequiredBlocks
+    ? `${BigInt(minHoldingRequiredBlocks).toLocaleString('en-US')} blocks before the incident.`
+    : 'the configured pre-incident window. Holding window unavailable; refresh before filing.';
+  const phaseMilliseconds = Number(claimIncident?.phaseWindowMilliseconds ?? 3 * 86_400_000);
+  const phaseUnit = phaseMilliseconds >= 86_400_000 ? 'day' : phaseMilliseconds >= 3_600_000 ? 'hour' : 'minute';
+  const phaseLength = phaseMilliseconds / ({ day: 86_400_000, hour: 3_600_000, minute: 60_000 }[phaseUnit]);
   const timelineLabels = {
     'claim-open': ['Claim Open', 'Settle', 'Payout'],
     'settlement-open': ['Claim Closed', 'Settle Open', 'Payout'],
@@ -121,26 +139,31 @@ export default function FileClaimDialog({
     'payout-open': ['Claim Closed', 'Settled', 'Payout Open'],
     'payout-expired': ['Claim Closed', 'Settled', 'Payout Closed'],
   }[liveClaimStatus?.state] || ['Claim Open', 'Settle', 'Payout'];
-  const showPayout = liveClaimStatus?.state === 'payout-open' || liveClaimStatus?.state === 'payout-expired';
+  const showPayout = activeClaim
+    && (liveClaimStatus?.state === 'payout-open' || liveClaimStatus?.state === 'payout-expired');
+  const payoutIneligible = liveClaimStatus?.payoutEligible === false;
+  const returnTokens = ['Cancel Payout and Return Tokens', onCancelPayout];
   const actionButtons = activeClaim ? {
     'claim-open': [['Cancel Claim', onCancel]],
     'settlement-open': [['Settle Claim', onSettle]],
     'settlement-expired': [['Return Tokens', onReturnTokens]],
-    'payout-open': [['Accept Payout', onAcceptPayout], ['Cancel Payout and Return Tokens', onCancelPayout]],
-    'payout-expired': [['Cancel Payout and Return Tokens', onCancelPayout]],
-  }[liveClaimStatus?.state] || [] : [];
+    // Accepting an ineligible payout resolves exactly as a decline, so only offer the decline.
+    'payout-open': payoutIneligible ? [returnTokens] : [['Accept Payout', onAcceptPayout], returnTokens],
+    'payout-expired': [returnTokens],
+  }[liveClaimStatus?.state] || []
+    : liveClaimStatus?.state === 'settlement-open' ? [['Settle Claim', onSettle]] : [];
 
   useEffect(() => {
     setScoreToSpend(insuranceScoreInputValue(availableScoreValue));
   }, [availableScoreValue]);
 
   useEffect(() => {
-    if (!activeClaim || !claimIncident) return undefined;
+    if (!claimIncident) return undefined;
     const update = () => setStatusNowMilliseconds(Date.now());
     update();
     const timer = window.setInterval(update, 60_000);
     return () => window.clearInterval(timer);
-  }, [activeClaim, claimIncident]);
+  }, [claimIncident]);
 
   const dialogRef = useDialogFocus(onClose);
 
@@ -149,20 +172,20 @@ export default function FileClaimDialog({
       if (event.target === event.currentTarget) onClose();
     }}>
       <section
-        className={`usd8-dialog file-claim-dialog${activeClaim ? ' file-claim-dialog--status' : ''}`}
+        className={`usd8-dialog file-claim-dialog${showStatus ? ' file-claim-dialog--status' : ''}`}
         ref={dialogRef} tabIndex={-1} role="dialog"
         aria-modal="true"
-        aria-label={`${activeClaim ? 'Claim Status' : 'File claim'} for ${selectedToken.symbol}`}
+        aria-label={`${showStatus ? 'Claim Status' : 'File claim'} for ${selectedToken.symbol}`}
       >
-        <ClaimDialogCloseButton activeClaim={activeClaim} onClose={onClose} />
+        <ClaimDialogCloseButton activeClaim={showStatus} onClose={onClose} />
         <h2
           className="file-claim-title"
-          aria-label={activeClaim ? 'Your Claim Status' : `File a Claim for ${selectedToken.symbol}`}
+          aria-label={statusTitle}
         >
-          {!activeClaim && selectedToken.iconSrc ? <img src={selectedToken.iconSrc} alt={selectedToken.symbol} /> : null}
-          <span>{activeClaim ? 'Your Claim Status' : `File a Claim for ${selectedToken.symbol}`}</span>
+          {!showStatus && selectedToken.iconSrc ? <img src={selectedToken.iconSrc} alt={selectedToken.symbol} /> : null}
+          <span>{statusTitle}</span>
         </h2>
-        {!activeClaim ? (
+        {!showStatus ? (
           <p className="file-claim-requirement">
             {selectedToken.symbol} must lose more than 20% of its value against its underlying,
             measured between its TWAP price immediately before and after the drop.{' '}
@@ -170,8 +193,14 @@ export default function FileClaimDialog({
           </p>
         ) : null}
 
-        {activeClaim ? (
+        {showStatus ? (
           <section className="file-claim-status" aria-live="polite">
+            {!activeClaim ? (
+              <p className="file-claim-requirement">
+                You have no claim in this incident. Filing has closed, but settlement is
+                permissionless — anyone can settle it.
+              </p>
+            ) : (
             <div className="claim-status-metrics">
               <div>
                 <span>Insured Token</span>
@@ -183,9 +212,16 @@ export default function FileClaimDialog({
                 <strong>{liveClaimStatus.scoreToSpend}</strong>
                 <small>{liveClaimStatus.scoreCommitmentPercentage} of all score committed</small>
               </div>
-              <div><span>Booster to spend</span><strong>{liveClaimStatus.boosterAmount}</strong></div>
+              <div><span>Boosters escrowed</span><strong>{liveClaimStatus.boosterAmount}</strong></div>
             </div>
-            {showPayout ? (
+            )}
+            {showPayout && payoutIneligible ? (
+              <p className="file-claim-requirement">
+                You are not eligible for a payout, and your {liveClaimStatus.bondAmount} USD8
+                bond will not be refunded. Return your tokens to close the claim.
+              </p>
+            ) : null}
+            {showPayout && !payoutIneligible ? (
               <>
                 <div className="claim-status-payout-summary">
                   <div>
@@ -209,6 +245,17 @@ export default function FileClaimDialog({
                     </strong>
                   </div>
                 </div>
+                <div className="claim-status-payout-summary">
+                  <div>
+                    <span>Boosters burned on acceptance</span>
+                    <strong><MetricValue loading={payoutLoading} value={liveClaimStatus.boostersToBurn} label="Loading eligible boosters" /></strong>
+                  </div>
+                  <div>
+                    <span>Boosters returned on acceptance</span>
+                    <strong><MetricValue loading={payoutLoading} value={liveClaimStatus.boostersToRefund} label="Loading booster refund" /></strong>
+                    <small>On decline: {liveClaimStatus.boosterAmount} returned</small>
+                  </div>
+                </div>
                 <div className="claim-status-payout-details">
                   <span>Payout Details</span>
                   {payoutLoading && (liveClaimStatus.payoutDetails || []).length === 0
@@ -228,8 +275,8 @@ export default function FileClaimDialog({
                 // bar and show no time remaining instead of their nominal length.
                 const complete = index < liveClaimStatus.stageIndex;
                 const duration = index === 1
-                  ? `${liveClaimStatus.phaseWindowDays || 3}-${(liveClaimStatus.phaseWindowDays || 3) * 2} days`
-                  : `${liveClaimStatus.phaseWindowDays || 3} days`;
+                  ? `${phaseLength}-${phaseLength * 2} ${phaseUnit}s`
+                  : `${phaseLength} ${phaseUnit}${phaseLength === 1 ? '' : 's'}`;
                 const progressPercent = active ? liveClaimStatus.progressPercent : 100;
                 return (
                 <div className={`claim-status-step${active ? ' claim-status-step--active' : ''}${complete ? ' claim-status-step--complete' : ''}`} key={label}>
@@ -241,7 +288,7 @@ export default function FileClaimDialog({
                     aria-valuemax={active || complete ? 100 : undefined}
                     aria-valuenow={active || complete ? progressPercent : undefined}
                     aria-valuetext={active
-                      ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft)
+                      ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft, liveClaimStatus.minutesLeft)
                       : complete ? timeLeftLabel(0, 0) : undefined}
                     style={active || complete
                       ? { '--claim-progress': `${progressPercent}%` }
@@ -249,7 +296,7 @@ export default function FileClaimDialog({
                   />
                   <strong>{label}</strong>
                   <small>{active
-                    ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft)
+                    ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft, liveClaimStatus.minutesLeft)
                     : complete ? timeLeftLabel(0, 0) : duration}</small>
                 </div>
                 );
@@ -280,7 +327,14 @@ export default function FileClaimDialog({
           }}>
             <div className="file-claim-form-grid">
               <div className="file-claim-field file-claim-field--token file-claim-field--primary">
-                <label htmlFor="file-claim-token-amount">{selectedToken.symbol} Amount</label>
+                <span className="metric-label-with-help">
+                  <label htmlFor="file-claim-token-amount">{selectedToken.symbol} Amount</label>
+                  <InfoTooltip ariaLabel="About insured token amount" floating>
+                    You must have held {selectedToken.symbol} for at least {holdingRequirement}
+                    Eligibility uses your lowest balance over that window, so tokens acquired later do not
+                    count. If that balance is zero you are not eligible and your claim bond is forfeited.
+                  </InfoTooltip>
+                </span>
                 <input
                   id="file-claim-token-amount"
                   aria-label={`Insured ${selectedToken.symbol} amount`}
@@ -334,14 +388,16 @@ export default function FileClaimDialog({
 
               <div className="file-claim-field file-claim-field--compact">
                 <span className="metric-label-with-help">
-                  <label htmlFor="file-claim-boosters">Boosters to burn</label>
-                  <InfoTooltip ariaLabel="About boosters to burn" className="dashboard-help--align-right" floating>
-                    Optional. Each Booster will boost the final insurance score by 1%. Unused Boosters will be returned.
+                  <label htmlFor="file-claim-boosters">Boosters to escrow</label>
+                  <InfoTooltip ariaLabel="About boosters to escrow" className="dashboard-help--align-right" floating>
+                    Optional. Boosters must meet the same pre-incident holding requirement as the insured token: {holdingRequirement}
+                    Only eligible boosters increase payout weight and are burned on acceptance.
+                    Excess boosters are returned. Declining returns all boosters.
                   </InfoTooltip>
                 </span>
                 <input
                   id="file-claim-boosters"
-                  aria-label="Boosters to burn"
+                  aria-label="Boosters to escrow"
                   inputMode="numeric"
                   min="0"
                   step="1"
@@ -367,9 +423,9 @@ export default function FileClaimDialog({
                 File Claim
               </AvailabilityAction>
               <small className="file-claim-weight">
-                Total insurance score to spend: {formatWad(effectiveScoreUnits, 2, { trim: true })}
+                Maximum payout weight: {formatWad(effectiveScoreUnits, 2, { trim: true })}
                 {boosterCount !== '0' ? ` (incl. ${boosterCount} booster${boosterCount === '1' ? '' : 's'})` : ''}
-                {' '}— {effectiveScoreShare} of all score committed atm.
+                {' '}— {effectiveScoreShare} of provisional escrow weight; final weight depends on holding eligibility.
               </small>
               {statusMessage ? (
                 <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label="Claim submission status" />

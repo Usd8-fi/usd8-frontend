@@ -1556,7 +1556,8 @@ small a,
   }
 
   .file-claim-form-grid,
-  .claim-status-metrics {
+  .claim-status-metrics,
+  .claim-status-payout-summary {
     grid-template-columns: 1fr;
     gap: 28px;
   }

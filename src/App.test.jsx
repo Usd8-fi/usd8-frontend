@@ -682,7 +682,7 @@ describe('App', () => {
     await act(async () => secondSettlement.resolve({
       poolAddrs: [payoutPool],
       poolOrder: [payoutAsset],
-      rows: [{ claimId: '10', amounts: [10n] }],
+      rows: [{ claimId: '10', amounts: [10n], boostedScore: 30n, scoreSpent: 30n, eligibleAmount: 10n }],
     }));
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
     await waitFor(() => expect(within(dialog).getByText(`10 base units of ${payoutAsset}`)).toBeInTheDocument());
@@ -690,7 +690,7 @@ describe('App', () => {
     await act(async () => firstSettlement.resolve({
       poolAddrs: [payoutPool],
       poolOrder: [payoutAsset],
-      rows: [{ claimId: '9', amounts: [9n] }],
+      rows: [{ claimId: '9', amounts: [9n], boostedScore: 10n, scoreSpent: 10n, eligibleAmount: 9n }],
     }));
     expect(within(dialog).getByText(`10 base units of ${payoutAsset}`)).toBeInTheDocument();
     expect(within(dialog).queryByText(`9 base units of ${payoutAsset}`)).not.toBeInTheDocument();
@@ -782,6 +782,7 @@ describe('App', () => {
         scoreSpent: 1n,
         boostedScore: 0n,
         eligibleAmount: 10n,
+        eligibleBoosterAmount: 0n,
         proof: [],
       }],
     });
@@ -796,6 +797,131 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('This claim has already been resolved.');
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [3n, 100n, true], [3n, 100n, false], [0n, 100n, true], [3n, 0n, false], [11n, 100n, true],
+  ])('uses proof-bound boosters (%s, score %s, accept %s) for finalization and refund display', async (eligibleBoosters, score, accept) => {
+    const root = `0x${'12'.repeat(32)}`;
+    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutPool = '0x00000000000000000000000000000000000000c1';
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: { usdc: '0', usd8: '25', insuredTokens: { 'test-msloss': '500' } },
+      pools: [], activeIncidentId: '1',
+      incident: {
+        id: '1', tokenId: 'test-msloss', root,
+        phaseDeadlineMilliseconds: Date.now() - 3_600_000,
+        phaseWindowMilliseconds: 3 * 86_400_000,
+        poolAddrs: [payoutPool], poolOrder: [payoutAsset],
+      },
+      claim: {
+        id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '10',
+        scoreToSpend: '100', scoreCommitmentPercentage: '100%', resolved: false,
+      },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
+    const row = { claimId: '9', amounts: [10n], scoreSpent: score, boostedScore: score * (100n + eligibleBoosters) / 100n,
+      eligibleAmount: 10n, eligibleBoosterAmount: eligibleBoosters, proof: [] };
+    mocks.prepareSettlement.mockResolvedValue({ root, poolAddrs: [payoutPool], poolOrder: [payoutAsset], rows: [row] });
+    mocks.writeContractAsync.mockImplementation(() => new Promise(() => {}));
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
+    if (score > 0n) {
+      await within(dialog).findByText(`10 base units of ${payoutAsset}`);
+      if (eligibleBoosters <= 10n) {
+        expect(within(dialog).getByText('Boosters burned on acceptance').nextElementSibling).toHaveTextContent(eligibleBoosters.toString());
+        expect(within(dialog).getByText('Boosters returned on acceptance').nextElementSibling).toHaveTextContent((10n - eligibleBoosters).toString());
+        expect(within(dialog).getByText('On decline: 10 returned')).toBeInTheDocument();
+      }
+    } else {
+      expect(await within(dialog).findByText(/You are not eligible for a payout/)).toBeInTheDocument();
+      expect(within(dialog).queryByRole('button', { name: 'Accept Payout' })).toBeNull();
+      expect(within(dialog).queryByText('Total Payout USD value')).toBeNull();
+    }
+    fireEvent.click(within(dialog).getByRole('button', { name: accept ? 'Accept Payout' : 'Cancel Payout and Return Tokens' }));
+    if (eligibleBoosters > 10n) {
+      expect(await within(dialog).findByRole('alert')).toHaveTextContent('The settlement booster amount exceeds this claim\'s escrow.');
+      expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+    } else {
+      await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
+        functionName: 'finalizeClaim',
+        args: [9n, accept, row.amounts, row.scoreSpent, row.boostedScore, row.eligibleAmount, eligibleBoosters, row.proof],
+      })));
+    }
+  });
+
+  it.each([
+    ['FinalizeNotOpen', ['incidentId'], [1n], 'Payout acceptance is not open. Refresh the claim status to check the payout or token-return window.'],
+    ['InvalidProof', ['claimId'], [9n], 'The settlement proof is invalid. Refresh payout details before trying again.'],
+    ['EligibleExceedsEscrow', ['eligibleAmount', 'escrow'], [11n, 10n], 'The settlement eligibility exceeds the escrowed tokens or boosters. Refresh payout details before trying again.'],
+    ['InvalidBoostedScore', ['provided', 'expected'], [11n, 10n], 'The settlement payout weight does not match its eligible boosters. Refresh payout details before trying again.'],
+    ['UnauthorizedClaim', ['claimId'], [9n], 'This wallet cannot finalize this claim. Check the connected account and refresh.'],
+    ['ClaimAlreadyResolved', ['claimId'], [9n], 'This claim has already been resolved. Refresh the claim status.'],
+    ['PayoutCapExceeded', ['poolIndex', 'requested', 'cap'], [0n, 11n, 10n], 'The payout exceeds the pool’s remaining payout allowance. Refresh payout details before trying again.'],
+  ])('decodes %s and shows actionable finalization guidance', async (name, fields, args, message) => {
+    const abi = [{ type: 'error', name, inputs: fields.map(name => ({ name, type: 'uint256' })) }];
+    const error = new ContractFunctionRevertedError({ abi: claimWriteAbi, data: encodeErrorResult({ abi, errorName: name, args }), functionName: 'finalizeClaim' });
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: { usdc: '0', usd8: '25', insuredTokens: { 'test-msloss': '500' } },
+      pools: [], activeIncidentId: '0',
+      incident: { id: '1', tokenId: 'test-msloss', root: `0x${'00'.repeat(32)}`,
+        phaseDeadlineMilliseconds: Date.now() - 10_000, phaseWindowMilliseconds: 1000 },
+      claim: { id: '9', incidentId: '1', insuredTokenAmount: '345', bondAmount: '10', boosterAmount: '10',
+        scoreToSpend: '100', scoreCommitmentPercentage: '100%', resolved: false },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
+    mocks.estimateContractGas.mockRejectedValueOnce({ shortMessage: 'Execution reverted.', cause: error });
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.*for test-msloss/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Return Tokens' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(message);
+    expect(error.data?.errorName).toBe(name);
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
+  it('weights the committed-score share by settled boosted scores, not filed claims', async () => {
+    const root = `0x${'12'.repeat(32)}`;
+    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutPool = '0x00000000000000000000000000000000000000c1';
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: { usdc: '0', usd8: '25', insuredTokens: { 'test-msloss': '500' } },
+      pools: [], activeIncidentId: '1',
+      incident: {
+        id: '1', tokenId: 'test-msloss', root,
+        phaseDeadlineMilliseconds: Date.now() - 3_600_000,
+        phaseWindowMilliseconds: 3 * 86_400_000,
+        poolAddrs: [payoutPool], poolOrder: [payoutAsset],
+      },
+      claim: {
+        id: '9', incidentId: '1', insuredTokenAmount: '2,000', bondAmount: '10', boosterAmount: '10',
+        // Filed-claim total still counts the ineligible claim, so it reads low.
+        scoreToSpend: '2,000', scoreCommitmentPercentage: '27.2%', resolved: false,
+      },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
+    mocks.prepareSettlement.mockResolvedValue({
+      root, poolAddrs: [payoutPool], poolOrder: [payoutAsset],
+      rows: [
+        { claimId: '9', amounts: [10n], scoreSpent: 2_000n, boostedScore: 2_200n, eligibleAmount: 10n, eligibleBoosterAmount: 10n, proof: [] },
+        { claimId: '10', amounts: [20n], scoreSpent: 4_000n, boostedScore: 4_880n, eligibleAmount: 20n, eligibleBoosterAmount: 22n, proof: [] },
+        // Zero-eligible: the enclave zeroes its boosted score, so it leaves the denominator.
+        { claimId: '11', amounts: [0n], scoreSpent: 0n, boostedScore: 0n, eligibleAmount: 0n, eligibleBoosterAmount: 0n, proof: [] },
+      ],
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
+    await within(dialog).findByText(`10 base units of ${payoutAsset}`);
+    expect(within(dialog).getByText('31.0% of all score committed')).toBeInTheDocument();
+    expect(within(dialog).queryByText('27.2% of all score committed')).not.toBeInTheDocument();
   });
 
   it('rejects finalization calldata when the refreshed pool topology changed', async () => {
@@ -840,6 +966,7 @@ describe('App', () => {
         scoreSpent: 1n,
         boostedScore: 0n,
         eligibleAmount: 10n,
+        eligibleBoosterAmount: 0n,
         proof: [],
       }],
     });
@@ -896,6 +1023,67 @@ describe('App', () => {
       'This account no longer has an unresolved claim to cancel.',
     );
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
+  it('requests settleIncident from the settlement-open UI for a nonclaimant', async () => {
+    const zeroRoot = `0x${'00'.repeat(32)}`;
+    const pool = '0x00000000000000000000000000000000000000c1';
+    const asset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const settlement = {
+      incidentId: '1',
+      root: `0x${'34'.repeat(32)}`,
+      poolAddrs: [pool],
+      poolOrder: [asset],
+      poolPayouts: [10n],
+      signature: `0x${'11'.repeat(65)}`,
+      rows: [],
+    };
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: {
+        usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0',
+        insuredTokens: { 'test-msloss': '0' },
+      },
+      pools: [coverPoolFixture()],
+      activeIncidentId: '1',
+      incident: {
+        id: '1',
+        tokenId: 'test-msloss',
+        phaseDeadlineMilliseconds: Date.now() - 3_600_000,
+        phaseWindowMilliseconds: 3 * 86_400_000,
+        root: zeroRoot,
+        poolAddrs: [pool],
+        poolOrder: [asset],
+      },
+      claim: null,
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
+    mocks.prepareSettlement.mockResolvedValue(settlement);
+    mocks.writeContractAsync.mockImplementation(() => new Promise(() => {}));
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Settle Claims .* for test-msloss/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle Claim' }));
+
+    await waitFor(() => {
+      expect(dialog).not.toHaveTextContent(/Cannot read properties of null/);
+      expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
+        abi: claimWriteAbi,
+        functionName: 'settleIncident',
+        args: [settlement.root, settlement.poolPayouts, settlement.signature],
+      }));
+    });
+    expect(mocks.prepareSettlement).toHaveBeenCalledWith('1', expect.objectContaining({
+      chainId: 11155111,
+      expectedRoot: zeroRoot,
+      expectedPoolAddrs: [pool],
+      expectedPoolOrder: [asset],
+    }));
+    expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2);
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent(/Cannot read properties of null/);
   });
 
   it('re-reads the authoritative incident before constructing settlement calldata', async () => {
@@ -2023,7 +2211,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
 
-    expect(within(dialog).getByLabelText('Boosters to burn')).toHaveValue(100);
+    expect(within(dialog).getByLabelText('Boosters to escrow')).toHaveValue(100);
     expect(within(dialog).queryByRole('button', { name: /Use all boosters/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('100.00 available')).toBeInTheDocument();
   });
@@ -2082,7 +2270,7 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
     fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
     fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
-    fireEvent.change(within(dialog).getByLabelText('Boosters to burn'), { target: { value: '3' } });
+    fireEvent.change(within(dialog).getByLabelText('Boosters to escrow'), { target: { value: '3' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
     if (scenario === 'reverting') {
@@ -2160,7 +2348,7 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
     fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
     fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
-    fireEvent.change(within(dialog).getByLabelText('Boosters to burn'), { target: { value: '2' } });
+    fireEvent.change(within(dialog).getByLabelText('Boosters to escrow'), { target: { value: '2' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
 

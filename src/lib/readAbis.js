@@ -108,6 +108,11 @@ export const poolAbi = [
 ];
 
 export const defiInsuranceAbi = [
+  { type: 'function', name: 'settlementParams', stateMutability: 'view', inputs: [], outputs: [
+    { name: 'twapLookbackBlocks', type: 'uint64' },
+    { name: 'minHoldingRequired', type: 'uint64' },
+    { name: 'sampleStepBlocks', type: 'uint64' },
+  ] },
   { type: 'function', name: 'claimBondAmount', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   {
     type: 'function',

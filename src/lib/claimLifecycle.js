@@ -4,12 +4,11 @@ const DAY_MILLISECONDS = 24 * HOUR_MILLISECONDS;
 
 export function remainingTimeParts(deadline, nowMilliseconds) {
   const remaining = Math.max(0, deadline - nowMilliseconds);
-  const totalHours = remaining > 0 && remaining < HOUR_MILLISECONDS
-    ? 1
-    : Math.floor(remaining / HOUR_MILLISECONDS);
+  const totalHours = Math.floor(remaining / HOUR_MILLISECONDS);
   return {
     daysLeft: Math.floor(totalHours / 24),
     hoursLeft: totalHours % 24,
+    minutesLeft: Math.min(59, Math.ceil((remaining % HOUR_MILLISECONDS) / 60_000)),
   };
 }
 

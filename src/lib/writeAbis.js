@@ -13,6 +13,13 @@ export const treasuryWriteAbi = [
 ];
 
 export const claimWriteAbi = [
+  { type: 'error', name: 'FinalizeNotOpen', inputs: [{ name: 'incidentId', type: 'uint256' }] },
+  { type: 'error', name: 'InvalidProof', inputs: [{ name: 'claimId', type: 'uint256' }] },
+  { type: 'error', name: 'EligibleExceedsEscrow', inputs: [{ name: 'eligibleAmount', type: 'uint256' }, { name: 'escrow', type: 'uint256' }] },
+  { type: 'error', name: 'InvalidBoostedScore', inputs: [{ name: 'provided', type: 'uint256' }, { name: 'expected', type: 'uint256' }] },
+  { type: 'error', name: 'UnauthorizedClaim', inputs: [{ name: 'claimId', type: 'uint256' }] },
+  { type: 'error', name: 'ClaimAlreadyResolved', inputs: [{ name: 'claimId', type: 'uint256' }] },
+  { type: 'error', name: 'PayoutCapExceeded', inputs: [{ name: 'poolIndex', type: 'uint256' }, { name: 'requested', type: 'uint256' }, { name: 'cap', type: 'uint256' }] },
   { type: 'error', name: 'ZeroAmount', inputs: [] },
   { type: 'error', name: 'InvalidReferenceBlock', inputs: [{ name: 'referenceBlock', type: 'uint64' }] },
   { type: 'error', name: 'InsuredTokenNotApproved', inputs: [{ name: 'insuredToken', type: 'address' }] },
@@ -67,6 +74,7 @@ export const claimWriteAbi = [
       { name: 'claimId', type: 'uint256' }, { name: 'acceptPayout', type: 'bool' },
       { name: 'amounts', type: 'uint256[]' }, { name: 'scoreSpent', type: 'uint256' },
       { name: 'boostedScore', type: 'uint256' }, { name: 'eligibleAmount', type: 'uint256' },
+      { name: 'eligibleBoosterAmount', type: 'uint256' },
       { name: 'proof', type: 'bytes32[]' },
     ], outputs: [],
   },

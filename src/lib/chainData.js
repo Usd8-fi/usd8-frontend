@@ -97,6 +97,12 @@ export async function fetchBoosterBalance(client, registry, account, policy, blo
   });
 }
 
+async function holdingWindowBlocks(client, address, blockNumber) {
+  const params = await client.readContract({ address, abi: defiInsuranceAbi, functionName: 'settlementParams', blockNumber });
+  const blocks = params?.minHoldingRequired ?? params?.[1];
+  return typeof blocks === 'bigint' && blocks > 0n ? blocks.toString() : null;
+}
+
 function currentScorePerSecond(balance, rateHistory) {
   const rate = rateHistory.at(-1)?.rate ?? 0n;
   return balance * rate / WAD / SEPOLIA_BLOCK_SECONDS;
@@ -464,7 +470,10 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   // Timestamp history is optional enrichment; never gate usable balances on it.
   const usd8BalanceChangeTimestamp = usd8 === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
   const savingsBalanceChangeTimestamp = savings === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
-  const [boosterBalance, claimBond] = await Promise.all([
+  const [minHoldingRequiredBlocks, boosterBalance, claimBond] = await Promise.all([
+    cachedData(protocolKey(network, 'settlement-params'),
+      () => holdingWindowBlocks(client, contracts.defiInsurance, blockNumber), { signal, staleTime: refresh ? 0 : 60_000 })
+      .catch(error => { checkAbort(signal); resourceErrors['settlement-params'] = error.message; return null; }),
     hasAccount && !resourceErrors.configuration
       ? cachedData(protocolKey(network, 'account-boosters', account, boosterPolicy[0], String(boosterPolicy[1])),
         () => fetchBoosterBalance(client, contracts.registry, account, boosterPolicy, blockNumber), { signal, staleTime: refresh && (!resources || resources.includes('incident')) ? 0 : 15_000 })
@@ -555,7 +564,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       availableForWithdraw: formatted(exitAvailable ? read.pendingExitShares : zero, shareDecimals),
       inCooldown: formatted(exitAvailable ? zero : read.pendingExitShares, shareDecimals),
       cooldownEndsAtMilliseconds: read.pendingExitShares > zero ? Number(read.exitEpoch) * 1_000 : 0,
-      earnings: formatted(read.earned),
+      earnings: formatted(read.earned, 18, 1),
       earningsExact: formatUnits(read.earned, 18),
       earningsPerSecond: formatUnits(earningsPerSecond, 18),
       earningsSnapshotTimestampMilliseconds: Date.now(),
@@ -573,7 +582,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     activeIncidentId: activeIncidentId.toString(),
     incident: null,
     claim: null,
-    insurance: { tokens: insuranceTokens, claimBond: claimBond === null ? null : formatted(claimBond) },
+    insurance: { tokens: insuranceTokens, minHoldingRequiredBlocks, claimBond: claimBond === null ? null : formatted(claimBond) },
     scoreBalances: resourceErrors['account-balances'] ? null : { usd8: usd8.toString(), savings: savings.toString() },
     // The score snapshot lags a spend until it finalizes, so the app compares
     // this against the snapshot's own scoreSpent to know when to re-fetch.
@@ -718,6 +727,8 @@ async function readIncident({ client, contracts, account, hasAccount, activeInci
       id: displayedIncidentId.toString(),
       tokenId,
       tokenAddress: tokenAddress.toLowerCase(),
+      minHoldingRequiredBlocks: await holdingWindowBlocks(client, contracts.defiInsurance, openBlock)
+        .catch(() => { checkAbort(signal); return null; }),
       phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
       phaseWindowMilliseconds: Number(phaseWindow) * 1_000,
       root,

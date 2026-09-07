@@ -167,9 +167,10 @@ function settlementProofs(incidentId, rows, expectedRoot) {
     const encoded = encodeAbiParameters([
       { type: 'uint256' }, { type: 'uint256' }, { type: 'address' }, { type: 'uint256[]' },
       { type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' },
+      { type: 'uint256' },
     ], [
       BigInt(incidentId), BigInt(row.claimId), canonicalAddress(row.user, 'claim user'), row.amounts,
-      row.scoreSpent, row.boostedScore, row.eligibleAmount,
+      row.scoreSpent, row.boostedScore, row.eligibleAmount, row.eligibleBoosterAmount,
     ]);
     return { claimId: row.claimId, hash: keccak256(keccak256(encoded)) };
   }).sort((left, right) => (left.hash < right.hash ? -1 : left.hash > right.hash ? 1 : 0));
@@ -293,7 +294,7 @@ async function completedSettlementPayload(job, expectedJobId, signal) {
 function validateSettlement(payload, expected) {
   const artifact = payload?.artifact;
   const artifactIncidentId = uint256Decimal(artifact?.incidentId, 'incident id');
-  if (artifact?.schemaVersion !== 1) throw new Error('Claim service returned an invalid settlement.');
+  if (artifact?.schemaVersion !== 2) throw new Error('Claim service returned an invalid settlement.');
   if (!Number.isSafeInteger(artifact.chainId) || artifact.chainId !== expected.chainId
       || !sameAddress(artifact.registry, expected.registry)
       || !sameAddress(artifact.defiInsurance, expected.defiInsurance)
@@ -342,8 +343,9 @@ function validateSettlement(payload, expected) {
     scoreSpent: uint256Decimal(row.scoreSpent, 'score spent'),
     boostedScore: uint256Decimal(row.boostedScore, 'boosted score'),
     eligibleAmount: uint256Decimal(row.eligibleAmount, 'eligible amount'),
+    eligibleBoosterAmount: uint256Decimal(row.eligibleBoosterAmount, 'eligible booster amount'),
     // Valuation the enclave reported. Not committed in the Merkle leaf, so this is
-    // informational only — the contract verifies amounts/score/eligibleAmount.
+    // informational only — the contract verifies amounts, scores, and both eligible quantities.
     payoutUsd: row.payoutUsd === undefined ? undefined : uint256Decimal(row.payoutUsd, 'payout USD'),
     lossUsd: row.lossUsd === undefined ? undefined : uint256Decimal(row.lossUsd, 'loss USD'),
     proof: row.proof,

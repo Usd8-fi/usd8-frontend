@@ -56,7 +56,8 @@ export const COVERED_PROTOCOL_ROWS = [
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;
 
 function timedLabel(label, deadline, nowMilliseconds) {
-  const { daysLeft, hoursLeft } = remainingTimeParts(deadline, nowMilliseconds);
+  const { daysLeft, hoursLeft, minutesLeft } = remainingTimeParts(deadline, nowMilliseconds);
+  if (daysLeft === 0 && hoursLeft === 0) return `${label} (${minutesLeft}m left)`;
   return `${label} (${daysLeft}d ${hoursLeft}h left)`;
 }
 

@@ -6,7 +6,7 @@ const REGISTRY = '0xB34D92cd05005DF36050370433819597a9BaC693';
 const DEFI_INSURANCE = '0x4E346CcD0a46D51ebaE6810d653791982968d502';
 const JOB_ID = 'a'.repeat(64);
 const SIGNATURE = `0x${'11'.repeat(65)}`;
-const SETTLEMENT_ROOT = '0x91cabe04b0bfad6e34acf4d7657edeeeeb76a09500fb629354a6c0d9551b3220';
+const SETTLEMENT_ROOT = '0xe4b071f66e038500cf6b49655929f4849b072adb31b84a107421a29790dc51ae';
 const POOL = '0x55cb69271da9937d0cb3c548409fd3f77586df79';
 const OTHER_POOL = '0x8917f4c377dd0e5bd4909d8a00b508f38c0f3f4f';
 const POOL_ASSET = '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa';
@@ -23,6 +23,7 @@ const VALID_SETTLEMENT_ROWS = [
     scoreSpent: '775090000000000000000',
     boostedScore: '775090000000000000000',
     eligibleAmount: '1000000000000000000',
+    eligibleBoosterAmount: '0',
     payoutUsd: '588812035029585798',
     lossUsd: '736015043786982248',
   },
@@ -33,6 +34,7 @@ const VALID_SETTLEMENT_ROWS = [
     scoreSpent: '750651388888889489410',
     boostedScore: '750651388888889489410',
     eligibleAmount: '1000000000000000000',
+    eligibleBoosterAmount: '0',
     payoutUsd: '588812035029585798',
     lossUsd: '736015043786982248',
   },
@@ -44,7 +46,7 @@ function completedSettlementJob(rows = VALID_SETTLEMENT_ROWS) {
     status: 'completed',
     payload: {
       artifact: {
-        schemaVersion: 1,
+        schemaVersion: 2,
         chainId: 11155111,
         registry: REGISTRY,
         defiInsurance: DEFI_INSURANCE,
@@ -257,6 +259,31 @@ describe('prepareIncidentOpen', () => {
 });
 
 describe('prepareSettlement', () => {
+  it.each([undefined, null, '-1', '1.5', '0x03', 3, (2n ** 256n).toString()])(
+    'rejects missing or malformed eligible booster quantities (%s)', async (quantity) => {
+      const job = completedSettlementJob(VALID_SETTLEMENT_ROWS.map(row => ({ ...row })));
+      job.payload.artifact.rows[0].eligibleBoosterAmount = quantity;
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(job))));
+      const { prepareSettlement } = await loadClaimApi();
+      await expect(prepareSettlement(5n, {
+        ...SETTLEMENT_SNAPSHOT, chainId: 11155111, registry: REGISTRY, defiInsurance: DEFI_INSURANCE,
+        expectedRoot: SETTLEMENT_ROOT, pollIntervalMs: 0,
+      })).rejects.toThrow('invalid eligible booster amount');
+    },
+  );
+
+  it.each(['old-schema', 'tampered-quantity'])('rejects %s settlements', async (reason) => {
+    const job = completedSettlementJob(VALID_SETTLEMENT_ROWS.map(row => ({ ...row })));
+    if (reason === 'old-schema') job.payload.artifact.schemaVersion = 1;
+    else job.payload.artifact.rows[0].eligibleBoosterAmount = '3';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(job))));
+    const { prepareSettlement } = await loadClaimApi();
+    await expect(prepareSettlement(5n, {
+      ...SETTLEMENT_SNAPSHOT, chainId: 11155111, registry: REGISTRY, defiInsurance: DEFI_INSURANCE,
+      expectedRoot: SETTLEMENT_ROOT, pollIntervalMs: 0,
+    })).rejects.toThrow('invalid settlement');
+  });
+
   it('keeps polling past the 1,200-second production parent bound', async () => {
     vi.spyOn(Date, 'now')
       .mockReturnValueOnce(1_000)
@@ -333,9 +360,9 @@ describe('prepareSettlement', () => {
   });
 
   it('derives omitted claim proofs from the complete root-bound row set', async () => {
-    const root = '0x91cabe04b0bfad6e34acf4d7657edeeeeb76a09500fb629354a6c0d9551b3220';
-    const claimant1Leaf = '0x77a0872d78b0f7206252cef20926d46fc24f012f429cccf3c07e8d3f3361964d';
-    const claimant2Leaf = '0xcb4fc0164c12adfadd59fd863b1f55a265d6d1d3e80458ac72e6b649e8ca78f9';
+    const root = '0xe4b071f66e038500cf6b49655929f4849b072adb31b84a107421a29790dc51ae';
+    const claimant1Leaf = '0x0e3a2005907c8f4f030d191fa81300d6e7ccb036b2e0c7ea4a422aa4bd59957f';
+    const claimant2Leaf = '0xfe535ae76748e68a650098c8195d9379b669c3c56530bbae0644b506adb1dfd9';
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ accepted: true, jobId: JOB_ID }), { status: 202 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
@@ -343,7 +370,7 @@ describe('prepareSettlement', () => {
         status: 'completed',
         payload: {
           artifact: {
-            schemaVersion: 1,
+            schemaVersion: 2,
             chainId: 11155111,
             registry: REGISTRY,
             defiInsurance: DEFI_INSURANCE,
@@ -360,6 +387,7 @@ describe('prepareSettlement', () => {
                 scoreSpent: '775090000000000000000',
                 boostedScore: '775090000000000000000',
                 eligibleAmount: '1000000000000000000',
+                eligibleBoosterAmount: '0',
                 payoutUsd: '588812035029585798',
                 lossUsd: '736015043786982248',
               },
@@ -370,6 +398,7 @@ describe('prepareSettlement', () => {
                 scoreSpent: '750651388888889489410',
                 boostedScore: '750651388888889489410',
                 eligibleAmount: '1000000000000000000',
+                eligibleBoosterAmount: '0',
                 payoutUsd: '588812035029585798',
                 lossUsd: '736015043786982248',
               },
@@ -433,7 +462,7 @@ describe('prepareSettlement', () => {
         status: 'completed',
         payload: {
           artifact: {
-            schemaVersion: 1,
+            schemaVersion: 2,
             chainId: 11155111,
             registry: REGISTRY,
             defiInsurance: DEFI_INSURANCE,
@@ -449,6 +478,7 @@ describe('prepareSettlement', () => {
               scoreSpent: '775090000000000000000',
               boostedScore: '775090000000000000000',
               eligibleAmount: '1000000000000000000',
+              eligibleBoosterAmount: '0',
               payoutUsd: '588812035029585798',
               lossUsd: '736015043786982248',
             }],
