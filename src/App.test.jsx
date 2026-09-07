@@ -925,7 +925,7 @@ describe('App', () => {
 
   it.each([
     [3n, 100n, true], [3n, 100n, false], [0n, 100n, true], [3n, 0n, false], [11n, 100n, true],
-  ])('uses proof-bound boosters (%s, score %s, accept %s) for finalization and refund display', async (eligibleBoosters, score, accept) => {
+  ])('uses proof-bound boosters (%s, score %s, accept %s) for finalization and the compact usable display', async (eligibleBoosters, score, accept) => {
     const root = `0x${'12'.repeat(32)}`;
     const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
@@ -952,14 +952,17 @@ describe('App', () => {
     mocks.writeContractAsync.mockImplementation(() => new Promise(() => {}));
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss/ }));
-    const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
+    const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
+    if (eligibleBoosters <= 10n) {
+      const expectedUsable = score > 0n ? eligibleBoosters : 0n;
+      const boosterMetric = within(dialog).getByText('Boosters escrowed').closest('div');
+      expect(await within(boosterMetric).findByText(`${expectedUsable} can be used`)).toBeInTheDocument();
+      expect(within(dialog).queryByText('Boosters burned on acceptance')).toBeNull();
+      expect(within(dialog).queryByText('Boosters returned on acceptance')).toBeNull();
+      expect(within(dialog).queryByText('On decline: 10 returned')).toBeNull();
+    }
     if (score > 0n) {
       await within(dialog).findByText(`10 base units of ${payoutAsset}`);
-      if (eligibleBoosters <= 10n) {
-        expect(within(dialog).getByText('Boosters burned on acceptance').nextElementSibling).toHaveTextContent(eligibleBoosters.toString());
-        expect(within(dialog).getByText('Boosters returned on acceptance').nextElementSibling).toHaveTextContent((10n - eligibleBoosters).toString());
-        expect(within(dialog).getByText('On decline: 10 returned')).toBeInTheDocument();
-      }
     } else {
       expect(await within(dialog).findByText(/You are not eligible for a payout/)).toBeInTheDocument();
       expect(within(dialog).queryByRole('button', { name: 'Accept Payout' })).toBeNull();

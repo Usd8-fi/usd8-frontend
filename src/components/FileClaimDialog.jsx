@@ -212,7 +212,20 @@ export default function FileClaimDialog({
                 <strong>{liveClaimStatus.scoreToSpend}</strong>
                 <small>{liveClaimStatus.scoreCommitmentPercentage} of all score committed</small>
               </div>
-              <div><span>Boosters escrowed</span><strong>{liveClaimStatus.boosterAmount}</strong></div>
+              <div>
+                <span>Boosters escrowed</span>
+                <strong>{liveClaimStatus.boosterAmount}</strong>
+                {showPayout && (payoutLoading || liveClaimStatus.boostersToBurn !== null) ? (
+                  <small>
+                    <MetricValue
+                      loading={payoutLoading}
+                      value={liveClaimStatus.boostersToBurn}
+                      label="Loading usable boosters"
+                    />
+                    {payoutLoading ? null : ' can be used'}
+                  </small>
+                ) : null}
+              </div>
             </div>
             )}
             {showPayout && payoutIneligible ? (
@@ -243,17 +256,6 @@ export default function FileClaimDialog({
                         label="Loading payout comparison"
                       />
                     </strong>
-                  </div>
-                </div>
-                <div className="claim-status-payout-summary">
-                  <div>
-                    <span>Boosters burned on acceptance</span>
-                    <strong><MetricValue loading={payoutLoading} value={liveClaimStatus.boostersToBurn} label="Loading eligible boosters" /></strong>
-                  </div>
-                  <div>
-                    <span>Boosters returned on acceptance</span>
-                    <strong><MetricValue loading={payoutLoading} value={liveClaimStatus.boostersToRefund} label="Loading booster refund" /></strong>
-                    <small>On decline: {liveClaimStatus.boosterAmount} returned</small>
                   </div>
                 </div>
                 <div className="claim-status-payout-details">

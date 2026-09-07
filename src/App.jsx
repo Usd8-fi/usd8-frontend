@@ -1782,8 +1782,6 @@ export default function App({ autoConnect = false }) {
       bondAmount: groupDecimalString(chainData.claim.bondAmount),
       boosterAmount: groupDecimalString(chainData.claim.boosterAmount),
       boostersToBurn: boostersToBurn === null ? null : groupDecimalString(boostersToBurn.toString()),
-      boostersToRefund: boostersToBurn === null
-        ? null : groupDecimalString((BigInt(chainData.claim.boosterAmount) - boostersToBurn).toString()),
       scoreToSpend: groupDecimalString(chainData.claim.scoreToSpend),
       // Mirrors finalizeClaim's `eligible`: without it every payout branch is a no-op,
       // the bond goes to the treasury, and accepting does nothing a decline would not.
