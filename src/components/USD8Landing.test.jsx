@@ -302,6 +302,23 @@ describe('USD8 landing navigation', () => {
     expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('1234567.8');
   });
 
+  it('shows numeric zero for absent connected-wallet scores', () => {
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
+        score={null}
+        scoreStatus="error"
+      />,
+    );
+
+    const total = screen.getByText('Total Insurance Score').parentElement.querySelector('strong');
+    const available = screen.getByText('Available Score').parentElement.querySelector('strong');
+    expect(total).toHaveTextContent('0');
+    expect(available).toHaveTextContent(total.textContent);
+    expect(available).not.toHaveTextContent('—');
+  });
+
   it('advances total, available, USD8, and sUSD8 score locally every second', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(20_000));

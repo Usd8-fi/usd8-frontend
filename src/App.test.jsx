@@ -508,20 +508,41 @@ describe('App', () => {
     expect(screen.queryByText('...')).not.toBeInTheDocument();
   });
 
-  it('shows unknown available score while the remaining chain score inputs are still loading', async () => {
+  it('shows zero available score and a retry warning when the score API fails', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
-    const scoreRequest = deferred();
-    mocks.fetchInsuranceScore.mockReturnValueOnce(scoreRequest.promise);
-    mocks.fetchLandingChainData.mockImplementation(() => new Promise(() => {}));
+    mocks.fetchInsuranceScore.mockRejectedValueOnce(new Error('score unavailable'));
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', boosters: '0', insuredTokens: { 'test-msloss': '10' } },
+      pools: [coverPoolFixture()],
+      activeIncidentId: '1',
+      incident: {
+        id: '1',
+        tokenId: 'test-msloss',
+        phaseDeadlineMilliseconds: Date.now() + 86_400_000,
+        phaseWindowMilliseconds: 3 * 86_400_000,
+        root: `0x${'00'.repeat(32)}`,
+      },
+      claim: null,
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10', minHoldingRequiredBlocks: '300' },
+    });
 
     render(<App />);
 
-    await act(async () => scoreRequest.reject(new Error('score unavailable')));
+    const warning = await screen.findByRole('alert', { name: 'Notification' });
+    const total = screen.getByText('Total Insurance Score').parentElement.querySelector('strong');
+    const available = screen.getByText('Available Score').parentElement.querySelector('strong');
+    expect(total).toHaveTextContent('0');
+    expect(available).toHaveTextContent(total.textContent);
+    expect(available).not.toHaveTextContent('—');
+    expect(warning).toHaveTextContent('Insurance Score could not be loaded. Retry to get your available score.');
+    expect(within(warning).getByRole('button', { name: 'Retry score' })).toBeEnabled();
 
-    expect(screen.getAllByRole('status', { name: 'Loading insurance score' })).toHaveLength(3);
-    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('—');
-    expect(screen.getAllByRole('status', { name: 'Loading wallet balance' })).toHaveLength(2);
+    fireEvent.click(await screen.findByRole('button', { name: /Claim Open.*for test-msloss/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'File claim for msLOSS' });
+    const scoreField = within(dialog).getByLabelText('Insurance score to spend').closest('.file-claim-field');
+    expect(within(scoreField).getByText('0.00 available')).toBeInTheDocument();
+    expect(within(scoreField).queryByText('— available')).not.toBeInTheDocument();
   });
 
   it('uses the connected wallet chain ID for the score API and protocol reads', async () => {

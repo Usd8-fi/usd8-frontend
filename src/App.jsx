@@ -1869,7 +1869,7 @@ export default function App({ autoConnect = false }) {
                 ? chainData.balances.savings
                 : chainData.balances.insuredTokens?.[row.id] || '0',
           }))}
-          availableScore={score?.availableScore ?? '—'}
+          availableScore={score?.availableScore ?? '0'}
           availableBoosters={chainData.balances.boosters || '0'}
           minHoldingRequiredBlocks={actionableIncident?.tokenId === claimToken.id
             ? actionableIncident.minHoldingRequiredBlocks : chainData.insurance?.minHoldingRequiredBlocks}

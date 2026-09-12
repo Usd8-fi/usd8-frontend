@@ -317,7 +317,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
             <strong>
               <ScoreValue
                 loading={availableScoreLoading ?? scoreLoading}
-                value={availableScore ?? (wallet.connected ? '—' : '0')}
+                value={availableScore}
                 decimals={scoreRateDecimals(score?.maturingScorePerSecond)}
               />
             </strong>

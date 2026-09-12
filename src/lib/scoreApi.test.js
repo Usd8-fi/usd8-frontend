@@ -110,6 +110,13 @@ describe('fetchInsuranceScore', () => {
     await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 }))
       .rejects.toThrow('Unexpected score API network');
   });
+
+  it('rejects a backend 503 instead of returning a zero score', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 503 });
+
+    await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 }))
+      .rejects.toThrow('Insurance Score is temporarily unavailable');
+  });
 });
 
 
