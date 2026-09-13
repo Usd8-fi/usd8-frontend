@@ -18,19 +18,7 @@ a:active {
   text-decoration: none;
 }
 
-.usd8-dialog-tab {
-  color: var(--navigation-inactive);
-  text-decoration: none;
-}
 
-.usd8-dialog-tab:hover,
-.usd8-dialog-tab:focus-visible {
-  background: transparent;
-  color: var(--link);
-  text-decoration: none;
-}
-
-.landing-product-tab,
 .landing-footer-links .site-nav-link,
 .sidebar .chapter a {
   color: var(--navigation-inactive);
@@ -42,8 +30,6 @@ a:active {
   background: transparent;
 }
 
-.landing-product-tab:hover,
-.landing-product-tab:focus-visible,
 .landing-footer-links .site-nav-link:hover,
 .landing-footer-links .site-nav-link:focus-visible,
 .sidebar .chapter a:hover,
@@ -59,21 +45,6 @@ a:active {
   background: transparent;
 }
 
-.landing-product-tab--active,
-.landing-product-tab--active:hover,
-.landing-product-tab--active:focus-visible {
-  background: var(--background);
-  color: var(--link);
-  text-decoration: none;
-}
-
-.usd8-dialog-tab--active,
-.usd8-dialog-tab--active:hover,
-.usd8-dialog-tab--active:focus-visible {
-  background: transparent;
-  color: var(--link);
-  text-decoration: none;
-}
 
 .usd8-dialog-available {
   color: var(--link);
