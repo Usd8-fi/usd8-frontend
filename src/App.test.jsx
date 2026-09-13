@@ -385,7 +385,6 @@ describe('App', () => {
 
   it('spins for unknown pool values rather than inventing them, then shows the real ones', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
     // Nothing is known yet, so APR/TVL/capacity must not display a number.
     expect(screen.getAllByRole('region').filter((card) => card.className.includes('cover-pool-card')))
@@ -407,7 +406,6 @@ describe('App', () => {
     const prompt = vi.spyOn(window, 'prompt').mockReturnValue(null);
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     const deposit = poolCard().getByRole('button', { name: 'deposit' });
 
     expect(deposit).toBeEnabled();
@@ -946,7 +944,7 @@ describe('App', () => {
 
   it.each([
     [3n, 100n, true], [3n, 100n, false], [0n, 100n, true], [3n, 0n, false], [11n, 100n, true],
-  ])('uses proof-bound boosters (%s, score %s, accept %s) for finalization and the compact usable display', async (eligibleBoosters, score, accept) => {
+  ])('uses proof-bound boosters (%s, score %s, accept %s) for finalization and the compact taken-into-account display', async (eligibleBoosters, score, accept) => {
     const root = `0x${'12'.repeat(32)}`;
     const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
@@ -975,9 +973,9 @@ describe('App', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
     if (eligibleBoosters <= 10n) {
-      const expectedUsable = score > 0n ? eligibleBoosters : 0n;
+      const expectedTakenIntoAccount = score > 0n ? eligibleBoosters : 0n;
       const boosterMetric = within(dialog).getByText('Boosters escrowed').closest('div');
-      expect(await within(boosterMetric).findByText(`${expectedUsable} can be used`)).toBeInTheDocument();
+      expect(await within(boosterMetric).findByText(`${expectedTakenIntoAccount} taken into account`)).toBeInTheDocument();
       expect(within(dialog).queryByText('Boosters burned on acceptance')).toBeNull();
       expect(within(dialog).queryByText('Boosters returned on acceptance')).toBeNull();
       expect(within(dialog).queryByText('On decline: 10 returned')).toBeNull();
@@ -1650,26 +1648,32 @@ describe('App', () => {
   });
 
 
-  it('opens the connected mint and redeem flows in the correct direction', () => {
+  it('opens mint and redeem as separate titled dialogs without action tabs', () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    let dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    let dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
+    expect(within(dialog).getByRole('heading', { name: 'Mint USD8' })).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USDC amount')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8 output')).toBeInTheDocument();
     const mintSubmit = within(dialog).getByRole('button', { name: 'mint' });
     expect(mintSubmit).toBeEnabled();
+    expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Redeem USD8' })).not.toBeInTheDocument();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem USD8' }));
-    dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close mint USD8' }));
+    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
+    expect(within(dialog).getByRole('heading', { name: 'Redeem USD8' })).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8 amount')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USDC output')).toBeInTheDocument();
-    const close = within(dialog).getByRole('button', { name: 'Close mint and redeem' });
+    expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
+    const close = within(dialog).getByRole('button', { name: 'Close redeem USD8' });
     expect(close).toHaveTextContent('×');
     fireEvent.click(close);
-    expect(screen.queryByRole('dialog', { name: 'Mint or redeem USD8' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Redeem USD8' })).not.toBeInTheDocument();
   });
 
   it('defaults mint and redemption amounts to the full balance without balance links', async () => {
@@ -1685,13 +1689,14 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    let dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    let dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     expect(within(dialog).getByLabelText('USDC amount')).toHaveValue('10.123456');
     expect(within(dialog).queryByRole('button', { name: /Use full USDC balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('10.12 available')).toBeInTheDocument();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem USD8' }));
-    dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close mint USD8' }));
+    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     expect(within(dialog).getByLabelText('USD8 amount')).toHaveValue('25.987654321');
     expect(within(dialog).queryByRole('button', { name: /Use full USD8 balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('25.98 available')).toBeInTheDocument();
@@ -1704,7 +1709,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    let dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    let dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '10.0000001' } });
     let submit = within(dialog).getByRole('button', { name: 'mint' });
     expect(submit).toBeEnabled();
@@ -1714,8 +1719,9 @@ describe('App', () => {
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '10' } });
     expect(availabilityTooltip(submit)).toBeNull();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem USD8' }));
-    dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close mint USD8' }));
+    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '25.0000001' } });
     submit = within(dialog).getByRole('button', { name: 'redeem' });
     expect(submit).toBeEnabled();
@@ -1730,7 +1736,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     const amount = within(dialog).getByLabelText('USDC amount');
     fireEvent.change(amount, { target: { value: '0' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
@@ -1747,7 +1753,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
 
@@ -1766,14 +1772,14 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     const submit = within(dialog).getByRole('button', { name: 'mint' });
     fireEvent.click(submit);
 
     expect(availabilityTooltip(submit)).toHaveTextContent('You do not have any USDC available to mint USD8.');
   });
 
-  it('opens the connected wstEth pool actions in one three-tab transaction dialog', async () => {
+  it('opens each connected wstEth pool action in its own titled dialog', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
@@ -1791,13 +1797,11 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
 
-    let dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
-    expect(within(dialog).getByRole('button', { name: 'Deposit' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Withdraw earnings' })).toBeInTheDocument();
+    let dialog = screen.getByRole('dialog', { name: 'Deposit to wstEth Cover Pool' });
+    expect(within(dialog).getByRole('heading', { name: 'Deposit to wstEth Cover Pool' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
     expect(within(dialog).getByLabelText('wstETH amount')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('wstETH amount')).toHaveValue('3.258765');
     expect(within(dialog).getByText('wstETH')).toBeInTheDocument();
@@ -1806,8 +1810,9 @@ describe('App', () => {
     expect(within(dialog).queryByRole('button', { name: /Use full wstETH balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText(/3.25 available/)).toBeInTheDocument();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
-    dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close deposit to wstEth Cover Pool' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('2.198765');
     expect(within(dialog).getByText('Pool shares to redeem')).toBeInTheDocument();
@@ -1818,16 +1823,18 @@ describe('App', () => {
     expect(within(dialog).getByText(/2.19 shares available/).closest('small')).toHaveTextContent('2.19 shares available. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized. Learn More.');
     expect(within(dialog).getByRole('button', { name: 'start cooldown' })).toBeInTheDocument();
     expect(within(dialog).getByText('4.00 wstETH estimated for withdrawal, 12.00 wstETH in cooldown.')).toBeInTheDocument();
-    expect(within(dialog).getAllByRole('button', { name: 'Withdraw' })).toHaveLength(2);
+    expect(within(dialog).getAllByRole('button', { name: 'Withdraw' })).toHaveLength(1);
     expect(within(dialog).getByRole('link', { name: 'Learn More' })).toHaveAttribute(
       'href',
       './docs/cover-pools.html',
     );
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw earnings' }));
-    dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close withdraw from wstEth Cover Pool' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw earnings' }));
+    dialog = screen.getByRole('dialog', { name: 'Withdraw earnings from wstEth Cover Pool' });
     expect(within(dialog).getByText('7.50 USD8 available to withdraw')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'withdraw earnings' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
   });
 
   it('prevents depositing more wstETH than the wallet balance', async () => {
@@ -1840,9 +1847,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Deposit to wstEth Cover Pool' });
     fireEvent.change(within(dialog).getByLabelText('wstETH amount'), { target: { value: '3.258766' } });
     const submit = within(dialog).getByRole('button', { name: 'deposit' });
     expect(submit).toBeEnabled();
@@ -1862,9 +1868,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Deposit to wstEth Cover Pool' });
     const poolCapacity = within(dialog).getByText('76.99 wstETH left in pool limit');
     expect(poolCapacity).toHaveClass('usd8-dialog-pool-capacity');
     expect(poolCapacity.parentElement).toHaveClass('usd8-dialog-pool-availability');
@@ -1893,9 +1898,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
 
     expect(within(dialog).getByText(
       '4.00 wstETH estimated for withdrawal after claims are finalized, 0.00 wstETH in cooldown.',
@@ -1905,7 +1909,7 @@ describe('App', () => {
     expect(availabilityTooltip(startCooldown)).toHaveTextContent(
       'Please finish the existing withdrawal request before starting a new one.',
     );
-    const withdraw = within(dialog).getAllByRole('button', { name: 'Withdraw' })[1];
+    const withdraw = within(dialog).getByRole('button', { name: 'Withdraw' });
     fireEvent.click(withdraw);
     expect(availabilityTooltip(withdraw)).toHaveTextContent('Waiting for claims to finish');
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
@@ -1923,9 +1927,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Deposit to wstEth Cover Pool' });
     const submit = within(dialog).getByRole('button', { name: 'deposit' });
     fireEvent.click(submit);
 
@@ -1938,7 +1941,6 @@ describe('App', () => {
   it('labels the cover-pool return as trailing earnings APR and explains its calculation', () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
     expect(poolCard().getByText('30D Earnings APR')).toBeInTheDocument();
     // Tooltips portal to document.body, one per card.
@@ -1956,9 +1958,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '2.198766' } });
     const submit = within(dialog).getByRole('button', { name: 'start cooldown' });
     expect(submit).toBeEnabled();
@@ -1972,10 +1973,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw earnings' }));
 
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw earnings from wstEth Cover Pool' });
     const withdraw = within(dialog).getByRole('button', { name: 'withdraw earnings' });
     expect(withdraw).toBeEnabled();
     fireEvent.click(withdraw);
@@ -2010,13 +2010,11 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'File claim for usd8' });
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw earnings' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw earnings from wstEth Cover Pool' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'withdraw earnings' }));
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
-    fireEvent.click(screen.getByRole('button', { name: 'Defi Insurance' }));
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(within(table).getByRole('button', { name: 'File claim for usd8' })).toBeInTheDocument();
     expect(await screen.findByText(/Transaction confirmed/)).toBeInTheDocument();
@@ -2041,9 +2039,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Deposit to wstEth Cover Pool' });
     fireEvent.change(within(dialog).getByLabelText('wstETH amount'), { target: { value: '1.5' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'deposit' }));
 
@@ -2061,7 +2058,7 @@ describe('App', () => {
     }));
     const status = await within(dialog).findByRole('status', { name: 'Transaction status' });
     expect(status).toHaveTextContent('Deposit confirmed on Sepolia.');
-    expect(screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Deposit to wstEth Cover Pool' })).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
@@ -2080,9 +2077,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '2.1' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
 
@@ -2112,7 +2108,6 @@ describe('App', () => {
     mocks.writeContractAsync.mockResolvedValue('0x' + 'ab'.repeat(32));
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
     const dialog = screen.getByRole('dialog');
     const input = within(dialog).getByLabelText('USD8-cp-wstETH amount');
@@ -2139,9 +2134,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
     expect(within(dialog).queryByRole('button', { name: /Use full USD8-cp-wstETH balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('19');
     expect(within(dialog).getByText(/19.00 shares available/).closest('small')).toHaveTextContent('19.00 shares available');
@@ -2166,9 +2160,8 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '0' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
 
@@ -2203,10 +2196,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
-    const dialog = screen.getByRole('dialog', { name: 'Manage wstEth Cover Pool' });
-    fireEvent.click(within(dialog).getAllByRole('button', { name: 'Withdraw' })[1]);
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw from wstEth Cover Pool' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
@@ -2217,7 +2209,7 @@ describe('App', () => {
     const status = await within(dialog).findByRole('status', { name: 'Transaction status' });
     expect(status).toHaveTextContent('Withdrawal completed on Sepolia.');
     expect(status.previousElementSibling).toContainElement(
-      within(dialog).getAllByRole('button', { name: 'Withdraw' })[1],
+      within(dialog).getByRole('button', { name: 'Withdraw' }),
     );
   });
 
@@ -2232,7 +2224,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '1.5' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
 
@@ -2264,7 +2256,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
@@ -2295,7 +2287,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     const submit = within(dialog).getByRole('button', { name: 'redeem' });
@@ -2314,7 +2306,7 @@ describe('App', () => {
 
     confirmation.resolve({ status: 'success' });
     await waitFor(() => expect(status).toHaveTextContent('Redemption confirmed on Sepolia.'));
-    expect(screen.getByRole('dialog', { name: 'Mint or redeem USD8' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Redeem USD8' })).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
@@ -2327,7 +2319,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
@@ -2952,7 +2944,7 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = await screen.findByRole('dialog', { name: 'Mint USD8' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
 
     const status = await within(dialog).findByLabelText('Transaction status');
@@ -3055,7 +3047,7 @@ describe('App', () => {
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole('button', { name: 'mint' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '1' } });
     const submit = within(dialog).getByRole('button', { name: 'mint' });
     fireEvent.click(submit);
@@ -3078,7 +3070,7 @@ describe('App', () => {
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
+    const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
@@ -3098,8 +3090,8 @@ describe('App', () => {
     const opener = screen.getByRole('button', { name: 'mint' });
     opener.focus();
     fireEvent.click(opener);
-    const dialog = screen.getByRole('dialog', { name: 'Mint or redeem USD8' });
-    const first = within(dialog).getByRole('button', { name: 'Close mint and redeem' });
+    const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
+    const first = within(dialog).getByRole('button', { name: 'Close mint USD8' });
     expect(first).toHaveFocus();
     fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
     expect(within(dialog).getByRole('button', { name: 'mint' })).toHaveFocus();

@@ -11,24 +11,6 @@ import CoveredProtocolsTable from './CoveredProtocolsTable.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
 
-const PRODUCTS = {
-  insurance: 'Defi Insurance',
-  pools: 'Cover Pools',
-  whiteHat: 'White Hat Economy',
-};
-const ACTIVE_PRODUCT_STORAGE_KEY = 'usd8-active-product';
-
-function storedProduct() {
-  const route = window.location.hash.slice(1);
-  if (Object.hasOwn(PRODUCTS, route)) return route;
-  try {
-    const product = window.localStorage.getItem(ACTIVE_PRODUCT_STORAGE_KEY);
-    return Object.hasOwn(PRODUCTS, product) ? product : 'insurance';
-  } catch {
-    return 'insurance';
-  }
-}
-
 const DOCS_BASE_URL = './docs/';
 const docsUrl = (path = '') => `${DOCS_BASE_URL}${path}`;
 
@@ -108,23 +90,6 @@ function WalletButton({ wallet }) {
   );
 }
 
-function ProductTabs({ activeProduct, onChange }) {
-  return (
-    <nav className="landing-product-tabs" aria-label="USD8 products">
-      {Object.entries(PRODUCTS).map(([key, label]) => (
-        <button
-          key={key}
-          className={`landing-product-tab${activeProduct === key ? ' landing-product-tab--active' : ''}`}
-          type="button"
-          aria-current={activeProduct === key ? 'page' : undefined}
-          onClick={() => onChange(key)}
-        >
-          {label}
-        </button>
-      ))}
-    </nav>
-  );
-}
 
 function SiteFooter({ updatedAt }) {
   return (
@@ -226,7 +191,7 @@ function AssetCard({
   );
 }
 
-function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, incident, insuredTokenStates, onFileClaim, onUsd8Action, fileClaimUnavailableReason }) {
+function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreLoading = scoreStatus === 'loading';
   const liveScore = useLiveScore(score);
   const totalScore = liveScore?.grossEarnedScore;
@@ -244,7 +209,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
 
   return (
     <main className="landing-page free-insurance-page">
-      <h1 className="sr-only">Defi Insurance</h1>
+      <h1 className="landing-section-title">DeFi Insurance</h1>
       <section className="insurance-summary">
         <p>Earn free insurance score with USD8 or sUSD8.</p>
         <div>
@@ -333,6 +298,32 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           />
         </div>
       </section>
+
+      <section className="cover-pools-section" aria-labelledby="cover-pools-title">
+        <h2 className="landing-section-title" id="cover-pools-title">Cover Pool</h2>
+        <p className="cover-pool-warning">
+          Warning - Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
+          <a href={docsUrl('cover-pools.html')}>risk involved</a>.
+        </p>
+
+        {pools.map((pool) => (
+          <CoverPoolCard
+            key={pool.id}
+            pool={pool}
+            poolLoading={poolLoading}
+            walletUnavailableReason={walletUnavailableReason}
+            onPoolAction={onPoolAction}
+          />
+        ))}
+      </section>
+
+      <section className="white-hat-economy-section" aria-labelledby="white-hat-economy-title">
+        <h2 className="landing-section-title" id="white-hat-economy-title">White Hat Economy</h2>
+        <p className="white-hat-economy-message">
+          The White Hat Economy will launch in the future, once USD8 holds a meaningful amount of insured tokens acquired through the claims process.{' '}
+          <a href={docsUrl('white-hat-economy.html')}>Learn more</a>.
+        </p>
+      </section>
     </main>
   );
 }
@@ -416,42 +407,6 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
   );
 }
 
-function CoverPoolsPage({ wallet, pools = [], poolLoading = false, onPoolAction }) {
-  const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
-
-  return (
-    <main className="landing-page cover-pools-page">
-      <h1 className="sr-only">Cover Pools</h1>
-      <p className="cover-pool-warning">
-        Warning - Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
-        <a href={docsUrl('cover-pools.html')}>risk involved</a>.
-      </p>
-
-      {pools.map((pool) => (
-        <CoverPoolCard
-          key={pool.id}
-          pool={pool}
-          poolLoading={poolLoading}
-          walletUnavailableReason={walletUnavailableReason}
-          onPoolAction={onPoolAction}
-        />
-      ))}
-    </main>
-  );
-}
-
-function WhiteHatEconomyPage() {
-  return (
-    <main className="landing-page white-hat-economy-page">
-      <h1 className="sr-only">White Hat Economy</h1>
-      <p className="white-hat-economy-message">
-        The White Hat Economy will launch in the future, once USD8 holds a meaningful amount of insured tokens acquired through the claims process.{' '}
-        <a href={docsUrl('white-hat-economy.html')}>Learn more</a>.
-      </p>
-    </main>
-  );
-}
-
 export default function USD8Landing({
   wallet = {},
   score = null,
@@ -472,26 +427,9 @@ export default function USD8Landing({
   onPoolAction,
   onUsd8Action,
 }) {
-  const [activeProduct, setActiveProduct] = useState(storedProduct);
-
-  useEffect(() => {
-    if (!Object.hasOwn(PRODUCTS, window.location.hash.slice(1))) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${activeProduct}`);
-    try {
-      window.localStorage.setItem(ACTIVE_PRODUCT_STORAGE_KEY, activeProduct);
-    } catch {
-      // Storage may be unavailable in private or restricted browser contexts.
-    }
-  }, [activeProduct]);
-
-  useEffect(() => {
-    const change = () => setActiveProduct(storedProduct());
-    window.addEventListener('hashchange', change);
-    return () => window.removeEventListener('hashchange', change);
-  }, []);
-
   return (
     <WalletNoticeProvider wallet={wallet}>
-    <div className={`landing-shell landing-shell--${activeProduct}`}>
+    <div className="landing-shell">
       <header className="landing-header">
         <div className="landing-brand-group">
           <a className="landing-brand" href="./" aria-label="USD8 home">
@@ -504,32 +442,27 @@ export default function USD8Landing({
         {wallet.networkUnavailableReason && wallet.onSwitchNetwork ? <button type="button" className="landing-wallet-button" onClick={wallet.onSwitchNetwork}>Switch to Sepolia</button> : null}
       </header>
 
-      <ProductTabs activeProduct={activeProduct} onChange={product => { window.location.hash = product; setActiveProduct(product); }} />
-
       {dataError ? (
         <NoticeMessage message={dataError} actionLabel={onRetry ? "Retry data" : undefined} onAction={onRetry} />
       ) : null}
 
-      {activeProduct === 'insurance' ? (
-        <FreeInsurancePage
-          wallet={wallet}
-          score={score}
-          scoreStatus={scoreStatus}
-          availableScoreLoading={availableScoreLoading}
-          balances={balances}
-          balancesLoading={balancesLoading}
-          savingsVault={savingsVault}
-          incident={incident}
-          insuredTokenStates={insuredTokenStates}
-          onFileClaim={onFileClaim}
-          fileClaimUnavailableReason={fileClaimUnavailableReason}
-          onUsd8Action={onUsd8Action}
-        />
-      ) : activeProduct === 'pools' ? (
-        <CoverPoolsPage wallet={wallet} pools={pools} poolLoading={poolLoading} onPoolAction={onPoolAction} />
-      ) : (
-        <WhiteHatEconomyPage />
-      )}
+      <FreeInsurancePage
+        wallet={wallet}
+        score={score}
+        scoreStatus={scoreStatus}
+        availableScoreLoading={availableScoreLoading}
+        balances={balances}
+        balancesLoading={balancesLoading}
+        savingsVault={savingsVault}
+        pools={pools}
+        poolLoading={poolLoading}
+        incident={incident}
+        insuredTokenStates={insuredTokenStates}
+        onFileClaim={onFileClaim}
+        fileClaimUnavailableReason={fileClaimUnavailableReason}
+        onPoolAction={onPoolAction}
+        onUsd8Action={onUsd8Action}
+      />
 
       <SiteFooter updatedAt={updatedAt} />
     </div>

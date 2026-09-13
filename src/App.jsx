@@ -308,13 +308,10 @@ function isWaitingStatus(message) {
     || WAITING_STATUS_PREFIXES.some((prefix) => message.startsWith(prefix));
 }
 
-function TransactionStatus({ message, failed = false, busy = false }) {
-  if (!message) return null;
-  return <NoticeMessage message={message} tone={failed ? 'error' : 'status'} busy={busy && !failed} label="Transaction status" />;
-}
-
-function Usd8ActionDialog({ busy = false, quoteRate, mode, usdcBalance, usd8Balance, statusMessage, statusFailed = false, onInputChange, onModeChange, onClose, onSubmit, submitUnavailableReason = '' }) {
+function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, onInputChange, onClose, onSubmit, submitUnavailableReason = '' }) {
   const minting = mode === 'mint';
+  const dialogTitle = minting ? 'Mint USD8' : 'Redeem USD8';
+  const closeLabel = minting ? 'Close mint USD8' : 'Close redeem USD8';
   const inputToken = minting ? 'USDC' : 'USD8';
   const outputToken = minting ? 'USD8' : 'USDC';
   const availableBalance = minting ? usdcBalance : usd8Balance;
@@ -323,34 +320,15 @@ function Usd8ActionDialog({ busy = false, quoteRate, mode, usdcBalance, usd8Bala
     || tokenAmountValidationReason(amount, availableBalance, inputToken, minting ? 'mint USD8' : 'redeem USD8')
     || (!minting && redemptionQuote(amount, quoteRate) === null ? 'Waiting for a valid redemption quote.' : '');
 
-  useEffect(() => {
-    setAmount(defaultTokenAmount(availableBalance));
-  }, [mode]);
-
   const dialogRef = useDialogFocus(onClose);
 
   return (
     <div className="usd8-dialog-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className="usd8-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Mint or redeem USD8">
-        <DialogCloseButton label="Close mint and redeem" onClose={onClose} />
-        <nav className="usd8-dialog-tabs" aria-label="USD8 action">
-          <button
-            className={minting ? 'usd8-dialog-tab usd8-dialog-tab--active' : 'usd8-dialog-tab'}
-            type="button"
-            onClick={() => onModeChange('mint')}
-          >
-            Mint USD8
-          </button>
-          <button
-            className={!minting ? 'usd8-dialog-tab usd8-dialog-tab--active' : 'usd8-dialog-tab'}
-            type="button"
-            onClick={() => onModeChange('redeem')}
-          >
-            Redeem USD8
-          </button>
-        </nav>
+      <section className="usd8-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={dialogTitle}>
+        <DialogCloseButton label={closeLabel} onClose={onClose} />
+        <h2 className="usd8-dialog-title">{dialogTitle}</h2>
 
         <form className="usd8-dialog-form" onSubmit={(event) => {
           event.preventDefault();
@@ -391,7 +369,6 @@ function Usd8ActionDialog({ busy = false, quoteRate, mode, usdcBalance, usd8Bala
             >
               {mode}
             </AvailabilityAction>
-            <TransactionStatus message={statusMessage} failed={statusFailed} busy={busy} />
           </div>
         </form>
       </section>
@@ -400,7 +377,6 @@ function Usd8ActionDialog({ busy = false, quoteRate, mode, usdcBalance, usd8Bala
 }
 
 export function PoolActionDialog({
-  busy = false,
   mode,
   poolName = 'cover pool',
   assetSymbol = '',
@@ -422,11 +398,7 @@ export function PoolActionDialog({
   cooldownEndsAtMilliseconds,
   earnings,
   hasEarnings,
-  statusMessage,
-  statusFailed = false,
-  statusAction,
   onInputChange,
-  onModeChange,
   onClose,
   onSubmit,
   submitUnavailableReason = '',
@@ -434,6 +406,8 @@ export function PoolActionDialog({
   const withdrawingEarnings = mode === 'claimReward';
   const depositing = mode === 'deposit';
   const withdrawing = mode === 'withdraw';
+  const dialogTitle = `${depositing ? 'Deposit to' : withdrawing ? 'Withdraw from' : 'Withdraw earnings from'} ${poolName}`;
+  const closeLabel = `Close ${depositing ? 'deposit to' : withdrawing ? 'withdraw from' : 'withdraw earnings from'} ${poolName}`;
   const inputToken = depositing ? assetSymbol : shareSymbol;
   const available = depositing ? coverAssetBalance : availableForCooldown ?? poolShareBalance;
 
@@ -494,12 +468,8 @@ export function PoolActionDialog({
     || (withdrawing && estimatedAssets === null ? 'Waiting for a valid withdrawal estimate.' : '');
 
   useEffect(() => {
-    amountEdited.current = false;
-  }, [mode]);
-
-  useEffect(() => {
     if (!amountEdited.current) setAmount(defaultTokenAmount(available));
-  }, [available, mode]);
+  }, [available]);
 
   useEffect(() => {
     if (!cooldownTiming || cooldownTiming === 'ready now') return undefined;
@@ -513,31 +483,9 @@ export function PoolActionDialog({
     <div className="usd8-dialog-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className="usd8-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Manage ${poolName}`}>
-        <DialogCloseButton label="Close cover pool actions" onClose={onClose} />
-        <nav className="usd8-dialog-tabs usd8-dialog-tabs--pool" aria-label={`${poolName} action`}>
-          <button
-            className={mode === 'deposit' ? 'usd8-dialog-tab usd8-dialog-tab--active' : 'usd8-dialog-tab'}
-            type="button"
-            onClick={() => onModeChange('deposit')}
-          >
-            Deposit
-          </button>
-          <button
-            className={mode === 'withdraw' ? 'usd8-dialog-tab usd8-dialog-tab--active' : 'usd8-dialog-tab'}
-            type="button"
-            onClick={() => onModeChange('withdraw')}
-          >
-            Withdraw
-          </button>
-          <button
-            className={withdrawingEarnings ? 'usd8-dialog-tab usd8-dialog-tab--active' : 'usd8-dialog-tab'}
-            type="button"
-            onClick={() => onModeChange('claimReward')}
-          >
-            Withdraw earnings
-          </button>
-        </nav>
+      <section className="usd8-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={dialogTitle}>
+        <DialogCloseButton label={closeLabel} onClose={onClose} />
+        <h2 className="usd8-dialog-title">{dialogTitle}</h2>
 
         <form className="usd8-dialog-form" onSubmit={(event) => {
           event.preventDefault();
@@ -610,7 +558,6 @@ export function PoolActionDialog({
                 >
                   start cooldown
                 </AvailabilityAction>
-                {statusAction === 'startCooldown' ? <TransactionStatus message={statusMessage} failed={statusFailed} busy={busy} /> : null}
                 <small className="usd8-dialog-withdraw-balances">
                   {displayAvailableBalance(displayedWithdrawAvailable)} {assetSymbol} {exitSettled ? 'ready to withdraw' : 'estimated for withdrawal'}{cooldownCompleteWaitingForClaims ? ' after claims are finalized' : ''}, {' '}
                   {displayAvailableBalance(displayedCooldownBalance)} {assetSymbol} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
@@ -625,7 +572,6 @@ export function PoolActionDialog({
                 >
                   Withdraw
                 </AvailabilityAction>
-                {statusAction === 'withdraw' ? <TransactionStatus message={statusMessage} failed={statusFailed} busy={busy} /> : null}
               </>
             ) : (
               <AvailabilityAction
@@ -637,7 +583,6 @@ export function PoolActionDialog({
                 {withdrawingEarnings ? 'withdraw earnings' : mode}
               </AvailabilityAction>
             )}
-            {!withdrawing ? <TransactionStatus message={statusMessage} failed={statusFailed} busy={busy} /> : null}
           </div>
         </form>
       </section>
@@ -690,7 +635,6 @@ export default function App({ autoConnect = false }) {
   const [poolActionId, setPoolActionId] = useState('');
   const [poolStatus, setPoolStatusState] = useState('');
   const [poolStatusFailed, setPoolStatusFailedState] = useState(false);
-  const [poolStatusAction, setPoolStatusAction] = useState('');
   const [claimSelection, setClaimToken] = useState(null);
   const claimToken = claimSelection?.walletScopeKey === walletScopeKey
     ? claimSelection.token
@@ -743,7 +687,6 @@ export default function App({ autoConnect = false }) {
     setUsd8Status('');
     setPoolAction(null);
     setPoolStatus('');
-    setPoolStatusAction('');
   }, [walletScopeKey]);
 
   useEffect(() => {
@@ -1177,7 +1120,6 @@ export default function App({ autoConnect = false }) {
     if (!connected || !protocolNetwork) return;
     setPoolStatus('');
     setPoolStatusFailed(false);
-    setPoolStatusAction('');
     setPoolActionId(poolId);
     setPoolAction(action);
   }
@@ -1186,7 +1128,6 @@ export default function App({ autoConnect = false }) {
     try {
       setPoolStatus('');
       setPoolStatusFailed(false);
-      setPoolStatusAction(action);
       if (action === 'deposit') await depositToPool(raw);
       else if (action === 'startCooldown') await startPoolCooldown(raw);
       else if (action === 'withdraw') await completePoolWithdrawal();
@@ -1916,15 +1857,12 @@ export default function App({ autoConnect = false }) {
       ) : null}
       {connected && usd8Action ? (
         <Usd8ActionDialog
-          busy={operationBusy && transaction?.phase !== 'confirmed'}
           quoteRate={quoteRate}
           mode={usd8Action}
           usdcBalance={chainData.balances.usdc}
           usd8Balance={chainData.balances.usd8}
-          statusMessage=""
-          statusFailed={usd8StatusFailed}
           onInputChange={() => setUsd8Status('')}
-          onModeChange={openUsd8Action}
+
           onClose={() => {
             setUsd8Status('');
             setUsd8Action(null);
@@ -1935,7 +1873,6 @@ export default function App({ autoConnect = false }) {
       ) : null}
       {connected && poolAction ? (
         <PoolActionDialog
-          busy={operationBusy && transaction?.phase !== 'confirmed'}
           mode={poolAction}
           poolName={activePool?.name || 'cover pool'}
           assetSymbol={activePool?.assetSymbol || ''}
@@ -1957,21 +1894,10 @@ export default function App({ autoConnect = false }) {
           cooldownEndsAtMilliseconds={activePool?.cooldownEndsAtMilliseconds}
           earnings={livePoolAction.earnings}
           hasEarnings={livePoolAction.hasEarnings}
-          statusMessage=""
-          statusFailed={poolStatusFailed}
-          statusAction={poolStatusAction}
-          onInputChange={() => {
-            setPoolStatus('');
-            setPoolStatusAction('');
-          }}
-          onModeChange={(action) => {
-            setPoolStatus('');
-            setPoolStatusAction('');
-            setPoolAction(action);
-          }}
+          onInputChange={() => setPoolStatus('')}
+
           onClose={() => {
             setPoolStatus('');
-            setPoolStatusAction('');
             setPoolAction(null);
           }}
           onSubmit={(...args) => runOperation(() => submitPoolAction(...args))}

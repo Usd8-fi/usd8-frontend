@@ -7,25 +7,20 @@ import AvailabilityAction from './AvailabilityAction.jsx';
 const appStyles = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
 describe('AvailabilityAction', () => {
-  it('sizes every small note identically', () => {
-    // One shared rule; no per-class font-size copies to drift apart.
-    const [, selectors, body] = appStyles.match(/Every small note[^*]*\*\/\s*([^{]+)\{([^}]*)\}/);
-    expect(body).toContain('font-size: 13px');
+  it('sizes muted dialog descriptions like the data-freshness caption', () => {
+    const [, selectors, body] = appStyles.match(/Muted dialog descriptions[^*]*\*\/\s*([^{]+)\{([^}]*)\}/);
+    expect(body).toContain('font-size: var(--font-small)');
     [
       '.usd8-dialog-amount small',
       '.usd8-dialog-output small',
       '.usd8-dialog-withdraw-balances',
       '.file-claim-field small',
-      '.file-claim-requirement',
       '.file-claim-weight',
-      '.usd8-dialog-status',
-      '.action-validation-warning',
-      '.covered-protocols-warning',
       '.claim-status-metrics small',
       '.claim-status-step small',
     ].forEach((selector) => expect(selectors).toContain(selector));
-    // Declared once, so the sizes cannot drift apart.
-    expect(appStyles.match(/font-size: 13px;/g)).toHaveLength(1);
+    expect(appStyles).toContain('--font-small: 12px;');
+    expect(appStyles).toMatch(/\.landing-data-freshness \{[^}]*font-size: var\(--font-small\)/);
   });
   it('keeps blocked actions clickable and shows the reason in the shared bottom toast after click', () => {
     const onClick = vi.fn();
@@ -77,7 +72,7 @@ describe('AvailabilityAction', () => {
     expect(appStyles).toMatch(/\.usd8-dialog-submit \{[^}]*flex: 0 0 auto;[^}]*white-space: nowrap;/);
     // Messages always claim a full line, so placement never depends on text length.
     expect(appStyles).toMatch(
-      /\.action-validation-warning,\s*\.usd8-dialog-status,\s*\.file-claim-weight \{[^}]*flex-basis: 100%;/,
+      /\.action-validation-warning,\s*\.file-claim-weight \{[^}]*flex-basis: 100%;/,
     );
     expect(appStyles).toMatch(/\.action-button-shell \{[^}]*flex-wrap: wrap;/);
     expect(appStyles).toMatch(/\.usd8-dialog-submit-row \{[^}]*flex-wrap: wrap;/);

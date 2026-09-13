@@ -220,9 +220,9 @@ export default function FileClaimDialog({
                     <MetricValue
                       loading={payoutLoading}
                       value={liveClaimStatus.boostersToBurn}
-                      label="Loading usable boosters"
+                      label="Loading boosters taken into account"
                     />
-                    {payoutLoading ? null : ' can be used'}
+                    {payoutLoading ? null : ' taken into account'}
                   </small>
                 ) : null}
               </div>

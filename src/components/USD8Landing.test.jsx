@@ -114,34 +114,18 @@ describe('USD8 landing navigation', () => {
     ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('defaults to Defi Insurance and exposes all three product tabs', () => {
+  it('combines DeFi insurance and the cover pool on one page without product navigation', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    const nav = screen.getByRole('navigation', { name: 'USD8 products' });
-    const tabs = within(nav).getAllByRole('button');
-    expect(tabs).toHaveLength(3);
-    expect(tabs[0]).toHaveTextContent('Defi Insurance');
-    expect(tabs[0]).toHaveAttribute('aria-current', 'page');
-    expect(tabs[1]).toHaveTextContent('Cover Pools');
-    expect(tabs[2]).toHaveTextContent('White Hat Economy');
-    expect(screen.getByRole('heading', { name: 'Defi Insurance' })).toBeInTheDocument();
-  });
-
-  it('shows the future White Hat Economy message', () => {
-    render(<USD8Landing wallet={wallet} pools={POOLS} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'White Hat Economy' }));
-
-    expect(screen.getByRole('heading', { name: 'White Hat Economy' })).toBeInTheDocument();
-    const learnMoreLink = screen.getByRole('link', { name: 'Learn more' });
-    expect(learnMoreLink.parentElement).toHaveTextContent(
-      'The White Hat Economy will launch in the future, once USD8 holds a meaningful amount of insured tokens acquired through the claims process. Learn more.',
-    );
-    expect(learnMoreLink).toHaveAttribute(
-      'href',
-      './docs/white-hat-economy.html',
-    );
-    expect(screen.getByRole('button', { name: 'White Hat Economy' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('navigation', { name: 'USD8 products' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'DeFi Insurance', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Earn free insurance score with USD8 or sUSD8.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'File claim with your insurance score' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cover Pool', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'wstEth Cover Pool' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'White Hat Economy', level: 2 })).toBeInTheDocument();
+    expect(screen.getByText(/will launch in the future/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Learn more' })).toHaveAttribute('href', './docs/white-hat-economy.html');
   });
 
   it('advances cover-pool earnings locally until the reward period ends', () => {
@@ -166,7 +150,6 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     const earnings = screen.getByText('Your Earnings').nextElementSibling;
     expect(earnings).toHaveTextContent('1.0 USD8');
 
@@ -178,31 +161,27 @@ describe('USD8 landing navigation', () => {
     expect(earnings).toHaveTextContent('1.4 USD8');
   });
 
-  it('switches to the cover-pool design without navigating away', () => {
+  it('renders the cover-pool design directly below insurance', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
-
-    expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cover Pool' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'risk involved' })).toHaveAttribute('href', './docs/cover-pools.html');
     expect(screen.getByText('wstEth Cover Pool')).toBeInTheDocument();
   });
 
-  it('restores the selected product after a refresh', () => {
+  it('keeps the combined page after a remount without persisting a product tab', () => {
     const { unmount } = render(<USD8Landing wallet={wallet} pools={POOLS} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
-    expect(window.localStorage.getItem('usd8-active-product')).toBe('pools');
+    expect(window.localStorage.getItem('usd8-active-product')).toBeNull();
 
     unmount();
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Cover Pools' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('heading', { name: 'DeFi Insurance' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cover Pool' })).toBeInTheDocument();
   });
 
   it('uses the wstETH artwork on the cover-pool card', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
     expect(poolCard.querySelector('img')).toHaveAttribute('src', coverWsteth);
@@ -210,7 +189,6 @@ describe('USD8 landing navigation', () => {
 
   it('uses the wide cover-pool layout with capacity beside the headline metrics', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
     const overview = poolCard.querySelector('.cover-pool-overview');
@@ -247,7 +225,6 @@ describe('USD8 landing navigation', () => {
     expect(onUsd8Action).not.toHaveBeenCalled();
     expect(onFileClaim).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     expect(screen.queryByRole('button', { name: 'start cooldown' })).not.toBeInTheDocument();
     for (const action of ['deposit', 'withdraw', 'withdraw earnings']) {
       const button = screen.getByRole('button', { name: action });
@@ -420,7 +397,6 @@ describe('USD8 landing navigation', () => {
     expect(screen.getAllByRole('tooltip', { name: /subject to the amount available in the cover pools/i })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cover Pools' }));
     expect(screen.getByRole('button', { name: 'About 30-day earnings APR for wstEth Cover Pool' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
       name: 'USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.',

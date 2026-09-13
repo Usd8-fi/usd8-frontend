@@ -29,7 +29,7 @@ describe('shared text-link styling', () => {
   text-decoration: underline;
   text-underline-offset: 3px;
 }`);
-    expect(sharedStyles).toMatch(/\.landing-product-tab[\s\S]*?\.content main a:link,[\s\S]*?\.sidebar \.chapter a\.active/);
+    expect(sharedStyles).toMatch(/\.landing-footer-links \.site-nav-link[\s\S]*?\.content main a:link,[\s\S]*?\.sidebar \.chapter a\.active/);
     expect(sharedStyles).toContain(`.content main a:link,
 .content main a:visited {
   color: var(--link);
@@ -45,45 +45,15 @@ describe('shared text-link styling', () => {
 .content .header.faq-question:focus-visible::before {
   color: var(--link-inverse);
 }`);
-    expect(sharedStyles).toContain(`.usd8-dialog-tab {
-  color: var(--navigation-inactive);
-  text-decoration: none;
-}`);
-    expect(sharedStyles).toContain(`.usd8-dialog-tab:hover,
-.usd8-dialog-tab:focus-visible {
-  background: transparent;
-  color: var(--link);
-  text-decoration: none;
-}`);
-    expect(sharedStyles).toContain(`.usd8-dialog-tab--active,
-.usd8-dialog-tab--active:hover,
-.usd8-dialog-tab--active:focus-visible {
-  background: transparent;
-  color: var(--link);
-  text-decoration: none;
-}`);
+    expect(`${appStyles}\n${sharedStyles}`).not.toContain('.usd8-dialog-tab');
+    expect(appStyles).not.toMatch(/\.(?:sr-only|landing-data-error|usd8-transaction-banner|usd8-dialog-status--warning|cover-pools-page|white-hat-economy-page)\b/);
+    expect(appStyles).not.toMatch(/--(?:font-navigation|pool-panel):/);
     expect(sharedStyles).not.toContain('border-bottom-color: var(--accent);');
     expect(appStyles).toMatch(/\.usd8-dialog \{[\s\S]*?min-height: 0;[\s\S]*?padding: 34px 42px 76px;/);
-    expect(appStyles).toContain(`.usd8-dialog-tabs {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 64px;
-}`);
-    expect(appStyles).toContain(`.usd8-dialog-tab {
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  line-height: 1.6;
-  cursor: pointer;
-}`);
+
     expect(appStyles).toMatch(/\.usd8-dialog-form \{\s+margin-top: 72px;/);
     expect(appStyles).toMatch(/\.usd8-dialog-submit-row--withdraw \{[\s\S]*?margin-top: 72px;/);
-    expect(sharedStyles).toContain(`.landing-product-tab,
-.landing-footer-links .site-nav-link,
+    expect(sharedStyles).toContain(`.landing-footer-links .site-nav-link,
 .sidebar .chapter a {
   color: var(--navigation-inactive);
   text-decoration: none;
@@ -92,16 +62,7 @@ describe('shared text-link styling', () => {
 .sidebar .chapter a {
   background: transparent;
 }`);
-    expect(sharedStyles).toContain(`.landing-product-tab--active,
-.landing-product-tab--active:hover,
-.landing-product-tab--active:focus-visible {
-  background: var(--background);
-  color: var(--link);
-  text-decoration: none;
-}`);
-    expect(sharedStyles).toContain(`.landing-product-tab:hover,
-.landing-product-tab:focus-visible,
-.landing-footer-links .site-nav-link:hover,
+    expect(sharedStyles).toContain(`.landing-footer-links .site-nav-link:hover,
 .landing-footer-links .site-nav-link:focus-visible,
 .sidebar .chapter a:hover,
 .sidebar .chapter a:focus-visible {
@@ -118,16 +79,21 @@ describe('shared text-link styling', () => {
     expect(sharedStyles).toContain(`:not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):focus-visible`);
     expect(sharedStyles).toMatch(/a:not\([\s\S]*?\.content main a:hover,[\s\S]*?\{\s+background: var\(--link\);\s+color: var\(--link-inverse\);\s+text-decoration: none;\s+\}/);
     expect(sharedStyles.match(/background: var\(--link\);/g)).toHaveLength(1);
-    expect(appStyles).toContain(`.landing-product-tab {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 auto;
-  width: auto;
-  min-height: 67px;
-  padding: 0 28px;
-  border: 0;
-  background: #171717;`);
-    expect(appStyles).toMatch(/\.landing-product-tabs \{[\s\S]*?margin: 65px 0 0;/);
+    expect(`${appStyles}\n${sharedStyles}`).not.toContain('.landing-product-tab');
+    expect(`${appStyles}\n${sharedStyles}`).not.toContain('.landing-product-tabs');
+    expect(appStyles).toContain('--font-body: 14px;');
+    expect(appStyles).toContain('--font-small: 12px;');
+    expect(appStyles).toContain('--font-large: 32px;');
+    expect(appStyles).not.toMatch(/font-size: (?:24|28)px;/);
+    expect(appStyles).toMatch(/\.usd8-dialog-title \{[\s\S]*?margin: 0;[\s\S]*?font-size: var\(--font-large\);[\s\S]*?font-weight: 200;/);
+    expect(appStyles).toMatch(/\.usd8-dialog-amount small,[\s\S]*?\.claim-status-step small \{[\s\S]*?font-size: var\(--font-small\);/);
+    expect(appStyles).toMatch(/\.landing-section-title \{[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);
+    expect(appStyles).toMatch(/\.cover-pool-warning,\s+\.white-hat-economy-message \{\s+width: 100%;/);
+    expect(appStyles).toMatch(/\.landing-header::before \{[\s\S]*?width: 100vw;[\s\S]*?height: 159px;[\s\S]*?background: #1d1d1d;/);
+    expect(appStyles).toMatch(/\.insurance-assets \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+    expect(appStyles).toMatch(/\.cover-pool-card \{[\s\S]*?width: 100%;/);
+    expect(appStyles).toMatch(/\.free-insurance-page > \.landing-section-title:first-child \{[\s\S]*?margin-top: 172px;/);
+    expect(appStyles).toMatch(/\.cover-pool-actions > \.action-button-shell:nth-child\(3\) \{[\s\S]*?width: 220px;/);
     expect(`${appStyles}\n${docsStyles}`).not.toMatch(/#(?:dc9900|cd9d34|b8892c|f2c158|d2a137|eab308)/i);
     expect(appStyles).toMatch(/\.landing-wallet-button,[\s\S]*?background: var\(--button\);\s+color: var\(--link-inverse\);/);
     expect(appStyles).toMatch(/\.usd8-dialog-submit \{[\s\S]*?background: var\(--accent\);\s+color: var\(--link-inverse\);/);

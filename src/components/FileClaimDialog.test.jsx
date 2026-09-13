@@ -398,7 +398,7 @@ describe('FileClaimDialog', () => {
     expect(appStyles).toMatch(/\.file-claim-status \{[\s\S]*?margin-top: 76px;/);
     expect(appStyles).toMatch(/\.claim-status-metrics \{[\s\S]*?grid-template-columns: 320px 180px;[\s\S]*?column-gap: 48px;[\s\S]*?row-gap: 72px;/);
     expect(appStyles).toMatch(/\.claim-status-metrics div \{[\s\S]*?gap: 18px;/);
-    expect(appStyles).toMatch(/\.claim-status-metrics strong \{[\s\S]*?font: inherit;[\s\S]*?font-size: 28px;/);
+    expect(appStyles).toMatch(/\.claim-status-metrics strong \{[\s\S]*?font: inherit;[\s\S]*?font-size: var\(--font-large\);/);
     expect(appStyles).toMatch(/\.claim-status-step strong \{[\s\S]*?font: inherit;/);
     expect(appStyles).toMatch(/\.claim-status-step-bar \{[\s\S]*?height: 3px;/);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close claim status' }));
@@ -513,6 +513,29 @@ describe('FileClaimDialog', () => {
     if (state !== 'payout-open') {
       expect(screen.queryByRole('button', { name: 'Accept Payout' })).toBeNull();
     }
+  });
+
+  it('describes eligible escrowed boosters as taken into account', () => {
+    render(<FileClaimDialog
+      token="test-msloss"
+      insuredTokens={[{ id: 'test-msloss', symbol: 'msLOSS', balance: '400' }]}
+      availableScore="1"
+      claimStatus={{
+        id: '42', insuredTokenAmount: '200', bondAmount: '10', scoreToSpend: '2000',
+        scoreCommitmentPercentage: '31.7%', boosterAmount: '5', boostersToBurn: '5',
+        payoutUsd: '$6,401.87', payoutVsLoss: '2.3%', payoutDetails: [],
+        incident: {
+          phaseDeadlineMilliseconds: Date.now() - 1_000,
+          phaseWindowMilliseconds: 86_400_000,
+          root: `0x${'11'.repeat(32)}`,
+        },
+      }}
+      onClose={vi.fn()}
+    />);
+
+    const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
+    expect(within(dialog).getByText('5 taken into account')).toBeInTheDocument();
+    expect(within(dialog).queryByText('5 can be used')).toBeNull();
   });
 
   it('renders finished stages as complete with no time remaining', () => {
