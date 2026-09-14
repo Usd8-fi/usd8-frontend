@@ -414,9 +414,9 @@ describe('USD8 landing navigation', () => {
     expect(screen.getAllByRole('tooltip', { name: /subject to the amount available in the cover pools/i })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
-    expect(screen.getByRole('button', { name: 'About 30-day earnings APR for wstEth Cover Pool' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About 30-day APY for wstEth Cover Pool' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
-      name: 'USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.',
+      name: 'USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.',
     })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About your earnings in wstEth Cover Pool' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {

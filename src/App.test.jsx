@@ -1948,13 +1948,13 @@ describe('App', () => {
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 
-  it('labels the cover-pool return as trailing earnings APR and explains its calculation', () => {
+  it('labels the cover-pool return as 30D APY and explains its calculation', () => {
     render(<App />);
 
 
-    expect(poolCard().getByText('30D Earnings APR')).toBeInTheDocument();
+    expect(poolCard().getByText('30D APY')).toBeInTheDocument();
     // Tooltips portal to document.body, one per card.
-    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.')).toHaveLength(2);
+    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.')).toHaveLength(2);
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {

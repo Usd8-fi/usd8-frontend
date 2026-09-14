@@ -352,9 +352,9 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
         <div className="cover-pool-metrics">
           <div>
             <span className="metric-label-with-help">
-              30D Earnings APR
-              <InfoTooltip ariaLabel={`About 30-day earnings APR for ${pool.name}`}>
-                USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.
+              30D APY
+              <InfoTooltip ariaLabel={`About 30-day APY for ${pool.name}`}>
+                USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.
               </InfoTooltip>
             </span>
             <strong><MetricValue loading={poolLoading} value={livePool.apy} label="Loading pool data" /></strong>
