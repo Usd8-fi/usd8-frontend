@@ -679,7 +679,7 @@ small a,
   background: #c39a32;
 }
 
-.cover-pool-card--yellow :is(header h2, strong) {
+.cover-pool-card.cover-pool-card--yellow :is(header h2, strong) {
   color: #000;
 }
 
