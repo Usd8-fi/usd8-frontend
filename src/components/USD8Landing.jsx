@@ -105,8 +105,6 @@ function SiteFooter({ updatedAt }) {
           <a className="site-nav-link" href="https://x.com/usd8_fi" target="_blank" rel="noreferrer">X.com</a>
         </div>
         <div>
-          <a className="site-nav-link" href={docsUrl('defi-insurance.html')}>DeFi Insurance</a>
-          <a className="site-nav-link" href={docsUrl('cover-pools.html')}>Cover Pools</a>
           <span className="landing-footer-unlinked">Audit Report</span>
           <a className="site-nav-link" href={docsUrl('faqs.html')}>FAQs</a>
         </div>
@@ -271,7 +269,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
 
       <section className="insurance-token-section">
         <div className="insurance-claim-summary">
-          <h2>File claim with your insurance score</h2>
+          <p>File claim with your insurance score.</p>
           <div>
             <span className="metric-label-with-help">
               Available Score
@@ -300,9 +298,9 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
       </section>
 
       <section className="cover-pools-section" aria-labelledby="cover-pools-title">
-        <h2 className="landing-section-title" id="cover-pools-title">Cover Pool</h2>
+        <h2 className="landing-section-title" id="cover-pools-title">Cover Pools</h2>
         <p className="cover-pool-warning">
-          Warning - Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
+          Be aware: Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
           <a href={docsUrl('cover-pools.html')}>risk involved</a>.
         </p>
 
@@ -320,7 +318,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
       <section className="white-hat-economy-section" aria-labelledby="white-hat-economy-title">
         <h2 className="landing-section-title" id="white-hat-economy-title">White Hat Economy</h2>
         <p className="white-hat-economy-message">
-          The White Hat Economy will launch in the future, once USD8 holds a meaningful amount of insured tokens acquired through the claims process.{' '}
+          The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process.{' '}
           <a href={docsUrl('white-hat-economy.html')}>Learn more</a>.
         </p>
       </section>

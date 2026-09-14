@@ -102,7 +102,8 @@ describe('shared text-link styling', () => {
     expect(appStyles).toMatch(/\.cover-pool-card \{\s+--pool-background: #3674b0;\s+--pool-button-background: color-mix\(in srgb, var\(--pool-background\) 65%, black\);\s+--pool-button-hover: color-mix\(in srgb, var\(--pool-background\) 52%, black\);/);
     expect(appStyles).toMatch(/\.cover-pool-overview \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 220px;[\s\S]*?gap: 64px;/);
     expect(appStyles).toMatch(/\.cover-pool-capacity-metric \{[\s\S]*?width: 220px;/);
-    expect(appStyles).toMatch(/\.cover-pool-account \{[\s\S]*?grid-template-columns: 300px minmax\(0, 1fr\);[\s\S]*?gap: 40px;/);
+    expect(appStyles).toMatch(/\.cover-pool-metrics,[\s\S]*?\.cover-pool-account \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*?gap: 56px;/);
+    expect(appStyles).toMatch(/\.cover-pool-account \{[\s\S]*?width: calc\(100% - 284px\);/);
     expect(appStyles).toMatch(/\.insurance-summary strong,[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);
     expect(appStyles).toMatch(/\.usd8-dialog-amount input \{[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);
     expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?background: var\(--pool-button-background\);\s+color: var\(--text\);/);

@@ -124,7 +124,7 @@ export default function FileClaimDialog({
     || Boolean(lifecycle && lifecycle.state !== 'claim-open' && lifecycle.state !== 'unavailable');
   const statusTitle = activeClaim
     ? 'Your Claim Status'
-    : showStatus ? 'Incident Status' : `File a Claim for ${selectedToken.symbol}`;
+    : showStatus ? 'Incident Status' : 'File A Claim';
   const holdingRequirement = minHoldingRequiredBlocks
     ? `${BigInt(minHoldingRequiredBlocks).toLocaleString('en-US')} blocks before the incident.`
     : 'the configured pre-incident window. Holding window unavailable; refresh before filing.';

@@ -261,7 +261,7 @@ a:focus-visible {
 }
 
 .insurance-summary p,
-.insurance-claim-summary h2 {
+.insurance-claim-summary p {
   margin: 0;
   color: var(--text);
   font: inherit;
@@ -696,7 +696,8 @@ small a,
   line-height: 1.2;
 }
 
-.cover-pool-metrics {
+.cover-pool-metrics,
+.cover-pool-account {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 56px;
@@ -749,9 +750,7 @@ small a,
 }
 
 .cover-pool-account {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 40px;
+  width: calc(100% - 284px);
   margin: 56px 0 0;
 }
 
@@ -1062,7 +1061,7 @@ small a,
 }
 
 .file-claim-requirement {
-  margin: 10px 0 0;
+  margin: 24px 0 0;
   color: #fff;
   font-weight: 400;
   line-height: 1.4;
@@ -1428,6 +1427,7 @@ small a,
   }
 
   .cover-pool-account {
+    width: 100%;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
     margin-top: 56px;

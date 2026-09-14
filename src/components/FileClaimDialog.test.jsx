@@ -75,7 +75,7 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const title = screen.getByRole('heading', { name: 'File a Claim for sGHO' });
+    const title = screen.getByRole('heading', { name: 'File A Claim' });
     expect(within(title).getByRole('img', { name: 'sGHO' })).toHaveAttribute('src', '/sgho.svg');
     expect(screen.queryByRole('combobox', { name: 'Insured token' })).not.toBeInTheDocument();
     expect(screen.getByText('sGHO Amount')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const title = screen.getByRole('heading', { name: 'File a Claim for msLOSS' });
+    const title = screen.getByRole('heading', { name: 'File A Claim' });
     const learnMore = screen.getByRole('link', { name: 'learn more' });
     const requirement = learnMore.closest('.file-claim-requirement');
     expect(requirement).toHaveTextContent(
@@ -110,7 +110,7 @@ describe('FileClaimDialog', () => {
     expect(learnMore).toHaveAttribute('href', './docs/defi-insurance.html');
     expect(title.nextElementSibling).toBe(requirement);
     expect(requirement).toHaveClass('file-claim-requirement');
-    expect(appStyles).toMatch(/\.file-claim-requirement \{[^}]*color: #fff;[^}]*font-weight: 400;/);
+    expect(appStyles).toMatch(/\.file-claim-requirement \{[^}]*margin: 24px 0 0;[^}]*color: #fff;[^}]*font-weight: 400;/);
   });
 
   it('uses wide primary inputs and aligned compact secondary fields', () => {
@@ -470,7 +470,7 @@ describe('FileClaimDialog', () => {
       onSubmit={vi.fn()}
     />);
 
-    expect(screen.getByRole('heading', { name: 'File a Claim for msLOSS' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'File A Claim' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Settle Claim' })).not.toBeInTheDocument();
   });
 

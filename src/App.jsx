@@ -406,7 +406,7 @@ export function PoolActionDialog({
   const withdrawingEarnings = mode === 'claimReward';
   const depositing = mode === 'deposit';
   const withdrawing = mode === 'withdraw';
-  const dialogTitle = `${depositing ? 'Deposit to' : withdrawing ? 'Withdraw from' : 'Withdraw earnings from'} ${poolName}`;
+  const dialogTitle = depositing ? 'Deposit' : withdrawing ? 'Withdraw' : 'Withdraw Earnings';
   const closeLabel = `Close ${depositing ? 'deposit to' : withdrawing ? 'withdraw from' : 'withdraw earnings from'} ${poolName}`;
   const inputToken = depositing ? assetSymbol : shareSymbol;
   const available = depositing ? coverAssetBalance : availableForCooldown ?? poolShareBalance;

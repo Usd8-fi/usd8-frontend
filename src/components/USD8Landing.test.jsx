@@ -69,8 +69,6 @@ describe('USD8 landing navigation', () => {
       'Github',
       'Telegram',
       'X.com',
-      'DeFi Insurance',
-      'Cover Pools',
       'FAQs',
       'Transparency',
       'Contacts',
@@ -85,14 +83,10 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'Github' })).toHaveAttribute('href', 'https://github.com/Usd8-fi/usd8-core');
     expect(within(footerNav).getByRole('link', { name: 'Telegram' })).toHaveAttribute('href', 'https://t.me/+e84i2oYk1ao1MTk1');
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
-    expect(within(footerNav).getByRole('link', { name: 'DeFi Insurance' })).toHaveAttribute(
-      'href',
-      './docs/defi-insurance.html',
-    );
-    expect(within(footerNav).getByRole('link', { name: 'Cover Pools' })).toHaveAttribute(
-      'href',
-      './docs/cover-pools.html',
-    );
+    expect(within(footerNav).queryByRole('link', { name: 'DeFi Insurance' })).not.toBeInTheDocument();
+    expect(within(footerNav).queryByRole('link', { name: 'Cover Pools' })).not.toBeInTheDocument();
+    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportFAQs$/);
+    expect(footerNav.children[1].children).toHaveLength(2);
     expect(within(footerNav).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', './docs/faqs.html');
     expect(within(footerNav).getByRole('link', { name: 'Transparency' })).toHaveAttribute(
       'href',
@@ -120,11 +114,11 @@ describe('USD8 landing navigation', () => {
     expect(screen.queryByRole('navigation', { name: 'USD8 products' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'DeFi Insurance', level: 1 })).toBeInTheDocument();
     expect(screen.getByText('Earn free insurance score with USD8 or sUSD8.')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'File claim with your insurance score' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Cover Pool', level: 2 })).toBeInTheDocument();
+    expect(screen.getByText('File claim with your insurance score.', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cover Pools', level: 2 })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'wstEth Cover Pool' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'White Hat Economy', level: 2 })).toBeInTheDocument();
-    expect(screen.getByText(/will launch in the future/)).toBeInTheDocument();
+    expect(screen.getByText(/The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process\./)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Learn more' })).toHaveAttribute('href', './docs/white-hat-economy.html');
   });
 
@@ -164,7 +158,8 @@ describe('USD8 landing navigation', () => {
   it('renders the cover-pool design directly below insurance', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    expect(screen.getByRole('heading', { name: 'Cover Pool' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
+    expect(screen.getByText(/Be aware: Cover Pools might be deployed to cover insured token loss/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'risk involved' })).toHaveAttribute('href', './docs/cover-pools.html');
     expect(screen.getByText('wstEth Cover Pool')).toBeInTheDocument();
   });
@@ -177,7 +172,7 @@ describe('USD8 landing navigation', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     expect(screen.getByRole('heading', { name: 'DeFi Insurance' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Cover Pool' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
   });
 
   it('uses the wstETH artwork on the cover-pool card', () => {
