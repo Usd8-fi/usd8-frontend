@@ -17,6 +17,16 @@ const SEPOLIA_CONTRACTS = Object.freeze({
       shareSymbol: 'USD8-cp-wstETH',
       usdOracle: '0x00e79afb10a84d153803f00e73900803179d594e',
     }),
+    Object.freeze({
+      id: 'usd8',
+      name: 'USD8 Cover Pool',
+      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+      assetSymbol: 'USD8',
+      shareSymbol: 'USD8-cp-USD8',
+      usdOracle: '0xf4aedc595912ce5951c3a0afdd8a61ebb07a8634',
+      tint: 'yellow',
+    }),
   ]),
   defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',
   insuredTokens: Object.freeze({
@@ -32,6 +42,7 @@ const SEPOLIA_CONTRACTS = Object.freeze({
 const SEPOLIA_PAYOUT_ASSETS = Object.freeze({
   '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': Object.freeze({ symbol: 'wstETH', decimals: 18 }),
   '0xbbd327336d5135e146312dd16f2491c1e6ce8822': Object.freeze({ symbol: 'mGHO-CP', decimals: 18 }),
+  '0xa5b32853235619b5e9af364a40c0c6386dbd6055': Object.freeze({ symbol: 'USD8', decimals: 18 }),
 });
 
 const NETWORKS = Object.freeze({

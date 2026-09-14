@@ -388,7 +388,7 @@ describe('App', () => {
 
     // Nothing is known yet, so APR/TVL/capacity must not display a number.
     expect(screen.getAllByRole('region').filter((card) => card.className.includes('cover-pool-card')))
-      .toHaveLength(1);
+      .toHaveLength(2);
     expect(poolCard().getAllByRole('status', { name: 'Loading pool data' })).toHaveLength(2);
     expect(poolCard().getByRole('status', { name: 'Loading pool capacity' })).toBeInTheDocument();
     expect(screen.queryByText('34%')).toBeNull();
@@ -1944,7 +1944,7 @@ describe('App', () => {
 
     expect(poolCard().getByText('30D Earnings APR')).toBeInTheDocument();
     // Tooltips portal to document.body, one per card.
-    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.')).toHaveLength(1);
+    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APR are delivered in USD8.')).toHaveLength(2);
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {
@@ -2023,12 +2023,30 @@ describe('App', () => {
     expect(await within(dialog).findByRole('alert', { name: 'Transaction status' })).toHaveTextContent('Rewards claimed on Sepolia.');
   });
 
-  it('submits a pool deposit from the dialog instead of using a browser prompt', async () => {
+  it('submits a USD8 pool deposit to the selected pool address', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
       balances: { usdc: '10', usd8: '25', savings: '0', coverAsset: '3', poolShares: '0' },
-      pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '3', availableForCooldown: '0' })],
+      pools: [
+        coverPoolFixture(),
+        coverPoolFixture({
+          id: 'usd8',
+          name: 'USD8 Cover Pool',
+          address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+          asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          assetSymbol: 'USD8',
+          shareSymbol: 'USD8-cp-USD8',
+          apy: '—',
+          tvl: '—',
+          capacityPercent: 0,
+          deposit: '0',
+          earnings: '0',
+          hasEarnings: false,
+          assetBalance: '3',
+          availableForCooldown: '0',
+        }),
+      ],
       activeIncidentId: '0',
     });
     mocks.readContract.mockResolvedValueOnce(0n);
@@ -2039,19 +2057,21 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
-    fireEvent.change(within(dialog).getByLabelText('wstETH amount'), { target: { value: '1.5' } });
+    fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'deposit' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
     expect(prompt).not.toHaveBeenCalled();
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      address: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
       chainId: 11155111,
       functionName: 'approve',
-      args: [expect.any(String), 1_500_000_000_000_000_000n],
+      args: ['0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf', 1_500_000_000_000_000_000n],
     }));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
       chainId: 11155111,
       functionName: 'deposit',
       args: [1_500_000_000_000_000_000n, mocks.account.address],

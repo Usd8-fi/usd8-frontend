@@ -154,13 +154,13 @@ const EMPTY_POOL = {
   periodFinish: 0n, exit: [0n, 0n], price: 0n, priceDecimals: 8,
 };
 
-/// Builds the landing multicall response: 11 fixed reads then 13 per cover pool,
-/// matching fetchLandingChainData's layout without hand-ordering 37 values.
+/// Builds the landing multicall response: 12 fixed reads then 13 per cover pool,
+/// matching fetchLandingChainData's layout without hand-ordering values.
 const landingSnapshot = ({
   usdc = 0n, usd8 = 0n, savings = 0n, activeIncidentId = 0n,
   sGho = 0n, sUsds = 0n, msloss = 0n,
   usd8Rates = [], savingsRates = [], nextIncidentId = 7n, scoreSpent = 0n,
-  pools = [{}],
+  pools = [{}, {}],
   insurance = [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(8_000),
     insuredTokenConfig(8_000), insuredTokenConfig(8_000), insuredTokenConfig(8_000)],
 } = {}) => [
@@ -340,7 +340,7 @@ describe('fetchLandingChainData', () => {
           periodFinish: 1_800_000_000n,
           exit: [12_000_000_000_000_000_000_000n, 1_800_000_000n],
           price: 2_000_000_000_00n,
-        }],
+        }, {}],
         insurance: [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(7_500),
           insuredTokenConfig(6_000), insuredTokenConfig(5_050), insuredTokenConfig(8_000)],
       }))
@@ -460,6 +460,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pools[0].capacityUncapped).toBe(false);
     expect(data.pools[0].assets).toBe('10');
     expect(data.pools[0].remainingDepositCapacity).toBe('90');
+    expect(data.pools[1].tint).toBe('yellow');
     expect(data.scoreBalances).toEqual({
       usd8: '25000000000000000000',
       savings: '4000000000000000000',

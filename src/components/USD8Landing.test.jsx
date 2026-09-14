@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
+import usd8Logo from '../assets/usd8Logo.svg';
 import USD8Landing from './USD8Landing.jsx';
 
 const wallet = {
@@ -35,6 +36,17 @@ const POOLS = [{
   earnings: '0',
   hasEarnings: false,
 }];
+
+const USD8_POOL = {
+  ...POOLS[0],
+  id: 'usd8',
+  name: 'USD8 Cover Pool',
+  assetSymbol: 'USD8',
+  shareSymbol: 'USD8-cp-USD8',
+  tint: 'yellow',
+  capacityUncapped: true,
+  assets: '1',
+};
 
 describe('USD8 landing navigation', () => {
   it('shows the connected network beside the shortened wallet address', () => {
@@ -162,6 +174,16 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText(/Be aware: Cover Pools might be deployed to cover insured token loss/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'risk involved' })).toHaveAttribute('href', './docs/cover-pools.html');
     expect(screen.getByText('wstEth Cover Pool')).toBeInTheDocument();
+  });
+
+  it('renders the USD8 cover pool with its logo and yellow tint', () => {
+    render(<USD8Landing wallet={wallet} pools={[...POOLS, USD8_POOL]} />);
+
+    const usd8Pool = screen.getByRole('region', { name: 'USD8 Cover Pool' });
+    expect(usd8Pool).toHaveClass('cover-pool-card--yellow');
+    expect(usd8Pool.querySelector('header img')).toHaveAttribute('src', usd8Logo);
+    expect(within(usd8Pool).getByText('Uncapped · 1 USD8 deposited')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'wstEth Cover Pool' })).not.toHaveClass('cover-pool-card--yellow');
   });
 
   it('keeps the combined page after a remount without persisting a product tab', () => {

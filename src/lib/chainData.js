@@ -551,6 +551,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       asset: read.config.asset,
       assetSymbol: read.config.assetSymbol,
       shareSymbol: read.config.shareSymbol,
+      tint: read.config.tint,
       assetBalance: formatted(read.assetBalance),
       apy: null,
       tvl: formattedUsd(read.totalAssets, read.assetUsdPrice, read.assetUsdDecimals),

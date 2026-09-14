@@ -326,9 +326,9 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
   );
 }
 
-function CapacityBar({ value = 0, uncapped = false, assets = '0' }) {
+function CapacityBar({ value = 0, uncapped = false, assets = '0', assetSymbol = 'wstETH' }) {
   if (uncapped) {
-    return <div className="landing-capacity" aria-label={`${assets} wstETH deposited, uncapped`}>Uncapped · {assets} wstETH deposited</div>;
+    return <div className="landing-capacity" aria-label={`${assets} ${assetSymbol} deposited, uncapped`}>Uncapped · {assets} {assetSymbol} deposited</div>;
   }
   const bounded = Math.max(0, Math.min(100, Number(value) || 0));
   return (
@@ -340,10 +340,11 @@ function CapacityBar({ value = 0, uncapped = false, assets = '0' }) {
 
 function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolAction }) {
   const livePool = useLivePoolEarnings(pool);
+  const cardClassName = pool.tint === 'yellow' ? 'cover-pool-card cover-pool-card--yellow' : 'cover-pool-card';
   return (
-    <section className="cover-pool-card" aria-label={pool.name}>
+    <section className={cardClassName} aria-label={pool.name}>
       <header>
-        <img src={coverWsteth} alt="" />
+        <img src={pool.id === 'usd8' ? usd8Logo : coverWsteth} alt="" />
         <h2>{pool.name}</h2>
       </header>
 
@@ -372,7 +373,7 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
           </span>
           {poolLoading && pool.capacityPercent === null
             ? <LoadingSpinner label="Loading pool capacity" />
-            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} />}
+            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} assetSymbol={pool.assetSymbol} />}
         </div>
       </div>
 

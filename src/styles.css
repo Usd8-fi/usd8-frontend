@@ -674,6 +674,11 @@ small a,
   color: #000;
 }
 
+.cover-pool-card.cover-pool-card--yellow {
+  --pool-background: #c39a32;
+  background: #c39a32;
+}
+
 .cover-pool-card header {
   text-align: center;
 }

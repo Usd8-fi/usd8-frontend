@@ -7,7 +7,17 @@ describe('network configuration', () => {
 
     expect(network).toMatchObject({ id: 11155111, name: 'Sepolia', protocolAvailable: true });
     expect(network.rpcUrl).toBe('https://rpc.sepolia.ethpandaops.io');
-    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth']);
+    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth', 'usd8']);
+    expect(network.contracts.coverPools[1]).toEqual({
+      id: 'usd8',
+      name: 'USD8 Cover Pool',
+      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+      assetSymbol: 'USD8',
+      shareSymbol: 'USD8-cp-USD8',
+      usdOracle: '0xf4aedc595912ce5951c3a0afdd8a61ebb07a8634',
+      tint: 'yellow',
+    });
     expect(network.payoutAssets).toEqual({
       '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': {
         symbol: 'wstETH',
@@ -15,6 +25,10 @@ describe('network configuration', () => {
       },
       '0xbbd327336d5135e146312dd16f2491c1e6ce8822': {
         symbol: 'mGHO-CP',
+        decimals: 18,
+      },
+      '0xa5b32853235619b5e9af364a40c0c6386dbd6055': {
+        symbol: 'USD8',
         decimals: 18,
       },
     });
