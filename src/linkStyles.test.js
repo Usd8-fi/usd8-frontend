@@ -100,7 +100,8 @@ describe('shared text-link styling', () => {
     expect(appStyles).toContain(`--button-hover: var(--accent-hover);`);
     expect(appStyles).toMatch(/\.usd8-dialog-submit:hover,[\s\S]*?background: var\(--accent-hover\);/);
     expect(appStyles).toMatch(/\.cover-pool-card \{\s+--pool-background: #3674b0;\s+--pool-button-background: color-mix\(in srgb, var\(--pool-background\) 65%, black\);\s+--pool-button-hover: color-mix\(in srgb, var\(--pool-background\) 52%, black\);/);
-    expect(appStyles).toMatch(/\.cover-pool-card\.cover-pool-card--yellow\s*\{[^}]*background:\s*#927019;[^}]*\}/s);
+    expect(appStyles).toMatch(/\.cover-pool-card\.cover-pool-card--yellow\s*\{[^}]*background:\s*#c39a32;[^}]*\}/s);
+    expect(appStyles).toMatch(/\.cover-pool-card--yellow :is\(header h2, strong\)\s*\{[^}]*color:\s*#000;[^}]*\}/s);
     expect(appStyles).toMatch(/\.cover-pool-overview \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 220px;[\s\S]*?gap: 64px;/);
     expect(appStyles).toMatch(/\.cover-pool-capacity-metric \{[\s\S]*?width: 220px;/);
     expect(appStyles).toMatch(/\.cover-pool-metrics,[\s\S]*?\.cover-pool-account \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*?gap: 56px;/);

@@ -192,6 +192,16 @@ const coverPoolFixture = (overrides = {}) => ({
   ...overrides,
 });
 
+const usd8PoolFixture = (overrides = {}) => coverPoolFixture({
+  id: 'usd8',
+  name: 'USD8 Cover Pool',
+  address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+  asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+  assetSymbol: 'USD8',
+  shareSymbol: 'USD8-cp-USD8',
+  ...overrides,
+});
+
 describe('App', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -2080,6 +2090,82 @@ describe('App', () => {
     expect(status).toHaveTextContent('Deposit confirmed on Sepolia.');
     expect(screen.getByRole('dialog', { name: 'Deposit' })).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
+  });
+
+  it('submits a USD8 pool cooldown request to the selected pool address', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0' },
+      pools: [coverPoolFixture(), usd8PoolFixture({ deposit: '2.1', availableForCooldown: '2.1' })],
+      activeIncidentId: '0',
+    });
+    mocks.readContract.mockImplementation(({ functionName }) => Promise.resolve(
+      functionName === 'balanceOf' ? 2_100_000_000_000_000_000_000n : 2_100_000_000_000_000_000n,
+    ));
+    mocks.writeContractAsync.mockResolvedValueOnce('0x' + 'ab'.repeat(32));
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'withdraw' }));
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
+    fireEvent.change(within(dialog).getByLabelText('USD8-cp-USD8 amount'), { target: { value: '2.1' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
+
+    await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
+    expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
+      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      functionName: 'requestRedeem',
+      args: [2_100_000_000_000_000_000_000n],
+    }));
+  });
+
+  it('completes a USD8 pool withdrawal through the selected pool address', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0' },
+      pools: [coverPoolFixture(), usd8PoolFixture({ availableForWithdraw: '12', availableForWithdrawAssets: '12' })],
+      activeIncidentId: '0',
+    });
+    mocks.writeContractAsync.mockResolvedValueOnce('0x' + 'cd'.repeat(32));
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'withdraw' }));
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
+
+    await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
+    expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
+      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      functionName: 'completeRedeem',
+      args: [mocks.account.address],
+    }));
+  });
+
+  it('claims USD8 pool earnings through the selected pool address', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0' },
+      pools: [coverPoolFixture(), usd8PoolFixture({ earnings: '7.5', earningsExact: '7.5', hasEarnings: true })],
+      activeIncidentId: '0',
+    });
+    mocks.writeContractAsync.mockResolvedValueOnce('0x' + 'ef'.repeat(32));
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'withdraw earnings' }));
+    const dialog = screen.getByRole('dialog', { name: 'Withdraw Earnings' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'withdraw earnings' }));
+
+    await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
+    expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
+      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      functionName: 'claimReward',
+      args: [],
+    }));
   });
 
   it('starts the cover-pool cooldown using the pool share decimals', async () => {
