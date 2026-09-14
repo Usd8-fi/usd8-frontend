@@ -675,8 +675,8 @@ small a,
 }
 
 .cover-pool-card.cover-pool-card--yellow {
-  --pool-background: #ffb100;
-  background: #ffb100;
+  --pool-background: #ffd36e;
+  background: #ffd36e;
 }
 
 .cover-pool-card.cover-pool-card--yellow :is(header h2, strong) {
