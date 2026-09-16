@@ -244,6 +244,37 @@ describe('App', () => {
     mocks.writeContractAsync.mockReset();
   });
 
+  it('uses the configured booster rate before an incident exists', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
+    mocks.fetchLandingChainData.mockResolvedValue({
+      balances: {
+        usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0',
+        poolShares: '0', boosters: '1', insuredTokens: { 'test-msloss': '10' },
+      },
+      pools: [coverPoolFixture()],
+      activeIncidentId: '0',
+      incident: null,
+      claim: null,
+      insurance: {
+        tokens: LISTED_INSURANCE_TOKENS,
+        claimBond: '10',
+        minHoldingRequiredBlocks: '300',
+        boosterBoostBps: 100,
+      },
+      resourceErrors: {},
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'File claim for test-msloss' }));
+    const dialog = await screen.findByRole('dialog', { name: 'File claim for msLOSS' });
+    expect(within(dialog).getByText(/Maximum payout weight/)).toHaveTextContent(
+      'Maximum payout weight: 101 (incl. 1 booster)',
+    );
+  });
+
   it('blocks claim filing while active-incident details are only partially loaded', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -394,22 +425,30 @@ describe('App', () => {
   });
 
   it('spins for unknown pool values rather than inventing them, then shows the real ones', async () => {
+    mocks.fetchLandingChainData.mockResolvedValueOnce({
+      balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0' },
+      pools: [coverPoolFixture({ apy: '34%', tvl: '$122.2K', capacityPercent: 50 })],
+      activeIncidentId: '0',
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
     render(<App />);
 
-    // Nothing is known yet, so APR/TVL/capacity must not display a number.
+    // Nothing is known yet, so APY/TVL/capacity must not display a number.
     expect(screen.getAllByRole('region').filter((card) => card.className.includes('cover-pool-card')))
       .toHaveLength(2);
     expect(poolCard().getAllByRole('status', { name: 'Loading pool data' })).toHaveLength(2);
     expect(poolCard().getByRole('status', { name: 'Loading pool capacity' })).toBeInTheDocument();
     expect(screen.queryByText('34%')).toBeNull();
     expect(screen.queryByText('$122.2K')).toBeNull();
-    expect(screen.queryByLabelText('50% capacity filled')).toBeNull();
-    expect(poolCard().getByText('0 wstETH')).toBeInTheDocument();
-    expect(poolCard().getByText('0 USD8')).toBeInTheDocument();
+    expect(poolCard().queryByText('50%')).toBeNull();
+    expect(poolCard().getByText('Your deposit').nextElementSibling).toHaveTextContent('0 wstETH');
+    expect(poolCard().getByText('Your Earnings').nextElementSibling).toHaveTextContent('0 USD8');
 
     // The snapshot replaces every spinner with the value it actually read.
     await waitFor(() => expect(screen.queryByRole('status', { name: 'Loading pool data' })).toBeNull());
-    expect(poolCard().getByLabelText('0% capacity filled')).toBeInTheDocument();
+    expect(poolCard().getByText('34%')).toBeInTheDocument();
+    expect(poolCard().getByText('$122.2K')).toBeInTheDocument();
+    expect(poolCard().getByLabelText('50% capacity filled')).toBeInTheDocument();
   });
 
   it('shows the shared wallet toast for a disconnected pool action', () => {
@@ -984,7 +1023,7 @@ describe('App', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
     if (eligibleBoosters <= 10n) {
       const expectedTakenIntoAccount = score > 0n ? eligibleBoosters : 0n;
-      const boosterMetric = within(dialog).getByText('Boosters escrowed').closest('div');
+      const boosterMetric = within(dialog).getByText('Boosters Escrowed').closest('div');
       expect(await within(boosterMetric).findByText(`${expectedTakenIntoAccount} taken into account`)).toBeInTheDocument();
       expect(within(dialog).queryByText('Boosters burned on acceptance')).toBeNull();
       expect(within(dialog).queryByText('Boosters returned on acceptance')).toBeNull();
@@ -1054,6 +1093,7 @@ describe('App', () => {
         id: '1', tokenId: 'test-msloss', root,
         phaseDeadlineMilliseconds: Date.now() - 3_600_000,
         phaseWindowMilliseconds: 3 * 86_400_000,
+        boosterBoostBps: 100,
         poolAddrs: [payoutPool], poolOrder: [payoutAsset],
       },
       claim: {
@@ -1076,8 +1116,10 @@ describe('App', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
     await within(dialog).findByText(`10 base units of ${payoutAsset}`);
-    expect(within(dialog).getByText('31.0% of all score committed')).toBeInTheDocument();
-    expect(within(dialog).queryByText('27.2% of all score committed')).not.toBeInTheDocument();
+    expect(within(dialog).getByText(
+      'Effective insurance score after boosters 2200, 31% of all score committed.',
+    )).toBeInTheDocument();
+    expect(within(dialog).queryByText(/27% of all score committed/)).not.toBeInTheDocument();
   });
 
   it('rejects finalization calldata when the refreshed pool topology changed', async () => {
@@ -1221,7 +1263,7 @@ describe('App', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Settle Claims .* for test-msloss/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle Claim' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle All Claims' }));
 
     await waitFor(() => {
       expect(dialog).not.toHaveTextContent(/Cannot read properties of null/);
@@ -1282,7 +1324,7 @@ describe('App', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Settle Claims .* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle Claim' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle All Claims' }));
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
@@ -1336,7 +1378,7 @@ describe('App', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Settle Claims .* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle Claim' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle All Claims' }));
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
@@ -2758,7 +2800,7 @@ describe('App', () => {
     const secondClaim = await startClaim();
     await waitFor(() => expect(mocks.prepareIncidentOpen).toHaveBeenCalledTimes(2));
     expect(await within(secondClaim.dialog).findByText(
-      'Verifying incident in the TEE. First claim may take several minutes.',
+      'Verifying incident in the TEE. First claim may take several minutes, please wait.',
     )).toBeInTheDocument();
 
     await act(async () => firstTee.resolve({
@@ -2767,7 +2809,7 @@ describe('App', () => {
     }));
 
     expect(within(secondClaim.dialog).getByText(
-      'Verifying incident in the TEE. First claim may take several minutes.',
+      'Verifying incident in the TEE. First claim may take several minutes, please wait.',
     )).toBeInTheDocument();
     expect(secondClaim.dialog).not.toHaveTextContent('Wallet account or network changed.');
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();

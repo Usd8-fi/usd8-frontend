@@ -31,6 +31,7 @@ vi.mock('viem', async (importOriginal) => {
 
 import {
   calculateTrailingRewardApr,
+  claimPercentage,
   fetchBoosterBalance,
   fetchLandingChainData,
   fetchLandingAnalytics,
@@ -38,6 +39,14 @@ import {
   fetchLogsInChunks,
   rpcTransportFor,
 } from './chainData.js';
+
+describe('claimPercentage', () => {
+  it('renders score commitment shares as rounded whole percentages', () => {
+    expect(claimPercentage(10n, 10n)).toBe('100%');
+    expect(claimPercentage(31n, 100n)).toBe('31%');
+    expect(claimPercentage(5n, 200n)).toBe('3%');
+  });
+});
 
 function insuredTokenConfig(maxCoverageBps) {
   return {
@@ -460,7 +469,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pools[0].capacityUncapped).toBe(false);
     expect(data.pools[0].assets).toBe('10');
     expect(data.pools[0].remainingDepositCapacity).toBe('90');
-    expect(data.pools[1].tint).toBe('yellow');
+    expect(data.pools[1].tint).toBe('green');
     expect(data.scoreBalances).toEqual({
       usd8: '25000000000000000000',
       savings: '4000000000000000000',
@@ -539,6 +548,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pools[0].exitSettled).toBe(false);
     expect(data.pools[0].cooldownEndsAtMilliseconds).toBe(1_800_000_000_000);
     expect(data.activeIncidentId).toBe('7');
+    expect(data.insurance.boosterBoostBps).toBe(100);
     expect(data.incident).toEqual({
       minHoldingRequiredBlocks: null,
       id: '7',
@@ -568,7 +578,7 @@ describe('fetchLandingChainData', () => {
       bondAmount: '10',
       boosterAmount: '2',
       scoreToSpend: '2344322',
-      scoreCommitmentPercentage: '2.5%',
+      scoreCommitmentPercentage: '3%',
       resolved: false,
     });
     expect(mocks.getLogs).toHaveBeenCalledTimes(1);

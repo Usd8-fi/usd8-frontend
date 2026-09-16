@@ -259,6 +259,23 @@ describe('prepareIncidentOpen', () => {
 });
 
 describe('prepareSettlement', () => {
+  it('explains when settlement is waiting for finalized chain state', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+      error: 'SETTLEMENT_NOT_ELIGIBLE',
+    }), { status: 422 })));
+    const { prepareSettlement } = await loadClaimApi();
+
+    await expect(prepareSettlement(5n, {
+      ...SETTLEMENT_SNAPSHOT,
+      chainId: 11155111,
+      registry: REGISTRY,
+      defiInsurance: DEFI_INSURANCE,
+      expectedRoot: `0x${'00'.repeat(32)}`,
+    })).rejects.toThrow(
+      'Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.',
+    );
+  });
+
   it.each([undefined, null, '-1', '1.5', '0x03', 3, (2n ** 256n).toString()])(
     'rejects missing or malformed eligible booster quantities (%s)', async (quantity) => {
       const job = completedSettlementJob(VALID_SETTLEMENT_ROWS.map(row => ({ ...row })));

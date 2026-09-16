@@ -368,6 +368,7 @@ describe('FileClaimDialog', () => {
         token="aave-sgho"
         insuredTokens={[{ id: 'aave-sgho', symbol: 'sGHO', balance: '400' }]}
         availableScore="128600"
+        boosterBoostBps={100}
         claimStatus={{
           id: '42',
           stage: 'Claim Open',
@@ -404,16 +405,20 @@ describe('FileClaimDialog', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close claim status' }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(within(dialog).getByRole('heading', { name: 'Your Claim Status' })).toBeInTheDocument();
-    expect(within(dialog).getByText('Insured Token')).toBeInTheDocument();
+    expect(within(dialog).getByText('Insured Token Escrowed')).toBeInTheDocument();
     expect(within(dialog).getByText('345 sGHO')).toBeInTheDocument();
-    expect(within(dialog).getByText('Claim Bond')).toBeInTheDocument();
+    expect(within(dialog).getByText('Claim Bond Escrowed')).toBeInTheDocument();
     expect(within(dialog).getByText('10 USD8')).toBeInTheDocument();
-    expect(within(dialog).getByText('Insurance score to spend')).toBeInTheDocument();
+    expect(within(dialog).getByText('Insurance Score to Spend')).toBeInTheDocument();
     expect(within(dialog).getByText('2344322')).toBeInTheDocument();
-    expect(within(dialog).getByText('2.5% of all score committed')).toBeInTheDocument();
-    expect(within(dialog).getByText('Boosters escrowed')).toBeInTheDocument();
+    expect(within(dialog).getByText(
+      'Effective insurance score after boosters 2391208.44, 3% of all score committed.',
+    )).toHaveClass('claim-status-score-summary');
+    expect(appStyles).toMatch(/\.claim-status-score-summary \{[\s\S]*?max-width: 100%;[\s\S]*?overflow-wrap: anywhere;/);
+    expect(appStyles).not.toMatch(/\.claim-status-score-summary \{[^}]*white-space: nowrap;/);
+    expect(within(dialog).getByText('Boosters Escrowed')).toBeInTheDocument();
     expect(within(dialog).getByText('2')).toBeInTheDocument();
-    expect(within(dialog).getByText('Status')).toBeInTheDocument();
+    expect(within(dialog).getByText('Status - waiting for others to join in the claim.')).toBeInTheDocument();
     expect(within(dialog).getByText('Claim Open')).toBeInTheDocument();
     expect(within(dialog).getByText('Settle')).toBeInTheDocument();
     expect(within(dialog).getByText('Payout')).toBeInTheDocument();
@@ -448,11 +453,40 @@ describe('FileClaimDialog', () => {
     />);
 
     expect(screen.getByRole('heading', { name: 'Incident Status' })).toBeInTheDocument();
+    expect(screen.getByText('Status - waiting for settlement, anyone can settle.')).toBeInTheDocument();
     expect(screen.queryByLabelText('Insured msLOSS amount')).not.toBeInTheDocument();
     expect(screen.queryByText('Claim Bond')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Settle Claim' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settle All Claims' }));
     expect(onSettle).toHaveBeenCalledOnce();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['claim-open', 1, `0x${'00'.repeat(32)}`, 'Status - waiting for others to join in the claim.'],
+    ['settlement-open', -1, `0x${'00'.repeat(32)}`, 'Status - waiting for settlement'],
+    ['settlement-expired', -2, `0x${'00'.repeat(32)}`, 'Status - settlement window closed, please withdraw your escrow.'],
+    ['settlement-pending', 1, `0x${'11'.repeat(32)}`, 'Status - settled, Window open for potential disputes'],
+    ['payout-open', -1, `0x${'11'.repeat(32)}`, 'Status - Payout window open, please finalised asap.'],
+    ['payout-expired', -2, `0x${'11'.repeat(32)}`, 'Status - Payout window closed, please withdraw your escrow.'],
+  ])('describes the %s lifecycle stage beside Status', (_state, deadlineOffset, root, expected) => {
+    const phaseWindowMilliseconds = 3_600_000;
+    render(<FileClaimDialog
+      token="test-msloss"
+      insuredTokens={[{ id: 'test-msloss', symbol: 'msLOSS', balance: '400' }]}
+      availableScore="1"
+      claimStatus={{
+        id: '42', insuredTokenAmount: '345', bondAmount: '10', scoreToSpend: '100',
+        scoreCommitmentPercentage: '100%', boosterAmount: '0',
+        incident: {
+          phaseDeadlineMilliseconds: Date.now() + deadlineOffset * phaseWindowMilliseconds,
+          phaseWindowMilliseconds,
+          root,
+        },
+      }}
+      onClose={vi.fn()}
+    />);
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   it('still shows the filing form to an account with no claim while filing is open', () => {
@@ -471,11 +505,11 @@ describe('FileClaimDialog', () => {
     />);
 
     expect(screen.getByRole('heading', { name: 'File A Claim' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Settle Claim' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Settle All Claims' })).not.toBeInTheDocument();
   });
 
   it.each([
-    ['settlement-open', 'Settle Claim', 'onSettle'],
+    ['settlement-open', 'Settle All Claims', 'onSettle'],
     ['settlement-expired', 'Return Tokens', 'onReturnTokens'],
     ['payout-open', 'Accept Payout', 'onAcceptPayout'],
     ['payout-expired', 'Cancel Payout and Return Tokens', 'onCancelPayout'],
@@ -563,6 +597,7 @@ describe('FileClaimDialog', () => {
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
     expect(within(dialog).getByText('257.56')).toBeInTheDocument();
     expect(within(dialog).getByText('100% of all score committed')).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Effective insurance score after boosters/)).not.toBeInTheDocument();
 
     // "Claim Closed" is behind the active stage: filled bar, nothing left to wait for.
     const closed = within(dialog).getByRole('progressbar', { name: 'Claim Closed progress' });

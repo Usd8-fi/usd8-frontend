@@ -1239,7 +1239,7 @@ export default function App({ autoConnect = false }) {
       let authorization = null;
       const prepareFirstIncident = async () => {
         claimStep = 'verification';
-        setCurrentClaimStatus('Verifying incident in the TEE. First claim may take several minutes.');
+        setCurrentClaimStatus('Verifying incident in the TEE. First claim may take several minutes, please wait.');
         return prepareIncidentOpen(insuredToken, {
           chainId: network.id,
           registry: contracts.registry,
@@ -1817,7 +1817,7 @@ export default function App({ autoConnect = false }) {
           claimBond={chainData.insurance?.claimBond === undefined || chainData.insurance?.claimBond === null ? '— USD8' : `${chainData.insurance.claimBond} USD8`}
           claimBondAvailable={chainData.balances.usd8}
           claimTotals={{ scoreCommitted: chainData.incident?.totalScoreCommitted || '0' }}
-          boosterBoostBps={chainData.incident?.boosterBoostBps || 0}
+          boosterBoostBps={chainData.incident?.boosterBoostBps ?? chainData.insurance?.boosterBoostBps ?? 0}
           claimStatus={selectedClaimStatus}
           incident={actionableIncident?.tokenId === claimToken.id ? actionableIncident : null}
           payoutLoading={payoutLoading}

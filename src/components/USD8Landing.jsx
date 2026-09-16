@@ -174,7 +174,7 @@ function AssetCard({
         {apy !== undefined ? (
           <div>
             <span>APY</span>
-            <strong>{displayValue(apy, '—')}</strong>
+            <strong><MetricValue value={apy} label="Loading APY" /></strong>
           </div>
         ) : null}
       </div>
@@ -328,11 +328,11 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
 
 function CapacityBar({ value = 0, uncapped = false, assets = '0', assetSymbol = 'wstETH' }) {
   if (uncapped) {
-    return <div className="landing-capacity" aria-label={`${assets} ${assetSymbol} deposited, uncapped`}>Uncapped · {assets} {assetSymbol} deposited</div>;
+    return <div className="landing-capacity" aria-label={`${assets} ${assetSymbol} deposited, uncapped`}>Uncapped</div>;
   }
   const bounded = Math.max(0, Math.min(100, Number(value) || 0));
   return (
-    <div className="landing-capacity" aria-label={`${bounded}% capacity filled`}>
+    <div className="landing-capacity" aria-label={`${Math.round(bounded)}% capacity filled`}>
       <span><i style={{ width: `${bounded}%` }} /></span>
     </div>
   );
@@ -340,7 +340,7 @@ function CapacityBar({ value = 0, uncapped = false, assets = '0', assetSymbol = 
 
 function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolAction }) {
   const livePool = useLivePoolEarnings(pool);
-  const cardClassName = pool.tint === 'yellow' ? 'cover-pool-card cover-pool-card--yellow' : 'cover-pool-card';
+  const cardClassName = pool.tint === 'green' ? 'cover-pool-card cover-pool-card--green' : 'cover-pool-card';
   return (
     <section className={cardClassName} aria-label={pool.name}>
       <header>

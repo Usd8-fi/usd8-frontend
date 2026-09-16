@@ -20,9 +20,11 @@ const MAX_UINT256 = (1n << 256n) - 1n;
 const MAX_UINT256_DECIMAL = MAX_UINT256.toString();
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;
 
-function apiError(status) {
+function apiError(status, operation = 'incident-open') {
   // The eligibility window is stated up front in the dialog, so it is not repeated here.
-  if (status === 422) return new Error('No qualifying >20% price drop was detected.');
+  if (status === 422) return new Error(operation === 'settlement'
+    ? 'Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.'
+    : 'No qualifying >20% price drop was detected.');
   if (status === 409) return new Error('An incident is already active. Close and reopen this claim.');
   if (status === 429) return new Error('Claim verification service is busy. Please wait a moment and try again.');
   return new Error(status === 503
@@ -435,7 +437,7 @@ async function prepareSettlementUncached(incidentId, {
       if (lookupResponse.status === 404) {
         throw new Error('Claim service returned no immutable settlement artifact for the expected root.');
       }
-      throw apiError(lookupResponse.status);
+      throw apiError(lookupResponse.status, 'settlement');
     }
   }
   // Terminals are immutable, so one key is one attempt. Walk a deterministic
@@ -459,7 +461,7 @@ async function prepareSettlementUncached(incidentId, {
       body: JSON.stringify({ incidentId: incidentIdText }),
       signal,
     }, { deadline, retryIntervalMs: pollIntervalMs, signal });
-    if (!response.ok) throw apiError(response.status);
+    if (!response.ok) throw apiError(response.status, 'settlement');
     const accepted = await response.json();
     if (accepted?.accepted !== true || !validJobId(accepted.jobId)) throw new Error('Claim verification service returned an invalid job.');
     const jobUrl = `${CLAIM_API_BASE_URL}/jobs/${accepted.jobId}`;
@@ -472,7 +474,7 @@ async function prepareSettlementUncached(incidentId, {
       const pollResponse = await fetchWithRateLimitRetry(jobUrl, {
         headers: { accept: 'application/json' }, cache: 'no-store', signal,
       }, { deadline, retryIntervalMs: pollIntervalMs, signal });
-      if (!pollResponse.ok) throw apiError(pollResponse.status);
+      if (!pollResponse.ok) throw apiError(pollResponse.status, 'settlement');
       const job = await pollResponse.json();
       if (job?.jobId !== accepted.jobId) throw new Error('Claim service returned another job.');
       if (job.status === 'completed') {

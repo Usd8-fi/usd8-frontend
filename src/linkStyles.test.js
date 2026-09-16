@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -7,10 +7,31 @@ const docsStyles = readFileSync(resolve(process.cwd(), 'theme/css/usd8-docs.css'
 const sharedStyles = readFileSync(resolve(process.cwd(), 'theme/css/link-theme.css'), 'utf8');
 const bookConfig = readFileSync(resolve(process.cwd(), 'book.toml'), 'utf8');
 const appEntry = readFileSync(resolve(process.cwd(), 'src/main.jsx'), 'utf8');
+const fontAwesomePath = resolve(process.cwd(), 'public/assets/fonts/fontawesome-webfont.woff2');
 
 describe('shared text-link styling', () => {
   it('uses a visible light rollover for popup close buttons', () => {
     expect(appStyles).toMatch(/\.app-dialog-close:hover,[\s\S]*?background: rgba\(255, 255, 255, 0\.16\);/);
+  });
+
+  it('matches the production sidebar social icon treatment', () => {
+    expect(existsSync(fontAwesomePath)).toBe(true);
+    expect(docsStyles).toMatch(/@font-face \{[\s\S]*?font-family: "FontAwesome";[\s\S]*?fontawesome-webfont\.woff2/);
+    expect(docsStyles).toContain(`.sidebar-telegram,
+.sidebar-x,
+.sidebar-github {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;`);
+    expect(docsStyles).toMatch(/\.sidebar-social \.sidebar-telegram,[\s\S]*?color: rgb\(255, 255, 255\);[\s\S]*?background: transparent;/);
+    expect(docsStyles).toMatch(/\.sidebar-social \.sidebar-telegram:hover,[\s\S]*?color: rgb\(255, 212, 0\);[\s\S]*?background: transparent;/);
+    expect(docsStyles).toMatch(/\.sidebar-x \.x-mark \{[\s\S]*?width: 22px;[\s\S]*?height: 22px;/);
+    expect(docsStyles).toContain('.sidebar-github { font-size: 26px; }');
+    expect(docsStyles).toMatch(/\.sidebar-telegram > span \{[\s\S]*?width: 22px;[\s\S]*?height: 22px;/);
+    expect(docsStyles).toMatch(/\.sidebar-github > span \{[\s\S]*?width: 26px;[\s\S]*?height: 26px;/);
+    expect(docsStyles).toMatch(/\.sidebar-telegram > span,[\s\S]*?\.sidebar-github > span \{[\s\S]*?font-family: "FontAwesome";/);
   });
 
   it('defines the app and docs link system once in the shared stylesheet', () => {
@@ -75,8 +96,8 @@ describe('shared text-link styling', () => {
   color: var(--link);
   text-decoration: none;
 }`);
-    expect(sharedStyles).toContain(`:not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):hover`);
-    expect(sharedStyles).toContain(`:not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):focus-visible`);
+    expect(sharedStyles).toContain(`:not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):hover`);
+    expect(sharedStyles).toContain(`:not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):focus-visible`);
     expect(sharedStyles).toMatch(/a:not\([\s\S]*?\.content main a:hover,[\s\S]*?\{\s+background: var\(--link\);\s+color: var\(--link-inverse\);\s+text-decoration: none;\s+\}/);
     expect(sharedStyles.match(/background: var\(--link\);/g)).toHaveLength(1);
     expect(`${appStyles}\n${sharedStyles}`).not.toContain('.landing-product-tab');
@@ -92,29 +113,41 @@ describe('shared text-link styling', () => {
     expect(appStyles).toMatch(/\.landing-header::before \{[\s\S]*?width: 100vw;[\s\S]*?height: 159px;[\s\S]*?background: #1d1d1d;/);
     expect(appStyles).toMatch(/\.insurance-assets \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
     expect(appStyles).toMatch(/\.cover-pool-card \{[\s\S]*?width: 100%;/);
+    expect(appStyles).toMatch(/\.cover-pool-card \+ \.cover-pool-card \{\s+margin-top: 112px;/);
+    expect(appStyles).toMatch(/\.cover-pool-card header img \{[\s\S]*?top: -32px;[\s\S]*?width: 64px;[\s\S]*?height: 64px;/);
     expect(appStyles).toMatch(/\.free-insurance-page > \.landing-section-title:first-child \{[\s\S]*?margin-top: 172px;/);
-    expect(appStyles).toMatch(/\.cover-pool-actions > \.action-button-shell:nth-child\(3\) \{[\s\S]*?width: 220px;/);
+    expect(appStyles).not.toMatch(/\.cover-pool-actions > \.action-button-shell:nth-child\(3\)\s*\{[^}]*width:/);
     expect(`${appStyles}\n${docsStyles}`).not.toMatch(/#(?:dc9900|cd9d34|b8892c|f2c158|d2a137|eab308)/i);
     expect(appStyles).toMatch(/\.landing-wallet-button,[\s\S]*?background: var\(--button\);\s+color: var\(--link-inverse\);/);
     expect(appStyles).toMatch(/\.usd8-dialog-submit \{[\s\S]*?background: var\(--accent\);\s+color: var\(--link-inverse\);/);
     expect(appStyles).toContain(`--button-hover: var(--accent-hover);`);
     expect(appStyles).toMatch(/\.usd8-dialog-submit:hover,[\s\S]*?background: var\(--accent-hover\);/);
-    expect(appStyles).toMatch(/\.cover-pool-card \{\s+--pool-background: #3674b0;\s+--pool-button-background: color-mix\(in srgb, var\(--pool-background\) 65%, black\);\s+--pool-button-hover: color-mix\(in srgb, var\(--pool-background\) 52%, black\);/);
-    expect(appStyles).toMatch(/\.cover-pool-card\.cover-pool-card--yellow\s*\{[^}]*background:\s*#ffd36e;[^}]*\}/s);
-    expect(appStyles).toMatch(/\.cover-pool-card\.cover-pool-card--yellow :is\(header h2, strong\)\s*\{[^}]*color:\s*#000;[^}]*\}/s);
-    expect(appStyles).toMatch(/\.cover-pool-overview \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 220px;[\s\S]*?gap: 64px;/);
-    expect(appStyles).toMatch(/\.cover-pool-capacity-metric \{[\s\S]*?width: 220px;/);
+    expect(appStyles).toMatch(/\.cover-pool-card \{\s+--pool-background: #4d67b9;\s+--pool-button-background: rgba\(0, 0, 0, 0\.3\);\s+--pool-button-hover: rgba\(0, 0, 0, 0\.42\);\s+--pool-capacity-fill: color-mix\(in srgb, var\(--pool-background\) 70%, black\);/);
+    expect(appStyles).toMatch(/\.cover-pool-card\.cover-pool-card--green\s*\{[^}]*--pool-background:\s*#08b18f;[^}]*\}/s);
+    expect(appStyles).toMatch(/\.cover-pool-card span \{[\s\S]*?color: var\(--text\);/);
+    expect(appStyles).toMatch(/\.landing-capacity > span \{[\s\S]*?background: #d9dddf;/);
+    expect(appStyles).toMatch(/\.landing-capacity i \{[\s\S]*?background: var\(--pool-capacity-fill\);/);
+    expect(appStyles).toMatch(/\.cover-pool-card \{[\s\S]*?padding: 42px 42px 40px;/);
+    expect(appStyles).toMatch(/\.cover-pool-overview \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 220px;[\s\S]*?gap: 64px;[\s\S]*?margin-top: 80px;/);
+    expect(appStyles).toMatch(/\.cover-pool-capacity-metric \.landing-capacity,[\s\S]*?\.cover-pool-capacity-metric > \.usd8-spinner \{\s+margin-top: 25px;/);
     expect(appStyles).toMatch(/\.cover-pool-metrics,[\s\S]*?\.cover-pool-account \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*?gap: 56px;/);
-    expect(appStyles).toMatch(/\.cover-pool-account \{[\s\S]*?width: calc\(100% - 284px\);/);
+    expect(appStyles).toMatch(/\.cover-pool-account \{[\s\S]*?width: calc\(100% - 284px\);[\s\S]*?margin: 80px 0 0;/);
+    expect(appStyles).toMatch(/\.cover-pool-actions \{[\s\S]*?grid-template-columns: repeat\(3, max-content\);[\s\S]*?gap: 28px;[\s\S]*?margin: 80px 0 0;/);
+    expect(appStyles).toMatch(/\.cover-pool-actions > \.action-button-shell \{\s+width: max-content;/);
+    expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{\s+width: auto;[\s\S]*?padding: 0 19px;/);
+    expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?text-transform: capitalize;/);
+    expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?min-height: 52px;[\s\S]*?height: 52px;/);
     expect(appStyles).toMatch(/\.insurance-summary strong,[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);
     expect(appStyles).toMatch(/\.usd8-dialog-amount input \{[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);
     expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?background: var\(--pool-button-background\);\s+color: var\(--text\);/);
+    expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?border: 0;/);
     expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\):not\(:disabled\):hover,[\s\S]*?background: var\(--pool-button-hover\);\s+color: var\(--text\);/);
+    expect(appStyles).not.toMatch(/\.cover-pool-actions button:nth-child\(n\):not\(:disabled\):hover,[\s\S]*?border-color:/);
     expect(appStyles).toMatch(/\.landing-brand:hover,[\s\S]*?filter: brightness\(0\.82\);/);
     expect(appStyles).toMatch(/\.landing-beta-link:hover,[\s\S]*?background: color-mix\(in srgb, rgb\(208, 153, 40\) 82%, black\);/);
     expect(docsStyles).toMatch(/\.sidebar-logo \{[\s\S]*?width: 64px;/);
     expect(docsStyles).toMatch(/\.sidebar-logo:hover,[\s\S]*?filter: brightness\(0\.82\);/);
     expect(docsStyles).toMatch(/\.sidebar-beta-link:hover,[\s\S]*?background: color-mix\(in srgb, rgb\(208, 153, 40\) 82%, black\);/);
-    expect(sharedStyles).toContain(':not(.sidebar-logo):not(.sidebar-beta-link):hover');
+    expect(sharedStyles).toContain(':not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):hover');
   });
 });

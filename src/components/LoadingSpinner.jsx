@@ -6,11 +6,13 @@ export default function LoadingSpinner({ label }) {
     : <span className="usd8-spinner" aria-hidden="true" />;
 }
 
-/// Renders `value`, or a spinner while it is still unknown. A value that is known
-/// to be unavailable falls back to `fallback` rather than spinning forever.
+/// Renders `value`, or the standard spinner while it is still unknown. Legacy
+/// dash placeholders are treated as pending values so they never flash onscreen.
 export function MetricValue({ loading, value, label, fallback = '—' }) {
-  if (loading && (value === null || value === undefined || value === '')) {
+  const missing = value === null || value === undefined || value === '';
+  const temporaryDash = typeof value === 'string' && /^[—–-]$/.test(value.trim());
+  if (temporaryDash || (loading && missing)) {
     return <LoadingSpinner label={label} />;
   }
-  return value === null || value === undefined || value === '' ? fallback : value;
+  return missing ? fallback : value;
 }

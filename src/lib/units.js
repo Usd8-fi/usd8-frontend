@@ -31,6 +31,18 @@ export function rateDecimals(rate, { max = 6, whenZero = max } = {}) {
   return max;
 }
 
+/// Smallest fraction width that makes Cover Pool earnings visibly advance each
+/// second. Rates below the ten-decimal display limit intentionally show whole
+/// numbers rather than implying a frozen fractional value.
+export function liveEarningsDecimals(rate, max = 10) {
+  const units = wadUnits(rate);
+  if (units === 0n) return 0;
+  for (let decimals = 0; decimals <= max; decimals += 1) {
+    if (units * 10n ** BigInt(decimals) >= WAD) return decimals;
+  }
+  return 0;
+}
+
 /// Mirrors DefiInsurance.finalizeClaim's expectedBoostedScore.
 export function boostedScore(scoreToSpend, boosterAmount, boostBps) {
   return scoreToSpend * (BPS_DENOMINATOR + BigInt(boosterAmount ?? 0) * BigInt(boostBps ?? 0))

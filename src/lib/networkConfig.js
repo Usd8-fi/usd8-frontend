@@ -25,7 +25,7 @@ const SEPOLIA_CONTRACTS = Object.freeze({
       assetSymbol: 'USD8',
       shareSymbol: 'USD8-cp-USD8',
       usdOracle: '0xf4aedc595912ce5951c3a0afdd8a61ebb07a8634',
-      tint: 'yellow',
+      tint: 'green',
     }),
   ]),
   defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',

@@ -16,7 +16,7 @@ describe('network configuration', () => {
       assetSymbol: 'USD8',
       shareSymbol: 'USD8-cp-USD8',
       usdOracle: '0xf4aedc595912ce5951c3a0afdd8a61ebb07a8634',
-      tint: 'yellow',
+      tint: 'green',
     });
     expect(network.payoutAssets).toEqual({
       '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': {

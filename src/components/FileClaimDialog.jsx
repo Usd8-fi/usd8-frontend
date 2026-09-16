@@ -42,6 +42,12 @@ function sharePercentage(mine, existingTotal) {
   return `${(mine * 100n + combined / 2n) / combined}%`;
 }
 
+function wholePercentage(value) {
+  const normalized = String(value ?? '').trim();
+  if (!/^\d+(?:\.\d+)?%$/.test(normalized)) return normalized;
+  return `${Math.round(Number.parseFloat(normalized))}%`;
+}
+
 function timeLeftLabel(daysLeft, hoursLeft, minutesLeft) {
   if (daysLeft === 0 && minutesLeft !== undefined) {
     const hours = hoursLeft ? `${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'} ` : '';
@@ -118,6 +124,13 @@ export default function FileClaimDialog({
   const [statusNowMilliseconds, setStatusNowMilliseconds] = useState(Date.now());
   const lifecycle = claimIncident ? claimLifecycle(claimIncident, statusNowMilliseconds) : null;
   const liveClaimStatus = lifecycle ? { ...claimStatus, ...lifecycle } : claimStatus;
+  const activeBoosterCount = normalizedDecimal(liveClaimStatus?.boosterAmount);
+  const showEffectiveClaimScore = /^\d+$/.test(activeBoosterCount)
+    && BigInt(activeBoosterCount) > 0n
+    && isPositiveDecimal(liveClaimStatus?.scoreToSpend);
+  const activeEffectiveScoreUnits = showEffectiveClaimScore
+    ? boostedScore(wadUnits(liveClaimStatus.scoreToSpend), BigInt(activeBoosterCount), boosterBoostBps)
+    : 0n;
   // Settlement is permissionless, so once filing closes the incident replaces the
   // claim form for everyone, including accounts that never filed.
   const showStatus = activeClaim
@@ -139,19 +152,29 @@ export default function FileClaimDialog({
     'payout-open': ['Claim Closed', 'Settled', 'Payout Open'],
     'payout-expired': ['Claim Closed', 'Settled', 'Payout Closed'],
   }[liveClaimStatus?.state] || ['Claim Open', 'Settle', 'Payout'];
+  const statusDescription = {
+    'claim-open': 'waiting for others to join in the claim.',
+    'settlement-open': activeClaim
+      ? 'waiting for settlement'
+      : 'waiting for settlement, anyone can settle.',
+    'settlement-expired': 'settlement window closed, please withdraw your escrow.',
+    'settlement-pending': 'settled, Window open for potential disputes',
+    'payout-open': 'Payout window open, please finalised asap.',
+    'payout-expired': 'Payout window closed, please withdraw your escrow.',
+  }[liveClaimStatus?.state] || '';
   const showPayout = activeClaim
     && (liveClaimStatus?.state === 'payout-open' || liveClaimStatus?.state === 'payout-expired');
   const payoutIneligible = liveClaimStatus?.payoutEligible === false;
   const returnTokens = ['Cancel Payout and Return Tokens', onCancelPayout];
   const actionButtons = activeClaim ? {
     'claim-open': [['Cancel Claim', onCancel]],
-    'settlement-open': [['Settle Claim', onSettle]],
+    'settlement-open': [['Settle All Claims', onSettle]],
     'settlement-expired': [['Return Tokens', onReturnTokens]],
     // Accepting an ineligible payout resolves exactly as a decline, so only offer the decline.
     'payout-open': payoutIneligible ? [returnTokens] : [['Accept Payout', onAcceptPayout], returnTokens],
     'payout-expired': [returnTokens],
   }[liveClaimStatus?.state] || []
-    : liveClaimStatus?.state === 'settlement-open' ? [['Settle Claim', onSettle]] : [];
+    : liveClaimStatus?.state === 'settlement-open' ? [['Settle All Claims', onSettle]] : [];
 
   useEffect(() => {
     setScoreToSpend(insuranceScoreInputValue(availableScoreValue));
@@ -203,17 +226,22 @@ export default function FileClaimDialog({
             ) : (
             <div className="claim-status-metrics">
               <div>
-                <span>Insured Token</span>
+                <span>Insured Token Escrowed</span>
                 <strong>{liveClaimStatus.insuredTokenAmount} {selectedToken.symbol}</strong>
               </div>
-              <div><span>Claim Bond</span><strong>{liveClaimStatus.bondAmount} USD8</strong></div>
+              <div><span>Claim Bond Escrowed</span><strong>{liveClaimStatus.bondAmount} USD8</strong></div>
               <div>
-                <span>Insurance score to spend</span>
+                <span>Insurance Score to Spend</span>
                 <strong>{liveClaimStatus.scoreToSpend}</strong>
-                <small>{liveClaimStatus.scoreCommitmentPercentage} of all score committed</small>
+                <small className={showEffectiveClaimScore ? 'claim-status-score-summary' : undefined}>
+                  {showEffectiveClaimScore
+                    ? `Effective insurance score after boosters ${formatWad(activeEffectiveScoreUnits, 2, { trim: true })}, `
+                    : ''}
+                  {wholePercentage(liveClaimStatus.scoreCommitmentPercentage)} of all score committed{showEffectiveClaimScore ? '.' : ''}
+                </small>
               </div>
               <div>
-                <span>Boosters escrowed</span>
+                <span>Boosters Escrowed</span>
                 <strong>{liveClaimStatus.boosterAmount}</strong>
                 {showPayout && (payoutLoading || liveClaimStatus.boostersToBurn !== null) ? (
                   <small>
@@ -269,7 +297,9 @@ export default function FileClaimDialog({
                 </div>
               </>
             ) : null}
-            <span className="claim-status-timeline-label">Status</span>
+            <span className="claim-status-timeline-label">
+              Status{statusDescription ? ` - ${statusDescription}` : ''}
+            </span>
             <div className="claim-status-timeline" aria-label={`Current stage: ${liveClaimStatus.stage}`}>
               {timelineLabels.map((label, index) => {
                 const active = index === liveClaimStatus.stageIndex;

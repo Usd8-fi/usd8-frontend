@@ -43,7 +43,7 @@ const USD8_POOL = {
   name: 'USD8 Cover Pool',
   assetSymbol: 'USD8',
   shareSymbol: 'USD8-cp-USD8',
-  tint: 'yellow',
+  tint: 'green',
   capacityUncapped: true,
   assets: '1',
 };
@@ -176,14 +176,23 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText('wstEth Cover Pool')).toBeInTheDocument();
   });
 
-  it('renders the USD8 cover pool with its logo and yellow tint', () => {
+  it('renders the USD8 cover pool with its logo and green tint', () => {
     render(<USD8Landing wallet={wallet} pools={[...POOLS, USD8_POOL]} />);
 
     const usd8Pool = screen.getByRole('region', { name: 'USD8 Cover Pool' });
-    expect(usd8Pool).toHaveClass('cover-pool-card--yellow');
+    expect(usd8Pool).toHaveClass('cover-pool-card--green');
     expect(usd8Pool.querySelector('header img')).toHaveAttribute('src', usd8Logo);
-    expect(within(usd8Pool).getByText('Uncapped · 1 USD8 deposited')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'wstEth Cover Pool' })).not.toHaveClass('cover-pool-card--yellow');
+    expect(within(usd8Pool).getByText('Uncapped')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'wstEth Cover Pool' })).not.toHaveClass('cover-pool-card--green');
+  });
+
+  it('shows capacity as a progress bar with a whole-percentage accessible label', () => {
+    render(<USD8Landing wallet={wallet} pools={[{ ...POOLS[0], capacityPercent: 87.6 }]} />);
+
+    const pool = screen.getByRole('region', { name: 'wstEth Cover Pool' });
+    expect(within(pool).getByLabelText('88% capacity filled')).toBeInTheDocument();
+    expect(pool.querySelector('.landing-capacity')).toBeInTheDocument();
+    expect(within(pool).queryByText('88%')).not.toBeInTheDocument();
   });
 
   it('keeps the combined page after a remount without persisting a product tab', () => {
@@ -204,7 +213,7 @@ describe('USD8 landing navigation', () => {
     expect(poolCard.querySelector('img')).toHaveAttribute('src', coverWsteth);
   });
 
-  it('uses the wide cover-pool layout with capacity beside the headline metrics', () => {
+  it('uses the spacious three-plus-two pool metric layout', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
@@ -212,6 +221,7 @@ describe('USD8 landing navigation', () => {
     expect(overview).not.toBeNull();
     expect(overview.children[0]).toHaveClass('cover-pool-metrics');
     expect(overview.children[1]).toHaveClass('cover-pool-capacity-metric');
+    expect(poolCard.querySelector('.cover-pool-account').children).toHaveLength(2);
     expect(poolCard.querySelector('.cover-pool-actions').children).toHaveLength(3);
   });
 
@@ -508,6 +518,23 @@ describe('Free insurance table', () => {
     );
     expect(within(savingsCard).queryByRole('button', { name: 'deposit' })).not.toBeInTheDocument();
     expect(within(savingsCard).queryByRole('button', { name: 'withdraw' })).not.toBeInTheDocument();
+  });
+
+  it('uses spinning icons instead of temporary dashes for APY and pool metrics', () => {
+    render(
+      <USD8Landing
+        wallet={wallet}
+        pools={POOLS}
+        savingsVault={{ apy: '—' }}
+      />,
+    );
+
+    const poolCard = screen.getByRole('region', { name: 'wstEth Cover Pool' });
+    const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
+    expect(within(poolCard).getAllByRole('status', { name: 'Loading pool data' })).toHaveLength(2);
+    expect(within(savingsCard).getByRole('status', { name: 'Loading APY' })).toBeInTheDocument();
+    expect(within(poolCard).queryByText('—')).not.toBeInTheDocument();
+    expect(within(savingsCard).queryByText('—')).not.toBeInTheDocument();
   });
 
   it('reuses the insured-token rows without exposing contract addresses', () => {

@@ -9,7 +9,7 @@ import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimC
 import { createPublicClient, formatUnits, http, zeroAddress } from 'viem';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
-import { boostedScore, WAD } from './units.js';
+import { boostedScore, liveEarningsDecimals, WAD } from './units.js';
 
 export { erc20Abi };
 
@@ -227,10 +227,9 @@ function insuranceTokenState(tokenId, address, config, claimantCoverageCapBps) {
 // A live claim is always part of its own total, so a zero denominator means the
 // registration logs were unavailable, not that the share is zero. Report the gap
 // rather than an impossible 0%.
-function claimPercentage(amount, total) {
+export function claimPercentage(amount, total) {
   if (total === 0n) return UNKNOWN_VALUE;
-  const tenths = (amount * 1_000n) / total;
-  return `${tenths / 10n}.${tenths % 10n}%`;
+  return `${(amount * 100n + total / 2n) / total}%`;
 }
 
 function formattedUsd(assetAmount, price, priceDecimals) {
@@ -543,6 +542,10 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     const earningsPerSecond = earningShares === zero
       ? zero
       : (read.shares * read.rewardRate) / earningShares;
+    const activeEarningsRate = Number(read.periodFinish) * 1_000 > Date.now()
+      ? formatUnits(earningsPerSecond, 18)
+      : '0';
+    const earningsDecimals = liveEarningsDecimals(activeEarningsRate);
     const shareDecimals = Number(read.shareDecimals);
     return {
       id: read.config.id,
@@ -572,7 +575,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       availableForWithdraw: formatted(exitAvailable ? read.pendingExitShares : zero, shareDecimals),
       inCooldown: formatted(exitAvailable ? zero : read.pendingExitShares, shareDecimals),
       cooldownEndsAtMilliseconds: read.pendingExitShares > zero ? Number(read.exitEpoch) * 1_000 : 0,
-      earnings: formatted(read.earned, 18, 1),
+      earnings: formatted(read.earned, 18, earningsDecimals),
       earningsExact: formatUnits(read.earned, 18),
       earningsPerSecond: formatUnits(earningsPerSecond, 18),
       earningsSnapshotTimestampMilliseconds: Date.now(),
@@ -590,7 +593,12 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     activeIncidentId: activeIncidentId.toString(),
     incident: null,
     claim: null,
-    insurance: { tokens: insuranceTokens, minHoldingRequiredBlocks, claimBond: claimBond === null ? null : formatted(claimBond) },
+    insurance: {
+      tokens: insuranceTokens,
+      minHoldingRequiredBlocks,
+      claimBond: claimBond === null ? null : formatted(claimBond),
+      boosterBoostBps: Number(boosterPolicy[2] ?? 0),
+    },
     scoreBalances: resourceErrors['account-balances'] ? null : { usd8: usd8.toString(), savings: savings.toString() },
     // The score snapshot lags a spend until it finalizes, so the app compares
     // this against the snapshot's own scoreSpent to know when to re-fetch.
