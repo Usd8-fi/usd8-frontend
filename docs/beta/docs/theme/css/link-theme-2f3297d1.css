@@ -101,17 +101,14 @@ a:active {
   color: var(--link);
 }
 
-a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):hover,
-a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):focus-visible,
+a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):hover,
+a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):focus-visible,
 .usd8-dialog-available:hover,
 .usd8-dialog-available:focus-visible,
 .content .header.faq-question:hover,
 .content .header.faq-question:focus-visible,
 .content main a:hover,
-.content main a:focus-visible,
-.sidebar-telegram:hover,
-.sidebar-x:hover,
-.sidebar-github:hover {
+.content main a:focus-visible {
   background: var(--link);
   color: var(--link-inverse);
   text-decoration: none;
