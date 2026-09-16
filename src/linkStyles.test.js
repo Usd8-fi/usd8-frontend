@@ -17,6 +17,7 @@ describe('shared text-link styling', () => {
   it('matches the production sidebar social icon treatment', () => {
     expect(existsSync(fontAwesomePath)).toBe(true);
     expect(docsStyles).toMatch(/@font-face \{[\s\S]*?font-family: "FontAwesome";[\s\S]*?fontawesome-webfont\.woff2/);
+    expect(docsStyles).toContain('src: url("../../../assets/fonts/fontawesome-webfont.woff2") format("woff2");');
     expect(docsStyles).toContain(`.sidebar-telegram,
 .sidebar-x,
 .sidebar-github {
