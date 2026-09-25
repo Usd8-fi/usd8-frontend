@@ -29,16 +29,21 @@ export async function fetchLogsInChunks(client, request, fromBlock, toBlock, { s
   return logs;
 }
 
+// Logs at or below the anchor are reused. The anchor sits at least
+// REORG_OVERLAP blocks behind the head (past Ethereum finality), so it is only
+// moved, and its hash re-checked, once the head is two overlaps ahead. Between
+// moves a refresh costs a single short getLogs call and no block reads.
 export async function incrementalLogs(client, key, request, fromBlock, toBlock, { signal } = {}) {
   let previous = histories.get(key);
-  if (previous && (previous.anchor < fromBlock || previous.anchor > toBlock
-    || (await client.getBlock({ blockNumber: previous.anchor }))?.hash !== previous.hash)) previous = null;
+  if (previous && (previous.anchor < fromBlock || previous.anchor > toBlock)) previous = null;
+  const advance = !previous || toBlock - previous.anchor >= REORG_OVERLAP * 2n;
+  if (previous && advance && (await client.getBlock({ blockNumber: previous.anchor }))?.hash !== previous.hash) previous = null;
   checkAbort(signal);
   const start = previous ? previous.anchor + 1n : fromBlock;
   const fresh = await fetchLogsInChunks(client, request, start, toBlock, { signal });
   const logs = [...(previous?.logs || []), ...fresh];
   const anchor = toBlock - REORG_OVERLAP;
-  if (anchor >= fromBlock) {
+  if ((advance || !previous) && anchor >= fromBlock) {
     const block = await client.getBlock({ blockNumber: anchor });
     checkAbort(signal);
     if (block?.hash && logs.length <= MAX_LOGS) retain(key, {

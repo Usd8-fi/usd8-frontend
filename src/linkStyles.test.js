@@ -14,6 +14,12 @@ describe('shared text-link styling', () => {
     expect(appStyles).toMatch(/\.app-dialog-close:hover,[\s\S]*?background: rgba\(255, 255, 255, 0\.16\);/);
   });
 
+  it('keeps analytics consent choices equally prominent while preserving keyboard focus', () => {
+    expect(sharedStyles).toMatch(/\.analytics-consent-button \{[\s\S]*?background: transparent;[\s\S]*?color: var\(--accent\);/);
+    expect(sharedStyles).toMatch(/\.analytics-consent-button:hover \{[\s\S]*?background: var\(--accent\);[\s\S]*?color: var\(--link-inverse\);/);
+    expect(sharedStyles).toMatch(/\.analytics-consent-button:focus-visible \{[\s\S]*?outline: 2px solid var\(--text\);[\s\S]*?outline-offset: 3px;/);
+  });
+
   it('matches the production sidebar social icon treatment', () => {
     expect(existsSync(fontAwesomePath)).toBe(true);
     expect(docsStyles).toMatch(/@font-face \{[\s\S]*?font-family: "FontAwesome";[\s\S]*?fontawesome-webfont\.woff2/);
@@ -45,7 +51,7 @@ describe('shared text-link styling', () => {
     expect(sharedStyles).toContain(`--accent: #ffcc00;`);
     expect(sharedStyles).toContain(`--accent-hover: color-mix(in srgb, var(--accent) 82%, black);`);
     expect(sharedStyles).toContain(`--link: var(--accent);`);
-    expect(sharedStyles).toContain(`--navigation-inactive: #5f5f5f;`);
+    expect(sharedStyles).toContain(`--navigation-inactive: #8f8f8f;`);
     expect(sharedStyles).toContain(`a {
   color: var(--link);
   text-decoration: underline;
@@ -76,18 +82,22 @@ describe('shared text-link styling', () => {
     expect(appStyles).toMatch(/\.usd8-dialog-form \{\s+margin-top: 72px;/);
     expect(appStyles).toMatch(/\.usd8-dialog-submit-row--withdraw \{[\s\S]*?margin-top: 72px;/);
     expect(sharedStyles).toContain(`.landing-footer-links .site-nav-link,
-.sidebar .chapter a {
+.sidebar .chapter a,
+.sidebar-analytics-settings {
   color: var(--navigation-inactive);
   text-decoration: none;
 }`);
     expect(sharedStyles).toContain(`.landing-footer-links .site-nav-link,
-.sidebar .chapter a {
+.sidebar .chapter a,
+.sidebar-analytics-settings {
   background: transparent;
 }`);
     expect(sharedStyles).toContain(`.landing-footer-links .site-nav-link:hover,
 .landing-footer-links .site-nav-link:focus-visible,
 .sidebar .chapter a:hover,
-.sidebar .chapter a:focus-visible {
+.sidebar .chapter a:focus-visible,
+.sidebar-analytics-settings:hover,
+.sidebar-analytics-settings:focus-visible {
   color: var(--link);
   text-decoration: none;
 }`);
@@ -136,7 +146,8 @@ describe('shared text-link styling', () => {
     expect(appStyles).toMatch(/\.cover-pool-actions \{[\s\S]*?grid-template-columns: repeat\(3, max-content\);[\s\S]*?gap: 28px;[\s\S]*?margin: 80px 0 0;/);
     expect(appStyles).toMatch(/\.cover-pool-actions > \.action-button-shell \{\s+width: max-content;/);
     expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{\s+width: auto;[\s\S]*?padding: 0 19px;/);
-    expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?text-transform: capitalize;/);
+    // Button labels carry their own Title Case; CSS must not re-case them.
+    expect(appStyles).not.toMatch(/text-transform: capitalize/);
     expect(appStyles).toMatch(/\.cover-pool-actions button:nth-child\(n\) \{[\s\S]*?min-height: 52px;[\s\S]*?height: 52px;/);
     expect(appStyles).toMatch(/\.insurance-summary strong,[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);
     expect(appStyles).toMatch(/\.usd8-dialog-amount input \{[\s\S]*?font-size: var\(--font-large\);\s+font-weight: 200;/);

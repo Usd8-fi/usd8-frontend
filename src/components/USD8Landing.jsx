@@ -4,21 +4,30 @@ import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
+import { useSecondClock } from '../lib/secondClock.js';
 import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
 import { MORPHO_VAULT_URL } from '../lib/morphoApi.js';
+import { docsUrl } from '../lib/docsLinks.js';
+import { durationPhrase } from '../lib/durations.js';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './AvailabilityAction.jsx';
 import CoveredProtocolsTable from './CoveredProtocolsTable.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
 
-const DOCS_BASE_URL = './docs/';
-const docsUrl = (path = '') => `${DOCS_BASE_URL}${path}`;
 
 function displayValue(value, fallback = '0') {
   return value === null || value === undefined || value === '' ? fallback : value;
 }
 
 const formatWholeBalance = (value) => groupDecimalString(displayValue(value), { decimals: 0 });
+// Dollar-denominated balances read as whole numbers everywhere on the page.
+// Other assets keep two decimals, because a whole wstETH hides most of a
+// typical position.
+const WHOLE_NUMBER_ASSETS = new Set(['USD8', 'sUSD8', 'USDC']);
+const formatAssetBalance = (value, assetSymbol) => groupDecimalString(displayValue(value), {
+  decimals: WHOLE_NUMBER_ASSETS.has(assetSymbol) ? 0 : 2,
+});
+const POOL_ACTION_LABELS = { deposit: 'Deposit', withdraw: 'Withdraw', claimReward: 'Withdraw Earnings' };
 const formatScore = (value, decimals = 1) => groupDecimalString(value, { decimals });
 
 const scoreRateDecimals = (rate) => rateDecimals(rate, { max: 4, whenZero: 1 });
@@ -27,37 +36,9 @@ const liveScoreValue = (base, rate, elapsedMilliseconds) => formatWad(
   18,
 );
 
-function useLiveScore(score) {
-  const [now, setNow] = useState(Date.now());
-  const snapshotTimestamp = Number(score?.snapshotTimestamp);
-  const snapshotMilliseconds = Number(
-    score?.snapshotTimestampMilliseconds ?? snapshotTimestamp * 1_000,
-  );
-  const canAdvance = Number.isSafeInteger(snapshotMilliseconds) && snapshotMilliseconds > 0;
-
-  useEffect(() => {
-    setNow(Date.now());
-    if (!canAdvance) return undefined;
-    const update = () => {
-      if (!document.hidden) setNow(Date.now());
-    };
-    const timer = window.setInterval(update, 1_000);
-    document.addEventListener('visibilitychange', update);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', update);
-    };
-  }, [canAdvance, snapshotMilliseconds]);
-
-  if (!score || !canAdvance) return score;
-  const elapsedMilliseconds = Math.max(0, now - snapshotMilliseconds);
-  return {
-    ...score,
-    grossEarnedScore: liveScoreValue(score.grossEarnedScore, score.grossScorePerSecond, elapsedMilliseconds),
-    availableScore: score.availableScore == null ? null : liveScoreValue(score.availableScore, score.maturingScorePerSecond, elapsedMilliseconds),
-    usd8Score: liveScoreValue(score.usd8Score, score.usd8ScorePerSecond, elapsedMilliseconds),
-    sUsd8Score: liveScoreValue(score.sUsd8Score, score.sUsd8ScorePerSecond, elapsedMilliseconds),
-  };
+function scoreSnapshotMilliseconds(score) {
+  const milliseconds = Number(score?.snapshotTimestampMilliseconds ?? Number(score?.snapshotTimestamp) * 1_000);
+  return Number.isSafeInteger(milliseconds) && milliseconds > 0 ? milliseconds : 0;
 }
 
 function ScoreValue({ loading, value, decimals = 1 }) {
@@ -65,6 +46,23 @@ function ScoreValue({ loading, value, decimals = 1 }) {
     return <LoadingSpinner label="Loading insurance score" />;
   }
   return value === null || value === undefined || value === '' ? displayValue(value) : formatScore(value, decimals);
+}
+
+/// One score figure, advanced every second from its snapshot. Only this leaf
+/// re-renders on each tick; the page around it renders when data changes.
+function LiveScoreValue({ loading, score, valueKey, rateKey, keepMissing = false }) {
+  const snapshotMilliseconds = scoreSnapshotMilliseconds(score);
+  const base = score?.[valueKey];
+  const canAdvance = snapshotMilliseconds > 0 && !(keepMissing && base == null);
+  const now = useSecondClock(canAdvance);
+  const value = canAdvance
+    ? liveScoreValue(base, score[rateKey], Math.max(0, now - snapshotMilliseconds))
+    : base;
+  return <ScoreValue loading={loading} value={value} decimals={scoreRateDecimals(score?.[rateKey])} />;
+}
+
+function LivePoolEarnings({ pool }) {
+  return `${displayValue(useLivePoolEarnings(pool).earnings)} USD8`;
 }
 
 function WalletButton({ wallet }) {
@@ -82,10 +80,10 @@ function WalletButton({ wallet }) {
       className="landing-wallet-button"
       type="button"
       onClick={connected ? onDisconnect : onConnect}
-      aria-label={connected ? `Manage wallet ${address}` : 'Connect wallet'}
+      aria-label={connected ? `Manage Wallet ${address}` : 'Connect Wallet'}
       unavailableReason={connected ? '' : connectUnavailableReason}
     >
-      {connecting ? 'connecting...' : connected ? `${address.slice(0, 6)}...${address.slice(-4)}${networkName ? ` ${networkName}` : ''}` : 'connect wallet'}
+      {connecting ? 'Connecting...' : connected ? `${address.slice(0, 6)}...${address.slice(-4)}${networkName ? ` ${networkName}` : ''}` : 'Connect Wallet'}
     </AvailabilityAction>
   );
 }
@@ -112,6 +110,7 @@ function SiteFooter({ updatedAt }) {
           <a className="site-nav-link" href={docsUrl('transparency.html')}>Transparency</a>
           <a className="site-nav-link" href={docsUrl('usd8.html#contact')}>Contacts</a>
           <a className="site-nav-link" href={docsUrl('legal.html')}>Legal</a>
+          <button className="site-nav-link analytics-settings-link" type="button" data-analytics-settings>Cookie Settings</button>
         </div>
       </nav>
       {updatedAt ? <small className="landing-data-freshness">Data as of {new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small> : null}
@@ -127,7 +126,8 @@ function AssetCard({
   balanceLoading = false,
   wholeBalance = false,
   score,
-  scoreDecimals = 1,
+  scoreKey,
+  scoreRateKey,
   scoreLoading = false,
   scoreRate,
   scoreRateHelp = 'Insurance score earned per eligible token held per day.',
@@ -180,8 +180,8 @@ function AssetCard({
       </div>
 
       <div className="insurance-asset-score">
-        <span>Score earned</span>
-        <strong><ScoreValue loading={scoreLoading} value={score} decimals={scoreDecimals} /></strong>
+        <span>Score Earned</span>
+        <strong><LiveScoreValue loading={scoreLoading} score={score} valueKey={scoreKey} rateKey={scoreRateKey} /></strong>
       </div>
 
       <div className="insurance-asset-actions">{children}</div>
@@ -189,11 +189,9 @@ function AssetCard({
   );
 }
 
-function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
+function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, scoreMaturitySeconds, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
+  const scoreMaturityPhrase = durationPhrase(scoreMaturitySeconds) || 'the holding period';
   const scoreLoading = scoreStatus === 'loading';
-  const liveScore = useLiveScore(score);
-  const totalScore = liveScore?.grossEarnedScore;
-  const availableScore = liveScore?.availableScore;
   const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
   const [nowMilliseconds, setNowMilliseconds] = useState(Date.now());
 
@@ -218,11 +216,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
             </InfoTooltip>
           </span>
           <strong>
-            <ScoreValue
-              loading={scoreLoading}
-              value={totalScore}
-              decimals={scoreRateDecimals(score?.grossScorePerSecond)}
-            />
+            <LiveScoreValue loading={scoreLoading} score={score} valueKey="grossEarnedScore" rateKey="grossScorePerSecond" />
           </strong>
         </div>
       </section>
@@ -233,17 +227,18 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           balance={balances.usd8}
           balanceLoading={balancesLoading}
           wholeBalance
-          score={liveScore?.usd8Score}
-          scoreDecimals={scoreRateDecimals(score?.usd8ScorePerSecond)}
+          score={score}
+          scoreKey="usd8Score"
+          scoreRateKey="usd8ScorePerSecond"
           scoreLoading={scoreLoading}
           scoreRate="1 per USD8 per day"
           scoreRateHelp="You get 1 score per day for every USD8 you hold. Rewarded every block."
         >
           <AvailabilityAction type="button" onClick={() => onUsd8Action?.('mint')} unavailableReason={walletUnavailableReason}>
-            mint
+            Mint
           </AvailabilityAction>
           <AvailabilityAction type="button" onClick={() => onUsd8Action?.('redeem')} unavailableReason={walletUnavailableReason}>
-            redeem
+            Redeem
           </AvailabilityAction>
         </AssetCard>
 
@@ -254,8 +249,9 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           balanceLabel="Your Deposit (USD8)"
           balanceLoading={balancesLoading}
           wholeBalance
-          score={liveScore?.sUsd8Score}
-          scoreDecimals={scoreRateDecimals(score?.sUsd8ScorePerSecond)}
+          score={score}
+          scoreKey="sUsd8Score"
+          scoreRateKey="sUsd8ScorePerSecond"
           scoreLoading={scoreLoading}
           scoreRate="0.1 per sUSD8 per day"
           scoreRateHelp="You get 0.1 score per day for every sUSD8 you hold. Rewarded every block."
@@ -274,14 +270,16 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
             <span className="metric-label-with-help">
               Available Score
               <InfoTooltip ariaLabel="About available score" className="dashboard-help--align-right">
-                Score becomes available to use after seven days, minus any score already spent on claims.
+                Score becomes available to use after {scoreMaturityPhrase}, minus any score already spent on claims.
               </InfoTooltip>
             </span>
             <strong>
-              <ScoreValue
+              <LiveScoreValue
                 loading={availableScoreLoading ?? scoreLoading}
-                value={availableScore}
-                decimals={scoreRateDecimals(score?.maturingScorePerSecond)}
+                score={score}
+                valueKey="availableScore"
+                rateKey="maturingScorePerSecond"
+                keepMissing
               />
             </strong>
           </div>
@@ -319,7 +317,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
         <h2 className="landing-section-title" id="white-hat-economy-title">White Hat Economy</h2>
         <p className="white-hat-economy-message">
           The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process.{' '}
-          <a href={docsUrl('white-hat-economy.html')}>Learn more</a>.
+          <a href={docsUrl('white-hat-economy.html')}>Learn More</a>.
         </p>
       </section>
     </main>
@@ -339,7 +337,6 @@ function CapacityBar({ value = 0, uncapped = false, assets = '0', assetSymbol = 
 }
 
 function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolAction }) {
-  const livePool = useLivePoolEarnings(pool);
   const cardClassName = pool.tint === 'green' ? 'cover-pool-card cover-pool-card--green' : 'cover-pool-card';
   return (
     <section className={cardClassName} aria-label={pool.name}>
@@ -357,9 +354,9 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
                 USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.
               </InfoTooltip>
             </span>
-            <strong><MetricValue loading={poolLoading} value={livePool.apy} label="Loading pool data" /></strong>
+            <strong><MetricValue loading={poolLoading} value={pool.apy} label="Loading pool data" /></strong>
           </div>
-          <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={livePool.tvl} label="Loading pool data" /></strong></div>
+          <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={pool.tvl} label="Loading pool data" /></strong></div>
         </div>
 
         <div className="cover-pool-capacity-metric">
@@ -378,7 +375,14 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
       </div>
 
       <div className="cover-pool-account">
-        <div><span>Your deposit</span><strong>{displayValue(pool.deposit)} {pool.assetSymbol}</strong></div>
+        <div>
+          <span>Your Deposit</span>
+          <strong>
+            {/^[—–-]$/.test(String(pool.deposit ?? '').trim())
+              ? <LoadingSpinner label="Loading your deposit" />
+              : `${formatAssetBalance(pool.deposit, pool.assetSymbol)} ${pool.assetSymbol}`}
+          </strong>
+        </div>
         <div>
           <span className="metric-label-with-help">
             Your Earnings
@@ -386,7 +390,7 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
               Earnings are paid in USD8, not {pool.assetSymbol}. Earnings are not exposed to insurance claims and can be withdrawn at any time.
             </InfoTooltip>
           </span>
-          <strong>{displayValue(livePool.earnings)} USD8</strong>
+          <strong><LivePoolEarnings pool={pool} /></strong>
         </div>
       </div>
 
@@ -398,7 +402,7 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
             onClick={() => onPoolAction?.(action, pool.id)}
             unavailableReason={walletUnavailableReason}
           >
-            {action === 'claimReward' ? 'withdraw earnings' : action}
+            {POOL_ACTION_LABELS[action]}
           </AvailabilityAction>
         ))}
       </div>
@@ -421,6 +425,7 @@ export default function USD8Landing({
   updatedAt,
   incident = null,
   insuredTokenStates = {},
+  scoreMaturitySeconds = null,
   onFileClaim,
   fileClaimUnavailableReason = '',
   onPoolAction,
@@ -442,7 +447,7 @@ export default function USD8Landing({
       </header>
 
       {dataError ? (
-        <NoticeMessage message={dataError} actionLabel={onRetry ? "Retry data" : undefined} onAction={onRetry} />
+        <NoticeMessage message={dataError} actionLabel={onRetry ? "Retry Data" : undefined} onAction={onRetry} />
       ) : null}
 
       <FreeInsurancePage
@@ -457,6 +462,7 @@ export default function USD8Landing({
         poolLoading={poolLoading}
         incident={incident}
         insuredTokenStates={insuredTokenStates}
+        scoreMaturitySeconds={scoreMaturitySeconds}
         onFileClaim={onFileClaim}
         fileClaimUnavailableReason={fileClaimUnavailableReason}
         onPoolAction={onPoolAction}

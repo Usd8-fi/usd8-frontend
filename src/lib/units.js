@@ -1,3 +1,6 @@
+/// Shown when a value is known to be unavailable; `MetricValue` renders it as a
+/// spinner while data is still loading.
+export const UNKNOWN_VALUE = '—';
 const WAD_DECIMALS = 18;
 export const WAD = 10n ** BigInt(WAD_DECIMALS);
 export const BPS_DENOMINATOR = 10_000n;

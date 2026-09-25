@@ -1,3 +1,4 @@
+import { UNKNOWN_VALUE } from '../lib/units.js';
 /// The one spinner in the app. Omit `label` where the surrounding element already
 /// announces the wait (a status line), so screen readers do not hear it twice.
 export default function LoadingSpinner({ label }) {
@@ -8,7 +9,7 @@ export default function LoadingSpinner({ label }) {
 
 /// Renders `value`, or the standard spinner while it is still unknown. Legacy
 /// dash placeholders are treated as pending values so they never flash onscreen.
-export function MetricValue({ loading, value, label, fallback = '—' }) {
+export function MetricValue({ loading, value, label, fallback = UNKNOWN_VALUE }) {
   const missing = value === null || value === undefined || value === '';
   const temporaryDash = typeof value === 'string' && /^[—–-]$/.test(value.trim());
   if (temporaryDash || (loading && missing)) {

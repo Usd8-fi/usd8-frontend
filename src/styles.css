@@ -802,7 +802,6 @@ small a,
   background: var(--pool-button-background);
   color: var(--text);
   font-size: var(--font-body);
-  text-transform: capitalize;
 }
 
 .cover-pool-actions button:nth-child(n):not(:disabled):hover,

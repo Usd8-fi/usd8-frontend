@@ -57,6 +57,15 @@ export function initializeWalletConnector() {
       receive: false,
       send: false,
       history: false,
+      // Wallets only. Reown's cloud config returns no per-feature settings for
+      // this project, so these local values are the ones applied; each paid or
+      // account feature is switched off explicitly so a dashboard default can't
+      // add it to the popup.
+      emailCapture: false,
+      payWithExchange: false,
+      payments: false,
+      reownAuthentication: false,
+      reownBranding: false,
     },
   });
 

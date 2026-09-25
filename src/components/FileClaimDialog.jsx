@@ -2,6 +2,7 @@ import { NoticeMessage } from './WalletNotice.jsx';
 import { useDialogFocus } from './useDialogFocus.js';
 import { useEffect, useState } from 'react';
 import { claimLifecycle } from '../lib/claimLifecycle.js';
+import { docsUrl } from '../lib/docsLinks.js';
 import { decimalInputValue, displayAvailableBalance } from '../lib/displayAvailableBalance.js';
 import { tokenAmountExceedsBalance } from '../lib/tokenAmount.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
@@ -212,7 +213,7 @@ export default function FileClaimDialog({
           <p className="file-claim-requirement">
             {selectedToken.symbol} must lose more than 20% of its value against its underlying,
             measured between its TWAP price immediately before and after the drop.{' '}
-            <a href="./docs/defi-insurance.html">learn more</a>.
+            <a href={docsUrl('defi-insurance.html')}>Learn More</a>.
           </p>
         ) : null}
 
@@ -266,7 +267,7 @@ export default function FileClaimDialog({
               <>
                 <div className="claim-status-payout-summary">
                   <div>
-                    <span>Total Payout USD value</span>
+                    <span>Total Payout USD Value</span>
                     <strong>
                       <MetricValue
                         loading={payoutLoading}
@@ -276,7 +277,7 @@ export default function FileClaimDialog({
                     </strong>
                   </div>
                   <div>
-                    <span>Payout vs Loss value</span>
+                    <span>Payout vs Loss Value</span>
                     <strong>
                       <MetricValue
                         loading={payoutLoading}
@@ -387,7 +388,7 @@ export default function FileClaimDialog({
 
               <div className="file-claim-field file-claim-field--bond file-claim-field--compact">
                 <span className="metric-label-with-help">
-                  Claim bond
+                  Claim Bond
                   <InfoTooltip ariaLabel="About claim bond" className="dashboard-help--align-right" floating>
                     A 10 USD8 anti-spam bond is required to file. It will not be returned if you are not eligible for a claim.
                   </InfoTooltip>
@@ -398,14 +399,14 @@ export default function FileClaimDialog({
 
               <div className="file-claim-field file-claim-field--score file-claim-field--primary">
                 <span className="metric-label-with-help">
-                  <label htmlFor="file-claim-score">Insurance score to spend</label>
+                  <label htmlFor="file-claim-score">Insurance Score to Spend</label>
                   <InfoTooltip ariaLabel="About insurance score to spend" floating>
                     Requested score spend. Settlement caps it to your available score, and score is spent only if an eligible payout is accepted.
                   </InfoTooltip>
                 </span>
                 <input
                   id="file-claim-score"
-                  aria-label="Insurance score to spend"
+                  aria-label="Insurance Score to Spend"
                   inputMode="decimal"
                   pattern="[0-9,]*[.]?[0-9]*"
                   type="text"
@@ -420,7 +421,7 @@ export default function FileClaimDialog({
 
               <div className="file-claim-field file-claim-field--compact">
                 <span className="metric-label-with-help">
-                  <label htmlFor="file-claim-boosters">Boosters to escrow</label>
+                  <label htmlFor="file-claim-boosters">Boosters to Escrow</label>
                   <InfoTooltip ariaLabel="About boosters to escrow" className="dashboard-help--align-right" floating>
                     Optional. Boosters must meet the same pre-incident holding requirement as the insured token: {holdingRequirement}
                     Only eligible boosters increase payout weight and are burned on acceptance.
@@ -429,7 +430,7 @@ export default function FileClaimDialog({
                 </span>
                 <input
                   id="file-claim-boosters"
-                  aria-label="Boosters to escrow"
+                  aria-label="Boosters to Escrow"
                   inputMode="numeric"
                   min="0"
                   step="1"

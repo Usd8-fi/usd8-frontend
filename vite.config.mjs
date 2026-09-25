@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -15,6 +16,8 @@ const claimProxy = {
 
 export default defineConfig({
   base: './',
+  // viem's ESM build by module file; see src/lib/viemLite.js.
+  resolve: { alias: { 'viem-esm': fileURLToPath(new URL('./node_modules/viem/_esm', import.meta.url)) } },
   plugins: [react()],
   server: {
     hmr: false,

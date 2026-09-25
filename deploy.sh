@@ -30,6 +30,8 @@ git worktree add --quiet --detach "$wt" origin/main
 rm -rf "$wt/docs/beta"
 mkdir -p "$wt/docs/beta"
 git archive HEAD docs | tar -x -C "$wt/docs/beta" --strip-components=1
+cp "$wt/docs/beta/robots.txt" "$wt/docs/robots.txt"
+cp "$wt/docs/beta/sitemap.xml" "$wt/docs/sitemap.xml"
 
 git -C "$wt" add -A
 if git -C "$wt" diff --cached --quiet; then
@@ -37,9 +39,8 @@ if git -C "$wt" diff --cached --quiet; then
   exit 0
 fi
 
-if git -C "$wt" diff --cached --name-only | grep -qv '^docs/beta/'; then
-  echo "Refusing to publish: the swap touched files outside docs/beta/" >&2
-  git -C "$wt" diff --cached --name-only | grep -v '^docs/beta/' >&2
+if ! git -C "$wt" diff --cached --name-only -z | node scripts/publish-scope.mjs --null; then
+  echo "Refusing to publish: the release touched files outside docs/beta and the root crawler files" >&2
   exit 1
 fi
 

@@ -24,7 +24,7 @@ describe('shared wallet notice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Deposit' }));
     expect(screen.getAllByRole('alert')).toEqual([notice]);
     expect(document.querySelector('.action-validation-warning')).toBeNull();
-    fireEvent.click(within(notice).getByRole('button', { name: 'Connect wallet' }));
+    fireEvent.click(within(notice).getByRole('button', { name: 'Connect Wallet' }));
     expect(connect).toHaveBeenCalledTimes(1);
     expect(action).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
@@ -63,7 +63,7 @@ describe('shared wallet notice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     const notice = screen.getByRole('alert');
     expect(notice).toHaveTextContent('Wallet connection is unavailable.');
-    expect(within(notice).getByRole('button', { name: 'Connect wallet' })).toBeDisabled();
+    expect(within(notice).getByRole('button', { name: 'Connect Wallet' })).toBeDisabled();
   });
 });
 
@@ -71,7 +71,7 @@ describe('unified notifications', () => {
   it('shows one message at a time, removes resolved errors, and does not reopen dismissed messages on rerender', () => {
     const retry = vi.fn();
     const ExampleNotices = ({ error = 'Score unavailable.', success = '' }) => <WalletNoticeProvider wallet={{ connected: true }}>
-      <NoticeMessage message={error} actionLabel="Retry score" onAction={() => retry()} />
+      <NoticeMessage message={error} actionLabel="Retry Score" onAction={() => retry()} />
       <NoticeMessage message={success} tone="status" label="Transaction status" />
     </WalletNoticeProvider>;
     const { rerender } = render(<ExampleNotices />);
@@ -81,7 +81,7 @@ describe('unified notifications', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Transaction confirmed.');
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Score unavailable.');
-    fireEvent.click(screen.getByRole('button', { name: 'Retry score' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Score' }));
     expect(retry).toHaveBeenCalledTimes(1);
     rerender(<ExampleNotices success="Transaction confirmed." />);
     expect(document.querySelector('.wallet-notice')).toBeNull();

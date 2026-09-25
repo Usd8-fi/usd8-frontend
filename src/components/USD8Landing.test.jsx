@@ -91,6 +91,7 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByText('Audit Report')).toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Audit Report' })).not.toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Risk disclaimer' })).not.toBeInTheDocument();
+    expect(within(footerNav).getByRole('button', { name: 'Cookie Settings' })).toHaveAttribute('data-analytics-settings');
     expect(within(footerNav).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', './docs/');
     expect(within(footerNav).getByRole('link', { name: 'Github' })).toHaveAttribute('href', 'https://github.com/Usd8-fi/usd8-core');
     expect(within(footerNav).getByRole('link', { name: 'Telegram' })).toHaveAttribute('href', 'https://t.me/+e84i2oYk1ao1MTk1');
@@ -131,7 +132,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('heading', { name: 'wstEth Cover Pool' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'White Hat Economy', level: 2 })).toBeInTheDocument();
     expect(screen.getByText(/The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process\./)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Learn more' })).toHaveAttribute('href', './docs/white-hat-economy.html');
+    expect(screen.getByRole('link', { name: 'Learn More' })).toHaveAttribute('href', './docs/white-hat-economy.html');
   });
 
   it('advances cover-pool earnings locally until the reward period ends', () => {
@@ -240,8 +241,8 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    const mint = screen.getByRole('button', { name: 'mint' });
-    const redeem = screen.getByRole('button', { name: 'redeem' });
+    const mint = screen.getByRole('button', { name: 'Mint' });
+    const redeem = screen.getByRole('button', { name: 'Redeem' });
     const claimButtons = screen.getAllByRole('button', { name: /file claim/i });
     for (const button of [mint, redeem, ...claimButtons]) {
       expect(button).toBeEnabled();
@@ -252,8 +253,8 @@ describe('USD8 landing navigation', () => {
     expect(onUsd8Action).not.toHaveBeenCalled();
     expect(onFileClaim).not.toHaveBeenCalled();
 
-    expect(screen.queryByRole('button', { name: 'start cooldown' })).not.toBeInTheDocument();
-    for (const action of ['deposit', 'withdraw', 'withdraw earnings']) {
+    expect(screen.queryByRole('button', { name: 'Start Cooldown' })).not.toBeInTheDocument();
+    for (const action of ['Deposit', 'Withdraw', 'Withdraw Earnings']) {
       const button = screen.getByRole('button', { name: action });
       expect(button).toBeEnabled();
       fireEvent.click(button);
@@ -262,10 +263,22 @@ describe('USD8 landing navigation', () => {
     expect(onPoolAction).not.toHaveBeenCalled();
   });
 
+  it('writes every button label in literal Title Case', () => {
+    render(<USD8Landing wallet={wallet} pools={[POOLS[0], USD8_POOL]} />);
+
+    const minorWords = new Set(['to', 'of', 'in', 'vs', 'for', 'and', 'or', 'with', 'a', 'the', 'per']);
+    for (const button of screen.getAllByRole('button')) {
+      const words = button.textContent.trim().split(/\s+/).filter((word) => /^[a-z]/i.test(word));
+      for (const word of words) {
+        if (!minorWords.has(word)) expect(word[0], button.textContent).toMatch(/[A-Z]/);
+      }
+    }
+  });
+
   it('shows zero for disconnected wallet scores', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    for (const label of screen.getAllByText('Score earned')) {
+    for (const label of screen.getAllByText('Score Earned')) {
       expect(label.nextElementSibling).toHaveTextContent('0');
     }
   });
@@ -282,6 +295,29 @@ describe('USD8 landing navigation', () => {
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('1235');
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).not.toHaveTextContent('1234.5678');
+  });
+
+  it('formats pool deposits with the same balance formatter as the asset cards', () => {
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={[{ ...POOLS[0], deposit: '0.4' }, { ...USD8_POOL, deposit: '1234.56' }]}
+      />,
+    );
+
+    const deposit = (name) => within(screen.getByRole('region', { name })).getByText('Your Deposit').nextElementSibling;
+    // USD8 reads as a whole number, exactly like the USD8 card balance.
+    expect(deposit('USD8 Cover Pool')).toHaveTextContent(/^1235 USD8$/);
+    // wstETH keeps a fixed two-decimal width so small positions stay visible.
+    expect(deposit('wstEth Cover Pool')).toHaveTextContent(/^0\.40 wstETH$/);
+  });
+
+  it('shows a spinner instead of a dash when the pool deposit is unavailable', () => {
+    render(<USD8Landing wallet={{ ...wallet, connected: true }} pools={[{ ...POOLS[0], deposit: '—' }]} />);
+
+    const deposit = within(screen.getByRole('region', { name: 'wstEth Cover Pool' })).getByText('Your Deposit').nextElementSibling;
+    expect(within(deposit).getByRole('status', { name: 'Loading your deposit' })).toBeInTheDocument();
+    expect(deposit).not.toHaveTextContent('—');
   });
 
   it('floors scores to one decimal and groups thousands without abbreviating them', () => {
@@ -302,8 +338,8 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText('Available Score').parentElement).toHaveTextContent('7123456.9');
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('7123.6');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('1234567.8');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('7123.6');
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('1234567.8');
   });
 
   it('shows numeric zero for absent connected-wallet scores', () => {
@@ -350,15 +386,15 @@ describe('USD8 landing navigation', () => {
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(total).toHaveTextContent('128600.0');
     expect(available).toHaveTextContent('96400.0');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84200.0');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44400.0');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('84200.0');
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('44400.0');
 
     act(() => vi.advanceTimersByTime(1_000));
 
     expect(total).toHaveTextContent('128600.2');
     expect(available).toHaveTextContent('96400.1');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('84200.1');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('44400.1');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('84200.1');
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('44400.1');
   });
 
 
@@ -392,18 +428,24 @@ describe('USD8 landing navigation', () => {
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(total).toHaveTextContent('12.9000');
     expect(available).toHaveTextContent('12.90');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('12.9');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('12.9');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('12.9');
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('12.9');
 
     act(() => vi.advanceTimersByTime(1_000));
 
     expect(total).toHaveTextContent('12.9002');
     expect(available).toHaveTextContent('12.92');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('13.0');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('13.0');
+  });
+
+  it('states the deployment\'s configured score maturity instead of a fixed seven days', () => {
+    render(<USD8Landing wallet={wallet} pools={POOLS} scoreMaturitySeconds={3_600} />);
+    expect(screen.getByRole('tooltip', { name: /available to use after 1 hour,/i })).toBeInTheDocument();
+    expect(screen.queryByText(/seven days/i)).toBeNull();
   });
 
   it('explains score and pool metrics with question-mark tooltips', () => {
-    render(<USD8Landing wallet={wallet} pools={POOLS} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} scoreMaturitySeconds={604_800} />);
 
     expect(screen.getByRole('button', { name: 'About total insurance score' })).toHaveTextContent('?');
     const scoreRateHelp = screen.getAllByRole('button', { name: 'About score rate' });
@@ -419,7 +461,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('tooltip', {
       name: 'Your total insurance score earned across all holdings. Score updates may be delayed by around 13–19 minutes while Ethereum blocks finalize.',
     })).toBeInTheDocument();
-    expect(screen.getByRole('tooltip', { name: /score becomes available to use after seven days, minus any score already spent on claims/i })).toBeInTheDocument();
+    expect(screen.getByRole('tooltip', { name: /score becomes available to use after 7 days, minus any score already spent on claims/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'About coverage limits' })).toHaveLength(2);
     expect(screen.getAllByRole('tooltip', { name: /subject to the amount available in the cover pools/i })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
@@ -516,8 +558,8 @@ describe('Free insurance table', () => {
       'href',
       'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
     );
-    expect(within(savingsCard).queryByRole('button', { name: 'deposit' })).not.toBeInTheDocument();
-    expect(within(savingsCard).queryByRole('button', { name: 'withdraw' })).not.toBeInTheDocument();
+    expect(within(savingsCard).queryByRole('button', { name: 'Deposit' })).not.toBeInTheDocument();
+    expect(within(savingsCard).queryByRole('button', { name: 'Withdraw' })).not.toBeInTheDocument();
   });
 
   it('uses spinning icons instead of temporary dashes for APY and pool metrics', () => {

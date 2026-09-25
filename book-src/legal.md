@@ -1,6 +1,6 @@
 # Legal - Terms, Privacy and Risk Disclaimer
 
-**Last updated: August 22, 2026**
+**Last updated: September 23, 2026**
 
 Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.
 
@@ -201,18 +201,16 @@ Google Analytics information is used to understand website and documentation usa
 
 ### 4. Cookies, browser storage, analytics, and choices
 
-Google Analytics loads by default when application or documentation pages open. Loading begins without a prior choice in the current interface and may transmit the visitor's IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers to Google. Google may place or read cookies or similar identifiers and process this data under its own [Privacy Policy](https://policies.google.com/privacy), including on servers outside your country.
+Google Analytics is optional and does not load until you select **Accept Analytics Cookies**. Select **Reject Analytics Cookies** to continue without analytics; rejecting does not affect protocol or documentation functionality. If accepted, Google Analytics cookies and similar identifiers may be placed or read, and the visitor's IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers may be transmitted to Google. Google may process this data under its own [Privacy Policy](https://policies.google.com/privacy), including on servers outside your country.
 
 The Services currently use the following cookies and similar technologies:
 
 | Type | Provider | Purpose | How to control |
 | --- | --- | --- | --- |
-| Analytics (first- and third-party) | Google (Google Analytics) | Understand website and documentation usage, measure performance, identify errors | Browser settings; Google's [Analytics opt-out tools](https://tools.google.com/dlpage/gaoptout) |
+| Analytics (first- and third-party, optional) | Google (Google Analytics) | Understand aggregate website and documentation usage, measure performance, identify errors | Accept or reject in the consent prompt; change the choice through **Cookie Settings**; browser settings; Google's [Analytics opt-out tools](https://tools.google.com/dlpage/gaoptout) |
 | Essential browser storage (first-party, local storage / session storage) | USD8 interface | Store interface preferences and wallet-connection session state needed for the application to function | Clearing site data in your browser settings |
 
-Essential browser storage does not require consent. Analytics technologies are not strictly necessary: depending on where you are located, you may be entitled to consent before they load or be notified of your ability to object. You can limit cookies through your browser settings, use browser privacy controls, block images, or use Google's opt-out tools. Blocking cookies or browser storage may affect functionality. Wallet providers and other third parties may provide separate privacy settings.
-
-Where required by applicable law, we will provide a consent mechanism or equivalent choice before loading non-essential tracking technologies.
+The interface stores your analytics choice in first-party local storage. Rejecting analytics does not affect protocol or documentation functionality. You can change or withdraw the choice at any time through **Cookie Settings**. Essential browser storage used for wallet connection and interface operation remains available independently of that choice. You can also limit cookies through browser settings or Google's opt-out tools. Wallet providers and other third parties may provide separate privacy settings.
 
 ### 5. How information may be shared
 

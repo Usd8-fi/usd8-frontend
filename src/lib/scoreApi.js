@@ -1,4 +1,5 @@
 import { formatUnits, getAddress, isAddress } from 'viem';
+import { sepolia } from './viemLite.js';
 
 export const DEFAULT_SCORE_API_URL = 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com';
 
@@ -8,7 +9,7 @@ export function scoreApiBaseUrl(hostname = globalThis.location?.hostname, overri
 }
 
 const SCORE_DECIMALS = 18;
-const LEGACY_SEPOLIA_CHAIN_ID = 11_155_111;
+const LEGACY_SEPOLIA_CHAIN_ID = sepolia.id;
 
 function requiredString(payload, key) {
   const value = payload?.[key];

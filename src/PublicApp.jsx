@@ -1,15 +1,16 @@
 import { CONNECT_WALLET_REASON } from './components/AvailabilityAction.jsx';
 import { useEffect, useState } from 'react';
-import { zeroAddress } from 'viem';
+import { zeroAddress } from './lib/viemLite.js';
 import USD8Landing from './components/USD8Landing.jsx';
 import { fetchLandingChainData, fetchLandingAnalytics } from './lib/chainData.js';
 import { cachedData } from './lib/dataCache.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
-import { getProtocolNetwork } from './lib/networkConfig.js';
+import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from './lib/networkConfig.js';
 import { mergeSnapshot } from './lib/mergeSnapshot.js';
+import { onForegroundRefresh } from './lib/foregroundRefresh.js';
 
 export default function PublicApp({ onConnect, connecting = false, connectError = '' }) {
-  const network = getProtocolNetwork(11155111);
+  const network = getProtocolNetwork(PROTOCOL_CHAIN_ID);
   const [data, setData] = useState({ pools: network.contracts.coverPools.map(pool => ({ ...pool, tvl: null, apy: null, capacityPercent: null })) });
   const [vault, setVault] = useState({});
   const [error, setError] = useState('');
@@ -39,14 +40,13 @@ export default function PublicApp({ onConnect, connecting = false, connectError 
     cachedData(['morpho-vault'], ({ signal }) => fetchMorphoVault({ signal }), { signal: controller.signal, staleTime: 300_000 }).then(next => {
       if (!controller.signal.aborted) setVault(next);
     }).catch(() => {});
-    const timer = setInterval(refresh, 30_000);
-    document.addEventListener('visibilitychange', refresh);
-    window.addEventListener('online', refresh);
-    return () => { controller.abort(); clearInterval(timer); document.removeEventListener('visibilitychange', refresh); window.removeEventListener('online', refresh); };
+    const stopRefreshing = onForegroundRefresh(refresh);
+    return () => { controller.abort(); stopRefreshing(); };
   }, [retry]);
   return <USD8Landing wallet={{ connected: false, connecting, onConnect }}
     scoreStatus="ready" pools={data.pools} poolLoading={!data.updatedAt && !error}
     savingsVault={vault} dataError={connectError || error} updatedAt={data.updatedAt}
     onRetry={() => setRetry(value => value + 1)} insuredTokenStates={data.insurance?.tokens}
+    scoreMaturitySeconds={data.insurance?.scoreMaturitySeconds}
     incident={data.incident} fileClaimUnavailableReason={CONNECT_WALLET_REASON} />;
 }

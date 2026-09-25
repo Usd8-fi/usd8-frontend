@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cachedData, protocolKey } from './dataCache.js';
-import { snapshotReads } from './snapshotReads.js';
+import { MULTICALL3_ADDRESS, MULTICALL_BATCH_BYTES, snapshotReads } from './snapshotReads.js';
 
 const network = { id: 1, contracts: { registry: '0xAA', defiInsurance: '0xBB' } };
 const descriptors = [
@@ -18,7 +18,27 @@ describe('resource snapshots', () => {
     expect(client.multicall).toHaveBeenCalledTimes(1);
     const updated = await snapshotReads(client, network, descriptors, { ...options, blockNumber: 101n, refresh: true, resources: ['account-balances'] });
     expect(updated.values).toEqual([8n, 20n]);
-    expect(client.multicall).toHaveBeenLastCalledWith({ contracts: [descriptors[0].call], allowFailure: true, blockNumber: 101n });
+    expect(client.multicall).toHaveBeenLastCalledWith({ contracts: [descriptors[0].call], allowFailure: true, blockNumber: 101n, batchSize: MULTICALL_BATCH_BYTES });
+  });
+  it('reads the latest block inside the same batch instead of a separate eth_blockNumber call', async () => {
+    const client = { multicall: vi.fn().mockResolvedValue([ok(4n), ok(20n), ok(250n)]), getBlockNumber: vi.fn() };
+    const result = await snapshotReads(client, { ...network, id: 11 }, descriptors, { account: '0x123' });
+    expect(result.values).toEqual([4n, 20n]);
+    expect(result.blockNumber).toBe(250n);
+    expect(client.getBlockNumber).not.toHaveBeenCalled();
+    expect(client.multicall).toHaveBeenCalledTimes(1);
+    const { contracts, blockNumber, batchSize } = client.multicall.mock.calls[0][0];
+    expect(contracts.at(-1)).toMatchObject({ address: MULTICALL3_ADDRESS, functionName: 'getBlockNumber' });
+    expect(blockNumber).toBeUndefined();
+    expect(batchSize).toBe(MULTICALL_BATCH_BYTES);
+  });
+  it('repeats the batch at the receipt block when the node answers from behind it', async () => {
+    const client = { multicall: vi.fn().mockResolvedValueOnce([ok(1n), ok(2n), ok(99n)]).mockResolvedValueOnce([ok(4n), ok(20n)]) };
+    const result = await snapshotReads(client, { ...network, id: 12 }, descriptors, { account: '0x123', minBlock: 100n });
+    expect(result.values).toEqual([4n, 20n]);
+    expect(result.blockNumber).toBe(100n);
+    expect(client.multicall).toHaveBeenCalledTimes(2);
+    expect(client.multicall.mock.calls[1][0].blockNumber).toBe(100n);
   });
   it('keeps successful wallet data when a pool read fails', async () => {
     const client = { multicall: vi.fn().mockResolvedValue([ok(4n), { status: 'failure', error: new Error('pool offline') }]) };

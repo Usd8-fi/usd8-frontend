@@ -1,4 +1,4 @@
-![](../assets/booster.png)
+<img src="../assets/booster-600.webp" srcset="../assets/booster-600.webp 600w, ../assets/booster-1200.webp 1200w" sizes="(max-width: 700px) 100vw, 600px" width="600" height="578" alt="USD8 Booster NFT artwork" />
 
 # Boosters
 

@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { useLayoutEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractFunctionRevertedError, createPublicClient, custom, encodeErrorResult } from 'viem';
-import App, { matchesSettlementTopology, settlementPayoutDetails } from './App.jsx';
+import App from './App.jsx';
+import { matchesSettlementTopology, settlementPayoutDetails } from './lib/settlement.js';
 import { claimWriteAbi } from './lib/writeAbis.js';
 
 const mocks = vi.hoisted(() => ({
@@ -37,17 +38,20 @@ vi.mock('./lib/chainData.js', () => ({
   fetchLandingChainData: mocks.fetchLandingChainData,
   fetchLandingAnalytics: async () => ({ pools: [] }),
   fetchScoreHistory: async () => null,
-  publicClientFor: () => ({
-    getBlockNumber: mocks.getBlockNumber,
-    estimateContractGas: mocks.estimateContractGas,
-    readContract: mocks.readContract,
-    waitForTransactionReceipt: mocks.waitForTransactionReceipt,
-  }),
   SEPOLIA_CONTRACTS: {
     usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
     usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
     treasury: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
   },
+}));
+
+vi.mock('./lib/transactionClient.js', () => ({
+  transactionClientFor: () => ({
+    getBlockNumber: mocks.getBlockNumber,
+    estimateContractGas: mocks.estimateContractGas,
+    readContract: mocks.readContract,
+    waitForTransactionReceipt: mocks.waitForTransactionReceipt,
+  }),
 }));
 
 vi.mock('./lib/scoreApi.js', () => ({ fetchInsuranceScore: mocks.fetchInsuranceScore }));
@@ -417,10 +421,10 @@ describe('App', () => {
 
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('0');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('0.0');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('0.0');
 
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('0.0');
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('0.0');
     expect(mocks.fetchInsuranceScore).not.toHaveBeenCalled();
   });
 
@@ -441,7 +445,7 @@ describe('App', () => {
     expect(screen.queryByText('34%')).toBeNull();
     expect(screen.queryByText('$122.2K')).toBeNull();
     expect(poolCard().queryByText('50%')).toBeNull();
-    expect(poolCard().getByText('Your deposit').nextElementSibling).toHaveTextContent('0 wstETH');
+    expect(poolCard().getByText('Your Deposit').nextElementSibling).toHaveTextContent('0 wstETH');
     expect(poolCard().getByText('Your Earnings').nextElementSibling).toHaveTextContent('0 USD8');
 
     // The snapshot replaces every spinner with the value it actually read.
@@ -455,7 +459,7 @@ describe('App', () => {
     const prompt = vi.spyOn(window, 'prompt').mockReturnValue(null);
     render(<App />);
 
-    const deposit = poolCard().getByRole('button', { name: 'deposit' });
+    const deposit = poolCard().getByRole('button', { name: 'Deposit' });
 
     expect(deposit).toBeEnabled();
     fireEvent.click(deposit);
@@ -468,7 +472,7 @@ describe('App', () => {
     const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
     render(<App />);
 
-    const mint = screen.getByRole('button', { name: 'mint' });
+    const mint = screen.getByRole('button', { name: 'Mint' });
 
     expect(mint).toBeEnabled();
     fireEvent.click(mint);
@@ -549,9 +553,9 @@ describe('App', () => {
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).not.toHaveTextContent('0');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).not.toHaveTextContent('0.0');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).not.toHaveTextContent('0.0');
     expect(within(savingsCard).getByText('Your Deposit (USD8)').nextElementSibling).not.toHaveTextContent('0');
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).not.toHaveTextContent('0.0');
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).not.toHaveTextContent('0.0');
     expect(screen.queryByText('...')).not.toBeInTheDocument();
   });
 
@@ -583,11 +587,11 @@ describe('App', () => {
     expect(available).toHaveTextContent(total.textContent);
     expect(available).not.toHaveTextContent('—');
     expect(warning).toHaveTextContent('Insurance Score could not be loaded. Retry to get your available score.');
-    expect(within(warning).getByRole('button', { name: 'Retry score' })).toBeEnabled();
+    expect(within(warning).getByRole('button', { name: 'Retry Score' })).toBeEnabled();
 
     fireEvent.click(await screen.findByRole('button', { name: /Claim Open.*for test-msloss/ }));
     const dialog = await screen.findByRole('dialog', { name: 'File claim for msLOSS' });
-    const scoreField = within(dialog).getByLabelText('Insurance score to spend').closest('.file-claim-field');
+    const scoreField = within(dialog).getByLabelText('Insurance Score to Spend').closest('.file-claim-field');
     expect(within(scoreField).getByText('0.00 available')).toBeInTheDocument();
     expect(within(scoreField).queryByText('— available')).not.toBeInTheDocument();
   });
@@ -780,7 +784,7 @@ describe('App', () => {
     rerender(<App />);
 
     expect(screen.queryByRole('dialog', { name: 'Claim Status for msLOSS' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Connect wallet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Connect Wallet' })).toBeInTheDocument();
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('0');
   });
@@ -814,11 +818,11 @@ describe('App', () => {
 
     await act(async () => secondScoreRequest.resolve(scoreData('222')));
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
-    await waitFor(() => expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('222.0'));
+    await waitFor(() => expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('222.0'));
 
     await act(async () => firstScoreRequest.resolve(scoreData('111')));
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('222.0');
-    expect(within(usd8Card).getByText('Score earned').nextElementSibling).not.toHaveTextContent('111.0');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('222.0');
+    expect(within(usd8Card).getByText('Score Earned').nextElementSibling).not.toHaveTextContent('111.0');
   });
 
   it('does not reuse a late settlement result for another account claim', async () => {
@@ -1034,7 +1038,7 @@ describe('App', () => {
     } else {
       expect(await within(dialog).findByText(/You are not eligible for a payout/)).toBeInTheDocument();
       expect(within(dialog).queryByRole('button', { name: 'Accept Payout' })).toBeNull();
-      expect(within(dialog).queryByText('Total Payout USD value')).toBeNull();
+      expect(within(dialog).queryByText('Total Payout USD Value')).toBeNull();
     }
     fireEvent.click(within(dialog).getByRole('button', { name: accept ? 'Accept Payout' : 'Cancel Payout and Return Tokens' }));
     if (eligibleBoosters > 10n) {
@@ -1414,8 +1418,8 @@ describe('App', () => {
 
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    await waitFor(() => expect(within(usd8Card).getByText('Score earned').nextElementSibling).toHaveTextContent('8.0'));
-    expect(within(savingsCard).getByText('Score earned').nextElementSibling).toHaveTextContent('4.0');
+    await waitFor(() => expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('8.0'));
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('4.0');
   });
 
   it('keeps the score loading until current chain balances are available', async () => {
@@ -1693,7 +1697,7 @@ describe('App', () => {
     expect(mocks.fetchInsuranceScore).not.toHaveBeenCalled();
     expect(mocks.fetchLandingChainData).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /manage wallet/i })).toHaveTextContent('Ethereum');
-    const mint = screen.getByRole('button', { name: 'mint' });
+    const mint = screen.getByRole('button', { name: 'Mint' });
     expect(mint).toBeEnabled();
     fireEvent.click(mint);
     expect(availabilityTooltip(mint)).toHaveTextContent('USD8 is not deployed on Ethereum.');
@@ -1705,18 +1709,18 @@ describe('App', () => {
     mocks.account.isConnected = true;
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     let dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     expect(within(dialog).getByRole('heading', { name: 'Mint USD8' })).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USDC amount')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8 output')).toBeInTheDocument();
-    const mintSubmit = within(dialog).getByRole('button', { name: 'mint' });
+    const mintSubmit = within(dialog).getByRole('button', { name: 'Mint' });
     expect(mintSubmit).toBeEnabled();
     expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: 'Redeem USD8' })).not.toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close mint USD8' }));
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     expect(within(dialog).getByRole('heading', { name: 'Redeem USD8' })).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8 amount')).toBeInTheDocument();
@@ -1740,14 +1744,14 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     let dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     expect(within(dialog).getByLabelText('USDC amount')).toHaveValue('10.123456');
     expect(within(dialog).queryByRole('button', { name: /Use full USDC balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('10.12 available')).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close mint USD8' }));
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     expect(within(dialog).getByLabelText('USD8 amount')).toHaveValue('25.987654321');
     expect(within(dialog).queryByRole('button', { name: /Use full USD8 balance/ })).not.toBeInTheDocument();
@@ -1760,10 +1764,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     let dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '10.0000001' } });
-    let submit = within(dialog).getByRole('button', { name: 'mint' });
+    let submit = within(dialog).getByRole('button', { name: 'Mint' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(availabilityTooltip(submit)).toHaveTextContent('The USDC amount exceeds your available balance.');
@@ -1772,10 +1776,10 @@ describe('App', () => {
     expect(availabilityTooltip(submit)).toBeNull();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close mint USD8' }));
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '25.0000001' } });
-    submit = within(dialog).getByRole('button', { name: 'redeem' });
+    submit = within(dialog).getByRole('button', { name: 'Redeem' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(availabilityTooltip(submit)).toHaveTextContent('The USD8 amount exceeds your available balance.');
@@ -1787,11 +1791,11 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     const amount = within(dialog).getByLabelText('USDC amount');
     fireEvent.change(amount, { target: { value: '0' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Mint' }));
 
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Enter a USDC amount greater than zero to mint USD8.');
     fireEvent.change(amount, { target: { value: '1' } });
@@ -1804,10 +1808,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Mint' }));
 
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Enter a valid USDC amount to mint USD8.');
   });
@@ -1823,9 +1827,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
-    const submit = within(dialog).getByRole('button', { name: 'mint' });
+    const submit = within(dialog).getByRole('button', { name: 'Mint' });
     fireEvent.click(submit);
 
     expect(availabilityTooltip(submit)).toHaveTextContent('You do not have any USDC available to mint USD8.');
@@ -1845,11 +1849,13 @@ describe('App', () => {
         availableForCooldown: '2.198765',
         availableForWithdraw: '4',
         inCooldown: '12', assetBalance: '3.258765', availableForCooldown: '2.198765' })],
+      // Deployment config: a 7-day cooldown is read from the Registry, not assumed.
+      insurance: { exitCooldownSeconds: 604_800 },
     });
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Deposit' }));
 
     let dialog = screen.getByRole('dialog', { name: 'Deposit' });
     expect(within(dialog).getByRole('heading', { name: 'Deposit' })).toBeInTheDocument();
@@ -1863,17 +1869,17 @@ describe('App', () => {
     expect(within(dialog).getByText(/3.25 available/)).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close deposit to wstEth Cover Pool' }));
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('2.198765');
-    expect(within(dialog).getByText('Pool shares to redeem')).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('Estimated wstETH received')).toHaveTextContent('2.198765');
+    expect(within(dialog).getByText('Pool Shares to Redeem')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Estimated wstETH Received')).toHaveTextContent('2.198765');
     expect(within(dialog).queryByText('USD8-cp-wstETH')).not.toBeInTheDocument();
     expect(within(dialog).queryByText('→')).toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: /Use full USD8-cp-wstETH balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText(/2.19 shares available/).closest('small')).toHaveTextContent('2.19 shares available. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized. Learn More.');
-    expect(within(dialog).getByRole('button', { name: 'start cooldown' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Start Cooldown' })).toBeInTheDocument();
     expect(within(dialog).getByText('4.00 wstETH estimated for withdrawal, 12.00 wstETH in cooldown.')).toBeInTheDocument();
     expect(within(dialog).getAllByRole('button', { name: 'Withdraw' })).toHaveLength(1);
     expect(within(dialog).getByRole('link', { name: 'Learn More' })).toHaveAttribute(
@@ -1882,10 +1888,10 @@ describe('App', () => {
     );
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close withdraw from wstEth Cover Pool' }));
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw earnings' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw Earnings' }));
     dialog = screen.getByRole('dialog', { name: 'Withdraw Earnings' });
     expect(within(dialog).getByText('7.50 USD8 available to withdraw')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'withdraw earnings' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Withdraw Earnings' })).toBeInTheDocument();
     expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
   });
 
@@ -1899,10 +1905,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
     fireEvent.change(within(dialog).getByLabelText('wstETH amount'), { target: { value: '3.258766' } });
-    const submit = within(dialog).getByRole('button', { name: 'deposit' });
+    const submit = within(dialog).getByRole('button', { name: 'Deposit' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(availabilityTooltip(submit)).toHaveTextContent('The wstETH amount exceeds your available balance.');
@@ -1920,7 +1926,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
     const poolCapacity = within(dialog).getByText('76.99 wstETH left in pool limit');
     expect(poolCapacity).toHaveClass('usd8-dialog-pool-capacity');
@@ -1928,7 +1934,7 @@ describe('App', () => {
     expect(within(dialog).queryByRole('button', { name: /Use full wstETH balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText(/3.00 available/).closest('small'))
       .toHaveTextContent('3.00 available. 76.99 wstETH left in pool limit');
-    const submit = within(dialog).getByRole('button', { name: 'deposit' });
+    const submit = within(dialog).getByRole('button', { name: 'Deposit' });
     fireEvent.click(submit);
 
     expect(availabilityTooltip(submit)).toHaveTextContent(
@@ -1950,13 +1956,13 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
 
     expect(within(dialog).getByText(
       '4.00 wstETH estimated for withdrawal after claims are finalized, 0.00 wstETH in cooldown.',
     )).toBeInTheDocument();
-    const startCooldown = within(dialog).getByRole('button', { name: 'start cooldown' });
+    const startCooldown = within(dialog).getByRole('button', { name: 'Start Cooldown' });
     fireEvent.click(startCooldown);
     expect(availabilityTooltip(startCooldown)).toHaveTextContent(
       'Please finish the existing withdrawal request before starting a new one.',
@@ -1979,9 +1985,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'deposit' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
-    const submit = within(dialog).getByRole('button', { name: 'deposit' });
+    const submit = within(dialog).getByRole('button', { name: 'Deposit' });
     fireEvent.click(submit);
 
     expect(availabilityTooltip(submit)).toHaveTextContent(
@@ -2010,10 +2016,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '2.198766' } });
-    const submit = within(dialog).getByRole('button', { name: 'start cooldown' });
+    const submit = within(dialog).getByRole('button', { name: 'Start Cooldown' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(availabilityTooltip(submit)).toHaveTextContent('The USD8-cp-wstETH amount exceeds your available balance.');
@@ -2025,10 +2031,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw earnings' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw Earnings' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Withdraw Earnings' });
-    const withdraw = within(dialog).getByRole('button', { name: 'withdraw earnings' });
+    const withdraw = within(dialog).getByRole('button', { name: 'Withdraw Earnings' });
     expect(withdraw).toBeEnabled();
     fireEvent.click(withdraw);
     expect(availabilityTooltip(withdraw)).toHaveTextContent('No earnings to withdraw.');
@@ -2062,16 +2068,16 @@ describe('App', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'File claim for usd8' });
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw earnings' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw Earnings' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw Earnings' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'withdraw earnings' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw Earnings' }));
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(within(table).getByRole('button', { name: 'File claim for usd8' })).toBeInTheDocument();
     expect(await screen.findByText(/Transaction confirmed/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View transaction' })).toHaveAttribute('href', expect.stringContaining('/tx/0xaaaa'));
-    expect(screen.getByRole('button', { name: 'Retry refresh' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry Refresh' })).toBeInTheDocument();
     expect(await within(dialog).findByRole('alert', { name: 'Transaction status' })).toHaveTextContent('Rewards claimed on Sepolia.');
   });
 
@@ -2109,10 +2115,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'deposit' }));
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'deposit' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Deposit' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
     expect(prompt).not.toHaveBeenCalled();
@@ -2149,10 +2155,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-USD8 amount'), { target: { value: '2.1' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Start Cooldown' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
@@ -2174,7 +2180,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
 
@@ -2198,9 +2204,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'withdraw earnings' }));
+    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Withdraw Earnings' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw Earnings' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'withdraw earnings' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw Earnings' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
@@ -2225,10 +2231,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '2.1' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Start Cooldown' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
@@ -2256,7 +2262,7 @@ describe('App', () => {
     mocks.writeContractAsync.mockResolvedValue('0x' + 'ab'.repeat(32));
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog');
     const input = within(dialog).getByLabelText('USD8-cp-wstETH amount');
     expect(input).toHaveValue('1');
@@ -2264,8 +2270,8 @@ describe('App', () => {
     expect(within(dialog).getByText('→')).toBeInTheDocument();
     expect(dialog).toHaveTextContent('May decrease if the pool pays claims before your withdrawal settles.');
     if (editedAmount) fireEvent.change(input, { target: { value: editedAmount } });
-    expect(within(dialog).getByLabelText('Estimated wstETH received')).toHaveTextContent(expectedOutput);
-    fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
+    expect(within(dialog).getByLabelText('Estimated wstETH Received')).toHaveTextContent(expectedOutput);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Start Cooldown' }));
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({ functionName: 'requestRedeem', args: [expectedShares] })));
     expect(mocks.readContract).not.toHaveBeenCalledWith(expect.objectContaining({ functionName: 'previewWithdraw' }));
   });
@@ -2282,13 +2288,13 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     expect(within(dialog).queryByRole('button', { name: /Use full USD8-cp-wstETH balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('19');
     expect(within(dialog).getByText(/19.00 shares available/).closest('small')).toHaveTextContent('19.00 shares available');
     expect(within(dialog).getByText('0.00 wstETH estimated for withdrawal, 1.00 wstETH in cooldown — ready in 6 days.')).toBeInTheDocument();
-    const submit = within(dialog).getByRole('button', { name: 'start cooldown' });
+    const submit = within(dialog).getByRole('button', { name: 'Start Cooldown' });
     fireEvent.click(submit);
 
     expect(availabilityTooltip(submit)).toHaveTextContent(
@@ -2308,14 +2314,14 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '0' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'start cooldown' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Start Cooldown' }));
 
     const status = await within(dialog).findByRole('alert');
     expect(status).toHaveTextContent('Enter a USD8-cp-wstETH amount greater than zero to start cooldown.');
-    expect(within(dialog).getByRole('button', { name: 'start cooldown' }).closest('.action-button-shell'))
+    expect(within(dialog).getByRole('button', { name: 'Start Cooldown' }).closest('.action-button-shell'))
       .not.toContainElement(status);
     fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '1' } });
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
@@ -2344,7 +2350,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard().getByRole('button', { name: 'withdraw' }));
+    fireEvent.click(poolCard().getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
 
@@ -2371,10 +2377,10 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '1.5' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Mint' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
@@ -2403,11 +2409,11 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
-    fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.readContract).toHaveBeenCalledWith(expect.objectContaining({
@@ -2434,11 +2440,11 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
-    const submit = within(dialog).getByRole('button', { name: 'redeem' });
+    const submit = within(dialog).getByRole('button', { name: 'Redeem' });
     fireEvent.click(submit);
 
     const status = await within(dialog).findByRole('status', { name: 'Transaction status' });
@@ -2466,11 +2472,11 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
-    fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem' }));
 
     expect(await within(dialog).findByText('Transaction cancelled in your wallet.')).toBeInTheDocument();
     expect(mocks.waitForTransactionReceipt).not.toHaveBeenCalled();
@@ -2499,7 +2505,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
 
-    expect(within(dialog).getByLabelText('Boosters to escrow')).toHaveValue(100);
+    expect(within(dialog).getByLabelText('Boosters to Escrow')).toHaveValue(100);
     expect(within(dialog).queryByRole('button', { name: /Use all boosters/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText('100.00 available')).toBeInTheDocument();
   });
@@ -2562,8 +2568,8 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: /Claim Open .* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
     fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
-    fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
-    fireEvent.change(within(dialog).getByLabelText('Boosters to escrow'), { target: { value: '3' } });
+    fireEvent.change(within(dialog).getByLabelText('Insurance Score to Spend'), { target: { value: '25' } });
+    fireEvent.change(within(dialog).getByLabelText('Boosters to Escrow'), { target: { value: '3' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
     if (scenario === 'reverting') {
@@ -2645,8 +2651,8 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: /Claim Open .* for test-msloss/ }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for msLOSS' });
     fireEvent.change(within(dialog).getByLabelText('Insured msLOSS amount'), { target: { value: '10' } });
-    fireEvent.change(within(dialog).getByLabelText('Insurance score to spend'), { target: { value: '25' } });
-    fireEvent.change(within(dialog).getByLabelText('Boosters to escrow'), { target: { value: '2' } });
+    fireEvent.change(within(dialog).getByLabelText('Insurance Score to Spend'), { target: { value: '25' } });
+    fireEvent.change(within(dialog).getByLabelText('Boosters to Escrow'), { target: { value: '2' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
 
@@ -2709,7 +2715,7 @@ describe('App', () => {
     expect(within(dialog).getByLabelText('Insured USD8 amount')).toBeInTheDocument();
     expect(within(dialog).queryByRole('combobox', { name: 'Approximate incident age' })).not.toBeInTheDocument();
     expect(within(dialog).queryByRole('note')).not.toBeInTheDocument();
-    await waitFor(() => expect(within(dialog).getByLabelText('Insurance score to spend')).toHaveValue('128600'));
+    await waitFor(() => expect(within(dialog).getByLabelText('Insurance Score to Spend')).toHaveValue('128600'));
     fireEvent.change(within(dialog).getByLabelText('Insured USD8 amount'), { target: { value: '1' } });
     const submit = within(dialog).getByRole('button', { name: 'File Claim' });
     expect(submit).toBeEnabled();
@@ -2925,7 +2931,7 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
-    await waitFor(() => expect(within(dialog).getByLabelText('Insurance score to spend')).toHaveValue('128600'));
+    await waitFor(() => expect(within(dialog).getByLabelText('Insurance Score to Spend')).toHaveValue('128600'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
@@ -2957,7 +2963,7 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
-    await waitFor(() => expect(within(dialog).getByLabelText('Insurance score to spend')).toHaveValue('128600'));
+    await waitFor(() => expect(within(dialog).getByLabelText('Insurance Score to Spend')).toHaveValue('128600'));
     fireEvent.change(within(dialog).getByLabelText('Insured USD8 amount'), { target: { value: '1' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
@@ -3063,7 +3069,7 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
     const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
-    await waitFor(() => expect(within(dialog).getByLabelText('Insurance score to spend')).toHaveValue('128600'));
+    await waitFor(() => expect(within(dialog).getByLabelText('Insurance Score to Spend')).toHaveValue('128600'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
@@ -3090,10 +3096,10 @@ describe('App', () => {
 
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Mint USD8' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'mint' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Mint' }));
 
     const status = await within(dialog).findByLabelText('Transaction status');
     await waitFor(() => expect(status).toHaveTextContent('Insufficient USDC allowance.'));
@@ -3194,10 +3200,10 @@ describe('App', () => {
     mocks.writeContractAsync.mockResolvedValue('0x' + 'a'.repeat(64));
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(1));
-    fireEvent.click(screen.getByRole('button', { name: 'mint' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
     const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '1' } });
-    const submit = within(dialog).getByRole('button', { name: 'mint' });
+    const submit = within(dialog).getByRole('button', { name: 'Mint' });
     fireEvent.click(submit);
     fireEvent.click(submit);
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(1));
@@ -3217,15 +3223,15 @@ describe('App', () => {
     mocks.writeContractAsync.mockResolvedValue('0x' + 'b'.repeat(64));
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'redeem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
     const dialog = screen.getByRole('dialog', { name: 'Redeem USD8' });
     fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
     await waitFor(() => expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.5'));
-    fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem' }));
     expect(await within(dialog).findByText(/redemption quote changed/)).toBeInTheDocument();
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
     expect(within(dialog).getByLabelText('USDC output')).toHaveTextContent('1.2');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'redeem' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Redeem' }));
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(1));
     expect(mocks.writeContractAsync).toHaveBeenLastCalledWith(expect.objectContaining({ args: [1_500_000_000_000_000_000n, 1_200_000n] }));
   });
@@ -3235,14 +3241,14 @@ describe('App', () => {
     mocks.account.isConnected = true;
     render(<App />);
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    const opener = screen.getByRole('button', { name: 'mint' });
+    const opener = screen.getByRole('button', { name: 'Mint' });
     opener.focus();
     fireEvent.click(opener);
     const dialog = screen.getByRole('dialog', { name: 'Mint USD8' });
     const first = within(dialog).getByRole('button', { name: 'Close mint USD8' });
     expect(first).toHaveFocus();
     fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
-    expect(within(dialog).getByRole('button', { name: 'mint' })).toHaveFocus();
+    expect(within(dialog).getByRole('button', { name: 'Mint' })).toHaveFocus();
     fireEvent.keyDown(document.activeElement, { key: 'Tab' });
     expect(first).toHaveFocus();
     fireEvent.keyDown(first, { key: 'Escape' });

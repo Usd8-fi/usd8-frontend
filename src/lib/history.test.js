@@ -15,12 +15,16 @@ describe('bounded history', () => {
   it('retains stable logs, re-reads the tail, and discards a reorged checkpoint', async () => {
     const client = { getLogs: vi.fn().mockResolvedValueOnce([{ blockNumber: 10n }, { blockNumber: 300n }]).mockResolvedValueOnce([{ blockNumber: 310n }]).mockResolvedValueOnce([{ blockNumber: 20n }]), getBlock: vi.fn().mockResolvedValue({ hash: '0xaaa' }) };
     await incrementalLogs(client, 'test', {}, 0n, 300n);
+    expect(client.getBlock).toHaveBeenCalledTimes(1);
     const next = await incrementalLogs(client, 'test', {}, 0n, 310n);
     expect(next).toEqual([{ blockNumber: 10n }, { blockNumber: 310n }]);
     expect(client.getLogs).toHaveBeenLastCalledWith({ fromBlock: 173n, toBlock: 310n });
+    // A refresh before the anchor needs to move reads no blocks at all.
+    expect(client.getBlock).toHaveBeenCalledTimes(1);
     client.getBlock.mockResolvedValue({ hash: '0xbbb' });
-    expect(await incrementalLogs(client, 'test', {}, 0n, 320n)).toEqual([{ blockNumber: 20n }]);
-    expect(client.getLogs).toHaveBeenLastCalledWith({ fromBlock: 0n, toBlock: 320n });
+    // Moving the anchor re-checks its hash and discards a reorged checkpoint.
+    expect(await incrementalLogs(client, 'test', {}, 0n, 430n)).toEqual([{ blockNumber: 20n }]);
+    expect(client.getLogs).toHaveBeenLastCalledWith({ fromBlock: 0n, toBlock: 430n });
   });
   it('stops scheduling work after cancellation', async () => {
     const controller = new AbortController();

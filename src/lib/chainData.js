@@ -1,15 +1,16 @@
 import { exitAssetAmount } from './poolWithdrawal.js';
-import { historicalClaimIds as readHistoricalClaimIds } from './claimHistory.js';
-import { snapshotReads } from './snapshotReads.js';
+import { unresolvedHistoricalClaim } from './claimHistory.js';
+import { multicall, snapshotReads } from './snapshotReads.js';
 import { cachedData, checkAbort, protocolKey, queryClient } from './dataCache.js';
-import { fetchJson, mapLimited } from './requestUtils.js';
+import { fetchJson } from './requestUtils.js';
 import { fetchLogsInChunks, incrementalLogs, poolHistory } from './history.js';
 export { fetchLogsInChunks } from './history.js';
 import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimCancelledEvent } from './readAbis.js';
-import { createPublicClient, formatUnits, http, zeroAddress } from 'viem';
+import { formatUnits, http, zeroAddress } from './viemLite.js';
+import { createReadClient } from './readClient.js';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
-import { boostedScore, liveEarningsDecimals, WAD } from './units.js';
+import { boostedScore, liveEarningsDecimals, UNKNOWN_VALUE, WAD } from './units.js';
 
 export { erc20Abi };
 
@@ -18,7 +19,6 @@ const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
 const SEPOLIA_BLOCKSCOUT_URL = 'https://eth-sepolia.blockscout.com/api/v2';
 
 const SEPOLIA_BLOCK_SECONDS = 12n;
-const UNKNOWN_VALUE = '—';
 // Public Sepolia endpoints cap eth_getLogs spans — the default endpoint rejects
 // anything wider than 30k blocks — so every log read is chunked below this width.
 const LOG_QUERY_BLOCK_RANGE = 10_000n;
@@ -39,13 +39,13 @@ export function rpcTransportFor(rpcUrl) {
   return http(rpcUrl, { timeout: 15_000 });
 }
 
-export function publicClientFor(chainId) {
+export function readClientFor(chainId) {
   const network = getProtocolNetwork(chainId);
   if (!network) throw protocolUnavailableError(chainId);
 
   let client = clients.get(network.id);
   if (!client) {
-    client = createPublicClient({
+    client = createReadClient({
       chain: network.chain,
       transport: rpcTransportFor(network.rpcUrl),
     });
@@ -66,6 +66,21 @@ const registryScoreSpentAbi = [{
   outputs: [{ name: '', type: 'uint256' }],
 }];
 
+const registryExitTimingAbi = [{
+  type: 'function',
+  name: 'exitTimingConfig',
+  stateMutability: 'view',
+  inputs: [],
+  outputs: [{
+    name: 'config',
+    type: 'tuple',
+    components: [
+      { name: 'unstakeCooldown', type: 'uint64' },
+      { name: 'exitBatchInterval', type: 'uint64' },
+    ],
+  }],
+}];
+
 const registryScoreAbi = [{
   type: 'function',
   name: 'getScoredRateHistory',
@@ -81,24 +96,7 @@ const registryScoreAbi = [{
   }],
 }];
 
-export async function fetchBoosterBalance(client, registry, account, policy, blockNumber) {
-  const [collection, tokenId] = policy || await client.readContract({
-    address: registry,
-    abi: registryBoosterAbi,
-    functionName: 'boosterConfig',
-  });
-  if (collection === zeroAddress) return 0n;
-  return client.readContract({
-    address: collection,
-    abi: erc1155Abi,
-    functionName: 'balanceOf',
-    args: [account, tokenId],
-    ...(blockNumber === undefined ? {} : { blockNumber }),
-  });
-}
-
-async function holdingWindowBlocks(client, address, blockNumber) {
-  const params = await client.readContract({ address, abi: defiInsuranceAbi, functionName: 'settlementParams', blockNumber });
+function holdingWindowFrom(params) {
   const blocks = params?.minHoldingRequired ?? params?.[1];
   return typeof blocks === 'bigint' && blocks > 0n ? blocks.toString() : null;
 }
@@ -233,9 +231,9 @@ export function claimPercentage(amount, total) {
 }
 
 function formattedUsd(assetAmount, price, priceDecimals) {
-  if (price <= 0n) return '—';
+  if (price <= 0n) return UNKNOWN_VALUE;
   const value = Number(formatUnits(assetAmount * price, 18 + Number(priceDecimals)));
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return UNKNOWN_VALUE;
   return value.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -255,7 +253,7 @@ export function calculateTrailingRewardApr({
   currentAssetUsdPrice,
   priceDecimals,
 }) {
-  if (currentAssetUsdPrice <= 0n) return '—';
+  if (currentAssetUsdPrice <= 0n) return UNKNOWN_VALUE;
   const windowStart = Math.max(deploymentTimestamp, nowSeconds - windowSeconds);
   let cursor = deploymentTimestamp;
   let assets = 0n;
@@ -291,7 +289,7 @@ export function calculateTrailingRewardApr({
   integrateUntil(nowSeconds);
 
   const poolValueSeconds = (assetSeconds * currentAssetUsdPrice) / (10n ** BigInt(priceDecimals));
-  if (poolValueSeconds === 0n) return '—';
+  if (poolValueSeconds === 0n) return UNKNOWN_VALUE;
   const annualSeconds = 365n * 24n * 60n * 60n;
   const basisPoints = (accruedRewards * annualSeconds * 10_000n + poolValueSeconds / 2n) / poolValueSeconds;
   const percent = Number(basisPoints) / 100;
@@ -305,7 +303,7 @@ export function calculateTrailingRewardApr({
 export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal } = {}) {
   const network = getProtocolNetwork(chainId);
   const logs = await cachedData(protocolKey(network, 'apr-history', poolAddress.toLowerCase()),
-    ({ signal: querySignal }) => poolHistory(publicClientFor(chainId), chainId, poolAddress, SEPOLIA_BLOCKSCOUT_URL, { signal: querySignal }),
+    ({ signal: querySignal }) => poolHistory(readClientFor(chainId), chainId, poolAddress, SEPOLIA_BLOCKSCOUT_URL, { signal: querySignal }),
     { signal, staleTime: 5 * 60_000 });
   const valueOf = (log, name) => log.decoded?.parameters?.find((parameter) => parameter.name === name)?.value;
   const events = logs.flatMap((log) => {
@@ -352,13 +350,10 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   if (!network) throw protocolUnavailableError(chainId);
   throwIfRequestAborted(signal);
   const { contracts } = network;
-  const client = publicClientFor(chainId);
+  const client = readClientFor(chainId);
   const zero = 0n;
   const hasAccount = Boolean(account) && account.toLowerCase() !== zeroAddress;
   account = hasAccount ? account.toLowerCase() : zeroAddress;
-  let blockNumber = await cachedData(protocolKey(network, 'block'), () => client.getBlockNumber({ cacheTime: 0 }), { signal, staleTime: refresh ? 0 : 15_000 });
-  if (minBlock !== undefined && blockNumber < minBlock) blockNumber = minBlock;
-  checkAbort(signal);
   const insuredTokenEntries = Object.entries(contracts.insuredTokens);
   const coverPools = contracts.coverPools;
   const FIXED_READS = 12;
@@ -409,12 +404,22 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     })),
   ];
 
-  const allCalls = [...landingCalls, ...insuranceCalls];
+  const protocolCalls = [
+    { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'settlementParams' },
+    { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimBondAmount' },
+    // Rides the existing batch, so the displayed cooldown costs no extra request.
+    { address: contracts.registry, abi: registryExitTimingAbi, functionName: 'exitTimingConfig' },
+  ];
+
+  const allCalls = [...landingCalls, ...insuranceCalls, ...protocolCalls];
   const fixedResources = ['account-balances', 'account-balances', 'account-balances', 'head',
     'account-balances', 'account-balances', 'account-balances', 'configuration', 'configuration', 'configuration', 'head', 'account-balances'];
+  const protocolResources = ['settlement-params', 'claim-bond', 'exit-timing'];
+  const protocolStart = landingCalls.length + insuranceCalls.length;
   const poolAccountOffsets = [0, 1, 4, 10];
   const descriptors = allCalls.map((call, index) => {
-    let resource = index < FIXED_READS ? fixedResources[index] : 'configuration';
+    let resource = index < FIXED_READS ? fixedResources[index]
+      : index >= protocolStart ? protocolResources[index - protocolStart] : 'configuration';
     if (index >= FIXED_READS && index < landingCalls.length) {
       const poolIndex = Math.floor((index - FIXED_READS) / POOL_READS);
       const offset = (index - FIXED_READS) % POOL_READS;
@@ -423,7 +428,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     const fallback = call.functionName === 'exitRequests' ? [0n, 0n]
       : call.functionName === 'latestRoundData' ? [0n, 0n, 0n, 0n, 0n]
       : call.functionName === 'boosterConfig' ? [zeroAddress, 0n, 0n]
-      : call.functionName === 'getScoredRateHistory' ? [] : 0n;
+      : call.functionName === 'getScoredRateHistory' ? [] : index >= protocolStart ? null : 0n;
     return { call, resource, fallback, index };
   });
   const selected = descriptors.filter(entry => hasAccount || !entry.resource.startsWith('account'));
@@ -432,14 +437,18 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   const requestedResources = resources?.includes('incident-settlement-params')
     ? [...new Set([...resources, 'head', 'configuration'])]
     : resources;
+  // One multicall: the head block number is read inside it, so there is no
+  // separate eth_blockNumber call.
   const readResult = await snapshotReads(client, network, selected, {
-    account, signal, blockNumber, refresh, resources: requestedResources,
+    account, signal, minBlock, refresh, resources: requestedResources,
   });
   const landingValues = descriptors.map(entry => entry.fallback);
   selected.forEach((entry, index) => { landingValues[entry.index] = readResult.values[index]; });
   const resourceErrors = readResult.errors;
   if (resourceErrors.head) throw new Error(resourceErrors.head);
   throwIfRequestAborted(signal);
+  const blockNumber = readResult.blockNumber;
+  if (typeof blockNumber !== 'bigint') throw new Error('Block number unavailable.');
   const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
     usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
     onchainScoreSpent] = landingValues.slice(0, FIXED_READS);
@@ -476,20 +485,18 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   // Timestamp history is optional enrichment; never gate usable balances on it.
   const usd8BalanceChangeTimestamp = usd8 === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
   const savingsBalanceChangeTimestamp = savings === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
-  const [minHoldingRequiredBlocks, boosterBalance, claimBond] = await Promise.all([
-    cachedData(protocolKey(network, 'settlement-params'),
-      () => holdingWindowBlocks(client, contracts.defiInsurance, blockNumber), { signal, staleTime: refresh ? 0 : 60_000 })
-      .catch(error => { checkAbort(signal); resourceErrors['settlement-params'] = error.message; return null; }),
-    hasAccount && !resourceErrors.configuration
-      ? cachedData(protocolKey(network, 'account-boosters', account, boosterPolicy[0], String(boosterPolicy[1])),
-        () => fetchBoosterBalance(client, contracts.registry, account, boosterPolicy, blockNumber), { signal, staleTime: refresh && (!resources || resources.includes('incident')) ? 0 : 15_000 })
-        .catch(error => { checkAbort(signal); resourceErrors.boosters = error.message; return null; }) : 0n,
-    cachedData(protocolKey(network, 'claim-bond'), () => client.readContract({ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimBondAmount', blockNumber }), { signal, staleTime: refresh ? 0 : 60_000 })
-      .catch(error => { checkAbort(signal); resourceErrors['claim-bond'] = error.message; return null; }),
-  ]);
+  const [settlementParams, claimBond, exitTiming] = landingValues.slice(protocolStart);
+  const exitCooldown = exitTiming?.unstakeCooldown ?? exitTiming?.[0];
+  const exitCooldownSeconds = !resourceErrors['exit-timing'] && typeof exitCooldown === 'bigint' && exitCooldown > 0n
+    ? Number(exitCooldown) : null;
+  const minHoldingRequiredBlocks = resourceErrors['settlement-params'] ? null : holdingWindowFrom(settlementParams);
 
   // Depend on balances from the multicall above but not on each other, so the
-  // savings conversion and every pool's conversion/exit read resolve together.
+  // savings conversion, booster balance, and every pool's conversion/exit read
+  // resolve together in one batch.
+  const boosterCall = hasAccount && !resourceErrors.configuration && boosterPolicy[0] !== zeroAddress ? {
+    address: boosterPolicy[0], abi: erc1155Abi, functionName: 'balanceOf', args: [account, boosterPolicy[1]],
+  } : null;
   const derivedCalls = [
     savings === zero ? null : {
       address: contracts.savingsVault, abi: poolAbi, functionName: 'convertToAssets', args: [savings],
@@ -511,12 +518,19 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     fallback: call.functionName === 'exitEpochs' ? [0n, 0n, 0n, 0n] : 0n,
   }] : []);
   for (const descriptor of derivedDescriptors) descriptor.cacheScope = derivedDescriptors.filter(item => item.resource === descriptor.resource).map(item => item.call.args.map(String).join(',')).join('|');
+  if (boosterCall) derivedDescriptors.push({ call: boosterCall, resource: 'account-boosters', fallback: null,
+    cacheScope: `${boosterPolicy[0].toLowerCase()}:${boosterPolicy[1]}` });
   const derivedResult = await snapshotReads(client, network, derivedDescriptors, { account, blockNumber, signal, refresh,
     resources: resources?.flatMap(resource => resource === 'account-balances' ? [resource, 'account-savings-conversion']
+      : resource === 'incident' ? [resource, 'account-boosters']
       : resource.startsWith('account-pool:') ? [resource, resource.replace('account-pool:', 'account-pool-derived:')] : [resource]),
   });
-  Object.assign(resourceErrors, derivedResult.errors);
-  const derived = derivedResult.values;
+  const { 'account-boosters': boosterError, ...derivedErrors } = derivedResult.errors;
+  Object.assign(resourceErrors, derivedErrors);
+  if (boosterError) resourceErrors.boosters = boosterError;
+  const boosterBalance = !hasAccount || resourceErrors.configuration ? (resourceErrors.configuration && hasAccount ? null : 0n)
+    : boosterCall ? derivedResult.values.at(-1) : 0n;
+  const derived = boosterCall ? derivedResult.values.slice(0, -1) : derivedResult.values;
   let derivedIndex = 0;
   const savingsAssets = savings === zero ? zero : derived[derivedIndex++];
 
@@ -564,8 +578,9 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
         ? ''
         : formatted(read.depositCap > read.totalAssets ? read.depositCap - read.totalAssets : zero),
       assets: formatted(read.totalAssets),
-      // Display only; two decimals keeps the card readable.
-      deposit: formatted(depositedAssets, 18, 2),
+      // Pending exits remain claim-exposed until completion, so keep them in
+      // the user's displayed deposit alongside active pool assets.
+      deposit: formatted(depositedAssets + exitAssets, 18, 2),
       availableForCooldownAssets: conversionUnavailable ? null : formatUnits(depositedAssets, 18),
       availableForWithdrawAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? exitAssets : zero, 18),
       inCooldownAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? zero : exitAssets, 18),
@@ -596,6 +611,9 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     insurance: {
       tokens: insuranceTokens,
       minHoldingRequiredBlocks,
+      scoreMaturitySeconds: minHoldingRequiredBlocks && network.blockTimeSeconds
+        ? Number(minHoldingRequiredBlocks) * network.blockTimeSeconds : null,
+      exitCooldownSeconds,
       claimBond: claimBond === null ? null : formatted(claimBond),
       boosterBoostBps: Number(boosterPolicy[2] ?? 0),
     },
@@ -612,14 +630,14 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       savings: savingsBalanceChangeTimestamp,
     },
     scoreBalancesSnapshotTimestampMilliseconds,
-    balances: resourceErrors['account-balances'] ? { usdc: '—', usd8: '—', savings: '—', savingsAssets: '—', insuredTokens: {} } : {
+    balances: resourceErrors['account-balances'] ? { usdc: UNKNOWN_VALUE, usd8: UNKNOWN_VALUE, savings: UNKNOWN_VALUE, savingsAssets: UNKNOWN_VALUE, insuredTokens: {} } : {
       usdc: formatted(usdc, 6),
       usd8: formatted(usd8),
       savings: formatted(savings),
-      savingsAssets: resourceErrors['account-savings-conversion'] ? '—' : formatted(savingsAssets),
+      savingsAssets: resourceErrors['account-savings-conversion'] ? UNKNOWN_VALUE : formatted(savingsAssets),
       coverAsset: pools[0]?.assetBalance ?? '0',
       poolShares: pools[0]?.availableForCooldown ?? '0',
-      boosters: boosterBalance === null ? '—' : boosterBalance.toString(),
+      boosters: boosterBalance === null ? UNKNOWN_VALUE : boosterBalance.toString(),
       insuredTokens: {
         'aave-sgho': formatted(sGho),
         'sky-susds': formatted(sUsds),
@@ -628,8 +646,8 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     },
     pools: pools.map((pool, index) => ({ ...pool,
       usdPrice: poolReads[index].assetUsdPrice.toString(), priceDecimals: Number(poolReads[index].assetUsdDecimals),
-      ...(resourceErrors[`pool:${pool.id}`] ? { tvl: null, capacityPercent: null, apy: '—', dataUnavailable: true } : {}),
-      ...(resourceErrors[`account-pool:${pool.id}`] || resourceErrors[`account-pool-derived:${pool.id}`] ? { deposit: '—', earnings: '—', assetBalance: '—', dataUnavailable: true } : {}),
+      ...(resourceErrors[`pool:${pool.id}`] ? { tvl: null, capacityPercent: null, apy: UNKNOWN_VALUE, dataUnavailable: true } : {}),
+      ...(resourceErrors[`account-pool:${pool.id}`] || resourceErrors[`account-pool-derived:${pool.id}`] ? { deposit: UNKNOWN_VALUE, earnings: UNKNOWN_VALUE, assetBalance: UNKNOWN_VALUE, dataUnavailable: true } : {}),
       ...poolExtras?.[index] })),
     ...extra,
   });
@@ -649,7 +667,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   const cachedIncident = queryClient.getQueryData(incidentKey);
   const { incident, claim } = resources && !incidentRequested && cachedIncident
     ? cachedIncident : await cachedData(incidentKey, ({ signal: querySignal }) => readIncident({
-      client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy,
+      client, network, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy,
       chainId, headBlock, blockNumber, signal: querySignal,
       onIncidentHoldingWindowError: error => { resourceErrors['incident-settlement-params'] = error.shortMessage || error.message; },
       onIncident: extra => { if (!signal?.aborted) onPartial?.(snapshot({ ...extra, incidentReady: true })); },
@@ -664,82 +682,106 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   return snapshot({ incident, claim });
 }
 
-async function readIncident({ client, contracts, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy, chainId, headBlock, blockNumber, signal, onIncident, onIncidentHoldingWindowError }) {
+// Facts fixed when an incident opens: its pools, their assets, the phase window,
+// and the holding window at the opening block. Read once per incident.
+async function incidentStaticFacts({ client, network, incidentId, openBlock, signal, onIncidentHoldingWindowError }) {
+  const key = protocolKey(network, 'incident-static', String(incidentId));
+  const cached = queryClient.getQueryData(key);
+  if (cached) return cached;
+  const { contracts } = network;
+  const [phaseWindow, rawPools] = await multicall(client, {
+    contracts: [
+      { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPhaseWindow', args: [incidentId] },
+      { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPools', args: [incidentId] },
+    ],
+    allowFailure: false,
+  });
+  checkAbort(signal);
+  const poolAddrs = rawPools.map((pool) => String(pool).toLowerCase());
+  if (poolAddrs.length === 0 || new Set(poolAddrs).size !== poolAddrs.length) {
+    throw new Error('Invalid incident pool snapshot.');
+  }
+  // Pool assets are immutable, so they are read at the opening block together
+  // with the holding window that applied to this incident.
+  const openReads = await multicall(client, {
+    contracts: [
+      ...poolAddrs.map((pool) => ({ address: pool, abi: poolAbi, functionName: 'asset' })),
+      { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'settlementParams' },
+    ],
+    allowFailure: true, blockNumber: openBlock,
+  });
+  checkAbort(signal);
+  const assetReads = openReads.slice(0, poolAddrs.length);
+  const failedAsset = assetReads.find(read => read.status !== 'success');
+  if (failedAsset) throw failedAsset.error || new Error('Invalid incident asset order.');
+  const poolOrder = assetReads.map(read => String(read.result).toLowerCase());
+  if (poolOrder.length !== poolAddrs.length || new Set(poolOrder).size !== poolOrder.length) {
+    throw new Error('Invalid incident asset order.');
+  }
+  const holding = openReads.at(-1);
+  const facts = {
+    poolAddrs, poolOrder, phaseWindowSeconds: phaseWindow,
+    minHoldingRequiredBlocks: holding.status === 'success' ? holdingWindowFrom(holding.result) : null,
+  };
+  if (holding.status !== 'success') {
+    // Leave it uncached so the next refresh retries the archive read.
+    onIncidentHoldingWindowError?.(holding.error || new Error('Holding window unavailable.'));
+    return facts;
+  }
+  queryClient.setQueryData(key, facts);
+  return facts;
+}
+
+async function readIncident({ client, network, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy, chainId, headBlock, blockNumber, signal, onIncident, onIncidentHoldingWindowError }) {
+  const { contracts } = network;
   const zero = 0n;
   let incident = null;
   let claim = null;
   let displayedIncidentId = activeIncidentId;
   let historicalClaimId = zero;
   let historicalClaimState = null;
-  if (hasAccount && displayedIncidentId === zero) {
-    if (nextIncidentId > 10_001n) throw new Error('Claim history exceeds the supported range.');
-    const historicalIncidentIds = Array.from({ length: Math.max(0, Number(nextIncidentId - 1n)) }, (_, index) => BigInt(index + 1));
-    if (historicalIncidentIds.length > 0) {
-      const historicalClaimIds = await readHistoricalClaimIds(client, `${chainId}:${contracts.defiInsurance}:${account}`, nextIncidentId, blockNumber, ids => client.multicall({
+  if (hasAccount && displayedIncidentId === zero && nextIncidentId > 1n) {
+    const historical = await unresolvedHistoricalClaim({
+      key: `${chainId}:${contracts.defiInsurance.toLowerCase()}:${account}`,
+      account, nextIncidentId, signal,
+      readClaimIds: ids => multicall(client, {
         contracts: ids.map((incidentId) => ({
-          address: contracts.defiInsurance,
-          abi: defiInsuranceAbi,
-          functionName: 'claimIdByIncidentAndUser',
-          args: [incidentId, account],
+          address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [incidentId, account],
         })),
         allowFailure: false, blockNumber,
-      }), { signal });
-      const candidates = historicalIncidentIds
-        .map((incidentId, index) => ({ incidentId, claimId: historicalClaimIds[index] }))
-        .filter(({ claimId }) => claimId !== zero)
-        .reverse();
-      if (candidates.length > 0) {
-        const candidateChunks = [];
-        for (let offset = 0; offset < candidates.length; offset += 128) candidateChunks.push(candidates.slice(offset, offset + 128));
-        const candidateStates = (await mapLimited(candidateChunks, chunk => client.multicall({
-          contracts: chunk.map(({ claimId }) => ({
-            address: contracts.defiInsurance,
-            abi: defiInsuranceAbi,
-            functionName: 'claims',
-            args: [claimId],
-          })),
-          allowFailure: false, blockNumber,
-        }), { signal, concurrency: 2 })).flat();
-        const unresolvedIndex = candidateStates.findIndex((state) => state[5] === false);
-        if (unresolvedIndex >= 0) {
-          displayedIncidentId = candidates[unresolvedIndex].incidentId;
-          historicalClaimId = candidates[unresolvedIndex].claimId;
-          historicalClaimState = candidateStates[unresolvedIndex];
-        }
-      }
+      }),
+      readClaims: claimIds => multicall(client, {
+        contracts: claimIds.map((claimId) => ({
+          address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId],
+        })),
+        allowFailure: false, blockNumber,
+      }),
+    });
+    if (historical) {
+      displayedIncidentId = historical.incidentId;
+      historicalClaimId = historical.claimId;
+      historicalClaimState = historical.state;
     }
   }
   if (displayedIncidentId !== zero) {
-    const incidentValues = await client.multicall({
+    // The claim ID seen last time lets its state ride in the same batch.
+    const claimIdKey = protocolKey(network, 'claim-id', String(displayedIncidentId), account);
+    const knownClaimId = historicalClaimId || (hasAccount ? queryClient.getQueryData(claimIdKey) ?? zero : zero);
+    const incidentValues = await multicall(client, {
       contracts: [
         { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidents', args: [displayedIncidentId] },
-        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPhaseWindow', args: [displayedIncidentId] },
-        ...(hasAccount ? [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [displayedIncidentId, account] }] : []),
-        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPools', args: [displayedIncidentId] },
+        ...(hasAccount && historicalClaimId === zero ? [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [displayedIncidentId, account] }] : []),
+        ...(knownClaimId !== zero && !historicalClaimState ? [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [knownClaimId] }] : []),
       ],
       allowFailure: false, blockNumber,
     });
-    const [incidentState, phaseWindow] = incidentValues;
-    const mappedClaimId = hasAccount ? incidentValues[2] : 0n;
-    const rawIncidentPools = incidentValues[hasAccount ? 3 : 2];
-    const claimId = historicalClaimId === zero ? mappedClaimId : historicalClaimId;
-    const poolAddrs = rawIncidentPools.map((pool) => String(pool).toLowerCase());
-    if (poolAddrs.length === 0 || new Set(poolAddrs).size !== poolAddrs.length) {
-      throw new Error('Invalid incident pool snapshot.');
-    }
-    const poolOrder = (await client.multicall({
-      contracts: poolAddrs.map((pool) => ({
-        address: pool,
-        abi: poolAbi,
-        functionName: 'asset',
-      })),
-      allowFailure: false, blockNumber,
-    })).map((asset) => String(asset).toLowerCase());
-    throwIfRequestAborted(signal);
-    if (poolOrder.length !== poolAddrs.length || new Set(poolOrder).size !== poolOrder.length) {
-      throw new Error('Invalid incident asset order.');
-    }
+    checkAbort(signal);
+    const [incidentState] = incidentValues;
+    const claimId = historicalClaimId !== zero ? historicalClaimId
+      : hasAccount ? incidentValues[1] : zero;
+    if (hasAccount && historicalClaimId === zero) queryClient.setQueryData(claimIdKey, claimId);
     const [tokenAddress, , , openBlock, phaseDeadline, root, unresolvedClaims] = incidentState;
+    const facts = await incidentStaticFacts({ client, network, incidentId: displayedIncidentId, openBlock, signal, onIncidentHoldingWindowError });
     const tokenId = Object.entries(contracts.insuredTokens)
       .find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase())?.[0] || '';
     const boosterBoostBps = boosterPolicy[2] ?? 0;
@@ -747,23 +789,24 @@ async function readIncident({ client, contracts, account, hasAccount, activeInci
       id: displayedIncidentId.toString(),
       tokenId,
       tokenAddress: tokenAddress.toLowerCase(),
-      minHoldingRequiredBlocks: await holdingWindowBlocks(client, contracts.defiInsurance, openBlock)
-        .catch(error => { checkAbort(signal); onIncidentHoldingWindowError?.(error); return null; }),
+      minHoldingRequiredBlocks: facts.minHoldingRequiredBlocks,
       phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
-      phaseWindowMilliseconds: Number(phaseWindow) * 1_000,
+      phaseWindowMilliseconds: Number(facts.phaseWindowSeconds) * 1_000,
       root,
       unresolvedClaims: unresolvedClaims.toString(),
       totalScoreCommitted: UNKNOWN_VALUE,
       boosterBoostBps: Number(boosterBoostBps),
-      poolAddrs,
-      poolOrder,
+      poolAddrs: facts.poolAddrs,
+      poolOrder: facts.poolOrder,
     };
 
     if (claimId !== zero) {
-      const claimState = historicalClaimState || (await client.multicall({
-        contracts: [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId] }],
-        allowFailure: false, blockNumber,
-      }))[0];
+      const claimState = historicalClaimState
+        || (claimId === knownClaimId ? incidentValues.at(-1) : undefined)
+        || (await multicall(client, {
+          contracts: [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId] }],
+          allowFailure: false, blockNumber,
+        }))[0];
       const [, claimIncidentId, insuredTokenAmount, boosterAmount, bondAmount, resolved] = claimState;
       claim = {
         id: claimId.toString(),
@@ -809,7 +852,7 @@ async function readIncident({ client, contracts, account, hasAccount, activeInci
 
 export async function fetchLandingAnalytics(snapshot, account, chainId, { signal } = {}) {
   const pools = await Promise.all((snapshot.pools || []).map(async pool => ({ id: pool.id,
-    apy: pool.usdPrice === undefined ? pool.apy : await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal }).catch(error => { checkAbort(signal); return '—'; }),
+    apy: pool.usdPrice === undefined ? pool.apy : await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal }).catch(error => { checkAbort(signal); return UNKNOWN_VALUE; }),
   })));
   return { pools };
 }
@@ -822,7 +865,7 @@ export async function fetchScoreHistory(snapshot, account, chainId, { signal } =
     if (balance === '0') return 0;
     const address = token === 'usd8' ? network.contracts.usd8 : network.contracts.savingsVault;
     return cachedData(protocolKey(network, 'score-history', account.toLowerCase(), address, balance),
-      ({ signal: querySignal }) => latestBalanceChangeTimestampMilliseconds(publicClientFor(chainId), address, account,
+      ({ signal: querySignal }) => latestBalanceChangeTimestampMilliseconds(readClientFor(chainId), address, account,
         BigInt(snapshot.scoreHistoryInputs[`${token}FromBlock`]), snapshot.scoreBalancesSnapshotTimestampMilliseconds,
         querySignal, BigInt(snapshot.blockNumber)), { signal, staleTime: 60_000 });
   }));

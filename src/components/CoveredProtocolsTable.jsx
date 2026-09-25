@@ -1,6 +1,11 @@
+import { UNKNOWN_VALUE } from '../lib/units.js';
 import { Fragment } from 'react';
 import aaveLogo from '../assets/aavelogo.svg';
+// Raster icons stay separate cached files; base64-inlining them would add
+// ~6.5 KB gzip of incompressible data to the public page's first-load JS.
+import curveLogo from '../assets/curve-scrvusd.webp?no-inline';
 import msLossLogo from '../assets/msloss-test.svg';
+import skyLogo from '../assets/sky-susds.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
@@ -33,14 +38,14 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'curve-scrvusd',
     symbol: 'scrvUSD',
-    iconSrc: 'https://cdn.jsdelivr.net/gh/curvefi/curve-assets/branding/logo.png',
+    iconSrc: curveLogo,
     token: <>Curve Savings<br />scrvUSD</>,
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
   },
   {
     id: 'sky-susds',
     symbol: 'sUSDS',
-    iconSrc: 'https://assets.coingecko.com/coins/images/39925/large/sky.jpg',
+    iconSrc: skyLogo,
     token: 'Sky Savings sUSDS',
     address: <>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br />impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</>,
   },
@@ -83,12 +88,12 @@ function incidentActionLabel(incident, nowMilliseconds) {
 function formatCoverageBps(value) {
   try {
     const basisPoints = BigInt(value);
-    if (basisPoints < 0n || basisPoints > 10_000n) return '—';
+    if (basisPoints < 0n || basisPoints > 10_000n) return UNKNOWN_VALUE;
     const whole = basisPoints / 100n;
     const fraction = String(basisPoints % 100n).padStart(2, '0').replace(/0+$/, '');
     return `${whole}${fraction ? `.${fraction}` : ''}%`;
   } catch {
-    return '—';
+    return UNKNOWN_VALUE;
   }
 }
 
@@ -136,7 +141,7 @@ export default function CoveredProtocolsTable({
           const insuranceState = insuredTokenStates?.[row.id];
           const reimbursement = insuranceState?.enabled
             ? formatCoverageBps(insuranceState.maxCoverageBps)
-            : '—';
+            : UNKNOWN_VALUE;
           const actionLabel = row.id === incident?.tokenId
             ? incidentActionLabel(incident, nowMilliseconds)
             : 'File Claim';

@@ -6,6 +6,7 @@ const bookRoot = resolve(process.cwd(), 'book-src');
 const publicRoot = resolve(process.cwd(), 'public');
 const summary = readFileSync(resolve(bookRoot, 'SUMMARY.md'), 'utf8');
 const docsTheme = readFileSync(resolve(process.cwd(), 'docs-theme.js'), 'utf8');
+const legal = readFileSync(resolve(bookRoot, 'legal.md'), 'utf8');
 const chapters = new Set(
   [...summary.matchAll(/\[[^\]]+\]\(([^)#]+\.md)\)/g)]
     .map(([, target]) => resolve(bookRoot, target)),
@@ -33,6 +34,8 @@ describe('mdBook links', () => {
     );
     expect(document.querySelector('.sidebar-app-link a')).toHaveAttribute('target', '_blank');
     expect(document.querySelector('.sidebar-app-link a')).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(document.querySelector('.sidebar-analytics-settings')).toHaveAttribute('data-analytics-settings');
+    expect(document.querySelector('.sidebar-analytics-settings')).toHaveTextContent('Cookie Settings');
   });
 
   it('automatically unfolds the beta FAQ when opened through the beta link', () => {
@@ -89,5 +92,11 @@ describe('mdBook links', () => {
     }
 
     expect(broken).toEqual([]);
+  });
+
+  it('describes analytics as optional cookie-based tracking', () => {
+    expect(legal).toContain('**Accept Analytics Cookies**');
+    expect(legal).toContain('**Reject Analytics Cookies**');
+    expect(legal).toContain('Google Analytics cookies');
   });
 });

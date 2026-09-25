@@ -28,8 +28,8 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/link-theme-2f3297d1.css">
-        <link rel="stylesheet" href="theme/css/usd8-docs-d158b2f4.css">
+        <link rel="stylesheet" href="theme/css/link-theme-81d933ec.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-d8a39c81.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-a8511456.js";
+            window.path_to_searchindex_js = "searchindex-1dae37e1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-7654ae6c.js"></script>
@@ -179,7 +179,7 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <img src="../assets/usd8Logo.svg" width="100px">
+                        <img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 logo">
 <h1 id="usd8"><a class="header" href="#usd8">USD8</a></h1>
 <p>USD8 is a stable coin backed 1:1 by USDC.</p>
 <p>It is designed to correct the mis-aligned incentive design in current Defi landscape with 2 major functions - <a href="#defi-insurance">Free Defi Insurance</a> and <a href="#white-hat-economy">White Hat Economy</a>, you can read more about our <a href="#philosophical-roots">philosophical roots</a></p>
@@ -213,18 +213,18 @@
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="philosophical-roots"><a href="#philosophical-roots" class="header">Philosophical Roots</a></h1>
-<img src="../assets/tyche.png" width="300px" />
+<img src="../assets/tyche-300.webp" srcset="../assets/tyche-300.webp 300w, ../assets/tyche-600.webp 600w" sizes="(max-width: 700px) 100vw, 300px" width="300" height="415" alt="Classical bust of Tyche framed by a cyan triangle" />
 <h2 id="the-broken-dream"><a class="header" href="#the-broken-dream">The Broken Dream</a></h2>
 <p>As we embrace decentralized dream to resist the abuses of centralized power, we also give up the enforcement mechanisms that deal with wrongdoing. Without safeguards, crypto is slowly turning into a dystopia where bad actors like hackers and malicious founders are heavily incentivized and rewarded to hack and steal in broad daylight with little consequence.</p>
 <p>This dystopia is slowly killing the decentralized industry following <a href="https://en.wikipedia.org/wiki/Gresham%27s_law">Gresham’s Law</a>, where good actors are gradually driven out till only bad actors left.</p>
-<img src="../assets/thomas_gresham.jpg" width="800px" />
+<img src="../assets/thomas_gresham.jpg" width="500" height="265" loading="lazy" decoding="async" alt="Portrait of Sir Thomas Gresham" />
 <p>Sir Thomas Gresham (1519–1579)</p>
 <h2 id="failed-attempt"><a class="header" href="#failed-attempt">Failed Attempt</a></h2>
 <p>Early-stage Ethereum did have an attempted solution — “Code is Law”, which uses smart contracts’ immutability to prevent misconduct. Unfortunately, this hasn’t worked out, largely due to vulnerabilities in smart contracts as well as the practical needs of upgradability, which remains as <a href="https://medium.com/consensys-diligence/upgradeability-is-a-bug-dba0203152ce">an industry disagreement</a> till today.</p>
 <p>Now that the crypto space is flawed, we didn’t come up with a new solution but ignored the flaw because we have become numb to the hacks and rug pulls happening all the time. This is rather irresponsible. And it is even worse when we onboard the next million innocent users, exposing them to sophisticated hackers and social engineering attacks with their life savings at stake.</p>
 <h2 id="a-crypto-native-alternative"><a class="header" href="#a-crypto-native-alternative">A Crypto-Native Alternative</a></h2>
 <p>We need a new solution, one without centralized power while still be able to deter malicious actors. USD8 is our attempt at this, our mission is to restore the missing layer of order enforcement in DeFi security.</p>
-<img src="../assets/murrayRothbard.jpg" width="800px" />
+<img src="../assets/murrayRothbard.jpg" width="800" height="444" loading="lazy" decoding="async" alt="Portrait of Murray Rothbard" />
 <p>Murray Rothbard (1926–1995), founder and primary theoretician of anarcho-capitalism.</p>
 <p>USD8 is rooted in the philosophical proposal of <a href="https://en.wikipedia.org/wiki/Anarcho-capitalism">anarcho-capitalism</a> where a voluntary society would use insurance companies and private agencies to replace essential services provided by centralized state system. Incentives are carefully aligned in this system using capitalism and game theory to achieve a functional society without central government presents.</p>
 <p>We adapted this model and made it crypto native, to provide the last missing piece for Defi and the whole crypto system. USD8 will be serving two major purposes - as insurance to cover users’ losses and as an order-enforcing mechanism to recover hacked assets.</p>
@@ -310,7 +310,7 @@
 <p>USD8 uses an amazon secure enclave running open sourced algorithm offchain to compute and sign payouts. Anyone can trigger the TEE and submit the result onchain which will verify the TEE’s signature before accepting the final result. Since the algorithm is open sourced, the result is publically verifiable by anyone.</p>
 <p>We plan to shift to a zk-coprocessor network like <a href="https://brevis.network/">Brevis</a> in the future to pass the <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html">walkaway test</a>.</p>
 <h2 id="boosters"><a class="header" href="#boosters">Boosters</a></h2>
-<p><img src="../assets/booster.png" width="300px" /><br /><br />
+<p><img src="../assets/booster-600.webp" srcset="../assets/booster-600.webp 600w, ../assets/booster-1200.webp 1200w" sizes="(max-width: 700px) 100vw, 300px" width="300" height="289" loading="lazy" decoding="async" alt="USD8 Booster NFT artwork" /><br /><br />
 <a href="https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f12d">Boosters</a> are NFTs that can be burnt when filing a claim to add a 1% boost to your total insurance score. You can stack multiple Boosters. Boosters are not for sale, they are only minted to early stage users who help USD8 grow. Follow our <a href="https://x.com/usd8_fi">X</a> and <a href="https://t.me/+e84i2oYk1ao1MTk1">Telegram</a>.</p>
 <p>Enter an Ethereum address to check Boosters</p>
 <div class="booster-check">
@@ -458,7 +458,7 @@
 <p>Any issues with these services might also impact USD8.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
-<p><strong>Last updated: August 22, 2026</strong></p>
+<p><strong>Last updated: September 23, 2026</strong></p>
 <p>Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.</p>
 <h2 id="terms"><a class="header" href="#terms">Terms</a></h2>
 <h3 id="1-acceptance-of-these-terms"><a class="header" href="#1-acceptance-of-these-terms">1. Acceptance of these terms</a></h3>
@@ -587,7 +587,7 @@
 <h3 id="3-how-information-may-be-used"><a class="header" href="#3-how-information-may-be-used">3. How information may be used</a></h3>
 <p>Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services. Where applicable, this processing may be based on consent or legitimate interests in understanding and improving the Services. USD8 does not sell personal information for money.</p>
 <h3 id="4-cookies-browser-storage-analytics-and-choices"><a class="header" href="#4-cookies-browser-storage-analytics-and-choices">4. Cookies, browser storage, analytics, and choices</a></h3>
-<p>Google Analytics loads by default when application or documentation pages open. Loading begins without a prior choice in the current interface and may transmit the visitor’s IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers to Google. Google may place or read cookies or similar identifiers and process this data under its own <a href="https://policies.google.com/privacy">Privacy Policy</a>, including on servers outside your country.</p>
+<p>Google Analytics is optional and does not load until you select <strong>Accept Analytics Cookies</strong>. Select <strong>Reject Analytics Cookies</strong> to continue without analytics; rejecting does not affect protocol or documentation functionality. If accepted, Google Analytics cookies and similar identifiers may be placed or read, and the visitor’s IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers may be transmitted to Google. Google may process this data under its own <a href="https://policies.google.com/privacy">Privacy Policy</a>, including on servers outside your country.</p>
 <p>The Services currently use the following cookies and similar technologies:</p>
 <div class="table-wrapper">
 <table>
@@ -595,13 +595,12 @@
 <tr><th>Type</th><th>Provider</th><th>Purpose</th><th>How to control</th></tr>
 </thead>
 <tbody>
-<tr><td>Analytics (first- and third-party)</td><td>Google (Google Analytics)</td><td>Understand website and documentation usage, measure performance, identify errors</td><td>Browser settings; Google’s <a href="https://tools.google.com/dlpage/gaoptout">Analytics opt-out tools</a></td></tr>
+<tr><td>Analytics (first- and third-party, optional)</td><td>Google (Google Analytics)</td><td>Understand aggregate website and documentation usage, measure performance, identify errors</td><td>Accept or reject in the consent prompt; change the choice through <strong>Cookie Settings</strong>; browser settings; Google’s <a href="https://tools.google.com/dlpage/gaoptout">Analytics opt-out tools</a></td></tr>
 <tr><td>Essential browser storage (first-party, local storage / session storage)</td><td>USD8 interface</td><td>Store interface preferences and wallet-connection session state needed for the application to function</td><td>Clearing site data in your browser settings</td></tr>
 </tbody>
 </table>
 </div>
-<p>Essential browser storage does not require consent. Analytics technologies are not strictly necessary: depending on where you are located, you may be entitled to consent before they load or be notified of your ability to object. You can limit cookies through your browser settings, use browser privacy controls, block images, or use Google’s opt-out tools. Blocking cookies or browser storage may affect functionality. Wallet providers and other third parties may provide separate privacy settings.</p>
-<p>Where required by applicable law, we will provide a consent mechanism or equivalent choice before loading non-essential tracking technologies.</p>
+<p>The interface stores your analytics choice in first-party local storage. Rejecting analytics does not affect protocol or documentation functionality. You can change or withdraw the choice at any time through <strong>Cookie Settings</strong>. Essential browser storage used for wallet connection and interface operation remains available independently of that choice. You can also limit cookies through browser settings or Google’s opt-out tools. Wallet providers and other third parties may provide separate privacy settings.</p>
 <h3 id="5-how-information-may-be-shared"><a class="header" href="#5-how-information-may-be-shared">5. How information may be shared</a></h3>
 <p>Analytics information is shared with Google as the analytics provider and may be disclosed when legally required. USD8 does not currently share a separate user-profile database because it does not maintain one.</p>
 <p>Public blockchain information is independently public and can be viewed, copied, analyzed, and shared by anyone. We cannot control downstream use of public blockchain data.</p>
@@ -734,8 +733,8 @@
         <script src="book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="analytics-8434d4e3.js"></script>
-        <script src="docs-theme-13a6a8a3.js"></script>
+        <script src="analytics-e9b25dfc.js"></script>
+        <script src="docs-theme-330ac479.js"></script>
         <script src="booster-check-aac21633.js"></script>
 
         <script>

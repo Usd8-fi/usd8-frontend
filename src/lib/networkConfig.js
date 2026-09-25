@@ -1,4 +1,4 @@
-import { mainnet, sepolia } from 'viem/chains';
+import { mainnet, sepolia } from './viemLite.js';
 
 const SEPOLIA_CONTRACTS = Object.freeze({
   registry: '0xb34d92cd05005df36050370433819597a9bac693',
@@ -66,6 +66,9 @@ const NETWORKS = Object.freeze({
     rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || 'https://eth.drpc.org',
   }),
 });
+
+/// The chain the protocol is deployed on; wallets are asked to switch here.
+export const PROTOCOL_CHAIN_ID = sepolia.id;
 
 export function getNetwork(chainId) {
   return Number.isSafeInteger(chainId) ? NETWORKS[chainId] || null : null;

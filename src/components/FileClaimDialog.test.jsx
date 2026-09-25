@@ -101,11 +101,11 @@ describe('FileClaimDialog', () => {
     );
 
     const title = screen.getByRole('heading', { name: 'File A Claim' });
-    const learnMore = screen.getByRole('link', { name: 'learn more' });
+    const learnMore = screen.getByRole('link', { name: 'Learn More' });
     const requirement = learnMore.closest('.file-claim-requirement');
     expect(requirement).toHaveTextContent(
       'msLOSS must lose more than 20% of its value against its underlying, '
-      + 'measured between its TWAP price immediately before and after the drop. learn more.',
+      + 'measured between its TWAP price immediately before and after the drop. Learn More.',
     );
     expect(learnMore).toHaveAttribute('href', './docs/defi-insurance.html');
     expect(title.nextElementSibling).toBe(requirement);
@@ -125,8 +125,8 @@ describe('FileClaimDialog', () => {
     );
 
     expect(screen.getByLabelText('Insured sGHO amount').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
-    expect(screen.getByLabelText('Insurance score to spend').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
-    expect(screen.getByLabelText('Boosters to escrow').closest('.file-claim-field')).toHaveClass('file-claim-field--compact');
+    expect(screen.getByLabelText('Insurance Score to Spend').closest('.file-claim-field')).toHaveClass('file-claim-field--primary');
+    expect(screen.getByLabelText('Boosters to Escrow').closest('.file-claim-field')).toHaveClass('file-claim-field--compact');
     expect(appStyles).toMatch(/\.file-claim-form-grid \{[\s\S]*grid-template-columns: 350px minmax\(160px, 1fr\);[\s\S]*column-gap: 64px;/);
     expect(appStyles).toMatch(/\.file-claim-field--primary input \{\s*width: 282px;/);
     expect(appStyles).toMatch(/\.file-claim-field--compact input \{\s*width: 160px;/);
@@ -161,9 +161,9 @@ describe('FileClaimDialog', () => {
       name: /Boosters must meet the same pre-incident holding requirement as the insured token/,
     })).toBeInTheDocument();
 
-    expect(screen.getByLabelText('Insurance score to spend')).toHaveValue('2344322');
-    expect(screen.getByLabelText('Boosters to escrow')).toHaveValue(12);
-    const claimBondField = screen.getByText('Claim bond').closest('.file-claim-field');
+    expect(screen.getByLabelText('Insurance Score to Spend')).toHaveValue('2344322');
+    expect(screen.getByLabelText('Boosters to Escrow')).toHaveValue(12);
+    const claimBondField = screen.getByText('Claim Bond').closest('.file-claim-field');
     const claimBondAvailable = claimBondField.querySelector('small');
     expect(claimBondAvailable).toHaveTextContent('12.45 available');
     expect(within(claimBondAvailable).queryByRole('button')).not.toBeInTheDocument();
@@ -206,7 +206,7 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const score = screen.getByLabelText('Insurance score to spend');
+    const score = screen.getByLabelText('Insurance Score to Spend');
     expect(score).toHaveAttribute('type', 'text');
     expect(score).toHaveValue('131239.80');
     fireEvent.change(score, { target: { value: '131,239.8999' } });
@@ -343,7 +343,7 @@ describe('FileClaimDialog', () => {
       />,
     );
 
-    const scoreInput = screen.getByLabelText('Insurance score to spend');
+    const scoreInput = screen.getByLabelText('Insurance Score to Spend');
     expect(scoreInput).toBeEnabled();
     fireEvent.change(scoreInput, { target: { value: '12' } });
     expect(scoreInput).toHaveValue('12');
@@ -539,7 +539,7 @@ describe('FileClaimDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: label }));
     expect(callbacks[callbackName]).toHaveBeenCalledOnce();
     if (state === 'payout-open') {
-      expect(screen.getByText('Total Payout USD value')).toBeInTheDocument();
+      expect(screen.getByText('Total Payout USD Value')).toBeInTheDocument();
       expect(screen.getByText('$2,003.10')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Cancel Payout and Return Tokens' })).toBeInTheDocument();
     }
@@ -679,7 +679,7 @@ describe('FileClaimDialog', () => {
     expect(screen.getByRole('status', { name: 'Loading payout value' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Loading payout comparison' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Loading payout details' })).toBeInTheDocument();
-    expect(screen.getByText('Total Payout USD value').parentElement).not.toHaveTextContent('—');
+    expect(screen.getByText('Total Payout USD Value').parentElement).not.toHaveTextContent('—');
 
     rerender(<FileClaimDialog
       token="test-msloss"

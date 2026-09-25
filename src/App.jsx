@@ -1,32 +1,39 @@
-import { poolRedemptionQuote } from './lib/poolWithdrawal.js';
 import WalletNoticeProvider, { NoticeMessage } from './components/WalletNotice.jsx';
-import { redemptionQuote } from './lib/quote.js';
-import { useDialogFocus } from './components/useDialogFocus.js';
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
-import { formatUnits, parseUnits, zeroAddress } from 'viem';
+import { zeroAddress } from 'viem';
 import { useAccount, useChainId, useSwitchChain, useWriteContract } from 'wagmi';
-import AvailabilityAction, { CONNECT_WALLET_REASON } from './components/AvailabilityAction.jsx';
+import { CONNECT_WALLET_REASON } from './components/AvailabilityAction.jsx';
 import { COVERED_PROTOCOL_ROWS } from './components/CoveredProtocolsTable.jsx';
 const FileClaimDialog = lazy(() => import('./components/FileClaimDialog.jsx'));
 import USD8Landing from './components/USD8Landing.jsx';
-import LoadingSpinner from './components/LoadingSpinner.jsx';
-import { fetchLandingChainData, fetchLandingAnalytics, fetchScoreHistory, publicClientFor } from './lib/chainData.js';
+import { fetchLandingChainData, fetchLandingAnalytics, fetchScoreHistory } from './lib/chainData.js';
+import { transactionClientFor } from './lib/transactionClient.js';
 import { mergeSnapshot } from './lib/mergeSnapshot.js';
 import { cachedData } from './lib/dataCache.js';
 import { poolWriteAbi, treasuryWriteAbi, claimWriteAbi } from './lib/writeAbis.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './lib/abis.js';
-import { formatUsdWad, groupDecimalString, percentOfWad } from './lib/units.js';
-import { decimalInputValue, displayAvailableBalance } from './lib/displayAvailableBalance.js';
-import { useLivePoolEarnings } from './lib/livePoolEarnings.js';
+import { formatUsdWad, groupDecimalString, percentOfWad, UNKNOWN_VALUE } from './lib/units.js';
+import { poolHasEarnings } from './lib/livePoolEarnings.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
-import { getNetwork, getProtocolNetwork } from './lib/networkConfig.js';
+import { getNetwork, getProtocolNetwork, PROTOCOL_CHAIN_ID } from './lib/networkConfig.js';
+import { onForegroundRefresh } from './lib/foregroundRefresh.js';
 import { claimApiConfigured, matchesSettlementContext } from './lib/claimContext.js';
 const prepareIncidentOpen = (...args) => import('./lib/claimApi.js').then(api => api.prepareIncidentOpen(...args));
 const prepareSettlement = (...args) => import('./lib/claimApi.js').then(api => api.prepareSettlement(...args));
 import { claimLifecycle } from './lib/claimLifecycle.js';
 import { fetchInsuranceScore } from './lib/scoreApi.js';
-import { tokenAmountExceedsBalance } from './lib/tokenAmount.js';
+import { useActionStatus } from './lib/actionStatus.js';
+import { isWaitingStatus, parseTokenAmount } from './lib/actionRules.js';
+import {
+  hasCurrentBalanceScoreRate,
+  scoreBalanceRefreshKey,
+  scoreSnapshotStale,
+  scoreWithCurrentBalanceRates,
+  scoreWithTokenBreakdown,
+} from './lib/scoreRules.js';
+import { matchesSettlementTopology, normalizedAddressOrder, settlementPayoutDetails } from './lib/settlement.js';
+import { PoolActionDialog, Usd8ActionDialog } from './components/TransactionDialogs.jsx';
 import { walletConnectorConfigured } from './lib/walletConnector.js';
 
 function cachedInsuranceScore(account, { chainId, signal, fresh = false, refresh = false }) {
@@ -47,7 +54,7 @@ const EMPTY_CHAIN_DATA = {
   },
   pools: [],
 };
-const EMPTY_SAVINGS_VAULT = { balance: '—', apy: '—' };
+const EMPTY_SAVINGS_VAULT = { balance: UNKNOWN_VALUE, apy: UNKNOWN_VALUE };
 const CLAIM_TOKEN_ROWS = COVERED_PROTOCOL_ROWS;
 const EMPTY_SCORE = {
   grossEarnedScore: '0',
@@ -60,535 +67,6 @@ const EMPTY_SCORE = {
   sUsd8ScorePerSecond: '0',
 };
 const WALLET_CONNECT_UNAVAILABLE_REASON = 'Wallet connection is unavailable until VITE_REOWN_PROJECT_ID is configured.';
-const DOCS_BASE_URL = './docs/';
-
-function defaultTokenAmount(available) {
-  const normalized = String(available ?? '').replace(/,/g, '').trim();
-  return /^(?:\d+\.?\d*|\.\d+)$/.test(normalized) && /[1-9]/.test(normalized)
-    ? normalized
-    : '';
-}
-
-function cooldownReadyLabel(endsAtMilliseconds, nowMilliseconds) {
-  const end = Number(endsAtMilliseconds);
-  const remainingMinutes = Math.ceil((end - nowMilliseconds) / 60_000);
-  if (!Number.isFinite(remainingMinutes) || end <= 0) return '';
-  if (remainingMinutes <= 0) return 'ready now';
-  if (remainingMinutes < 60) return `ready in ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}`;
-  const remainingHours = Math.ceil(remainingMinutes / 60);
-  if (remainingHours < 24) return `ready in ${remainingHours} ${remainingHours === 1 ? 'hour' : 'hours'}`;
-  const remainingDays = Math.ceil(remainingHours / 24);
-  return `ready in ${remainingDays} ${remainingDays === 1 ? 'day' : 'days'}`;
-}
-
-function parseTokenAmount(raw, decimals) {
-  const normalized = String(raw ?? '').trim();
-  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(normalized)) {
-    throw new Error('Please enter a valid number.');
-  }
-  if ((normalized.split('.')[1] || '').length > decimals) throw new Error(`Use at most ${decimals} decimal places.`);
-  try {
-    return parseUnits(normalized, decimals);
-  } catch {
-    throw new Error('Please enter a valid number.');
-  }
-}
-
-function tokenAmountValidationReason(raw, available, token, action) {
-  const normalized = String(raw ?? '').trim();
-  if (!defaultTokenAmount(available)) return `You do not have any ${token} available to ${action}.`;
-  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(normalized)) return `Enter a valid ${token} amount to ${action}.`;
-  if (!/[1-9]/.test(normalized)) return `Enter a ${token} amount greater than zero to ${action}.`;
-  return tokenAmountExceedsBalance(normalized, available)
-    ? `The ${token} amount exceeds your available balance.`
-    : '';
-}
-
-function formattedPayoutAmount(amount, decimals) {
-  const displayedDecimals = Math.min(decimals, 4);
-  const discardedScale = 10n ** BigInt(decimals - displayedDecimals);
-  const rounded = discardedScale === 1n
-    ? amount
-    : (amount + discardedScale / 2n) / discardedScale;
-  const displayedScale = 10n ** BigInt(displayedDecimals);
-  const whole = rounded / displayedScale;
-  const fraction = String(rounded % displayedScale)
-    .padStart(displayedDecimals, '0')
-    .replace(/0+$/, '');
-  return fraction ? `${groupDecimalString(whole)}.${fraction}` : groupDecimalString(whole);
-}
-
-export function settlementPayoutDetails(amounts, poolOrder, payoutAssets = {}) {
-  return amounts.map((amount, index) => {
-    const asset = poolOrder[index];
-    const metadata = payoutAssets[asset?.toLowerCase()];
-    return {
-      amount: metadata
-        ? formattedPayoutAmount(amount, metadata.decimals)
-        : groupDecimalString(amount),
-      symbol: metadata?.symbol || `base units of ${asset || 'unknown asset'}`,
-      usd: '',
-    };
-  });
-}
-
-function normalizedAddressOrder(addresses) {
-  return Array.isArray(addresses) ? addresses.map((address) => String(address).toLowerCase()) : [];
-}
-
-export function matchesSettlementTopology(settlement, incident) {
-  const settlementPools = normalizedAddressOrder(settlement?.poolAddrs);
-  const settlementAssets = normalizedAddressOrder(settlement?.poolOrder);
-  const incidentPools = normalizedAddressOrder(incident?.poolAddrs);
-  const incidentAssets = normalizedAddressOrder(incident?.poolOrder);
-  return incidentPools.length > 0
-    && incidentAssets.length === incidentPools.length
-    && settlementPools.length === incidentPools.length
-    && settlementAssets.length === incidentAssets.length
-    && settlementPools.every((address, index) => address === incidentPools[index])
-    && settlementAssets.every((address, index) => address === incidentAssets[index]);
-}
-
-function scoreWithTokenBreakdown(score, contracts) {
-  const tokenScores = Array.isArray(score?.tokenScores) ? score.tokenScores : [];
-  const byToken = new Map(tokenScores.map((item) => [item.token.toLowerCase(), item]));
-  const usd8 = byToken.get(contracts?.usd8?.toLowerCase());
-  const sUsd8 = byToken.get(contracts?.savingsVault?.toLowerCase());
-  return {
-    ...score,
-    usd8Score: usd8?.grossEarnedScore || '0',
-    usd8ScorePerSecond: usd8?.grossScorePerSecond || '0',
-    sUsd8Score: sUsd8?.grossEarnedScore || '0',
-    sUsd8ScorePerSecond: sUsd8?.grossScorePerSecond || '0',
-  };
-}
-
-function scoredTokenBalancesChanged(score, scoreBalances, contracts) {
-  if (!scoreBalances || !Array.isArray(score?.tokenScores)) return false;
-  const byToken = new Map(score.tokenScores.map((item) => [item.token.toLowerCase(), item.balance]));
-  return [
-    [contracts?.usd8, scoreBalances.usd8],
-    [contracts?.savingsVault, scoreBalances.savings],
-  ].some(([token, currentBalance]) => {
-    const snapshotBalance = token ? byToken.get(token.toLowerCase()) : undefined;
-    return typeof snapshotBalance === 'string'
-      && typeof currentBalance === 'string'
-      && BigInt(snapshotBalance) !== BigInt(currentBalance);
-  });
-}
-
-// Accepting a payout spends score without moving any token balance, so the
-// snapshot also has to be re-fetched when onchain scoreSpent moves past it.
-function scoreSpentChanged(score, onchainScoreSpent) {
-  if (typeof onchainScoreSpent !== 'string' || typeof score?.scoreSpent !== 'string') return false;
-  try {
-    return parseUnits(score.scoreSpent, 18) !== BigInt(onchainScoreSpent);
-  } catch {
-    return false;
-  }
-}
-
-function scoreSnapshotStale(score, chainData, contracts) {
-  return scoredTokenBalancesChanged(score, chainData?.scoreBalances, contracts)
-    || scoreSpentChanged(score, chainData?.scoreSpent);
-}
-
-function scoreBalanceRefreshKey(score, chainData, contracts, chainId, address) {
-  if (!scoreSnapshotStale(score, chainData, contracts)) return '';
-  const tokenBalances = (score.tokenScores || []).map((item) => `${item.token}:${item.balance}`).join('|');
-  return [
-    chainId,
-    address.toLowerCase(),
-    tokenBalances,
-    chainData.scoreBalances?.usd8,
-    chainData.scoreBalances?.savings,
-    chainData.scoreSpent,
-  ].join(':');
-}
-
-function advanceScoreValue(value, rate, elapsedMilliseconds) {
-  const elapsed = BigInt(Math.max(0, Math.floor(elapsedMilliseconds)));
-  return formatUnits(
-    parseUnits(value || '0', 18) + parseUnits(rate || '0', 18) * elapsed / 1_000n,
-    18,
-  );
-}
-
-function scoreWithCurrentBalanceRates(
-  score,
-  rates,
-  balanceChangeTimestamps,
-  snapshotTimestampMilliseconds,
-) {
-  if (!score) return score;
-  const usd8Rate = rates?.usd8 || '0';
-  const savingsRate = rates?.savings || '0';
-  if (!Number.isSafeInteger(snapshotTimestampMilliseconds)
-    || snapshotTimestampMilliseconds <= 0) {
-    return {
-      ...score,
-      snapshotTimestampMilliseconds: Date.now(),
-      grossScorePerSecond: formatUnits(parseUnits(usd8Rate, 18) + parseUnits(savingsRate, 18), 18),
-      usd8ScorePerSecond: usd8Rate,
-      sUsd8ScorePerSecond: savingsRate,
-    };
-  }
-  const authoritativeTimestampMilliseconds = Number(
-    score.snapshotTimestampMilliseconds ?? Number(score.snapshotTimestamp || 0) * 1_000,
-  );
-  const tokenScore = (token, baseValue, oldRate, currentRate) => {
-    const balanceChangeTimestamp = Number(
-      balanceChangeTimestamps?.[token] || snapshotTimestampMilliseconds,
-    );
-    if (!Number.isSafeInteger(authoritativeTimestampMilliseconds)
-      || authoritativeTimestampMilliseconds <= 0) {
-      return advanceScoreValue(
-        baseValue,
-        currentRate,
-        snapshotTimestampMilliseconds - balanceChangeTimestamp,
-      );
-    }
-    const oldRateEnd = Math.min(
-      snapshotTimestampMilliseconds,
-      Math.max(authoritativeTimestampMilliseconds, balanceChangeTimestamp),
-    );
-    const afterOldRate = advanceScoreValue(
-      baseValue,
-      oldRate,
-      oldRateEnd - authoritativeTimestampMilliseconds,
-    );
-    return advanceScoreValue(
-      afterOldRate,
-      currentRate,
-      snapshotTimestampMilliseconds - Math.max(authoritativeTimestampMilliseconds, balanceChangeTimestamp),
-    );
-  };
-  const usd8Score = tokenScore('usd8', score.usd8Score, score.usd8ScorePerSecond, usd8Rate);
-  const savingsScore = tokenScore('savings', score.sUsd8Score, score.sUsd8ScorePerSecond, savingsRate);
-  return {
-    ...score,
-    snapshotTimestampMilliseconds,
-    grossEarnedScore: formatUnits(parseUnits(usd8Score, 18) + parseUnits(savingsScore, 18), 18),
-    grossScorePerSecond: formatUnits(parseUnits(usd8Rate, 18) + parseUnits(savingsRate, 18), 18),
-    usd8Score,
-    usd8ScorePerSecond: usd8Rate,
-    sUsd8Score: savingsScore,
-    sUsd8ScorePerSecond: savingsRate,
-  };
-}
-
-function hasCurrentBalanceScoreRate(rates) {
-  return ['usd8', 'savings'].some((token) => {
-    try {
-      return parseUnits(rates?.[token] || '0', 18) > 0n;
-    } catch {
-      return false;
-    }
-  });
-}
-
-function DialogCloseButton({ label, onClose }) {
-  return (
-    <button className="app-dialog-close" type="button" aria-label={label} onClick={onClose}>×</button>
-  );
-}
-
-// Anything the user has to wait on spins. Terminal confirmations and errors
-// are absent from this list and stay static.
-const WAITING_STATUS_PREFIXES = [
-  'Checking ',
-  'Loading ',
-  'Preparing ',
-  'Verifying ',
-  'Transaction submitted:',
-];
-
-function isWaitingStatus(message) {
-  return message.includes('in your wallet.')
-    || WAITING_STATUS_PREFIXES.some((prefix) => message.startsWith(prefix));
-}
-
-function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, onInputChange, onClose, onSubmit, submitUnavailableReason = '' }) {
-  const minting = mode === 'mint';
-  const dialogTitle = minting ? 'Mint USD8' : 'Redeem USD8';
-  const closeLabel = minting ? 'Close mint USD8' : 'Close redeem USD8';
-  const inputToken = minting ? 'USDC' : 'USD8';
-  const outputToken = minting ? 'USD8' : 'USDC';
-  const availableBalance = minting ? usdcBalance : usd8Balance;
-  const [amount, setAmount] = useState(() => defaultTokenAmount(availableBalance));
-  const amountUnavailableReason = submitUnavailableReason
-    || tokenAmountValidationReason(amount, availableBalance, inputToken, minting ? 'mint USD8' : 'redeem USD8')
-    || (!minting && redemptionQuote(amount, quoteRate) === null ? 'Waiting for a valid redemption quote.' : '');
-
-  const dialogRef = useDialogFocus(onClose);
-
-  return (
-    <div className="usd8-dialog-backdrop" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose();
-    }}>
-      <section className="usd8-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={dialogTitle}>
-        <DialogCloseButton label={closeLabel} onClose={onClose} />
-        <h2 className="usd8-dialog-title">{dialogTitle}</h2>
-
-        <form className="usd8-dialog-form" onSubmit={(event) => {
-          event.preventDefault();
-          if (!amountUnavailableReason) onSubmit(mode, amount);
-        }}>
-          <div className="usd8-dialog-flow">
-            <label className="usd8-dialog-amount">
-              <span>{inputToken}</span>
-              <input
-                aria-label={`${inputToken} amount`}
-                inputMode="decimal"
-                min="0"
-                step="any"
-                type="text"
-                value={amount}
-                onChange={(event) => {
-                  setAmount(decimalInputValue(event.target.value));
-                  onInputChange?.();
-                }}
-              />
-              <small>{displayAvailableBalance(availableBalance)} available</small>
-            </label>
-
-            <span className="usd8-dialog-arrow" aria-hidden="true">→</span>
-
-            <div className="usd8-dialog-output">
-              <span>{outputToken}</span>
-              <output aria-label={`${outputToken} output`}>{minting ? amount || '0' : redemptionQuote(amount, quoteRate) ?? '—'}</output>
-            </div>
-          </div>
-
-          <div className="usd8-dialog-submit-row">
-            <AvailabilityAction
-              className="usd8-dialog-submit"
-              type="submit"
-              unavailableReason={amountUnavailableReason}
-              warningResetKey={`${mode}:${amount}`}
-            >
-              {mode}
-            </AvailabilityAction>
-          </div>
-        </form>
-      </section>
-    </div>
-  );
-}
-
-export function PoolActionDialog({
-  mode,
-  poolName = 'cover pool',
-  assetSymbol = '',
-  shareSymbol = '',
-  shareDecimals = 21,
-  withdrawalQuote,
-  coverAssetBalance,
-  activeIncidentId,
-  capacityUncapped,
-  remainingDepositCapacity,
-  poolShareBalance,
-  availableForCooldown,
-  availableForCooldownAssets,
-  availableForWithdrawAssets,
-  inCooldownAssets,
-  exitSettled,
-  availableForWithdraw,
-  inCooldown,
-  cooldownEndsAtMilliseconds,
-  earnings,
-  hasEarnings,
-  onInputChange,
-  onClose,
-  onSubmit,
-  submitUnavailableReason = '',
-}) {
-  const withdrawingEarnings = mode === 'claimReward';
-  const depositing = mode === 'deposit';
-  const withdrawing = mode === 'withdraw';
-  const dialogTitle = depositing ? 'Deposit' : withdrawing ? 'Withdraw' : 'Withdraw Earnings';
-  const closeLabel = `Close ${depositing ? 'deposit to' : withdrawing ? 'withdraw from' : 'withdraw earnings from'} ${poolName}`;
-  const inputToken = depositing ? assetSymbol : shareSymbol;
-  const available = depositing ? coverAssetBalance : availableForCooldown ?? poolShareBalance;
-
-  const [amount, setAmount] = useState(() => defaultTokenAmount(available));
-  const amountEdited = useRef(false);
-  const estimatedAssets = poolRedemptionQuote(amount, withdrawalQuote, shareDecimals);
-  const estimatedOutput = estimatedAssets === null ? '—'
-    : parseUnits(estimatedAssets, 18) > 0n && parseUnits(estimatedAssets, 18) < 1_000_000_000_000n ? '<0.000001'
-    : groupDecimalString(estimatedAssets, { decimals: 6 });
-  const withdrawAvailable = availableForWithdraw ?? '0';
-  const cooldownBalance = inCooldown ?? '0';
-  const [currentTimeMilliseconds, setCurrentTimeMilliseconds] = useState(Date.now());
-  const incidentActive = String(activeIncidentId || '0') !== '0';
-  const cooldownElapsed = Number(cooldownEndsAtMilliseconds) > 0
-    && currentTimeMilliseconds >= Number(cooldownEndsAtMilliseconds);
-  const cooldownCompleteWaitingForClaims = incidentActive
-    && cooldownElapsed
-    && Boolean(defaultTokenAmount(cooldownBalance));
-  const cooldownTiming = defaultTokenAmount(cooldownBalance)
-    && !cooldownCompleteWaitingForClaims
-    ? cooldownReadyLabel(cooldownEndsAtMilliseconds, currentTimeMilliseconds)
-    : '';
-  const displayedWithdrawAvailable = (cooldownCompleteWaitingForClaims ? inCooldownAssets : availableForWithdrawAssets) ?? '—';
-  const displayedCooldownBalance = cooldownCompleteWaitingForClaims ? '0' : inCooldownAssets ?? '—';
-  const hasWithdrawAvailable = !/^0(?:\.0+)?$/.test(String(withdrawAvailable).replace(/,/g, ''));
-  const existingWithdrawalRequestReason = 'Please finish the existing withdrawal request before starting a new one.';
-  const cooldownUnavailableReason = withdrawing && defaultTokenAmount(cooldownBalance)
-    ? existingWithdrawalRequestReason
-    : (withdrawing && hasWithdrawAvailable
-      ? existingWithdrawalRequestReason
-      : '');
-  const actionUnavailableReason = submitUnavailableReason
-    || (withdrawing && availableForCooldownAssets == null ? 'Withdrawal amounts are unavailable. Retry data to continue.' : '')
-    || (withdrawingEarnings && !hasEarnings ? 'No earnings to withdraw.' : '');
-  const tokenValidationReason = !withdrawingEarnings
-    ? tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown')
-    : '';
-  const activeIncidentDepositReason = depositing && incidentActive
-    ? `Deposits are temporarily unavailable while insurance incident #${activeIncidentId} is active. Try again after the incident is finalized.`
-    : '';
-  const activeIncidentWithdrawReason = withdrawing
-    && cooldownCompleteWaitingForClaims
-    ? 'Waiting for claims to finish'
-    : '';
-  const capacityDepositReason = depositing
-    && !capacityUncapped
-    && !tokenValidationReason
-    && tokenAmountExceedsBalance(amount, remainingDepositCapacity)
-    ? (defaultTokenAmount(remainingDepositCapacity)
-      ? `This deposit exceeds the cover pool's remaining capacity. You can deposit up to ${remainingDepositCapacity} ${assetSymbol}.`
-      : `The cover pool is full and cannot accept additional ${assetSymbol} deposits.`)
-    : '';
-  const amountUnavailableReason = actionUnavailableReason
-    || cooldownUnavailableReason
-    || activeIncidentDepositReason
-    || tokenValidationReason
-    || capacityDepositReason
-    || (withdrawing && estimatedAssets === null ? 'Waiting for a valid withdrawal estimate.' : '');
-
-  useEffect(() => {
-    if (!amountEdited.current) setAmount(defaultTokenAmount(available));
-  }, [available]);
-
-  useEffect(() => {
-    if (!cooldownTiming || cooldownTiming === 'ready now') return undefined;
-    const timer = window.setInterval(() => setCurrentTimeMilliseconds(Date.now()), 60_000);
-    return () => window.clearInterval(timer);
-  }, [cooldownEndsAtMilliseconds, cooldownTiming]);
-
-  const dialogRef = useDialogFocus(onClose);
-
-  return (
-    <div className="usd8-dialog-backdrop" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose();
-    }}>
-      <section className="usd8-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={dialogTitle}>
-        <DialogCloseButton label={closeLabel} onClose={onClose} />
-        <h2 className="usd8-dialog-title">{dialogTitle}</h2>
-
-        <form className="usd8-dialog-form" onSubmit={(event) => {
-          event.preventDefault();
-          if (!amountUnavailableReason && !withdrawing) onSubmit(mode, amount);
-        }}>
-          {withdrawingEarnings ? (
-            <div className="usd8-dialog-flow usd8-dialog-flow--single">
-              <div className="usd8-dialog-output">
-                <span>USD8 earnings</span>
-                <output aria-label="USD8 earnings">{earnings}</output>
-                <small>{displayAvailableBalance(earnings)} USD8 available to withdraw</small>
-              </div>
-            </div>
-          ) : (
-            <div className={`usd8-dialog-flow${withdrawing ? ' usd8-dialog-flow--withdraw' : ' usd8-dialog-flow--single'}`}>
-              <label className="usd8-dialog-amount">
-                <span>{withdrawing ? 'Pool shares to redeem' : inputToken}</span>
-                <input
-                  aria-label={`${inputToken} amount`}
-                  inputMode="decimal"
-                  min="0"
-                  step="any"
-                  type="text"
-                  value={amount}
-                  onChange={(event) => {
-                    amountEdited.current = true;
-                    setAmount(decimalInputValue(event.target.value));
-                    onInputChange?.();
-                  }}
-                />
-                {mode === 'withdraw' ? (
-                  <small className="usd8-dialog-pool-availability usd8-dialog-withdrawal-availability">
-                    {displayAvailableBalance(available)} shares available. 7-day cooldown if no pending claims. Otherwise after the claims are all finalized.{' '}
-                    <a href={`${DOCS_BASE_URL}cover-pools.html`}>Learn More</a>.
-                  </small>
-                ) : (
-                  <small className="usd8-dialog-pool-availability">
-                    {displayAvailableBalance(available)} available
-                    {depositing && !capacityUncapped && remainingDepositCapacity !== '' ? (
-                      <>
-                        .{' '}
-                        <span className="usd8-dialog-pool-capacity">
-                          {displayAvailableBalance(remainingDepositCapacity)} {assetSymbol} left in pool limit
-                        </span>
-                      </>
-                    ) : null}
-                  </small>
-                )}
-              </label>
-              {withdrawing ? <>
-                <span className="usd8-dialog-arrow" aria-hidden="true">→</span>
-                <div className="usd8-dialog-output">
-                  <span>Estimated {assetSymbol} received</span>
-                  <output aria-label={`Estimated ${assetSymbol} received`} title={estimatedAssets ?? undefined}>{estimatedOutput}</output>
-                  <small>May decrease if the pool pays claims before your withdrawal settles.</small>
-                </div>
-              </> : null}
-            </div>
-          )}
-
-          <div className={`usd8-dialog-submit-row${withdrawing ? ' usd8-dialog-submit-row--withdraw' : ''}`}>
-            {withdrawing ? (
-              <>
-                <AvailabilityAction
-                  className="usd8-dialog-submit"
-                  type="button"
-                  onClick={() => onSubmit('startCooldown', amount)}
-                  unavailableReason={amountUnavailableReason}
-                  warningResetKey={`${mode}:${amount}`}
-                >
-                  start cooldown
-                </AvailabilityAction>
-                <small className="usd8-dialog-withdraw-balances">
-                  {displayAvailableBalance(displayedWithdrawAvailable)} {assetSymbol} {exitSettled ? 'ready to withdraw' : 'estimated for withdrawal'}{cooldownCompleteWaitingForClaims ? ' after claims are finalized' : ''}, {' '}
-                  {displayAvailableBalance(displayedCooldownBalance)} {assetSymbol} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
-                </small>
-                <AvailabilityAction
-                  className="usd8-dialog-submit"
-                  type="button"
-                  onClick={() => onSubmit('withdraw', '')}
-                  unavailableReason={actionUnavailableReason
-                    || activeIncidentWithdrawReason
-                    || (!hasWithdrawAvailable ? 'No cover-pool withdrawal is available yet.' : '')}
-                >
-                  Withdraw
-                </AvailabilityAction>
-              </>
-            ) : (
-              <AvailabilityAction
-                className="usd8-dialog-submit"
-                type="submit"
-                unavailableReason={amountUnavailableReason}
-                warningResetKey={`${mode}:${amount}`}
-              >
-                {withdrawingEarnings ? 'withdraw earnings' : mode}
-              </AvailabilityAction>
-            )}
-          </div>
-        </form>
-      </section>
-    </div>
-  );
-}
 
 export default function App({ autoConnect = false }) {
   const { address = '', isConnected } = useAccount();
@@ -629,27 +107,22 @@ export default function App({ autoConnect = false }) {
   const chainDataRequestGeneration = useRef(0);
   const [savingsVault, setSavingsVault] = useState(EMPTY_SAVINGS_VAULT);
   const [usd8Action, setUsd8Action] = useState(null);
-  const [usd8Status, setUsd8StatusState] = useState('');
-  const [usd8StatusFailed, setUsd8StatusFailedState] = useState(false);
   const [poolAction, setPoolAction] = useState(null);
   const [poolActionId, setPoolActionId] = useState('');
-  const [poolStatus, setPoolStatusState] = useState('');
-  const [poolStatusFailed, setPoolStatusFailedState] = useState(false);
   const [claimSelection, setClaimToken] = useState(null);
   const claimToken = claimSelection?.walletScopeKey === walletScopeKey
     ? claimSelection.token
     : null;
-  const [claimStatus, setClaimStatus] = useState('');
-  const [claimStatusIsWarning, setClaimStatusIsWarning] = useState(false);
   const [claimSubmitting, setClaimSubmitting] = useState(false);
   const [claimSettlement, setClaimSettlement] = useState(null);
   const claimAbortController = useRef(null);
   const walletScopeRef = useRef(walletScopeKey);
   walletScopeRef.current = walletScopeKey;
-  function setUsd8Status(value) { if (walletScopeRef.current === walletScopeKey) setUsd8StatusState(value); }
-  function setUsd8StatusFailed(value) { if (walletScopeRef.current === walletScopeKey) setUsd8StatusFailedState(value); }
-  function setPoolStatus(value) { if (walletScopeRef.current === walletScopeKey) setPoolStatusState(value); }
-  function setPoolStatusFailed(value) { if (walletScopeRef.current === walletScopeKey) setPoolStatusFailedState(value); }
+  const inCurrentWalletScope = () => walletScopeRef.current === walletScopeKey;
+  const [usd8Status, usd8StatusLine] = useActionStatus(inCurrentWalletScope);
+  const [poolStatus, poolStatusLine] = useActionStatus(inCurrentWalletScope);
+  // Claim flows check wallet scope and abort state themselves at each step.
+  const [claimStatus, claimStatusLine] = useActionStatus();
   const claimContextKey = [
     walletScopeKey,
     chainData.incident?.id || '',
@@ -680,13 +153,12 @@ export default function App({ autoConnect = false }) {
     setDataError('');
     setClaimToken(null);
     setClaimSettlement(null);
-    setClaimStatus('');
-    setClaimStatusIsWarning(false);
+    claimStatusLine.clear();
     setClaimSubmitting(false);
     setUsd8Action(null);
-    setUsd8Status('');
+    usd8StatusLine.clear();
     setPoolAction(null);
-    setPoolStatus('');
+    poolStatusLine.clear();
   }, [walletScopeKey]);
 
   useEffect(() => {
@@ -751,15 +223,14 @@ export default function App({ autoConnect = false }) {
 
   useEffect(() => {
     const root = chainData.incident?.root;
-    if (!claimToken || !chainData.claim || !protocolNetwork || !root || claimStatusIsWarning
+    if (!claimToken || !chainData.claim || !protocolNetwork || !root || claimStatus.failed
         || root === `0x${'00'.repeat(32)}`
         || (claimSettlement?.contextKey === claimContextKey
           && matchesSettlementContext(claimSettlement, chainData.incident.id, root)
           && matchesSettlementTopology(claimSettlement.value, chainData.incident))) return undefined;
     const requestedContextKey = claimContextKey;
     const controller = new AbortController();
-    setClaimStatusIsWarning(false);
-    setClaimStatus('Loading proof-backed payout details.');
+    claimStatusLine.show('Loading proof-backed payout details.');
     prepareSettlement(chainData.incident.id, {
       chainId: protocolNetwork.id,
       registry: protocolNetwork.contracts.registry,
@@ -777,15 +248,14 @@ export default function App({ autoConnect = false }) {
         root,
         value,
       });
-      setClaimStatus('');
+      claimStatusLine.clear();
     }).catch((error) => {
       if (claimContextRef.current === requestedContextKey && error?.name !== 'AbortError') {
-        setClaimStatusIsWarning(true);
-        setClaimStatus(error?.message || 'Payout details are temporarily unavailable.');
+        claimStatusLine.fail(error?.message || 'Payout details are temporarily unavailable.');
       }
     });
     return () => controller.abort();
-  }, [claimToken, claimContextKey, protocolNetwork, claimSettlement?.contextKey, claimStatusIsWarning]);
+  }, [claimToken, claimContextKey, protocolNetwork, claimSettlement?.contextKey, claimStatus.failed]);
 
   useEffect(() => {
     if (!connected || !activeNetwork?.scoreAvailable || scoreStatus !== 'ready') {
@@ -862,12 +332,9 @@ export default function App({ autoConnect = false }) {
     const id = Symbol('operation');
     operation.current = id;
     setTransaction(null);
-    setUsd8Status('');
-    setUsd8StatusFailed(false);
-    setPoolStatus('');
-    setPoolStatusFailed(false);
-    setClaimStatus('');
-    setClaimStatusIsWarning(false);
+    usd8StatusLine.clear();
+    poolStatusLine.clear();
+    claimStatusLine.clear();
     const controller = new AbortController();
     claimAbortController.current = controller;
     setOperationBusy(true);
@@ -923,7 +390,7 @@ export default function App({ autoConnect = false }) {
     } catch (error) {
       if (current()) {
         setChainDataStatus('error');
-        setChainData(previous => previous.updatedAt ? previous : { ...previous, balances: { usdc: '—', usd8: '—', savings: '—', savingsAssets: '—', insuredTokens: {} } });
+        setChainData(previous => previous.updatedAt ? previous : { ...previous, balances: { usdc: UNKNOWN_VALUE, usd8: UNKNOWN_VALUE, savings: UNKNOWN_VALUE, savingsAssets: UNKNOWN_VALUE, insuredTokens: {} } });
         setDataError(error?.shortMessage || error?.message || 'Could not refresh onchain data.');
       }
       throw error;
@@ -940,15 +407,9 @@ export default function App({ autoConnect = false }) {
       foregroundRefreshing.current = true;
       loadChainData(walletScopeKey).catch(() => {}).finally(() => { foregroundRefreshing.current = false; });
     };
-    const timer = window.setInterval(refresh, 30_000);
-    window.addEventListener('focus', refresh);
-    window.addEventListener('online', refresh);
-    document.addEventListener('visibilitychange', refresh);
+    const stopRefreshing = onForegroundRefresh(refresh);
     return () => {
-      clearInterval(timer);
-      window.removeEventListener('focus', refresh);
-      window.removeEventListener('online', refresh);
-      document.removeEventListener('visibilitychange', refresh);
+      stopRefreshing();
       dataController.current?.abort();
       enrichmentController.current?.abort();
     };
@@ -974,7 +435,6 @@ export default function App({ autoConnect = false }) {
     || chainData.pools?.[0]
     || null;
 
-  const livePoolAction = useLivePoolEarnings(activePool || {}) || {};
 
   function selectedPool(network) {
     const pool = network.contracts.coverPools.find((entry) => entry.id === poolActionId)
@@ -997,7 +457,7 @@ export default function App({ autoConnect = false }) {
   ) {
     assertCurrentWalletScope(expectedWalletScope);
     const network = requireProtocolNetwork();
-    const client = publicClientFor(network.id);
+    const client = transactionClientFor(network.id);
     setTransaction({ phase: 'wallet', message: pendingMessage, chainId: network.id });
     setStatus(pendingMessage);
     try {
@@ -1045,7 +505,7 @@ export default function App({ autoConnect = false }) {
 
   async function depositToPool(raw) {
     const network = requireProtocolNetwork();
-    const client = publicClientFor(network.id);
+    const client = transactionClientFor(network.id);
     const pool = selectedPool(network);
     const amount = parseTokenAmount(raw, 18);
     if (amount <= 0n) throw new Error('Deposit amount must be positive.');
@@ -1061,15 +521,15 @@ export default function App({ autoConnect = false }) {
         abi: erc20Abi,
         functionName: 'approve',
         args: [pool.address, amount],
-      }, `Approve ${pool.assetSymbol} in your wallet.`, setPoolStatus);
+      }, `Approve ${pool.assetSymbol} in your wallet.`, poolStatusLine.show);
     }
     await submitTransaction({
       address: pool.address,
       abi: poolWriteAbi,
       functionName: 'deposit',
       args: [amount, address],
-    }, 'Confirm the cover-pool deposit in your wallet.', setPoolStatus);
-    setPoolStatus(`Deposit confirmed on ${network.name}.`);
+    }, 'Confirm the cover-pool deposit in your wallet.', poolStatusLine.show);
+    poolStatusLine.show(`Deposit confirmed on ${network.name}.`);
     return true;
   }
 
@@ -1079,7 +539,7 @@ export default function App({ autoConnect = false }) {
     const shares = parseTokenAmount(raw, activePool?.shareDecimals ?? 21);
     if (shares <= 0n) throw new Error('Enter a share amount greater than zero.');
     const expectedWalletScope = walletScopeKey;
-    const balance = await publicClientFor(network.id).readContract({ address: pool.address, abi: erc20Abi, functionName: 'balanceOf', args: [address] });
+    const balance = await transactionClientFor(network.id).readContract({ address: pool.address, abi: erc20Abi, functionName: 'balanceOf', args: [address] });
     assertCurrentWalletScope(expectedWalletScope);
     if (shares > balance) throw new Error('Your pool share balance has changed. Refresh the amount and try again.');
     await submitTransaction({
@@ -1087,8 +547,8 @@ export default function App({ autoConnect = false }) {
       abi: poolWriteAbi,
       functionName: 'requestRedeem',
       args: [shares],
-    }, 'Confirm the seven-day cooldown request in your wallet.', setPoolStatus);
-    setPoolStatus('Cooldown started. This amount stops earning and may decrease if the pool pays claims before your exit settles.');
+    }, 'Confirm the cooldown request in your wallet.', poolStatusLine.show);
+    poolStatusLine.show('Cooldown started. This amount stops earning and may decrease if the pool pays claims before your exit settles.');
     return true;
   }
 
@@ -1099,8 +559,8 @@ export default function App({ autoConnect = false }) {
       abi: poolWriteAbi,
       functionName: 'completeRedeem',
       args: [address],
-    }, 'Complete the matured withdrawal in your wallet.', setPoolStatus);
-    setPoolStatus(`Withdrawal completed on ${network.name}.`);
+    }, 'Complete the matured withdrawal in your wallet.', poolStatusLine.show);
+    poolStatusLine.show(`Withdrawal completed on ${network.name}.`);
     return true;
   }
 
@@ -1111,37 +571,33 @@ export default function App({ autoConnect = false }) {
       abi: poolWriteAbi,
       functionName: 'claimReward',
       args: [],
-    }, 'Confirm the USD8 reward claim in your wallet.', setPoolStatus);
-    setPoolStatus(`Rewards claimed on ${network.name}.`);
+    }, 'Confirm the USD8 reward claim in your wallet.', poolStatusLine.show);
+    poolStatusLine.show(`Rewards claimed on ${network.name}.`);
     return true;
   }
 
   function openPoolAction(action, poolId) {
     if (!connected || !protocolNetwork) return;
-    setPoolStatus('');
-    setPoolStatusFailed(false);
+    poolStatusLine.clear();
     setPoolActionId(poolId);
     setPoolAction(action);
   }
 
   async function submitPoolAction(action, raw) {
     try {
-      setPoolStatus('');
-      setPoolStatusFailed(false);
+      poolStatusLine.clear();
       if (action === 'deposit') await depositToPool(raw);
       else if (action === 'startCooldown') await startPoolCooldown(raw);
       else if (action === 'withdraw') await completePoolWithdrawal();
       else if (action === 'claimReward') await claimPoolRewards();
     } catch (error) {
-      setPoolStatusFailed(true);
-      setPoolStatus(error?.shortMessage || error?.message || 'Transaction failed.');
+      poolStatusLine.fail(error?.shortMessage || error?.message || 'Transaction failed.');
     }
   }
 
   function fileClaimAction(row) {
     if (!connected) return;
-    setClaimStatus('');
-    setClaimStatusIsWarning(false);
+    claimStatusLine.clear();
     setClaimToken({ walletScopeKey, token: row });
   }
 
@@ -1164,7 +620,7 @@ export default function App({ autoConnect = false }) {
     };
     const setCurrentClaimStatus = (message) => {
       assertCurrentClaimOperation();
-      setClaimStatus(message);
+      claimStatusLine.show(message);
     };
     let claimStep = 'requirements';
     let minBlock = 0n;
@@ -1179,12 +635,11 @@ export default function App({ autoConnect = false }) {
     };
     setTransaction(null);
     setClaimSubmitting(true);
-    setClaimStatusIsWarning(false);
-    setClaimStatus('Checking current incident and claim requirements.');
+    claimStatusLine.show('Checking current incident and claim requirements.');
     try {
       const network = requireProtocolNetwork();
       const { contracts } = network;
-      const client = publicClientFor(network.id);
+      const client = transactionClientFor(network.id);
       const insuredToken = contracts.insuredTokens?.[token];
       if (!insuredToken) throw new Error('This token is not enabled for claims on the selected network.');
       const claimTokenSymbol = CLAIM_TOKEN_ROWS.find((row) => row.id === token)?.symbol || token;
@@ -1348,13 +803,12 @@ export default function App({ autoConnect = false }) {
       }, 'Confirm the claim in your wallet.', setCurrentClaimStatus, expectedWalletScope, minBlock);
       assertCurrentClaimOperation();
       if (walletScopeRef.current === expectedWalletScope) {
-        setClaimStatus(`Claim confirmed on ${network.name}.`);
+        claimStatusLine.show(`Claim confirmed on ${network.name}.`);
       }
     } catch (error) {
       if (claimAbortController.current === controller
         && walletScopeRef.current === expectedWalletScope
         && error?.name !== 'AbortError') {
-        setClaimStatusIsWarning(true);
         let stepLabel = {
           requirements: 'Claim requirements check failed',
           'token-approval': 'Token approval failed',
@@ -1373,7 +827,7 @@ export default function App({ autoConnect = false }) {
         }
         const approvals = [...new Set(confirmedApprovals)].map(label => `${label} confirmed.`).join(' ');
         const outcome = claimStep !== 'submission' ? 'No claim transaction was submitted.' : '';
-        setClaimStatus([`${stepLabel}: ${reason}`, approvals, outcome].filter(Boolean).join(' '));
+        claimStatusLine.fail([`${stepLabel}: ${reason}`, approvals, outcome].filter(Boolean).join(' '));
       }
     } finally {
       if (claimAbortController.current === controller) {
@@ -1390,7 +844,7 @@ export default function App({ autoConnect = false }) {
       const network = requireProtocolNetwork();
       const initialClaimId = chainData.claim?.id;
       const initialIncidentId = chainData.incident?.id;
-      setClaimStatusIsWarning(false);
+      claimStatusLine.clear();
       const latestChainData = await refreshChainData(expectedWalletScope);
       const latestClaim = latestChainData?.claim;
       if (!latestClaim) throw new Error('This account no longer has an unresolved claim to cancel.');
@@ -1407,14 +861,13 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'cancelClaim',
         args: [],
-      }, 'Confirm claim cancellation in your wallet.', setClaimStatus, expectedWalletScope);
+      }, 'Confirm claim cancellation in your wallet.', claimStatusLine.show, expectedWalletScope);
       if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimToken(null);
-      setClaimStatus('');
+      claimStatusLine.clear();
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
-      setClaimStatusIsWarning(true);
-      setClaimStatus(error?.shortMessage || error?.message || 'Claim cancellation failed.');
+      claimStatusLine.fail(error?.shortMessage || error?.message || 'Claim cancellation failed.');
     }
   }
 
@@ -1457,8 +910,7 @@ export default function App({ autoConnect = false }) {
       const network = requireProtocolNetwork();
       const initialIncidentId = chainData.incident?.id;
       const initialRoot = chainData.incident?.root;
-      setClaimStatusIsWarning(false);
-      setClaimStatus('Preparing the TEE settlement. This may take several minutes.');
+      claimStatusLine.show('Preparing the TEE settlement. This may take several minutes.');
       const settlement = await settlementArtifact();
       const latestChainData = await refreshChainData(expectedWalletScope);
       const latestIncident = latestChainData?.incident;
@@ -1474,14 +926,13 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'settleIncident',
         args: [settlement.root, settlement.poolPayouts, settlement.signature],
-      }, 'Confirm claim settlement in your wallet.', setClaimStatus, expectedWalletScope);
+      }, 'Confirm claim settlement in your wallet.', claimStatusLine.show, expectedWalletScope);
       if (walletScopeRef.current === expectedWalletScope) {
-        setClaimStatus(`Settlement confirmed on ${network.name}.`);
+        claimStatusLine.show(`Settlement confirmed on ${network.name}.`);
       }
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
-      setClaimStatusIsWarning(true);
-      setClaimStatus(error?.shortMessage || error?.message || 'Claim settlement failed.');
+      claimStatusLine.fail(error?.shortMessage || error?.message || 'Claim settlement failed.');
     }
   }
 
@@ -1494,7 +945,7 @@ export default function App({ autoConnect = false }) {
       const initialIncidentId = chainData.incident?.id;
       const initialRoot = chainData.incident?.root;
       const lifecycle = claimLifecycle(chainData.incident);
-      setClaimStatusIsWarning(false);
+      claimStatusLine.clear();
       const settlement = lifecycle.state === 'payout-open' || lifecycle.state === 'payout-expired'
         ? await settlementArtifact()
         : null;
@@ -1529,13 +980,12 @@ export default function App({ autoConnect = false }) {
         args: row
           ? [BigInt(latestClaim.id), acceptPayout, row.amounts, row.scoreSpent, row.boostedScore, row.eligibleAmount, row.eligibleBoosterAmount, row.proof]
           : [BigInt(latestClaim.id), false, [], 0n, 0n, 0n, 0n, []],
-      }, acceptPayout ? 'Confirm payout acceptance in your wallet.' : 'Confirm token return in your wallet.', setClaimStatus, expectedWalletScope);
+      }, acceptPayout ? 'Confirm payout acceptance in your wallet.' : 'Confirm token return in your wallet.', claimStatusLine.show, expectedWalletScope);
       if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimToken(null);
-      setClaimStatus('');
+      claimStatusLine.clear();
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
-      setClaimStatusIsWarning(true);
       const messages = {
         FinalizeNotOpen: 'Payout acceptance is not open. Refresh the claim status to check the payout or token-return window.',
         InvalidProof: 'The settlement proof is invalid. Refresh payout details before trying again.',
@@ -1552,29 +1002,28 @@ export default function App({ autoConnect = false }) {
         reason = messages[cause.data?.errorName];
         if (reason) break;
       }
-      setClaimStatus(reason || error?.shortMessage || error?.message || 'Claim finalization failed.');
+      claimStatusLine.fail(reason || error?.shortMessage || error?.message || 'Claim finalization failed.');
     }
   }
 
   async function openUsd8Action(action) {
     if (!connected || !protocolNetwork) return;
-    setUsd8Status('');
+    usd8StatusLine.clear();
     setUsd8Action(action);
     if (action === 'redeem') {
       setQuoteRate(null);
       try {
-        const rate = await publicClientFor(protocolNetwork.id).readContract({ address: protocolNetwork.contracts.treasury, abi: treasuryWriteAbi, functionName: 'usd8ToUsdcRate' });
+        const rate = await transactionClientFor(protocolNetwork.id).readContract({ address: protocolNetwork.contracts.treasury, abi: treasuryWriteAbi, functionName: 'usd8ToUsdcRate' });
         if (walletScopeRef.current === walletScopeKey) setQuoteRate(rate);
-      } catch { setUsd8Status('Could not load the redemption quote. Reopen the dialog to retry.'); }
+      } catch { usd8StatusLine.show('Could not load the redemption quote. Reopen the dialog to retry.'); }
     }
   }
 
   async function submitUsd8Action(action, raw) {
     try {
-      setUsd8Status('');
-      setUsd8StatusFailed(false);
+      usd8StatusLine.clear();
       const network = requireProtocolNetwork();
-      const client = publicClientFor(network.id);
+      const client = transactionClientFor(network.id);
       const { contracts } = network;
       const amount = parseTokenAmount(raw, action === 'mint' ? 6 : 18);
       if (amount <= 0n) throw new Error(`${action === 'mint' ? 'Mint' : 'Redemption'} amount must be positive.`);
@@ -1585,15 +1034,15 @@ export default function App({ autoConnect = false }) {
           functionName: 'usd8ToUsdcRate',
         });
         assertCurrentWalletScope(walletScopeKey);
-        if (rate !== quoteRate) { setQuoteRate(rate); setUsd8Status('The redemption quote changed. Review the updated output and submit again.'); return; }
+        if (rate !== quoteRate) { setQuoteRate(rate); usd8StatusLine.show('The redemption quote changed. Review the updated output and submit again.'); return; }
         const minUsdcOut = amount * rate / 1_000_000_000_000_000_000_000_000_000_000n;
         await submitTransaction({
           address: contracts.treasury,
           abi: treasuryWriteAbi,
           functionName: 'redeemUSD8',
           args: [amount, minUsdcOut],
-        }, 'Confirm the USD8 redemption in your wallet.', setUsd8Status);
-        setUsd8Status(`Redemption confirmed on ${network.name}.`);
+        }, 'Confirm the USD8 redemption in your wallet.', usd8StatusLine.show);
+        usd8StatusLine.show(`Redemption confirmed on ${network.name}.`);
         return;
       }
 
@@ -1609,18 +1058,17 @@ export default function App({ autoConnect = false }) {
           abi: erc20Abi,
           functionName: 'approve',
           args: [contracts.treasury, amount],
-        }, 'Approve USDC in your wallet.', setUsd8Status);
+        }, 'Approve USDC in your wallet.', usd8StatusLine.show);
       }
       await submitTransaction({
         address: contracts.treasury,
         abi: treasuryWriteAbi,
         functionName: 'mintUSD8',
         args: [amount],
-      }, 'Confirm the USD8 mint in your wallet.', setUsd8Status);
-      setUsd8Status(`Mint confirmed on ${network.name}.`);
+      }, 'Confirm the USD8 mint in your wallet.', usd8StatusLine.show);
+      usd8StatusLine.show(`Mint confirmed on ${network.name}.`);
     } catch (error) {
-      setUsd8StatusFailed(true);
-      setUsd8Status(error?.shortMessage || error?.message || 'Transaction failed.');
+      usd8StatusLine.fail(error?.shortMessage || error?.message || 'Transaction failed.');
     }
   }
 
@@ -1700,7 +1148,7 @@ export default function App({ autoConnect = false }) {
   // unknown rather than unavailable.
   const payoutLoading = Boolean(unresolvedClaim)
     && !selectedSettlementRow
-    && !claimStatusIsWarning;
+    && !claimStatus.failed;
   const boostersToBurn = selectedSettlementRow?.eligibleBoosterAmount !== undefined
     && selectedSettlementRow.eligibleBoosterAmount <= BigInt(chainData.claim.boosterAmount)
     ? (selectedSettlementRow.eligibleAmount > 0n && selectedSettlementRow.scoreSpent > 0n
@@ -1751,18 +1199,20 @@ export default function App({ autoConnect = false }) {
     insuredTokenStates[row.id]?.enabled || row.id === actionableIncident?.tokenId
   ));
 
+  const statusMessage = claimStatus.message || usd8Status.message || poolStatus.message;
+
   return (
     <WalletNoticeProvider key={walletScopeKey} wallet={{ connected, connecting, onConnect: connect, connectUnavailableReason: !walletConnectorConfigured ? WALLET_CONNECT_UNAVAILABLE_REASON : '' }}>
       <NoticeMessage
-        message={transaction?.refreshError ? `${claimStatus || usd8Status || poolStatus || 'Transaction confirmed.'} Transaction confirmed. Balances could not be refreshed.` : claimStatus || usd8Status || poolStatus || (transaction ? (transaction.phase === 'confirmed' ? 'Transaction confirmed.' : transaction.message) : '')}
-        actionLabel={transaction?.refreshError ? 'Retry refresh' : undefined}
+        message={transaction?.refreshError ? `${statusMessage || 'Transaction confirmed.'} Transaction confirmed. Balances could not be refreshed.` : statusMessage || (transaction ? (transaction.phase === 'confirmed' ? 'Transaction confirmed.' : transaction.message) : '')}
+        actionLabel={transaction?.refreshError ? 'Retry Refresh' : undefined}
         onAction={() => refreshChainData().then(() => setTransaction(previous => previous ? ({ ...previous, refreshError: false }) : previous)).catch(() => {})}
-        tone={transaction?.refreshError || claimStatusIsWarning || usd8StatusFailed || poolStatusFailed || transaction?.phase === 'failed' ? 'error' : 'status'}
-        label={claimStatus ? 'Claim submission status' : 'Transaction status'}
+        tone={transaction?.refreshError || claimStatus.failed || usd8Status.failed || poolStatus.failed || transaction?.phase === 'failed' ? 'error' : 'status'}
+        label={claimStatus.message ? 'Claim submission status' : 'Transaction status'}
         busy={operationBusy && transaction?.phase !== 'confirmed' && transaction?.phase !== 'failed'}
         href={transaction?.hash ? `${getNetwork(transaction.chainId)?.chain.blockExplorers?.default.url || 'https://sepolia.etherscan.io'}/tx/${transaction.hash}` : undefined}
       />
-      <NoticeMessage message={scoreError} actionLabel="Retry score" onAction={() => {
+      <NoticeMessage message={scoreError} actionLabel="Retry Score" onAction={() => {
         scoreRetryForcesRefresh.current = true;
         setScoreRetry(value => value + 1);
       }} />
@@ -1776,7 +1226,7 @@ export default function App({ autoConnect = false }) {
           connectUnavailableReason: !connected && !walletConnectorConfigured ? WALLET_CONNECT_UNAVAILABLE_REASON : '',
           onConnect: connect,
           onDisconnect: () => open({ view: 'Account' }).catch(error => setDataError(error?.message || 'Wallet details could not be opened.')),
-          onSwitchNetwork: () => switchChainAsync({ chainId: 11155111 }).catch(error => setDataError(error.shortMessage || error.message)),
+          onSwitchNetwork: () => switchChainAsync({ chainId: PROTOCOL_CHAIN_ID }).catch(error => setDataError(error.shortMessage || error.message)),
         }}
         score={connected ? displayedScore : EMPTY_SCORE}
         scoreStatus={connected ? scoreStatusForDisplay : 'ready'}
@@ -1791,6 +1241,7 @@ export default function App({ autoConnect = false }) {
         onRetry={() => refreshChainData(walletScopeKey, { resources: Object.keys(chainData.resourceErrors || {}).length ? Object.keys(chainData.resourceErrors) : undefined }).catch(() => {})}
         incident={actionableIncident}
         insuredTokenStates={insuredTokenStates}
+        scoreMaturitySeconds={chainData.insurance?.scoreMaturitySeconds}
         onFileClaim={fileClaimAction}
         fileClaimUnavailableReason={connected ? protocolUnavailableReason || (chainDataStatus === 'error' ? 'Refresh unavailable data before continuing.' : '') : CONNECT_WALLET_REASON}
         onPoolAction={openPoolAction}
@@ -1834,17 +1285,15 @@ export default function App({ autoConnect = false }) {
                 ? 'Claim verification service is not configured.'
                 : '')))}
           statusMessage=""
-          statusTone={claimStatusIsWarning
+          statusTone={claimStatus.failed
             ? 'warning'
-            : (isWaitingStatus(claimStatus) ? 'loading' : 'neutral')}
+            : (isWaitingStatus(claimStatus.message) ? 'loading' : 'neutral')}
           onClearStatus={() => {
-            setClaimStatus('');
-            setClaimStatusIsWarning(false);
+            claimStatusLine.clear();
           }}
           onClose={() => {
             claimAbortController.current?.abort();
-            setClaimStatus('');
-            setClaimStatusIsWarning(false);
+            claimStatusLine.clear();
             setClaimToken(null);
           }}
           onCancel={(...args) => runOperation(() => cancelClaim(...args))}
@@ -1861,10 +1310,10 @@ export default function App({ autoConnect = false }) {
           mode={usd8Action}
           usdcBalance={chainData.balances.usdc}
           usd8Balance={chainData.balances.usd8}
-          onInputChange={() => setUsd8Status('')}
+          onInputChange={() => usd8StatusLine.clear()}
 
           onClose={() => {
-            setUsd8Status('');
+            usd8StatusLine.clear();
             setUsd8Action(null);
           }}
           onSubmit={(...args) => runOperation(() => submitUsd8Action(...args))}
@@ -1892,12 +1341,13 @@ export default function App({ autoConnect = false }) {
           availableForWithdraw={activePool?.availableForWithdraw}
           inCooldown={activePool?.inCooldown}
           cooldownEndsAtMilliseconds={activePool?.cooldownEndsAtMilliseconds}
-          earnings={livePoolAction.earnings}
-          hasEarnings={livePoolAction.hasEarnings}
-          onInputChange={() => setPoolStatus('')}
+          exitCooldownSeconds={chainData.insurance?.exitCooldownSeconds}
+          earningsPool={activePool}
+          hasEarnings={poolHasEarnings(activePool)}
+          onInputChange={() => poolStatusLine.clear()}
 
           onClose={() => {
-            setPoolStatus('');
+            poolStatusLine.clear();
             setPoolAction(null);
           }}
           onSubmit={(...args) => runOperation(() => submitPoolAction(...args))}

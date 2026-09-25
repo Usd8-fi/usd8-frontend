@@ -1,4 +1,4 @@
-<img src="../assets/usd8Logo.svg" width="100px">
+<img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 logo">
 
 # USD8
 

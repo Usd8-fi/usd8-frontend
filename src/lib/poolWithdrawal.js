@@ -1,4 +1,4 @@
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits, parseUnits } from './viemLite.js';
 
 // Settled exits use their reserved receipt, never the pool's later exchange rate.
 export function exitAssetAmount(shares, epoch, estimatedAssets) {

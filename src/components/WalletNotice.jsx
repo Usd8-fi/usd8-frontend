@@ -60,7 +60,7 @@ function NoticeHost({ wallet, children }) {
   const show = useCallback(button => publish({
     id: messageId, wallet: true, trigger: button, label: 'Wallet connection required',
     message: 'Connect your wallet to continue.', detail: wallet.connectUnavailableReason,
-    actionLabel: 'Connect wallet', onAction: wallet.connectUnavailableReason ? undefined : wallet.onConnect,
+    actionLabel: 'Connect Wallet', onAction: wallet.connectUnavailableReason ? undefined : wallet.onConnect,
   }), [publish, messageId, wallet.connectUnavailableReason, wallet.onConnect]);
   useEffect(() => { if (wallet.connected || wallet.connecting) remove(messageId); }, [wallet.connected, wallet.connecting, remove, messageId]);
   const current = entries.at(-1);
