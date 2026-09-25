@@ -1,0 +1,204 @@
+:root {
+  --accent: #ffcc00;
+  --accent-hover: color-mix(in srgb, var(--accent) 82%, black);
+  --link: var(--accent);
+  --link-inverse: #000;
+  --navigation-inactive: #8f8f8f;
+}
+
+a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+a:active {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+
+.landing-footer-links .site-nav-link,
+.sidebar .chapter a,
+.sidebar-analytics-settings {
+  color: var(--navigation-inactive);
+  text-decoration: none;
+}
+
+.landing-footer-links .site-nav-link,
+.sidebar .chapter a,
+.sidebar-analytics-settings {
+  background: transparent;
+}
+
+.landing-footer-links .site-nav-link:hover,
+.landing-footer-links .site-nav-link:focus-visible,
+.sidebar .chapter a:hover,
+.sidebar .chapter a:focus-visible,
+.sidebar-analytics-settings:hover,
+.sidebar-analytics-settings:focus-visible {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.landing-footer-links .site-nav-link:hover,
+.landing-footer-links .site-nav-link:focus-visible,
+.sidebar .chapter a:hover,
+.sidebar .chapter a:focus-visible,
+.sidebar-analytics-settings:hover,
+.sidebar-analytics-settings:focus-visible {
+  background: transparent;
+}
+
+.analytics-settings-link,
+.sidebar-analytics-settings {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.analytics-consent {
+  position: fixed;
+  z-index: 3000;
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  width: min(560px, calc(100% - 40px));
+  padding: 20px;
+  border: 1px solid var(--accent);
+  background: #1a1a1a;
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.analytics-consent-copy strong,
+.analytics-consent-copy p {
+  margin: 0;
+}
+
+.analytics-consent-copy p {
+  margin-top: 8px;
+}
+
+.analytics-consent-copy a {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.analytics-consent-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.analytics-consent-button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--accent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.analytics-consent-button:hover {
+  background: var(--accent);
+  color: var(--link-inverse);
+}
+
+.analytics-consent-button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .analytics-consent {
+    right: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    width: calc(100% - 32px);
+  }
+
+  .analytics-consent-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.usd8-dialog-available {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content .faq-question::before {
+  display: inline-block;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.content .header.faq-question {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content .header.faq-question:hover::before,
+.content .header.faq-question:focus-visible::before {
+  color: var(--link-inverse);
+}
+
+.content .faq-question[aria-expanded="true"]:not(:hover):not(:focus-visible) {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.content main a:link,
+.content main a:visited {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content main a:active {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.sidebar .chapter a.active,
+.sidebar .chapter a.current-header {
+  background: transparent;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.sidebar-telegram,
+.sidebar-x,
+.sidebar-github {
+  color: var(--link);
+}
+
+a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):hover,
+a:not(.landing-brand):not(.landing-beta-link):not(.landing-footer-logo):not(.landing-gold-button):not(.site-nav-link):not(.sidebar .chapter a):not(.sidebar-logo):not(.sidebar-beta-link):not(.sidebar-telegram):not(.sidebar-x):not(.sidebar-github):focus-visible,
+.usd8-dialog-available:hover,
+.usd8-dialog-available:focus-visible,
+.content .header.faq-question:hover,
+.content .header.faq-question:focus-visible,
+.content main a:hover,
+.content main a:focus-visible {
+  background: var(--link);
+  color: var(--link-inverse);
+  text-decoration: none;
+}
