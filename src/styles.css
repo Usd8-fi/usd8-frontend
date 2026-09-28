@@ -219,6 +219,11 @@ a:focus-visible {
   transform: translateX(18px);
 }
 
+/* The button is a flex row, which drops the leading space; restore it as a gap. */
+.landing-wallet-network {
+  margin-left: 1ch;
+}
+
 .landing-wallet-button:not(:disabled):hover,
 .landing-gold-button:hover,
 .insurance-asset-actions button:not(:disabled):hover,
@@ -1311,13 +1316,22 @@ small a,
     padding: 24px 20px 0;
   }
 
+  /* Row 1: logo, USD8.fi and beta. Row 2: wallet button. */
   .landing-header {
-    height: 56px;
+    height: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 16px;
   }
 
   .landing-header::before {
     top: -24px;
-    height: 112px;
+    height: calc(100% + 48px);
+  }
+
+  .landing-brand-group {
+    flex: 1 0 100%;
+    gap: 14px;
   }
 
   .landing-brand {
@@ -1332,24 +1346,39 @@ small a,
 
   .landing-wallet-button {
     width: auto;
-    min-width: 138px;
+    min-width: 0;
     height: 46px;
     min-height: 46px;
+    margin-top: 0;
+    padding-inline: 19px;
     transform: none;
   }
 
+  /* The short address is enough on a phone; the network stays in the accessible name. */
+  .landing-wallet-network {
+    display: none;
+  }
+
+  .free-insurance-page > .landing-section-title:first-child {
+    margin-top: 120px;
+  }
+
+  /* Score first, then its sentence, each on its own line so they can't collide. */
+  .insurance-summary,
+  .insurance-claim-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
   .insurance-summary {
-    margin-top: 58px;
-    gap: 12px;
+    margin-top: 40px;
   }
 
-  .insurance-summary p {
-    min-width: 0;
-    max-width: 225px;
-  }
-
-  .insurance-summary > div {
-    min-width: 95px;
+  .insurance-summary > div,
+  .insurance-claim-summary > div {
+    order: -1;
+    align-items: flex-start;
   }
 
   .insurance-assets {
@@ -1379,13 +1408,6 @@ small a,
     margin-top: 100px;
   }
 
-  .insurance-claim-summary {
-    gap: 24px;
-  }
-
-  .insurance-claim-summary h2 {
-    max-width: 190px;
-  }
 
   .landing-table-shell {
     max-width: 100%;
@@ -1435,10 +1457,15 @@ small a,
     margin-top: var(--metric-label-gap);
   }
 
-  .cover-pool-metrics,
-  .cover-pool-account {
+  .cover-pool-metrics {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
+  }
+
+  /* Deposit and earnings amounts carry token symbols; give each the full width. */
+  .cover-pool-account {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
   }
 
   .cover-pool-account {
@@ -1541,23 +1568,6 @@ small a,
   }
 }
 
-@media (max-width: 400px) {
-  .landing-brand-group {
-    position: relative;
-    gap: 0;
-  }
-
-  .landing-beta-link,
-  .landing-beta-link:active,
-  .landing-beta-link:hover,
-  .landing-beta-link:focus-visible {
-    position: absolute;
-    top: 36px;
-    left: 70px;
-    width: 44px;
-    height: 22px;
-  }
-}
 .landing-data-freshness { position: relative; top: 28px; z-index: 1; display: block; color: #454545; font-size: var(--font-small); margin: 32px 0 0; }
 
 /* One toast surface. Only the border and icon distinguish warnings from status. */

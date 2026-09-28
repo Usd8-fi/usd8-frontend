@@ -83,7 +83,12 @@ function WalletButton({ wallet }) {
       aria-label={connected ? `Manage Wallet ${address}` : 'Connect Wallet'}
       unavailableReason={connected ? '' : connectUnavailableReason}
     >
-      {connecting ? 'Connecting...' : connected ? `${address.slice(0, 6)}...${address.slice(-4)}${networkName ? ` ${networkName}` : ''}` : 'Connect Wallet'}
+      {connecting ? 'Connecting...' : connected ? (
+        <>
+          {`${address.slice(0, 6)}...${address.slice(-4)}`}
+          {networkName ? <span className="landing-wallet-network">{` ${networkName}`}</span> : null}
+        </>
+      ) : 'Connect Wallet'}
     </AvailabilityAction>
   );
 }
