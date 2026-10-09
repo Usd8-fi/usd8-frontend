@@ -10,6 +10,7 @@ import USD8Landing from './components/USD8Landing.jsx';
 import { fetchLandingChainData, fetchLandingAnalytics, fetchScoreHistory } from './lib/chainData.js';
 import { transactionClientFor } from './lib/transactionClient.js';
 import { mergeSnapshot } from './lib/mergeSnapshot.js';
+import { readErrorMessage, resourceErrorMessage } from './lib/readErrorMessage.js';
 import { cachedData } from './lib/dataCache.js';
 import { poolWriteAbi, treasuryWriteAbi, claimWriteAbi } from './lib/writeAbis.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './lib/abis.js';
@@ -116,6 +117,7 @@ export default function App({ autoConnect = false }) {
   const [claimSubmitting, setClaimSubmitting] = useState(false);
   const [claimSettlement, setClaimSettlement] = useState(null);
   const claimAbortController = useRef(null);
+  const claimAdvisory = useRef(null);
   const walletScopeRef = useRef(walletScopeKey);
   walletScopeRef.current = walletScopeKey;
   const inCurrentWalletScope = () => walletScopeRef.current === walletScopeKey;
@@ -361,8 +363,7 @@ export default function App({ autoConnect = false }) {
       setChainData(previous => mergeSnapshot(previous, partial && !next.incidentReady
         ? { ...next, incident: previous.incident, claim: previous.claim } : next));
       setChainDataStatus(partial ? 'partial' : 'ready');
-      const failures = Object.keys(next.resourceErrors || {});
-      setDataError(failures.length ? 'Some balances or protocol data could not be updated. Retry to update it.' : '');
+      setDataError(resourceErrorMessage(next.resourceErrors, 'Some balances or protocol data could not be updated. Retry to update it.'));
     };
     try {
       const next = await fetchLandingChainData(connected ? address : zeroAddress, protocolNetwork.id, {
@@ -391,7 +392,7 @@ export default function App({ autoConnect = false }) {
       if (current()) {
         setChainDataStatus('error');
         setChainData(previous => previous.updatedAt ? previous : { ...previous, balances: { usdc: UNKNOWN_VALUE, usd8: UNKNOWN_VALUE, savings: UNKNOWN_VALUE, savingsAssets: UNKNOWN_VALUE, insuredTokens: {} } });
-        setDataError(error?.shortMessage || error?.message || 'Could not refresh onchain data.');
+        setDataError(readErrorMessage(error));
       }
       throw error;
     }
@@ -700,6 +701,9 @@ export default function App({ autoConnect = false }) {
           registry: contracts.registry,
           defiInsurance: contracts.defiInsurance,
           signal: controller.signal,
+          previousAdvisory: claimAdvisory.current,
+          onAdvisory: (advisory) => { assertCurrentClaimOperation(); claimAdvisory.current = advisory; },
+          onStatus: setCurrentClaimStatus,
         });
       };
       const approvals = insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
@@ -827,7 +831,11 @@ export default function App({ autoConnect = false }) {
         }
         const approvals = [...new Set(confirmedApprovals)].map(label => `${label} confirmed.`).join(' ');
         const outcome = claimStep !== 'submission' ? 'No claim transaction was submitted.' : '';
-        claimStatusLine.fail([`${stepLabel}: ${reason}`, approvals, outcome].filter(Boolean).join(' '));
+        if (error?.name === 'ClaimServiceBusyError') {
+          claimStatusLine.show([reason, approvals, outcome].filter(Boolean).join(' '));
+        } else {
+          claimStatusLine.fail([`${stepLabel}: ${reason}`, approvals, outcome].filter(Boolean).join(' '));
+        }
       }
     } finally {
       if (claimAbortController.current === controller) {
@@ -910,6 +918,13 @@ export default function App({ autoConnect = false }) {
       const network = requireProtocolNetwork();
       const initialIncidentId = chainData.incident?.id;
       const initialRoot = chainData.incident?.root;
+      const beforePreparation = await refreshChainData(expectedWalletScope);
+      if (beforePreparation?.incident?.id !== initialIncidentId
+          || beforePreparation?.incident?.root?.toLowerCase() !== initialRoot?.toLowerCase()
+          || claimLifecycle(beforePreparation?.incident).state !== 'settlement-open') {
+        throw new Error('The incident settlement state changed while the settlement was prepared.');
+      }
+      assertCurrentWalletScope(expectedWalletScope);
       claimStatusLine.show('Preparing the TEE settlement. This may take several minutes.');
       const settlement = await settlementArtifact();
       const latestChainData = await refreshChainData(expectedWalletScope);
@@ -1238,7 +1253,7 @@ export default function App({ autoConnect = false }) {
         poolLoading={poolLoading}
         dataError={transaction?.refreshError ? '' : dataError}
         updatedAt={chainData.updatedAt}
-        onRetry={() => refreshChainData(walletScopeKey, { resources: Object.keys(chainData.resourceErrors || {}).length ? Object.keys(chainData.resourceErrors) : undefined }).catch(() => {})}
+        onRetry={() => { setDataError(''); refreshChainData(walletScopeKey, { resources: Object.keys(chainData.resourceErrors || {}).length ? Object.keys(chainData.resourceErrors) : undefined }).catch(() => {}); }}
         incident={actionableIncident}
         insuredTokenStates={insuredTokenStates}
         scoreMaturitySeconds={chainData.insurance?.scoreMaturitySeconds}

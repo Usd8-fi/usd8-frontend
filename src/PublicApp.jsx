@@ -7,6 +7,7 @@ import { cachedData } from './lib/dataCache.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
 import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from './lib/networkConfig.js';
 import { mergeSnapshot } from './lib/mergeSnapshot.js';
+import { readErrorMessage, resourceErrorMessage } from './lib/readErrorMessage.js';
 import { onForegroundRefresh } from './lib/foregroundRefresh.js';
 
 export default function PublicApp({ onConnect, connecting = false, connectError = '' }) {
@@ -26,14 +27,14 @@ export default function PublicApp({ onConnect, connecting = false, connectError 
       try {
         const next = await fetchLandingChainData(zeroAddress, network.id, { signal: controller.signal, onPartial: apply, refresh: retry > 0 });
         apply(next);
-        if (!controller.signal.aborted) setError(Object.keys(next.resourceErrors || {}).length ? 'Some data is unavailable. Retry to update it.' : '');
+        if (!controller.signal.aborted) setError(resourceErrorMessage(next.resourceErrors, 'Some data is unavailable. Retry to update it.'));
         if (!analyticsPending) {
           analyticsPending = true;
           fetchLandingAnalytics(next, zeroAddress, network.id, { signal: controller.signal }).then(extra => {
             if (!controller.signal.aborted) setData(old => ({ ...old, pools: old.pools.map(pool => ({ ...pool, ...extra.pools.find(item => item.id === pool.id) })) }));
           }).catch(() => {}).finally(() => { analyticsPending = false; });
         }
-      } catch (error) { if (!controller.signal.aborted) setError(error.shortMessage || error.message); }
+      } catch (error) { if (!controller.signal.aborted) setError(readErrorMessage(error)); }
       finally { loading = false; }
     };
     refresh();
@@ -46,7 +47,7 @@ export default function PublicApp({ onConnect, connecting = false, connectError 
   return <USD8Landing wallet={{ connected: false, connecting, onConnect }}
     scoreStatus="ready" pools={data.pools} poolLoading={!data.updatedAt && !error}
     savingsVault={vault} dataError={connectError || error} updatedAt={data.updatedAt}
-    onRetry={() => setRetry(value => value + 1)} insuredTokenStates={data.insurance?.tokens}
+    onRetry={() => { setError(''); setRetry(value => value + 1); }} insuredTokenStates={data.insurance?.tokens}
     scoreMaturitySeconds={data.insurance?.scoreMaturitySeconds}
     incident={data.incident} fileClaimUnavailableReason={CONNECT_WALLET_REASON} />;
 }

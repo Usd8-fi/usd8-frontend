@@ -11,11 +11,18 @@ const DEFAULT_POLL_INTERVAL_MS = 3_000;
 const DEFAULT_OPEN_MAX_WAIT_MS = 10 * 60 * 1_000;
 const DEFAULT_SETTLEMENT_MAX_WAIT_MS = 21 * 60 * 1_000;
 const MAX_SETTLEMENT_ATTEMPTS = 8;
+const JOB_RETENTION_MS = 3_600_000;
+
+// Accepted handles have no observers; retain them for the explicit resume window,
+// without extending the GC lifetime of unrelated metrics or cached artifacts.
+queryClient.setQueryDefaults(['claim-job'], { gcTime: JOB_RETENTION_MS });
 
 function terminalFailure(terminal) {
   throw new Error(`Claim settlement ${terminal}.`);
 }
-const MAX_DOWNLOADED_RESULT_BYTES = 16 * 1024 * 1024;
+// Match the candidate worker's bounded result capacity; streamed actual bytes,
+// digest and terminal bindings remain authoritative, not Content-Length.
+const MAX_DOWNLOADED_RESULT_BYTES = 64 * 1024 * 1024;
 const MAX_UINT256 = (1n << 256n) - 1n;
 const MAX_UINT256_DECIMAL = MAX_UINT256.toString();
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;
@@ -30,6 +37,29 @@ function apiError(status, operation = 'incident-open') {
   return new Error(status === 503
     ? 'Claim verification service is temporarily unavailable.'
     : `Claim verification request failed (${status}).`);
+}
+
+function validAdvisory(advisory, expected) {
+  try {
+    const snapshot = advisory?.snapshot;
+    const result = snapshot?.result;
+    if (advisory?.schemaVersion !== 1 || advisory.displayOnly !== true || typeof advisory.stale !== 'boolean'
+        || advisory.chainId !== expected.chainId || !sameAddress(advisory.registry, expected.registry)
+        || !sameAddress(advisory.defiInsurance, expected.defiInsurance) || !sameAddress(advisory.insuredToken, expected.insuredToken)
+        || !Number.isSafeInteger(snapshot?.checkedAt) || snapshot.checkedAt <= 0
+        || snapshot.checkedAt * 1000 > Date.now() || snapshot.expiresAt !== snapshot.checkedAt + 3600
+        || snapshot.expiresAt * 1000 <= Date.now() || !/^[0-9a-f]{64}$/.test(snapshot.configuration)) return null;
+    if (result?.outcome !== 'noDrop' && (result?.outcome !== 'qualifying'
+        || !Number.isSafeInteger(result.referenceBlock) || result.referenceBlock <= 0
+        || !Number.isSafeInteger(result.observationBlock) || result.observationBlock <= result.referenceBlock)) return null;
+    return advisory;
+  } catch { return null; }
+}
+
+function advisoryBusyMessage(advisory) {
+  if (!advisory) return 'Claim verification service is busy. Waiting for a fresh check; no previous result is available.';
+  const result = advisory.snapshot.result.outcome === 'noDrop' ? 'no qualifying price drop detected' : 'qualifying price drop detected';
+  return `Claim verification service is busy. Stale check at ${new Date(advisory.snapshot.checkedAt * 1000).toISOString()}: ${result}. Display only; fresh verification is required.`;
 }
 
 function canonicalAddress(value, label) {
@@ -65,6 +95,20 @@ function validJobId(value) {
   return typeof value === 'string' && JOB_ID_PATTERN.test(value);
 }
 
+function resumableJobKey(operation, chainId, registry, module, identity, attempt = '') {
+  return ['claim-job', operation, chainId, canonicalAddress(registry, 'Registry').toLowerCase(),
+    canonicalAddress(module, 'insurance contract').toLowerCase(), identity, attempt];
+}
+
+function rememberedJob(key) {
+  const entry = queryClient.getQueryData(key);
+  return entry && entry.expiresAt > Date.now() && validJobId(entry.jobId) ? entry : null;
+}
+
+function rememberJob(key, accepted) {
+  queryClient.setQueryData(key, { ...accepted, expiresAt: Date.now() + JOB_RETENTION_MS });
+}
+
 function wait(milliseconds, signal) {
   checkAbort(signal);
   return new Promise((resolve, reject) => {
@@ -87,9 +131,17 @@ async function fetchWithRateLimitRetry(url, options, {
   deadline,
   retryIntervalMs,
   signal,
+  onResponse,
+  busyMessage = () => apiError(429).message,
 }) {
+  let throttled = false;
   while (true) {
     checkAbort(signal);
+    if (Date.now() >= deadline) {
+      const error = new Error(throttled ? busyMessage() : 'Claim verification timed out. Please try again.');
+      if (throttled) error.name = 'ClaimServiceBusyError';
+      throw error;
+    }
     const timeout = AbortSignal.timeout(Math.max(1, Math.min(15_000, deadline - Date.now())));
     let response;
     try {
@@ -101,9 +153,11 @@ async function fetchWithRateLimitRetry(url, options, {
       }
       throw new Error('Could not reach the claim verification service. Check your connection and try again.', { cause: error });
     }
+    await onResponse?.(response);
     if (response.status !== 429) return response;
+    throttled = true;
     const remainingMilliseconds = deadline - Date.now();
-    if (remainingMilliseconds <= 0) throw apiError(429);
+    if (remainingMilliseconds <= 0) continue;
     await wait(Math.min(
       rateLimitRetryDelay(response, retryIntervalMs),
       remainingMilliseconds,
@@ -454,7 +508,11 @@ async function prepareSettlementUncached(incidentId, {
   let spentTerminal = '';
 
   for (const attemptKey of attemptKeys) {
-    if (Date.now() > deadline) break;
+    if (Date.now() >= deadline) break;
+    const resumeKey = resumableJobKey('settlement', chainId, registry, defiInsurance,
+      [incidentIdText, ...expectedPoolSnapshot.poolAddrs, '|', ...expectedPoolSnapshot.poolOrder].join(':'), attemptKey);
+    let accepted = rememberedJob(resumeKey);
+    if (!accepted) {
     const response = await fetchWithRateLimitRetry(`${CLAIM_API_BASE_URL}/jobs/settlement`, {
       method: 'POST',
       headers: { accept: 'application/json', 'content-type': 'application/json', 'Idempotency-Key': attemptKey },
@@ -462,8 +520,10 @@ async function prepareSettlementUncached(incidentId, {
       signal,
     }, { deadline, retryIntervalMs: pollIntervalMs, signal });
     if (!response.ok) throw apiError(response.status, 'settlement');
-    const accepted = await response.json();
+    accepted = await response.json();
     if (accepted?.accepted !== true || !validJobId(accepted.jobId)) throw new Error('Claim verification service returned an invalid job.');
+    rememberJob(resumeKey, accepted);
+    }
     const jobUrl = `${CLAIM_API_BASE_URL}/jobs/${accepted.jobId}`;
     spentTerminal = '';
     // A key already spent before this call reports its terminal on the first poll.
@@ -494,6 +554,7 @@ async function prepareSettlementUncached(incidentId, {
       if (job.status === 'failed' || job.status === 'expired') {
         const code = typeof job.payload?.code === 'string' ? ` (${job.payload.code})` : '';
         spentTerminal = `${job.status}${code}`;
+        queryClient.removeQueries({ queryKey: resumeKey, exact: true });
         if (launchedHere) return terminalFailure(spentTerminal);
         break;
       }
@@ -515,10 +576,26 @@ export async function prepareIncidentOpen(insuredToken, {
   signal,
   pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
   maxWaitMs = DEFAULT_OPEN_MAX_WAIT_MS,
+  previousAdvisory,
+  onAdvisory,
+  onStatus,
 } = {}) {
   if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
   const canonicalToken = canonicalAddress(insuredToken, 'insured token');
+  const expected = { chainId, registry, defiInsurance, insuredToken: canonicalToken };
+  let advisory = validAdvisory(previousAdvisory, expected);
+  const busyMessage = () => advisoryBusyMessage(validAdvisory(advisory, expected));
+  const onResponse = async (response) => {
+    let payload;
+    try { payload = await response.clone().json(); } catch { /* Gateway errors need not be JSON. */ }
+    const incoming = validAdvisory(payload?.advisory, expected);
+    if (incoming) { advisory = incoming; onAdvisory?.(incoming); }
+    if (response.status === 429 || response.status === 503) onStatus?.(busyMessage());
+  };
   const deadline = Date.now() + maxWaitMs;
+  const resumeKey = resumableJobKey('open', chainId, registry, defiInsurance, canonicalToken.toLowerCase());
+  let accepted = rememberedJob(resumeKey);
+  if (!accepted) {
   const response = await fetchWithRateLimitRetry(`${CLAIM_API_BASE_URL}/jobs/open`, {
     method: 'POST',
     headers: {
@@ -532,11 +609,22 @@ export async function prepareIncidentOpen(insuredToken, {
     deadline,
     retryIntervalMs: pollIntervalMs,
     signal,
+    onResponse,
+    busyMessage,
   });
-  if (!response.ok) throw apiError(response.status);
-  const accepted = await response.json();
+  if (!response.ok) {
+    if (response.status === 503) {
+      const error = new Error(busyMessage());
+      error.name = 'ClaimServiceBusyError';
+      throw error;
+    }
+    throw apiError(response.status);
+  }
+  accepted = await response.json();
   if (accepted?.accepted !== true || !validJobId(accepted.jobId)) {
     throw new Error('Claim verification service returned an invalid job.');
+  }
+  rememberJob(resumeKey, accepted);
   }
 
   while (Date.now() <= deadline) {
@@ -548,11 +636,14 @@ export async function prepareIncidentOpen(insuredToken, {
       deadline,
       retryIntervalMs: pollIntervalMs,
       signal,
+      onResponse,
+      busyMessage,
     });
     if (!pollResponse.ok) throw apiError(pollResponse.status);
     const job = await pollResponse.json();
     if (job?.jobId !== accepted.jobId) throw new Error('Claim service returned another job.');
     if (job.status === 'completed') {
+      queryClient.removeQueries({ queryKey: resumeKey, exact: true });
       return validateAuthorization(job.payload, {
         chainId,
         registry,
@@ -561,6 +652,7 @@ export async function prepareIncidentOpen(insuredToken, {
       });
     }
     if (job.status === 'failed' || job.status === 'expired') {
+      queryClient.removeQueries({ queryKey: resumeKey, exact: true });
       const code = typeof job.payload?.code === 'string' ? ` (${job.payload.code})` : '';
       throw new Error(`Claim verification ${job.status}${code}.`);
     }

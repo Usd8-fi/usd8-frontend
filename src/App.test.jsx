@@ -1,10 +1,11 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useLayoutEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ContractFunctionRevertedError, createPublicClient, custom, encodeErrorResult } from 'viem';
+import { ContractFunctionRevertedError, TimeoutError, createPublicClient, custom, encodeErrorResult } from 'viem';
 import App from './App.jsx';
 import { matchesSettlementTopology, settlementPayoutDetails } from './lib/settlement.js';
 import { claimWriteAbi } from './lib/writeAbis.js';
+import { RPC_READ_ERROR } from './lib/readErrorMessage.js';
 
 const mocks = vi.hoisted(() => ({
   account: { address: '', isConnected: false },
@@ -246,6 +247,33 @@ describe('App', () => {
     mocks.waitForTransactionReceipt.mockReset();
     mocks.waitForTransactionReceipt.mockResolvedValue({ status: 'success', blockNumber: 99n });
     mocks.writeContractAsync.mockReset();
+  });
+
+  it('shows the RPC warning again when a connected-wallet request times out after Retry Data', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockRejectedValue(new TimeoutError({ url: 'https://rpc.example' }));
+    render(<App />);
+    expect(await screen.findByText(RPC_READ_ERROR)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Data' }));
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText(RPC_READ_ERROR)).toBeInTheDocument();
+  });
+
+  it('keeps the RPC failure explicit when a connected-wallet retry fails again', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValue({
+      updatedAt: Date.now(), pools: [coverPoolFixture()], activeIncidentId: '0',
+      balances: { usdc: '10', usd8: '25', savings: '0', savingsAssets: '0' },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS },
+      resourceErrors: { 'pool:wsteth': RPC_READ_ERROR },
+    });
+    render(<App />);
+    expect(await screen.findByText(RPC_READ_ERROR)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Data' }));
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText(RPC_READ_ERROR)).toBeInTheDocument();
   });
 
   it('uses the configured booster rate before an incident exists', async () => {
@@ -1227,6 +1255,28 @@ describe('App', () => {
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 
+  it('does not request a new settlement job when another caller already settled', async () => {
+    const zeroRoot = `0x${'00'.repeat(32)}`;
+    const state = root => ({
+      balances: { usdc: '0', usd8: '0', savings: '0', savingsAssets: '0', coverAsset: '0', poolShares: '0', insuredTokens: { 'test-msloss': '0' } },
+      pools: [coverPoolFixture()], activeIncidentId: '1', claim: null,
+      incident: { id: '1', tokenId: 'test-msloss', phaseDeadlineMilliseconds: Date.now() - 3_600_000,
+        phaseWindowMilliseconds: 3 * 86_400_000, root, poolAddrs: [], poolOrder: [] },
+      insurance: { tokens: LISTED_INSURANCE_TOKENS, claimBond: '10' },
+    });
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchLandingChainData.mockResolvedValueOnce(state(zeroRoot)).mockResolvedValue(state(`0x${'34'.repeat(32)}`));
+    mocks.prepareSettlement.mockRejectedValue(new Error('must not submit'));
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /Settle Claims .* for test-msloss/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Settle All Claims' }));
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
+    expect(mocks.prepareSettlement).not.toHaveBeenCalled();
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
+
   it('requests settleIncident from the settlement-open UI for a nonclaimant', async () => {
     const zeroRoot = `0x${'00'.repeat(32)}`;
     const pool = '0x00000000000000000000000000000000000000c1';
@@ -1283,7 +1333,7 @@ describe('App', () => {
       expectedPoolAddrs: [pool],
       expectedPoolOrder: [asset],
     }));
-    expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2);
+    expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(3);
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
     expect(dialog).not.toHaveTextContent(/Cannot read properties of null/);
   });
@@ -1315,6 +1365,7 @@ describe('App', () => {
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData
       .mockResolvedValueOnce(accountData(zeroRoot))
+      .mockResolvedValueOnce(accountData(zeroRoot))
       .mockResolvedValueOnce(accountData(standingRoot));
     mocks.prepareSettlement.mockResolvedValue({
       root: standingRoot,
@@ -1330,7 +1381,7 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Settle All Claims' }));
 
-    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(3));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
       'The incident settlement state changed while the settlement was prepared.',
     );
@@ -1369,6 +1420,7 @@ describe('App', () => {
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData
       .mockResolvedValueOnce(accountData([pool]))
+      .mockResolvedValueOnce(accountData([pool]))
       .mockResolvedValueOnce(accountData([replacementPool]));
     mocks.prepareSettlement.mockResolvedValue({
       root: standingRoot,
@@ -1384,7 +1436,7 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Settle All Claims' }));
 
-    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalledTimes(3));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
       'The incident settlement state changed while the settlement was prepared.',
     );
@@ -2684,6 +2736,38 @@ describe('App', () => {
     }
   });
 
+
+  it('keeps advisory busy feedback inline without submitting a claim', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '100' });
+    mocks.readContract.mockImplementation(({ functionName }) => {
+      if (functionName === 'isInsuredToken') return Promise.resolve(true);
+      if (functionName === 'activeIncidentId') return Promise.resolve(0n);
+      if (functionName === 'claimBondAmount') return Promise.resolve(10n ** 18n);
+      if (functionName === 'incidentTimingConfig') return Promise.resolve({ phaseWindow: 3600n, maxReferenceBlockAge: 450n });
+      if (functionName === 'allowance') return Promise.resolve(10n ** 30n);
+      throw new Error(`Unexpected read: ${functionName}`);
+    });
+    mocks.prepareIncidentOpen.mockImplementation(async (_token, options) => {
+      options.onAdvisory({ displayOnly: true });
+      options.onStatus('Claim verification service is busy. Stale check; display only.');
+      const error = new Error('Claim verification service is busy. Stale check; display only.');
+      error.name = 'ClaimServiceBusyError';
+      throw error;
+    });
+    render(<App />);
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
+    const dialog = await screen.findByRole('dialog', { name: 'File claim for USD8' });
+    await waitFor(() => expect(within(dialog).getByLabelText('Insurance Score to Spend')).toHaveValue('100'));
+    fireEvent.change(within(dialog).getByLabelText('Insured USD8 amount'), { target: { value: '1' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
+    expect(await within(dialog).findByText(/busy\. Stale check; display only\./)).toBeInTheDocument();
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+  });
 
   it('prepares a first claim through the TEE service and submits its authorization onchain', async () => {
     const approval = deferred();
