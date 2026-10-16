@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ prepare: vi.fn() }));
 vi.mock('./PublicApp.jsx', () => ({ default: ({ onConnect, connectError }) => <><button onClick={onConnect}>Connect</button><p>{connectError}</p></> }));
 vi.mock('./WalletApp.jsx', () => ({ prepareWallet: mocks.prepare, default: () => <p>Wallet ready</p> }));
+vi.mock('./components/ActivityTicker.jsx', () => ({ default: () => null }));
+vi.mock('./components/SystemDashboard.jsx', () => ({ default: () => <p>System dashboard</p> }));
 import Root from './Root.jsx';
 beforeEach(() => { localStorage.clear(); mocks.prepare.mockReset(); });
 describe('wallet startup', () => {
@@ -26,5 +28,13 @@ describe('wallet startup', () => {
     render(<Root />);
     expect(mocks.prepare).not.toHaveBeenCalled();
     await waitFor(() => expect(mocks.prepare).toHaveBeenCalledTimes(1));
+  });
+  it('opens the system dashboard from its link and returns to the app', async () => {
+    window.location.hash = '#system-dashboard';
+    render(<Root />);
+    expect(await screen.findByText('System dashboard')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
+    window.location.hash = '#';
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument());
   });
 });

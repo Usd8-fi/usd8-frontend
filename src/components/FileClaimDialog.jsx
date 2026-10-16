@@ -8,6 +8,7 @@ import { tokenAmountExceedsBalance } from '../lib/tokenAmount.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
+import SettlementFinalityNote from './SettlementFinalityNote.jsx';
 import { boostedScore, wadUnits, formatWad } from '../lib/units.js';
 
 function normalizedDecimal(value) {
@@ -230,7 +231,15 @@ export default function FileClaimDialog({
                 <span>Insured Token Escrowed</span>
                 <strong>{liveClaimStatus.insuredTokenAmount} {selectedToken.symbol}</strong>
               </div>
-              <div><span>Claim Bond Escrowed</span><strong>{liveClaimStatus.bondAmount} USD8</strong></div>
+              <div>
+                <span>Claim Bond Escrowed</span>
+                <strong>{liveClaimStatus.bondAmount} USD8</strong>
+                {showPayout && typeof liveClaimStatus.payoutEligible === 'boolean' ? (
+                  <small>{liveClaimStatus.payoutEligible
+                    ? 'Will be fully refunded'
+                    : 'Will not be refunded: conditions not met'}</small>
+                ) : null}
+              </div>
               <div>
                 <span>Insurance Score to Spend</span>
                 <strong>{liveClaimStatus.scoreToSpend}</strong>
@@ -238,7 +247,7 @@ export default function FileClaimDialog({
                   {showEffectiveClaimScore
                     ? `Effective insurance score after boosters ${formatWad(activeEffectiveScoreUnits, 2, { trim: true })}, `
                     : ''}
-                  {wholePercentage(liveClaimStatus.scoreCommitmentPercentage)} of all score committed{showEffectiveClaimScore ? '.' : ''}
+                  {wholePercentage(liveClaimStatus.scoreCommitmentPercentage)} of all score committed
                 </small>
               </div>
               <div>
@@ -340,6 +349,9 @@ export default function FileClaimDialog({
                 {actionButtons.map(([label, action]) => (
                   <button className="usd8-dialog-submit" type="button" onClick={action} key={label}>{label}</button>
                 ))}
+                {actionButtons.some(([label]) => label === 'Settle All Claims') ? (
+                  <SettlementFinalityNote claimDeadlineMilliseconds={claimIncident?.phaseDeadlineMilliseconds} />
+                ) : null}
                 {statusMessage ? (
                   <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label="Claim submission status" />
                 ) : null}

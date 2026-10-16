@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="theme/css/link-theme-81d933ec.css">
-        <link rel="stylesheet" href="theme/css/usd8-docs-d8a39c81.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-478eb518.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-1dae37e1.js";
+            window.path_to_searchindex_js = "searchindex-c8325b70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-7654ae6c.js"></script>
@@ -179,7 +179,7 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
-<p><strong>Last updated: September 23, 2026</strong></p>
+<p><strong>Last updated: October 15, 2026</strong></p>
 <p>Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.</p>
 <h2 id="terms"><a class="header" href="#terms">Terms</a></h2>
 <h3 id="1-acceptance-of-these-terms"><a class="header" href="#1-acceptance-of-these-terms">1. Acceptance of these terms</a></h3>
@@ -299,14 +299,19 @@
 <p><strong>Export controls.</strong> You must not access, export, re-export, or transfer the Services or related technical data in violation of German, European Union, or applicable United States export-control and sanctions laws.</p>
 <h2 id="privacy"><a class="header" href="#privacy">Privacy</a></h2>
 <h3 id="1-scope-and-controller"><a class="header" href="#1-scope-and-controller">1. Scope and controller</a></h3>
-<p>This Privacy section explains the limited information USD8 currently collects when you visit its website, documentation, or interface. USD8 currently collects usage information only through Google Analytics. Public blockchains and independent third parties may process information under their own rules and privacy notices; their processing is not collection by USD8.</p>
+<p>This Privacy section explains the limited information USD8 currently collects when you visit its website, documentation, or interface: optional website analytics through Google Analytics, a record of your acceptance of these terms, and insurance-score snapshots for wallet addresses that are looked up. Public blockchains and independent third parties may process information under their own rules and privacy notices; their processing is not collection by USD8.</p>
 <p>The controller responsible for the processing described in this section is the operator of the relevant website or interface identified in these terms (see <a href="#terms">Terms §1</a>). Privacy requests may be sent to <a href="mailto:info@usd8.fi">info@usd8.fi</a>.</p>
 <h3 id="2-information-we-may-process"><a class="header" href="#2-information-we-may-process">2. Information we may process</a></h3>
-<p>USD8 currently processes only <strong>website analytics data</strong> through Google Analytics. Depending on Google’s operation and configuration, this may include IP address, approximate location derived from IP, browser and device type, operating system, language, referring page, pages viewed, access times, interactions, cookies, and similar identifiers.</p>
-<p>USD8 does not currently maintain user accounts or intentionally collect or retain names, email addresses, wallet private keys, seed phrases, wallet balances, transaction histories, claim histories, or other protocol activity as user-profile data. Never send us a private key or seed phrase.</p>
+<p>USD8 currently processes:</p>
+<ul>
+<li><strong>Website analytics data</strong> through Google Analytics, only if you accept analytics cookies. Depending on Google’s operation and configuration, this may include IP address, approximate location derived from IP, browser and device type, operating system, language, referring page, pages viewed, access times, interactions, cookies, and similar identifiers.</li>
+<li><strong>Terms-acceptance records.</strong> When you connect a wallet and select <strong>Agree</strong>, we record the connected wallet address, the version of these terms (with a fingerprint of their text), and the time of acceptance. We do not record your IP address, device information, or a signature, and there is no public way to look up whether an address has accepted.</li>
+<li><strong>Insurance-score snapshots.</strong> When the interface requests an insurance score for a wallet address, our score service stores a snapshot computed from public blockchain data (the address, network, score values, and processing timestamps) so that it does not have to be recomputed on every request.</li>
+</ul>
+<p>USD8 does not maintain user accounts and does not intentionally collect or retain names, email addresses, wallet private keys, seed phrases, or user profiles beyond the records described above. Never send us a private key or seed phrase.</p>
 <p>The interface may request public blockchain information or send a public wallet address or chain identifier to an RPC, wallet, blockchain, or other service needed to display protocol information. USD8 does not currently retain that information as a user profile. Those independent services may process it under their own privacy notices.</p>
 <h3 id="3-how-information-may-be-used"><a class="header" href="#3-how-information-may-be-used">3. How information may be used</a></h3>
-<p>Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services. Where applicable, this processing may be based on consent or legitimate interests in understanding and improving the Services. USD8 does not sell personal information for money.</p>
+<p>Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services; this processing is based on your consent. Terms-acceptance records are used to document that the terms were accepted, based on the performance of these terms and our legitimate interest in being able to demonstrate acceptance. Insurance-score snapshots are used to provide the score service efficiently, based on our legitimate interest in operating the Services. USD8 does not sell personal information for money.</p>
 <h3 id="4-cookies-browser-storage-analytics-and-choices"><a class="header" href="#4-cookies-browser-storage-analytics-and-choices">4. Cookies, browser storage, analytics, and choices</a></h3>
 <p>Google Analytics is optional and does not load until you select <strong>Accept Analytics Cookies</strong>. Select <strong>Reject Analytics Cookies</strong> to continue without analytics; rejecting does not affect protocol or documentation functionality. If accepted, Google Analytics cookies and similar identifiers may be placed or read, and the visitor’s IP address, browser or device information, page URL, referrer, timestamps, interactions, and identifiers may be transmitted to Google. Google may process this data under its own <a href="https://policies.google.com/privacy">Privacy Policy</a>, including on servers outside your country.</p>
 <p>The Services currently use the following cookies and similar technologies:</p>
@@ -317,18 +322,18 @@
 </thead>
 <tbody>
 <tr><td>Analytics (first- and third-party, optional)</td><td>Google (Google Analytics)</td><td>Understand aggregate website and documentation usage, measure performance, identify errors</td><td>Accept or reject in the consent prompt; change the choice through <strong>Cookie Settings</strong>; browser settings; Google’s <a href="https://tools.google.com/dlpage/gaoptout">Analytics opt-out tools</a></td></tr>
-<tr><td>Essential browser storage (first-party, local storage / session storage)</td><td>USD8 interface</td><td>Store interface preferences and wallet-connection session state needed for the application to function</td><td>Clearing site data in your browser settings</td></tr>
+<tr><td>Essential browser storage (first-party, local storage / session storage)</td><td>USD8 interface</td><td>Store interface preferences, wallet-connection session state, your analytics choice, and which wallet addresses have accepted the current terms in this browser (so you are not asked again)</td><td>Clearing site data in your browser settings</td></tr>
 </tbody>
 </table>
 </div>
 <p>The interface stores your analytics choice in first-party local storage. Rejecting analytics does not affect protocol or documentation functionality. You can change or withdraw the choice at any time through <strong>Cookie Settings</strong>. Essential browser storage used for wallet connection and interface operation remains available independently of that choice. You can also limit cookies through browser settings or Google’s opt-out tools. Wallet providers and other third parties may provide separate privacy settings.</p>
 <h3 id="5-how-information-may-be-shared"><a class="header" href="#5-how-information-may-be-shared">5. How information may be shared</a></h3>
-<p>Analytics information is shared with Google as the analytics provider and may be disclosed when legally required. USD8 does not currently share a separate user-profile database because it does not maintain one.</p>
+<p>Analytics information is shared with Google as the analytics provider and may be disclosed when legally required. Terms-acceptance records and insurance-score snapshots are stored with our hosting provider, Amazon Web Services, in the EU (Frankfurt), and are not sold or shared with third parties except where legally required.</p>
 <p>Public blockchain information is independently public and can be viewed, copied, analyzed, and shared by anyone. We cannot control downstream use of public blockchain data.</p>
 <h3 id="6-third-party-processing"><a class="header" href="#6-third-party-processing">6. Third-party processing</a></h3>
 <p>Google processes analytics information under its own privacy notice. Hosting providers, wallet providers, RPC providers, blockchain networks, block explorers, and linked sites or protocols may also independently process information when you use their services. Their processing is governed by their own privacy notices and is not controlled by USD8.</p>
 <h3 id="7-international-transfers-and-retention"><a class="header" href="#7-international-transfers-and-retention">7. International transfers and retention</a></h3>
-<p>Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google’s policies. USD8 does not currently maintain a separate database of visitor personal information. Public blockchain records are generally permanent and cannot be altered or deleted by us.</p>
+<p>Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google’s policies. Terms-acceptance records are kept for as long as these terms may apply to your use of the Services and for up to three years afterwards. Insurance-score snapshots expire automatically after 180 days. Public blockchain records are generally permanent and cannot be altered or deleted by us.</p>
 <h3 id="8-security"><a class="header" href="#8-security">8. Security</a></h3>
 <p>We may use reasonable safeguards, but no website, analytics service, or transmission method is completely secure. We cannot guarantee that analytics information will never be lost, accessed, altered, disclosed, or destroyed without authorization.</p>
 <h3 id="9-your-choices-and-rights"><a class="header" href="#9-your-choices-and-rights">9. Your choices and rights</a></h3>
@@ -461,7 +466,7 @@
 
         <!-- Custom JS scripts -->
         <script src="analytics-e9b25dfc.js"></script>
-        <script src="docs-theme-330ac479.js"></script>
+        <script src="docs-theme-4573ae75.js"></script>
         <script src="booster-check-aac21633.js"></script>
 
 

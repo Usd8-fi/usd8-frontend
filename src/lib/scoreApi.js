@@ -1,5 +1,6 @@
 import { formatUnits, getAddress, isAddress } from 'viem';
 import { sepolia } from './viemLite.js';
+import { getProtocolNetwork } from './networkConfig.js';
 
 export const DEFAULT_SCORE_API_URL = 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com';
 
@@ -58,17 +59,27 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
   const scorePath = chainId === LEGACY_SEPOLIA_CHAIN_ID
     ? `/score/${canonicalAccount}`
     : `/score/${expectedChainId}/${canonicalAccount}`;
-  const response = await fetch(`${scoreApiBaseUrl()}${scorePath}${refresh ? '?refresh=1' : ''}`, {
-    ...(refresh ? { cache: 'no-store' } : {}),
-    headers: { accept: 'application/json' },
-    signal,
-  });
+  const expectedRegistry = getProtocolNetwork(chainId)?.contracts?.registry?.toLowerCase();
+  const request = async (bypassCache) => {
+    const response = await fetch(`${scoreApiBaseUrl()}${scorePath}${refresh ? '?refresh=1' : ''}`, {
+      ...(refresh || bypassCache ? { cache: 'no-store' } : {}),
+      headers: { accept: 'application/json' },
+      signal,
+    });
+    if (!response.ok) {
+      throw new Error(response.status === 503 ? 'Insurance Score is temporarily unavailable' : `Insurance Score request failed (${response.status})`);
+    }
+    return response.json();
+  };
+  const wrongDeployment = (value) => Boolean(expectedRegistry)
+    && typeof value?.registry === 'string'
+    && value.registry.toLowerCase() !== expectedRegistry;
 
-  if (!response.ok) {
-    throw new Error(response.status === 503 ? 'Insurance Score is temporarily unavailable' : `Insurance Score request failed (${response.status})`);
-  }
-
-  const payload = await response.json();
+  let payload = await request(false);
+  // A browser-cached snapshot can outlive a redeploy (it is cacheable until the
+  // next UTC day). Never mix another deployment's score with this one.
+  if (wrongDeployment(payload)) payload = await request(true);
+  if (wrongDeployment(payload)) throw new Error('Score API returned a different deployment');
   if (String(payload.chainId) !== expectedChainId) {
     throw new Error(`Unexpected score API network: ${payload.chainId ?? 'unknown'}`);
   }

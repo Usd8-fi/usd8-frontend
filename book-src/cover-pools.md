@@ -30,6 +30,6 @@ If new claims are made during this time, withdraw process is then paused till th
 Assets in cool down do not gain yield and are still covering claims. Assets are withdrawable after cool down at anytime, they do not cover any claims nor gain yield anymore.
 
 
-## Payout Limit
+## Insurance Payout Limit
 
 There is a limit for the total payout for each incident from the Cover Pool, currently set at 50%, meaning max payout of each incident is capped at 50% size of the current Cover Pool.

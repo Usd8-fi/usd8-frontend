@@ -412,7 +412,7 @@ describe('FileClaimDialog', () => {
     expect(within(dialog).getByText('Insurance Score to Spend')).toBeInTheDocument();
     expect(within(dialog).getByText('2344322')).toBeInTheDocument();
     expect(within(dialog).getByText(
-      'Effective insurance score after boosters 2391208.44, 3% of all score committed.',
+      'Effective insurance score after boosters 2391208.44, 3% of all score committed',
     )).toHaveClass('claim-status-score-summary');
     expect(appStyles).toMatch(/\.claim-status-score-summary \{[\s\S]*?max-width: 100%;[\s\S]*?overflow-wrap: anywhere;/);
     expect(appStyles).not.toMatch(/\.claim-status-score-summary \{[^}]*white-space: nowrap;/);
@@ -547,6 +547,25 @@ describe('FileClaimDialog', () => {
     if (state !== 'payout-open') {
       expect(screen.queryByRole('button', { name: 'Accept Payout' })).toBeNull();
     }
+  });
+
+  it.each([
+    [true, 'Will be fully refunded'],
+    [false, 'Will not be refunded: conditions not met'],
+  ])('tells the claimant whether the bond is refunded (eligible=%s)', (payoutEligible, text) => {
+    render(<FileClaimDialog
+      token="test-msloss"
+      insuredTokens={[{ id: 'test-msloss', symbol: 'msLOSS', balance: '400' }]}
+      availableScore="1"
+      claimStatus={{
+        id: '42', insuredTokenAmount: '345', bondAmount: '10', scoreToSpend: '2344322',
+        insuredTokenClaimPercentage: '3%', scoreCommitmentPercentage: '2%', boosterAmount: '0',
+        payoutEligible, payoutUsd: '$2,003.10', payoutVsLoss: '76%', payoutDetails: [],
+        incident: { phaseDeadlineMilliseconds: Date.now() - 1_000, phaseWindowMilliseconds: 86_400_000, root: `0x${'11'.repeat(32)}` },
+      }}
+      onClose={vi.fn()}
+    />);
+    expect(screen.getByText('Claim Bond Escrowed').parentElement).toHaveTextContent(text);
   });
 
   it('describes eligible escrowed boosters as taken into account', () => {

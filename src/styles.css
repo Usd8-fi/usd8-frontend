@@ -1651,3 +1651,523 @@ small a,
   width: 100%;
   line-height: 1.5;
 }
+
+/* Private beta invitation gate */
+.private-beta {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: var(--background);
+  color: var(--text);
+}
+
+.private-beta-panel {
+  display: grid;
+  width: min(420px, 100%);
+  justify-items: center;
+  gap: 28px;
+  padding: 48px 36px;
+  border: 1px solid var(--gold);
+  background: #191919;
+  text-align: center;
+}
+
+.private-beta-logo {
+  width: 56px;
+  height: 56px;
+}
+
+.private-beta-panel h1 {
+  margin: 0;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.private-beta-form {
+  display: grid;
+  width: 100%;
+  gap: 16px;
+}
+
+.private-beta-form label {
+  color: var(--text);
+}
+
+.private-beta-form input {
+  width: 100%;
+  height: 68px;
+  border: 1px solid var(--gold);
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  font-size: var(--font-large);
+  letter-spacing: 0.5em;
+  text-align: center;
+}
+
+.private-beta-error {
+  margin: 0;
+  color: #ef6b6b;
+  font-size: var(--font-small);
+}
+
+.private-beta-button {
+  min-height: 52px;
+  padding: 0 24px;
+  border: 1px solid var(--gold-soft);
+  background: var(--accent);
+  color: var(--link-inverse);
+  font: inherit;
+  cursor: pointer;
+}
+
+.private-beta-button:hover {
+  background: var(--button-hover);
+}
+
+/* Claim simulator */
+.covered-protocols-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.covered-protocols-simulate-link {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--font-small);
+  cursor: pointer;
+}
+
+.covered-protocols-simulate-link:hover,
+.covered-protocols-simulate-link:focus-visible {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  outline: 0;
+}
+
+.claim-simulator-dialog {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 56px);
+  padding: 53px 36px 44px;
+  overflow-y: auto;
+}
+
+.claim-simulator-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 48px;
+  margin-top: 44px;
+}
+
+.claim-simulator-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.claim-simulator-field {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.claim-simulator-input-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.claim-simulator-range {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.claim-simulator-number {
+  display: flex;
+  align-items: center;
+  width: 150px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+}
+
+.claim-simulator-number input,
+.claim-simulator-field--compact input,
+.claim-simulator-field select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+}
+
+.claim-simulator-field--compact input,
+.claim-simulator-field select {
+  width: 150px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--gold);
+  color-scheme: dark;
+}
+
+.claim-simulator-number:focus-within,
+.claim-simulator-field--compact input:focus,
+.claim-simulator-field select:focus {
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.claim-simulator-results {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 24px;
+  border: 1px solid #333;
+  background: var(--panel);
+}
+
+.claim-simulator-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-simulator-headline strong {
+  color: var(--gold);
+  font-size: var(--font-large);
+  font-weight: 200;
+  line-height: 1.15;
+}
+
+.claim-simulator-headline small,
+.claim-simulator-tokens small {
+  color: #a8a8a8;
+  font-size: var(--font-small);
+  line-height: 1.4;
+}
+
+.claim-simulator-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--font-small);
+}
+
+.claim-simulator-breakdown div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.claim-simulator-breakdown dt { color: #a8a8a8; }
+.claim-simulator-breakdown dd { margin: 0; text-align: right; }
+
+.claim-simulator-breakdown-total {
+  padding-top: 8px;
+  border-top: 1px solid #333;
+}
+
+.claim-simulator-breakdown-total dt,
+.claim-simulator-breakdown-total dd { color: var(--text); }
+
+.claim-simulator-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.claim-simulator-tokens ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.claim-simulator-tokens li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.claim-simulator-tokens li span:first-child { color: var(--gold); }
+
+@media (max-width: 760px) {
+  .claim-simulator-layout { grid-template-columns: 1fr; }
+  .claim-simulator-dialog { padding: 48px 20px 32px; }
+}
+
+/* Vector USD8.fi wordmark (header + footer) */
+.landing-brand {
+  height: 56px;
+  gap: 16px;
+}
+
+.landing-brand img {
+  width: 56px;
+  height: 56px;
+}
+
+.landing-brand img.landing-brand-wordmark {
+  width: auto;
+  height: 27px;
+}
+
+.landing-footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: auto;
+  height: 32px;
+}
+
+.landing-footer-logo img.landing-footer-wordmark {
+  width: auto;
+  height: 16px;
+}
+
+@media (max-width: 760px) {
+  .landing-brand {
+    height: 44px;
+    gap: 12px;
+  }
+
+  .landing-brand img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .landing-brand img.landing-brand-wordmark {
+    height: 21px;
+  }
+}
+
+.settlement-finality-note {
+  flex-basis: 100%;
+  margin: 10px 0 0;
+  color: #a8a8a8;
+  font-size: var(--font-small);
+  line-height: 1.5;
+}
+
+/* Terms acceptance after wallet connect */
+.terms-dialog {
+  width: min(560px, 100%);
+  padding: 48px 36px 40px;
+}
+
+.terms-dialog-note {
+  margin: 16px 0 0;
+  color: #a8a8a8;
+  font-size: var(--font-small);
+  line-height: 1.5;
+}
+
+.terms-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 40px;
+}
+
+.terms-dialog-actions .usd8-dialog-submit {
+  margin-top: 0;
+  min-width: 140px;
+}
+
+.terms-dialog-actions .terms-dialog-secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+.score-cooldown-note {
+  display: block;
+  margin-top: 6px;
+  color: #a8a8a8;
+  font-size: var(--font-small);
+  line-height: 1.4;
+}
+
+/* Cover pool card: one line of stats, actions bottom-right */
+.cover-pool-card {
+  padding: 48px 44px 28px;
+  border-radius: 12px;
+}
+
+.cover-pool-card header h2 {
+  margin-top: 6px;
+}
+
+.cover-pool-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, max-content));
+  justify-content: space-between;
+  column-gap: 48px;
+  margin-top: 44px;
+  align-items: start;
+}
+
+.cover-pool-stats > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cover-pool-stats strong {
+  font-size: 26px;
+  font-weight: 200;
+}
+
+.cover-pool-stats .cover-pool-capacity-metric {
+  width: auto;
+}
+
+.cover-pool-stats .cover-pool-capacity-metric .landing-capacity,
+.cover-pool-stats .cover-pool-capacity-metric > .usd8-spinner {
+  margin-top: 12px;
+}
+
+.cover-pool-card .cover-pool-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin: 36px 0 0;
+}
+
+.cover-pool-card .cover-pool-actions button:nth-child(n) {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 2px;
+}
+
+@media (max-width: 900px) {
+  .cover-pool-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 32px;
+    column-gap: 24px;
+  }
+
+
+  .cover-pool-card .cover-pool-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+.cover-pool-card .cover-pool-unit {
+  font-size: var(--font-body);
+  font-weight: 400;
+}
+
+.cover-pool-stats .landing-capacity--value {
+  margin-top: 0;
+  font-size: 26px;
+  font-weight: 200;
+  line-height: 1.15;
+}
+
+.cover-pool-stats .cover-pool-capacity-metric .landing-capacity--value {
+  margin-top: 0;
+}
+
+/* Activity ticker: one small line along the bottom edge, scrolling right to left. */
+body:has(.activity-ticker) { padding-bottom: 28px; }
+
+.activity-ticker {
+  position: fixed;
+  z-index: 90;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 28px;
+  overflow: hidden;
+  border-top: 1px solid #292929;
+  background: var(--panel);
+  color: var(--inactive);
+  font-size: var(--font-small);
+  line-height: 27px;
+  white-space: nowrap;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
+}
+
+.activity-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: activity-ticker-scroll var(--ticker-seconds, 60s) linear infinite;
+}
+
+.activity-ticker:hover .activity-ticker-track,
+.activity-ticker:focus-within .activity-ticker-track { animation-play-state: paused; }
+
+.activity-ticker-list {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 100vw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-ticker-item { flex: 0 0 auto; padding-right: 56px; }
+.activity-ticker-item a { color: inherit; text-decoration: none; }
+.activity-ticker-item a:hover,
+.activity-ticker-item a:focus-visible { color: var(--text); }
+.activity-ticker-actor { color: var(--text); }
+.activity-ticker-item b { color: var(--accent); font-weight: 400; }
+.activity-ticker-age { color: var(--inactive); }
+
+@keyframes activity-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-ticker-track { animation: none; }
+  .activity-ticker-copy { display: none; }
+  .activity-ticker-list { overflow: hidden; }
+}
+
+/* Percentage with a small ring after it: the arc is the share of the full circle. */
+.percent-with-ring { display: inline-flex; align-items: center; gap: 8px; }
+.percent-ring { flex: 0 0 auto; }
+.percent-ring circle { fill: none; stroke-width: 2.5; }
+.percent-ring-track { stroke: #3a3a3a; }
+.percent-ring-arc { stroke: var(--accent); stroke-linecap: butt; animation: percent-ring-draw 900ms ease-out; }
+@keyframes percent-ring-draw { from { stroke-dasharray: 0 51; } }
+@media (prefers-reduced-motion: reduce) { .percent-ring-arc { animation: none; } }
+
+/* "7D 30D APY" label: the chosen window is white, the other a shade darker. */
+.cover-pool-card .apy-window-label { color: inherit; font: inherit; }
+.apy-window-option {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font: inherit;
+  cursor: pointer;
+}
+.apy-window-option:hover,
+.apy-window-option:focus-visible { color: var(--text); }
+.apy-window-option[aria-pressed="true"] { color: var(--text); }
+
+/* On a cover pool card the ring uses the card's own darker shade, like the old capacity bar fill. */
+.cover-pool-card .percent-ring-arc { stroke: var(--pool-capacity-fill); }
+.cover-pool-card .percent-ring-track { stroke: rgba(255, 255, 255, 0.28); }

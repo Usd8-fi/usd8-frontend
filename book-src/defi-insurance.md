@@ -23,10 +23,10 @@ Claim is a 3-step process combine both onchain and offchain(TEE) process, it tak
 
 Anyone can file a claim if
 1. an insured token's adjacent 24hr TWAP prices dropped >20% in the past 1-6 days.
-2. claimer has insurance score available to spend (min 7 days old)
+2. claimer has unspent insurance score that was earned at least 7 days before the price drop
 3. claimer held the insured token for min 7 days before the price drop
 
-There is also a 10 USD8 bond, fully refunded if condition 2 and 3 are satisfied. First claimer needs to provide a rough time when the price drop happened, our TEE will ping down the exact block.
+There is also a 10 USD8 bond, fully refunded if condition 2 and 3 are satisfied. You don't need to say when the price drop happened: our TEE finds the drop and pins down the exact block itself.
 
 
 Important - claim window closes 3 days after the first valid claim, after that no claims can be filed for this insured token.

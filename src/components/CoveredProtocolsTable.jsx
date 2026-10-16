@@ -11,6 +11,7 @@ import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
+import PercentRing from './PercentRing.jsx';
 import TableTokenCell from './TableTokenCell.jsx';
 
 export const COVERED_PROTOCOL_ROWS = [
@@ -85,6 +86,10 @@ function incidentActionLabel(incident, nowMilliseconds) {
   return 'Finalise Payout';
 }
 
+function coverageShare(value) {
+  try { return Number(BigInt(value)) / 10_000; } catch { return NaN; }
+}
+
 function formatCoverageBps(value) {
   try {
     const basisPoints = BigInt(value);
@@ -103,6 +108,7 @@ export default function CoveredProtocolsTable({
   incident = null,
   insuredTokenStates = {},
   nowMilliseconds = Date.now(),
+  onSimulate,
 }) {
   const displayedRows = COVERED_PROTOCOL_ROWS.filter((row) => (
     insuredTokenStates[row.id]?.enabled || row.id === incident?.tokenId
@@ -151,7 +157,12 @@ export default function CoveredProtocolsTable({
           return (
           <tr key={row.id}>
             <td><TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell></td>
-            <td>{reimbursement}</td>
+            <td>
+              <span className="percent-with-ring">
+                {reimbursement}
+                {insuranceState?.enabled ? <PercentRing share={coverageShare(insuranceState.maxCoverageBps)} /> : null}
+              </span>
+            </td>
             <td className="table-action-cell covered-protocols-action-cell">
               <AvailabilityAction
                 unavailableReason={fileClaimUnavailableReason}
@@ -169,6 +180,13 @@ export default function CoveredProtocolsTable({
       </tbody>
         </table>
       </div>
+      {onSimulate ? (
+        <div className="covered-protocols-footer">
+          <button className="covered-protocols-simulate-link" type="button" onClick={onSimulate}>
+            Simulate Claim
+          </button>
+        </div>
+      ) : null}
     </Fragment>
   );
 }

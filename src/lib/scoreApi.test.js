@@ -4,6 +4,28 @@ import { fetchInsuranceScore, scoreApiBaseUrl, DEFAULT_SCORE_API_URL } from './s
 afterEach(() => vi.restoreAllMocks());
 
 describe('fetchInsuranceScore', () => {
+  it('refetches past a browser-cached snapshot from another deployment, then fails closed', async () => {
+    const payload = (registry) => ({
+      network: 'sepolia', chainId: '11155111', account: '0x1111111111111111111111111111111111111111', registry,
+      grossEarnedScore: '1', maturedGrossEarnedScore: '1', scoreSpent: '0', availableScore: '1',
+      snapshotTimestamp: '1786320000', grossScorePerSecond: '0', maturingScorePerSecond: '0',
+      tokenScores: [{ token: '0x3333333333333333333333333333333333333333', balance: '1', grossEarnedScore: '1', grossScorePerSecond: '0' }],
+    });
+    const stale = '0xb34d92cd05005df36050370433819597a9bac693';
+    const current = '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430';
+    let fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => payload(stale) })
+      .mockResolvedValueOnce({ ok: true, json: async () => payload(current) });
+    await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 }))
+      .resolves.toMatchObject({ registry: current });
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ cache: 'no-store' });
+
+    vi.restoreAllMocks();
+    fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => payload(stale) });
+    await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 }))
+      .rejects.toThrow('different deployment');
+  });
+
   it('loads the local proxy score route and normalizes its string fields', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
@@ -11,7 +33,7 @@ describe('fetchInsuranceScore', () => {
         network: 'sepolia',
         chainId: '11155111',
         account: '0x1111111111111111111111111111111111111111',
-        registry: '0x2222222222222222222222222222222222222222',
+        registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430',
         grossEarnedScore: '1200000000000000000',
         maturedGrossEarnedScore: '700000000000000000',
         scoreSpent: '200000000000000000',

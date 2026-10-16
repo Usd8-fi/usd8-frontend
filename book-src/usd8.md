@@ -1,6 +1,4 @@
-<img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 logo">
-
-# USD8
+<span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 logo"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
 USD8 is a stable coin backed 1:1 by USDC. 
 

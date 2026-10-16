@@ -3,7 +3,7 @@ import { unresolvedHistoricalClaim } from './claimHistory.js';
 import { multicall, snapshotReads } from './snapshotReads.js';
 import { cachedData, checkAbort, protocolKey, queryClient } from './dataCache.js';
 import { fetchJson } from './requestUtils.js';
-import { fetchLogsInChunks, incrementalLogs, poolHistory } from './history.js';
+import { fetchLogsInChunks, incrementalLogs } from './history.js';
 export { fetchLogsInChunks } from './history.js';
 import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimCancelledEvent } from './readAbis.js';
 import { formatUnits, http, zeroAddress } from './viemLite.js';
@@ -16,6 +16,8 @@ export { erc20Abi };
 
 const clients = new Map();
 const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
+const SHORT_WINDOW_SECONDS = 7 * 24 * 60 * 60;
+const MIN_APY_WINDOW_SECONDS = 60 * 60;
 const SEPOLIA_BLOCKSCOUT_URL = 'https://eth-sepolia.blockscout.com/api/v2';
 
 const SEPOLIA_BLOCK_SECONDS = 12n;
@@ -300,46 +302,99 @@ export function calculateTrailingRewardApr({
   })}%`;
 }
 
+// Pool events that change staked assets or the reward stream, decoded locally
+// from our own ABI so the APY never depends on a third-party indexer.
+const poolHistoryEvents = [
+  { type: 'event', name: 'Deposit', inputs: [
+    { name: 'sender', type: 'address', indexed: true }, { name: 'owner', type: 'address', indexed: true },
+    { name: 'assets', type: 'uint256', indexed: false }, { name: 'shares', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'ExitEpochSettled', inputs: [
+    { name: 'exitEpoch', type: 'uint64', indexed: true }, { name: 'shares', type: 'uint256', indexed: false },
+    { name: 'assets', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'ClaimPaid', inputs: [
+    { name: 'to', type: 'address', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'RewardNotified', inputs: [
+    { name: 'amount', type: 'uint256', indexed: false }, { name: 'newRate', type: 'uint128', indexed: false },
+    { name: 'newPeriodFinish', type: 'uint64', indexed: false }] },
+];
+const rewardStateAbi = [
+  { type: 'function', name: 'totalAssets', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'rewardRate', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'periodFinish', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+];
+
+/// Trailing reward APY from the chain itself. Reads the pool's assets and reward
+/// stream at the window start, then replays its own events up to the head.
+/// The window is the last 30 days, or the pool's whole life if it is younger:
+/// the rate earned so far is annualized as if it continued.
 export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal } = {}) {
   const network = getProtocolNetwork(chainId);
-  const logs = await cachedData(protocolKey(network, 'apr-history', poolAddress.toLowerCase()),
-    ({ signal: querySignal }) => poolHistory(readClientFor(chainId), chainId, poolAddress, SEPOLIA_BLOCKSCOUT_URL, { signal: querySignal }),
-    { signal, staleTime: 5 * 60_000 });
-  const valueOf = (log, name) => log.decoded?.parameters?.find((parameter) => parameter.name === name)?.value;
-  const events = logs.flatMap((log) => {
-    const timestamp = Math.floor(Date.parse(log.block_timestamp) / 1_000);
-    const logIndex = Number(log.index);
-    const method = log.decoded?.method_call || '';
-    if (method.startsWith('Deposit(')) {
-      return [{ timestamp, logIndex, type: 'deposit', assets: BigInt(valueOf(log, 'assets')) }];
+  const address = poolAddress.toLowerCase();
+  const config = network.contracts.coverPools.find((pool) => pool.address.toLowerCase() === address);
+  return cachedData(protocolKey(network, 'apr-rpc', address), async ({ signal: querySignal }) => {
+    const client = readClientFor(chainId);
+    const head = await client.getBlock({ blockTag: 'latest' });
+    checkAbort(querySignal);
+    const windowBlocks = BigInt(TRAILING_WINDOW_SECONDS) / SEPOLIA_BLOCK_SECONDS;
+    const earliest = head.number > windowBlocks ? head.number - windowBlocks : 0n;
+    const deployBlock = config?.deployBlock === undefined ? earliest : BigInt(config.deployBlock);
+    const startBlock = deployBlock > earliest ? deployBlock : earliest;
+    const read = (functionName) => client.readContract({ address, abi: rewardStateAbi, functionName, blockNumber: startBlock });
+    const [start, assets, rate, finish] = await Promise.all([
+      client.getBlock({ blockNumber: startBlock }), read('totalAssets'), read('rewardRate'), read('periodFinish'),
+    ]);
+    const logs = await fetchLogsInChunks(client, { address, events: poolHistoryEvents }, startBlock + 1n, head.number, { signal: querySignal });
+    const blockNumbers = [...new Set(logs.map((log) => log.blockNumber))];
+    const blocks = await Promise.all(blockNumbers.map((blockNumber) => client.getBlock({ blockNumber })));
+    const timeOf = new Map(blocks.map((block) => [block.number, Number(block.timestamp)]));
+    const startSeconds = Number(start.timestamp);
+    const events = [
+      { timestamp: startSeconds, logIndex: -2, type: 'deposit', assets },
+      { timestamp: startSeconds, logIndex: -1, type: 'reward', rate, periodFinish: Number(finish) },
+      ...logs.flatMap((log) => {
+        const timestamp = timeOf.get(log.blockNumber);
+        const logIndex = Number(log.logIndex);
+        if (log.eventName === 'Deposit') return [{ timestamp, logIndex, type: 'deposit', assets: log.args.assets }];
+        if (log.eventName === 'ExitEpochSettled') return [{ timestamp, logIndex, type: 'exit', assets: log.args.assets }];
+        if (log.eventName === 'ClaimPaid') return [{ timestamp, logIndex, type: 'claim', assets: log.args.amount }];
+        if (log.eventName === 'RewardNotified') {
+          return [{ timestamp, logIndex, type: 'reward', rate: log.args.newRate, periodFinish: Number(log.args.newPeriodFinish) }];
+        }
+        return [];
+      }),
+    ];
+    // Measure from when rewards began, not from deployment: time before the
+    // first reward stream would only dilute the realized rate.
+    const nowSeconds = Number(head.timestamp);
+    const streamingAtStart = rate > 0n && Number(finish) > startSeconds;
+    const firstReward = events.find((event) => event.type === 'reward' && event.logIndex >= 0);
+    const rewardsSince = streamingAtStart ? startSeconds : firstReward?.timestamp;
+    if (rewardsSince === undefined) {
+      return { apy: '0.0%', windowSeconds: nowSeconds - startSeconds, apy7d: '0.0%', apy7dWindowSeconds: nowSeconds - startSeconds };
     }
-    if (method.startsWith('ExitEpochSettled(')) {
-      return [{ timestamp, logIndex, type: 'exit', assets: BigInt(valueOf(log, 'assets')) }];
-    }
-    if (method.startsWith('ClaimPaid(')) {
-      return [{ timestamp, logIndex, type: 'claim', assets: BigInt(valueOf(log, 'amount')) }];
-    }
-    if (method.startsWith('RewardNotified(')) {
-      return [{
-        timestamp,
-        logIndex,
-        type: 'reward',
-        rate: BigInt(valueOf(log, 'newRate')),
-        periodFinish: Number(valueOf(log, 'newPeriodFinish')),
-      }];
-    }
-    return [];
-  });
-  const deploymentTimestamp = Math.min(...logs.map((log) => Math.floor(Date.parse(log.block_timestamp) / 1_000)));
-  const value = calculateTrailingRewardApr({
-    events,
-    nowSeconds: Math.floor(Date.now() / 1_000),
-    windowSeconds: TRAILING_WINDOW_SECONDS,
-    deploymentTimestamp,
-    currentAssetUsdPrice: price,
-    priceDecimals,
-  });
-  return value;
+    // Both windows replay the same events, so 7D costs no extra requests. A
+    // window is the shorter of its length and the time rewards have been paid.
+    const trailing = (limitSeconds) => {
+      const windowSeconds = Math.min(limitSeconds, nowSeconds - rewardsSince);
+      // Too little reward history for a stable figure yet.
+      if (windowSeconds < MIN_APY_WINDOW_SECONDS) return { apy: null, windowSeconds };
+      return {
+        apy: calculateTrailingRewardApr({
+          events,
+          nowSeconds,
+          windowSeconds: limitSeconds,
+          deploymentTimestamp: rewardsSince,
+          currentAssetUsdPrice: price,
+          priceDecimals,
+        }),
+        windowSeconds,
+      };
+    };
+    const month = trailing(TRAILING_WINDOW_SECONDS);
+    const week = trailing(SHORT_WINDOW_SECONDS);
+    // The replayed events let the system dashboard chart history without more requests.
+    return { ...month, apy7d: week.apy, apy7dWindowSeconds: week.windowSeconds, history: { events, nowSeconds, rewardsSince } };
+  }, { signal, staleTime: 5 * 60_000 });
 }
 
 /// Resolves the full snapshot, but invokes `onPartial` with balances and pool
@@ -431,7 +486,9 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       : call.functionName === 'getScoredRateHistory' ? [] : index >= protocolStart ? null : 0n;
     return { call, resource, fallback, index };
   });
-  const selected = descriptors.filter(entry => hasAccount || !entry.resource.startsWith('account'));
+  // Contracts absent from this deployment (null config entries) keep their zero fallback.
+  const deployed = (call) => Boolean(call.address) && !(call.args || []).some(arg => arg == null);
+  const selected = descriptors.filter(entry => deployed(entry.call) && (hasAccount || !entry.resource.startsWith('account')));
   // Retrying the incident's archived settlement parameters also needs the
   // current incident ID and configuration required to reconstruct that cache.
   const requestedResources = resources?.includes('incident-settlement-params')
@@ -851,9 +908,23 @@ async function readIncident({ client, network, account, hasAccount, activeIncide
 }
 
 export async function fetchLandingAnalytics(snapshot, account, chainId, { signal } = {}) {
-  const pools = await Promise.all((snapshot.pools || []).map(async pool => ({ id: pool.id,
-    apy: pool.usdPrice === undefined ? pool.apy : await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal }).catch(error => { checkAbort(signal); return UNKNOWN_VALUE; }),
-  })));
+  const pools = await Promise.all((snapshot.pools || []).map(async pool => {
+    if (pool.usdPrice === undefined) return { id: pool.id, apy: pool.apy, apy7d: pool.apy7d };
+    // A pool that has never received a reward stream (periodFinish is still 0
+    // onchain) has earned nothing: its trailing APY is exactly 0%.
+    if (pool.earningsPeriodFinishMilliseconds === 0) return { id: pool.id, apy: '0.0%', apy7d: '0.0%' };
+    const result = await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal })
+      .catch(() => { checkAbort(signal); return { apy: null, windowSeconds: null }; });
+    // null (not the em-dash) means "could not be computed": shown as a static
+    // dash once loading ends, instead of a spinner that never resolves.
+    return {
+      id: pool.id,
+      apy: result.apy === UNKNOWN_VALUE ? null : result.apy,
+      apyWindowSeconds: result.windowSeconds,
+      apy7d: result.apy7d === UNKNOWN_VALUE ? null : (result.apy7d ?? null),
+      apy7dWindowSeconds: result.apy7dWindowSeconds ?? null,
+    };
+  }));
   return { pools };
 }
 

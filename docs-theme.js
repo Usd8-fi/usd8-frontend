@@ -18,6 +18,12 @@
         logo.alt = "USD8";
         link.appendChild(logo);
 
+        var wordmark = document.createElement("img");
+        wordmark.className = "sidebar-wordmark";
+        wordmark.src = "/assets/usd8-wordmark.svg";
+        wordmark.alt = "USD8.fi";
+        link.appendChild(wordmark);
+
         var betaLink = document.createElement("a");
         betaLink.className = "sidebar-beta-link";
         betaLink.href = "faqs.html#whats-different-in-beta";
@@ -84,21 +90,6 @@
         sidebar.appendChild(social);
     }
 
-    function injectAnalyticsSettings() {
-        var chapter = document.querySelector("#mdbook-sidebar .chapter");
-        if (!chapter || chapter.querySelector(".sidebar-analytics-settings")) return;
-
-        var item = document.createElement("li");
-        item.className = "chapter-item sidebar-analytics-settings-item";
-        var button = document.createElement("button");
-        button.type = "button";
-        button.className = "sidebar-analytics-settings";
-        button.setAttribute("data-analytics-settings", "");
-        button.textContent = "Cookie Settings";
-        item.appendChild(button);
-        chapter.appendChild(item);
-    }
-
     function initializeFaqs() {
         var title = document.querySelector(".faq-title");
         if (!title) return;
@@ -163,7 +154,6 @@
     function initialize() {
         injectSidebarLogo();
         injectAppLink();
-        injectAnalyticsSettings();
         injectSocialLinks();
         initializeFaqs();
         expandFaqFromHash();

@@ -89,34 +89,33 @@
 .booster-check input {
     width: 480px;
     max-width: 100%;
-    padding: 12px 16px;
-    font-family: inherit;
-    font-size: 16px;
-    border: 1px solid var(--sidebar-spacer, #3b4556);
-    border-radius: 6px;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--accent);
+    border-radius: 0;
     background: transparent;
-    color: inherit;
+    color: var(--accent);
+    font: inherit;
     outline: none;
 }
 
 .booster-check input:focus {
-    border-color: #16a34a;
+    box-shadow: 0 0 0 1px var(--accent);
 }
 
 .booster-check button {
-    padding: 12px 22px;
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    border-radius: 6px;
-    background: #16a34a;
-    color: #fff;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--accent);
+    border-radius: 0;
+    background: var(--accent);
+    color: var(--link-inverse);
+    font: inherit;
     cursor: pointer;
 }
 
 .booster-check button:hover:not(:disabled) {
-    background: #15803d;
+    background: var(--accent-hover);
 }
 
 .booster-check button:disabled {
@@ -126,7 +125,6 @@
 
 .booster-result {
     flex-basis: 100%;
-    font-size: 16px;
     line-height: 1.4;
     min-height: 1.2em;
 }
@@ -150,7 +148,7 @@
 }
 
 .booster-result[data-state="error"] { color: #dc2626; }
-.booster-result[data-state="success"] { color: #16a34a; }
+.booster-result[data-state="success"] { color: var(--accent); }
 .booster-result[data-state="empty"] { opacity: 0.7; }
 .booster-result[data-state="loading"] { opacity: 0.7; }
 
@@ -535,15 +533,21 @@ dt:target::before {
 }
 
 .sidebar-logo {
-    display: block;
-    width: 64px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
     flex: 0 0 auto;
 }
 
 .sidebar-logo img {
     display: block;
-    width: 100%;
+    width: 40px;
     height: auto;
+}
+
+.sidebar-logo img.sidebar-wordmark {
+    width: auto;
+    height: 18px;
 }
 
 .sidebar-logo:hover,
@@ -710,3 +714,30 @@ body {
 }
 
 
+
+/* First docs page: big logo with the USD8.fi wordmark beside it. */
+.docs-hero-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.docs-hero-brand img {
+    display: block;
+}
+
+.docs-hero-brand img.docs-hero-wordmark {
+    width: auto;
+    height: 44px;
+}
+
+@media (max-width: 760px) {
+    .docs-hero-brand { gap: 16px; }
+    .docs-hero-brand img:first-child { width: 72px; height: 72px; }
+    .docs-hero-brand img.docs-hero-wordmark { height: 32px; }
+}
+
+/* USD8 App is an external destination, not a docs chapter: set it apart. */
+#mdbook-sidebar .chapter > li.sidebar-app-link {
+    margin-top: 28px;
+}

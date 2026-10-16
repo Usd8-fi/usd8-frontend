@@ -34,8 +34,8 @@ describe('mdBook links', () => {
     );
     expect(document.querySelector('.sidebar-app-link a')).toHaveAttribute('target', '_blank');
     expect(document.querySelector('.sidebar-app-link a')).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(document.querySelector('.sidebar-analytics-settings')).toHaveAttribute('data-analytics-settings');
-    expect(document.querySelector('.sidebar-analytics-settings')).toHaveTextContent('Cookie Settings');
+    // Cookie Settings lives in the shared footer only, not the docs sidebar.
+    expect(document.querySelector('.sidebar-analytics-settings')).toBeNull();
   });
 
   it('automatically unfolds the beta FAQ when opened through the beta link', () => {

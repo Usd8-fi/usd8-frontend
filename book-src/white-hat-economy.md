@@ -3,7 +3,7 @@
 
 The White Hat economy is the enforcement layer of USD8. It plays a critical role in recovering lost assets and deterring future malicious activities in Defi.  
 
-After a successful claim, the forfeited LP tokens become the property of the USD8 protocol, providing the financial engine to power the White Hat Economy. We plan to explore multiple mechanisms depending on the size of the hack:
+After a successful claim, the forfeited insured tokens become the property of the USD8 protocol, providing the financial engine to power the White Hat Economy. We plan to explore multiple mechanisms depending on the size of the hack:
 
 - Tokenized Distressed Debt Market
 - Bounties & Anonymous Tips

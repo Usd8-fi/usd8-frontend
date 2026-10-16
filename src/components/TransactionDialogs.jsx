@@ -228,7 +228,7 @@ export function PoolActionDialog({
                       <>
                         .{' '}
                         <span className="usd8-dialog-pool-capacity">
-                          {displayAvailableBalance(remainingDepositCapacity)} {assetSymbol} left in pool limit
+                          {displayAvailableBalance(remainingDepositCapacity)} {assetSymbol} left in pool capacity
                         </span>
                       </>
                     ) : null}

@@ -46,8 +46,6 @@ We adapted this model and made it crypto native, to provide the last missing pie
 
 USD8 offers [free insurance](./defi-insurance.md) to DeFi users according to their insurance score based on USD8 usage history, covering a range of DeFi tokens vetted by our team and third party security partners. The more you use USD8, the more you are covered. If any insured Defi token drops significantly(currently 20%), users can claim up to 80% value back.
 
-E.g., if Aave USDC market is hacked and 1 aUSDC drops to 0.3 USDC, users can claim up to 0.8 USDC in value with their aUSDC.
-
 The actual payout depends the user's USD8 history vs other claimers, and the Cover Pool size.
 
 Payouts come from USD8's [Cover Pools](cover-pools.md) which are public vaults with different asset types, incentivized by USD8's treasury revenue. Any LPs depositing into Cover Pools will get stable coin yield in USD8, however assets in the Cover Pool might be deployed to cover any potential losses.

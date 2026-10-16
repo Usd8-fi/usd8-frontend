@@ -7,43 +7,30 @@ describe('network configuration', () => {
 
     expect(network).toMatchObject({ id: 11155111, name: 'Sepolia', protocolAvailable: true });
     expect(network.rpcUrl).toBe('https://rpc.sepolia.ethpandaops.io');
-    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth', 'usd8']);
-    expect(network.contracts.coverPools[1]).toEqual({
-      id: 'usd8',
-      name: 'USD8 Cover Pool',
-      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
-      asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-      assetSymbol: 'USD8',
-      shareSymbol: 'USD8-cp-USD8',
-      usdOracle: '0xf4aedc595912ce5951c3a0afdd8a61ebb07a8634',
-      tint: 'green',
+    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth']);
+    expect(network.contracts.coverPools[0]).toEqual({
+      id: 'wsteth',
+      name: 'wstEth Cover Pool',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
+      asset: '0x0539fcd774c5351da3c1d8efd64d4511f46662df',
+      assetSymbol: 'wstETH',
+      shareSymbol: 'USD8-cp-wstETH',
+      usdOracle: '0x6ae3bb0897f0b15e175ba96ba0aaa55ccb719a05',
+      deployBlock: 11915276,
     });
-    expect(network.payoutAssets).toEqual({
-      '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': {
-        symbol: 'wstETH',
-        decimals: 18,
-      },
-      '0xbbd327336d5135e146312dd16f2491c1e6ce8822': {
-        symbol: 'mGHO-CP',
-        decimals: 18,
-      },
-      '0xa5b32853235619b5e9af364a40c0c6386dbd6055': {
-        symbol: 'USD8',
-        decimals: 18,
-      },
+    expect(network.payoutAssets).toMatchObject({
+      '0x0539fcd774c5351da3c1d8efd64d4511f46662df': { symbol: 'wstETH', decimals: 18 },
+      '0x2fe01f5e235eeab9045066f873f531de20f31947': { symbol: 'USD8', decimals: 18 },
     });
     expect(network.contracts).toMatchObject({
-      registry: '0xb34d92cd05005df36050370433819597a9bac693',
-      usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
-      usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-      treasury: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
-      savingsVault: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
-      defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',
+      registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430',
+      usdc: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
+      usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+      treasury: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
+      savingsVault: null,
+      defiInsurance: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
       insuredTokens: {
-        usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-        susd8: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
-        'aave-sgho': '0x6e5eb99a5923bea10eb3990ec8da84e70007e668',
-        'sky-susds': '0x5279e60d104110db53b9d00a54f323e978be3757',
+        usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
         'test-msloss': '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
       },
     });

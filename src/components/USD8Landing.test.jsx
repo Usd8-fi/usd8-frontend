@@ -68,7 +68,8 @@ describe('USD8 landing navigation', () => {
   it('shows the USD8.fi header wordmark and the shared footer links', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    expect(within(screen.getByRole('link', { name: 'USD8 home' })).getByText('USD8.fi')).toBeInTheDocument();
+    expect(within(screen.getByRole('link', { name: 'USD8 home' })).getByAltText('USD8.fi')).toBeInTheDocument();
+    expect(within(screen.getByRole('contentinfo')).getByAltText('USD8.fi')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'beta' })).toHaveAttribute(
       'href',
       './docs/faqs.html#whats-different-in-beta',
@@ -88,8 +89,11 @@ describe('USD8 landing navigation', () => {
     ]) {
       expect(within(footerNav).getByRole('link', { name: label })).toBeInTheDocument();
     }
-    expect(within(footerNav).getByText('Audit Report')).toBeInTheDocument();
-    expect(within(footerNav).queryByRole('link', { name: 'Audit Report' })).not.toBeInTheDocument();
+    expect(within(footerNav).getByRole('link', { name: 'Audit Report' })).toHaveAttribute(
+      'href',
+      'https://github.com/Usd8-fi/usd8-core/tree/main/audit',
+    );
+    expect(within(footerNav).getByRole('link', { name: 'Audit Report' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).queryByRole('link', { name: 'Risk disclaimer' })).not.toBeInTheDocument();
     expect(within(footerNav).getByRole('button', { name: 'Cookie Settings' })).toHaveAttribute('data-analytics-settings');
     expect(within(footerNav).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', './docs/');
@@ -98,8 +102,8 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
     expect(within(footerNav).queryByRole('link', { name: 'DeFi Insurance' })).not.toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Cover Pools' })).not.toBeInTheDocument();
-    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportFAQs$/);
-    expect(footerNav.children[1].children).toHaveLength(2);
+    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportFAQsSystem Dashboard$/);
+    expect(footerNav.children[1].children).toHaveLength(3);
     expect(within(footerNav).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', './docs/faqs.html');
     expect(within(footerNav).getByRole('link', { name: 'Transparency' })).toHaveAttribute(
       'href',
@@ -187,13 +191,14 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('region', { name: 'wstEth Cover Pool' })).not.toHaveClass('cover-pool-card--green');
   });
 
-  it('shows capacity as a progress bar with a whole-percentage accessible label', () => {
+  it('shows capacity as a whole percentage instead of a progress bar', () => {
     render(<USD8Landing wallet={wallet} pools={[{ ...POOLS[0], capacityPercent: 87.6 }]} />);
 
     const pool = screen.getByRole('region', { name: 'wstEth Cover Pool' });
     expect(within(pool).getByLabelText('88% capacity filled')).toBeInTheDocument();
     expect(pool.querySelector('.landing-capacity')).toBeInTheDocument();
-    expect(within(pool).queryByText('88%')).not.toBeInTheDocument();
+    expect(within(pool).getByText('88%')).toBeInTheDocument();
+    expect(pool.querySelector('.landing-capacity i')).toBeNull();
   });
 
   it('keeps the combined page after a remount without persisting a product tab', () => {
@@ -214,15 +219,15 @@ describe('USD8 landing navigation', () => {
     expect(poolCard.querySelector('img')).toHaveAttribute('src', coverWsteth);
   });
 
-  it('uses the spacious three-plus-two pool metric layout', () => {
+  it('lays the pool stats out in one row: APY, TVL, deposit, earnings, capacity', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
-    const overview = poolCard.querySelector('.cover-pool-overview');
-    expect(overview).not.toBeNull();
-    expect(overview.children[0]).toHaveClass('cover-pool-metrics');
-    expect(overview.children[1]).toHaveClass('cover-pool-capacity-metric');
-    expect(poolCard.querySelector('.cover-pool-account').children).toHaveLength(2);
+    const stats = poolCard.querySelector('.cover-pool-stats');
+    expect(stats).not.toBeNull();
+    expect([...stats.children].map((item) => item.querySelector('span').childNodes[0].textContent.trim()))
+      .toEqual(['30D APY', 'TVL', 'Your Deposit', 'Your Earnings', 'Capacity']);
+    expect(stats.children[4]).toHaveClass('cover-pool-capacity-metric');
     expect(poolCard.querySelector('.cover-pool-actions').children).toHaveLength(3);
   });
 
@@ -334,12 +339,42 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('7123.9');
-    expect(screen.getByText('Available Score').parentElement).toHaveTextContent('7123456.9');
+    expect(screen.getByText('Your Insurance Score').parentElement).toHaveTextContent('7123.9');
+    expect(screen.getByText('Your Available Score').parentElement).toHaveTextContent('7123456.9');
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('7123.6');
     expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('1234567.8');
+  });
+
+  it('shows how much score is still in cooldown under the available score', () => {
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
+        score={{
+          grossEarnedScore: '10', availableScore: '6', scoreSpent: '1',
+          grossScorePerSecond: '0', maturingScorePerSecond: '0',
+          snapshotTimestampMilliseconds: Date.now(),
+        }}
+      />,
+    );
+    expect(screen.getByText(/in cooldown, available within/)).toHaveTextContent('3.0 in cooldown');
+  });
+
+  it('hides the cooldown note when nothing is cooling down', () => {
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
+        score={{
+          grossEarnedScore: '10', availableScore: '9', scoreSpent: '1',
+          grossScorePerSecond: '0', maturingScorePerSecond: '0',
+          snapshotTimestampMilliseconds: Date.now(),
+        }}
+      />,
+    );
+    expect(screen.queryByText(/in cooldown/)).toBeNull();
   });
 
   it('shows numeric zero for absent connected-wallet scores', () => {
@@ -352,8 +387,8 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    const total = screen.getByText('Total Insurance Score').parentElement.querySelector('strong');
-    const available = screen.getByText('Available Score').parentElement.querySelector('strong');
+    const total = screen.getByText('Your Insurance Score').parentElement.querySelector('strong');
+    const available = screen.getByText('Your Available Score').parentElement.querySelector('strong');
     expect(total).toHaveTextContent('0');
     expect(available).toHaveTextContent(total.textContent);
     expect(available).not.toHaveTextContent('—');
@@ -380,8 +415,8 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    const total = screen.getByText('Total Insurance Score').parentElement;
-    const available = screen.getByText('Available Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
+    const available = screen.getByText('Your Available Score').parentElement;
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(total).toHaveTextContent('128600.0');
@@ -422,8 +457,8 @@ describe('USD8 landing navigation', () => {
       />,
     );
 
-    const total = screen.getByText('Total Insurance Score').parentElement;
-    const available = screen.getByText('Available Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
+    const available = screen.getByText('Your Available Score').parentElement;
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     expect(total).toHaveTextContent('12.9000');
@@ -474,7 +509,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('tooltip', {
       name: 'Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.',
     })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'About capacity filled for wstEth Cover Pool' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About capacity for wstEth Cover Pool' })).toHaveTextContent('?');
   });
 });
 
@@ -670,5 +705,58 @@ describe('Free insurance table', () => {
 
     const table = screen.getByRole('table', { name: 'Insured tokens' });
     expect(within(table).queryByText('Lido stETH')).not.toBeInTheDocument();
+  });
+});
+
+describe('cover pool APY window', () => {
+  const WEEK = 7 * 86_400;
+  const renderPool = extra => render(<USD8Landing wallet={wallet} scoreStatus="ready"
+    pools={[{ ...POOLS[0], apy: '10.0%', apyWindowSeconds: 30 * 86_400, apy7d: '14.0%', apy7dWindowSeconds: WEEK, ...extra }]} />);
+
+  it('defaults to the higher APY and lets the user switch windows', () => {
+    renderPool();
+    expect(screen.getByRole('group', { name: 'APY window for wstEth Cover Pool' })).toHaveTextContent('7D 30D APY');
+    expect(screen.getByText('14.0%')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '7D' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '30D' }));
+    expect(screen.getByRole('button', { name: '7D' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('10.0%')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '30D' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'About 30-day APY for wstEth Cover Pool' })).toBeInTheDocument();
+  });
+
+  it('defaults to 30D when it is higher, and keeps the 30D label on a tie', () => {
+    const { unmount } = renderPool({ apy7d: '8.0%' });
+    expect(screen.getByRole('button', { name: '30D' })).toHaveAttribute('aria-pressed', 'true');
+    unmount();
+    renderPool({ apy7d: '10.0%' });
+    expect(screen.getByRole('button', { name: '30D' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('offers the switch for a young pool and says how much history 7D uses', () => {
+    renderPool({ apy7dWindowSeconds: 2 * 86_400, apyWindowSeconds: 2 * 86_400 });
+    expect(screen.getByRole('button', { name: '7D' })).toBeInTheDocument();
+    expect(screen.getByRole('tooltip', { name: /Based on 2 days of rewards so far; becomes a 7-day average after 7 days\./ })).toBeInTheDocument();
+  });
+
+  it('draws a capacity ring after the percentage', () => {
+    const { container } = render(<USD8Landing wallet={wallet} pools={[{ ...POOLS[0], capacityPercent: 40 }]} />);
+    const cell = container.querySelector('.landing-capacity--value');
+    expect(cell.firstChild.textContent).toBe('40%');
+    const [filled, total] = cell.querySelector('.percent-ring-arc').getAttribute('stroke-dasharray').split(' ').map(Number);
+    expect(filled / total).toBeCloseTo(0.4, 3);
+  });
+
+  it('offers no choice when either figure is unavailable', () => {
+    renderPool({ apy7d: null });
+    expect(screen.queryByRole('button', { name: '7D' })).toBeNull();
+    expect(screen.getByText('30D APY')).toBeInTheDocument();
+  });
+
+  it('links the system dashboard right after FAQs in the footer', () => {
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
+    const links = within(screen.getByRole('navigation', { name: 'Footer' })).getAllByRole('link').map(link => link.textContent);
+    expect(links[links.indexOf('FAQs') + 1]).toBe('System Dashboard');
+    expect(screen.getByRole('link', { name: 'System Dashboard' })).toHaveAttribute('href', '#system-dashboard');
   });
 });

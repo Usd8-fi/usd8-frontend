@@ -48,13 +48,13 @@ describe('live values', () => {
     const setInterval = vi.spyOn(window, 'setInterval');
     const { unmount } = render(<USD8Landing wallet={wallet} pools={pools} score={score} />);
 
-    // Four score figures plus pool earnings share a single 1-second timer.
-    expect(secondClockSubscriberCount()).toBe(5);
+    // Four score figures, the cooldown note and pool earnings share a single 1-second timer.
+    expect(secondClockSubscriberCount()).toBe(6);
     expect(setInterval.mock.calls.filter(([, delay]) => delay === 1_000)).toHaveLength(1);
 
     const rendersBefore = tooltipRenders.count;
     act(() => vi.advanceTimersByTime(3_000));
-    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('128600.6');
+    expect(screen.getByText('Your Insurance Score').parentElement).toHaveTextContent('128600.6');
     expect(screen.getByText('Your Earnings').nextElementSibling).toHaveTextContent('1.6 USD8');
     expect(tooltipRenders.count).toBe(rendersBefore);
 

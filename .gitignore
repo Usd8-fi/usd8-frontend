@@ -7,3 +7,6 @@ node_modules/
 worker/.dev.vars
 .env
 .env.local
+
+# Lambda deployment bundle (build artifact)
+terms-api/fn.zip

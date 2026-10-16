@@ -2,7 +2,7 @@ import WalletNoticeProvider, { NoticeMessage } from './components/WalletNotice.j
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { zeroAddress } from 'viem';
-import { useAccount, useChainId, useSwitchChain, useWriteContract } from 'wagmi';
+import { useAccount, useChainId, useDisconnect, useSwitchChain, useWriteContract } from 'wagmi';
 import { CONNECT_WALLET_REASON } from './components/AvailabilityAction.jsx';
 import { COVERED_PROTOCOL_ROWS } from './components/CoveredProtocolsTable.jsx';
 const FileClaimDialog = lazy(() => import('./components/FileClaimDialog.jsx'));
@@ -36,6 +36,8 @@ import {
 import { matchesSettlementTopology, normalizedAddressOrder, settlementPayoutDetails } from './lib/settlement.js';
 import { PoolActionDialog, Usd8ActionDialog } from './components/TransactionDialogs.jsx';
 import { walletConnectorConfigured } from './lib/walletConnector.js';
+import TermsAcceptanceDialog from './components/TermsAcceptanceDialog.jsx';
+import { hasAcceptedTerms, recordTermsAcceptance, rememberTermsAccepted } from './lib/termsAcceptance.js';
 
 function cachedInsuranceScore(account, { chainId, signal, fresh = false, refresh = false }) {
   return cachedData(['insurance-score', chainId, account.toLowerCase()], ({ signal: querySignal }) => fetchInsuranceScore(account, { chainId, signal: querySignal, ...(refresh || fresh ? { refresh: true } : {}) }), { signal, staleTime: fresh || refresh ? 0 : 60_000 });
@@ -76,6 +78,10 @@ export default function App({ autoConnect = false }) {
   const { writeContractAsync } = useWriteContract();
   const { open } = useAppKit();
   const connected = isConnected && Boolean(address);
+  const { disconnectAsync } = useDisconnect();
+  // Re-render after Agree; the browser flag itself lives in localStorage.
+  const [, setTermsAcceptedAddress] = useState('');
+  const termsRequired = connected && !hasAcceptedTerms(address);
   const activeNetwork = getNetwork(chainId);
   const protocolNetwork = getProtocolNetwork(chainId);
   const walletScopeKey = [
@@ -1218,6 +1224,16 @@ export default function App({ autoConnect = false }) {
 
   return (
     <WalletNoticeProvider key={walletScopeKey} wallet={{ connected, connecting, onConnect: connect, connectUnavailableReason: !walletConnectorConfigured ? WALLET_CONNECT_UNAVAILABLE_REASON : '' }}>
+      {termsRequired ? (
+        <TermsAcceptanceDialog
+          onAgree={() => {
+            rememberTermsAccepted(address);
+            setTermsAcceptedAddress(address.toLowerCase());
+            recordTermsAcceptance(address);
+          }}
+          onDisagree={() => { disconnectAsync?.().catch(() => {}); }}
+        />
+      ) : null}
       <NoticeMessage
         message={transaction?.refreshError ? `${statusMessage || 'Transaction confirmed.'} Transaction confirmed. Balances could not be refreshed.` : statusMessage || (transaction ? (transaction.phase === 'confirmed' ? 'Transaction confirmed.' : transaction.message) : '')}
         actionLabel={transaction?.refreshError ? 'Retry Refresh' : undefined}

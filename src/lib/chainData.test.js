@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getProtocolNetwork } from './networkConfig.js';
 
 const mocks = vi.hoisted(() => ({
   multicall: vi.fn(),
@@ -127,6 +128,23 @@ describe('calculateTrailingRewardApr', () => {
     expect(apr).toBe('60.8%');
   });
 
+  it('measures 7-day and 30-day windows from the same events', () => {
+    const day = 24 * 60 * 60;
+    const events = [
+      { timestamp: 0, logIndex: 0, type: 'deposit', assets: 10n * 10n ** 18n },
+      { timestamp: 0, logIndex: 1, type: 'reward', rate: 100n * 10n ** 18n / BigInt(23 * day), periodFinish: 23 * day },
+      { timestamp: 23 * day, logIndex: 0, type: 'reward', rate: 700n * 10n ** 18n / BigInt(7 * day), periodFinish: 30 * day },
+    ];
+    const apr = windowSeconds => calculateTrailingRewardApr({
+      nowSeconds: 30 * day, windowSeconds, deploymentTimestamp: 0,
+      currentAssetUsdPrice: 2_000_00000000n, priceDecimals: 8, events,
+    });
+    // 700 of the 800 rewards fall in the last week, so the shorter window annualizes higher.
+    expect(Number.parseFloat(apr(7 * day))).toBeGreaterThan(Number.parseFloat(apr(30 * day)));
+    expect(apr(30 * day)).toBe('48.7%');
+    expect(apr(7 * day)).toBe('182.5%');
+  });
+
   it('returns unavailable when the pool had no assets in the trailing window', () => {
     expect(calculateTrailingRewardApr({
       nowSeconds: 100,
@@ -154,19 +172,32 @@ const landingSnapshot = ({
   pools = [{}, {}],
   insurance = [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(8_000),
     insuredTokenConfig(8_000), insuredTokenConfig(8_000), insuredTokenConfig(8_000)],
-} = {}) => [
-  usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
-  usd8Rates, savingsRates, BOOSTER_POLICY, nextIncidentId, scoreSpent,
-  ...pools.flatMap((overrides) => {
+} = {}) => {
+  // The batch only carries reads for contracts this deployment has: reads for
+  // null config entries (no savings vault, unlisted insured tokens) are skipped,
+  // and only the configured cover pools and insured tokens are read.
+  const { contracts } = getProtocolNetwork(11155111);
+  const insured = contracts.insuredTokens;
+  const fixed = [
+    usdc, usd8, contracts.savingsVault ? savings : SKIP, activeIncidentId,
+    insured['aave-sgho'] ? sGho : SKIP, insured['sky-susds'] ? sUsds : SKIP, insured['test-msloss'] ? msloss : SKIP,
+    usd8Rates, contracts.savingsVault ? savingsRates : SKIP, BOOSTER_POLICY, nextIncidentId, scoreSpent,
+  ].filter((value) => value !== SKIP);
+  return [
+    ...fixed,
+    ...poolValues(pools.slice(0, contracts.coverPools.length)),
+    ...insurance.slice(0, 1 + Object.keys(insured).length),
+  ];
+};
+const SKIP = Symbol('not deployed');
+const poolValues = (pools) => pools.flatMap((overrides) => {
     const pool = { ...EMPTY_POOL, ...overrides };
     return [
       pool.assetBalance, pool.shares, pool.totalAssets, pool.depositCap, pool.earned,
       pool.shareDecimals, pool.rewardRate, pool.totalSupply, pool.escrowedShares,
       pool.periodFinish, pool.exit, [1n, pool.price, 0n, 0n, 1n], pool.priceDecimals,
     ];
-  }),
-  ...insurance,
-];
+  });
 
 describe('fetchLandingChainData', () => {
   beforeEach(() => {
@@ -340,9 +371,9 @@ describe('fetchLandingChainData', () => {
         insurance: [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(7_500),
           insuredTokenConfig(6_000), insuredTokenConfig(5_050), insuredTokenConfig(8_000)],
       }))
-      // derived batch: savings assets, active pool assets, exit receipt, pending pool assets
+      // derived batch: active pool assets, exit receipt, pending pool assets
+      // (no savings-vault read: this deployment has no sUSD8)
       .mockResolvedValueOnce([
-        4_200_000_000_000_000_000n,
         2_123_456_789_012_345_678n,
         [12_000_000_000_000_000_000_000n, 0n, 0n, 0n],
         6_000_000_000_000_000_000n,
@@ -452,60 +483,48 @@ describe('fetchLandingChainData', () => {
     if (history) data.scoreBalanceChangeTimestampMilliseconds = history;
 
     expect(data.pools[0].tvl).toBe('$20K');
-    expect(data.pools[0].apy).toBe('—');
+    // History reads fail in this fixture, so the APY is unknown (null), shown as a static dash.
+    expect(data.pools[0].apy).toBeNull();
     expect(data.pools[0].capacityUncapped).toBe(false);
     expect(data.pools[0].assets).toBe('10');
     expect(data.pools[0].remainingDepositCapacity).toBe('90');
-    expect(data.pools[1].tint).toBe('green');
+    expect(data.pools).toHaveLength(1);
+    // No savings vault in this deployment: its score inputs stay at zero.
     expect(data.scoreBalances).toEqual({
       usd8: '25000000000000000000',
-      savings: '4000000000000000000',
+      savings: '0',
     });
     expect(data.scoreRatesPerSecond).toEqual({
       usd8: '0.000289351851851852',
-      savings: '0.000004629629629629',
+      savings: '0',
     });
     expect(data.scoreBalanceChangeTimestampMilliseconds).toEqual({
       usd8: 1_800_000_100_000,
-      savings: 1_800_000_100_000,
+      savings: 0,
     });
     expect(Number.isSafeInteger(data.scoreBalancesSnapshotTimestampMilliseconds)).toBe(true);
-    expect(data.balances.savings).toBe('4');
-    expect(data.balances.savingsAssets).toBe('4.2');
+    expect(data.balances.savings).toBe('0');
+    expect(data.balances.savingsAssets).toBe('0');
     // Pending exits remain claim-exposed until completion, so the deposit line
     // includes both active assets and the current pending-exit estimate.
     expect(data.pools[0].deposit).toBe('8.12');
     expect(data.balances.boosters).toBe('100');
+    // Unlisted insured tokens are not read and stay at zero.
     expect(data.balances.insuredTokens).toEqual({
-      'aave-sgho': '345',
-      'sky-susds': '678',
+      'aave-sgho': '0',
+      'sky-susds': '0',
       'test-msloss': '5000',
     });
     expect(data.insurance.tokens).toEqual({
       usd8: {
-        address: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+        address: '0x2fe01f5e235eeab9045066f873f531de20f31947',
         enabled: true,
         maxCoverageBps: '8000',
-      },
-      susd8: {
-        address: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
-        enabled: true,
-        maxCoverageBps: '7500',
-      },
-      'aave-sgho': {
-        address: '0x6e5eb99a5923bea10eb3990ec8da84e70007e668',
-        enabled: true,
-        maxCoverageBps: '6000',
-      },
-      'sky-susds': {
-        address: '0x5279e60d104110db53b9d00a54f323e978be3757',
-        enabled: true,
-        maxCoverageBps: '5050',
       },
       'test-msloss': {
         address: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
         enabled: true,
-        maxCoverageBps: '8000',
+        maxCoverageBps: '7500',
       },
     });
     const firstBatch = mocks.multicall.mock.calls[0][0].contracts;
@@ -514,10 +533,7 @@ describe('fetchLandingChainData', () => {
       functionName: call.functionName,
       token: call.args[0],
     }))).toEqual([
-      { functionName: 'getInsuredToken', token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055' },
-      { functionName: 'getInsuredToken', token: '0x7989b3eb6fad27e404b07433ebd265657359f4ab' },
-      { functionName: 'getInsuredToken', token: '0x6e5eb99a5923bea10eb3990ec8da84e70007e668' },
-      { functionName: 'getInsuredToken', token: '0x5279e60d104110db53b9d00a54f323e978be3757' },
+      { functionName: 'getInsuredToken', token: '0x2fe01f5e235eeab9045066f873f531de20f31947' },
       { functionName: 'getInsuredToken', token: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc' },
     ]);
     expect(data.pools[0].hasEarnings).toBe(false);
@@ -874,5 +890,15 @@ describe('fetchLandingChainData', () => {
 
     await expect(request).rejects.toMatchObject({ name: 'AbortError' });
     expect(mocks.getLogs).not.toHaveBeenCalled();
+  });
+
+  it('reports 0% APY for a pool that has never received rewards, without querying history', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const analytics = await fetchLandingAnalytics({ pools: [{
+      id: 'wsteth', address: '0x00000000000000000000000000000000000000c1',
+      usdPrice: '400000000000', priceDecimals: 8, earningsPeriodFinishMilliseconds: 0,
+    }] }, '', 11155111);
+    expect(analytics.pools).toEqual([{ id: 'wsteth', apy: '0.0%', apy7d: '0.0%' }]);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

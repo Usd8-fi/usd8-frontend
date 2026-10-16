@@ -34,15 +34,23 @@ vi.mock('wagmi', () => ({
   useWriteContract: () => ({ writeContractAsync: mocks.writeContractAsync }),
 }));
 
+// Terms acceptance has its own tests; assume it was already accepted here.
+vi.mock('./lib/termsAcceptance.js', () => ({
+  hasAcceptedTerms: () => true,
+  rememberTermsAccepted: () => {},
+  recordTermsAcceptance: async () => true,
+  TERMS_URL: '#', RISK_URL: '#',
+}));
+
 vi.mock('./lib/chainData.js', () => ({
   erc20Abi: [],
   fetchLandingChainData: mocks.fetchLandingChainData,
   fetchLandingAnalytics: async () => ({ pools: [] }),
   fetchScoreHistory: async () => null,
   SEPOLIA_CONTRACTS: {
-    usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
-    usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-    treasury: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
+    usdc: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
+    usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+    treasury: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
   },
 }));
 
@@ -95,8 +103,8 @@ afterEach(() => vi.useRealTimers());
 
 describe('settlementPayoutDetails', () => {
   it('formats each payout with the artifact asset order and configured decimals', () => {
-    const usdc = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
-    const wstEth = '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa';
+    const usdc = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
+    const wstEth = '0x0539fcd774c5351da3c1d8efd64d4511f46662df';
 
     expect(settlementPayoutDetails(
       [1_234_567n, 100_000_000_000_000_000n],
@@ -112,7 +120,7 @@ describe('settlementPayoutDetails', () => {
   });
 
   it('preserves large payout precision while rounding the displayed fraction', () => {
-    const usdc = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const usdc = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
 
     expect(settlementPayoutDetails(
       [9_007_199_254_740_993_123_456_789n],
@@ -165,8 +173,8 @@ const poolCard = (name = 'wstEth Cover Pool') => within(screen.getByRole('region
 const coverPoolFixture = (overrides = {}) => ({
   id: 'wsteth',
   name: 'wstEth Cover Pool',
-  address: '0x55cb69271da9937d0cb3c548409fd3f77586df79',
-  asset: '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa',
+  address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
+  asset: '0x0539fcd774c5351da3c1d8efd64d4511f46662df',
   assetSymbol: 'wstETH',
   shareSymbol: 'USD8-cp-wstETH',
   assetBalance: '0',
@@ -194,16 +202,6 @@ const coverPoolFixture = (overrides = {}) => ({
   inCooldownAssets: overrides.inCooldown ?? '0',
   exitSettled: false,
   withdrawalQuote: { totalAssets: '100000000000000000000', totalSupply: '100000000000000000000000' },
-  ...overrides,
-});
-
-const usd8PoolFixture = (overrides = {}) => coverPoolFixture({
-  id: 'usd8',
-  name: 'USD8 Cover Pool',
-  address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
-  asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-  assetSymbol: 'USD8',
-  shareSymbol: 'USD8-cp-USD8',
   ...overrides,
 });
 
@@ -444,8 +442,8 @@ describe('App', () => {
   it('shows zero wallet-specific values while disconnected', () => {
     render(<App />);
 
-    expect(screen.getByText('Total Insurance Score').parentElement).toHaveTextContent('0.0');
-    expect(screen.getByText('Available Score').nextElementSibling).toHaveTextContent('0.0');
+    expect(screen.getByText('Your Insurance Score').parentElement).toHaveTextContent('0.0');
+    expect(screen.getByText('Your Available Score').nextElementSibling).toHaveTextContent('0.0');
 
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     expect(within(usd8Card).getByText('Your Balance').nextElementSibling).toHaveTextContent('0');
@@ -466,8 +464,9 @@ describe('App', () => {
     render(<App />);
 
     // Nothing is known yet, so APY/TVL/capacity must not display a number.
+    // One card per configured pool: this deployment has only the wstETH pool.
     expect(screen.getAllByRole('region').filter((card) => card.className.includes('cover-pool-card')))
-      .toHaveLength(2);
+      .toHaveLength(1);
     expect(poolCard().getAllByRole('status', { name: 'Loading pool data' })).toHaveLength(2);
     expect(poolCard().getByRole('status', { name: 'Loading pool capacity' })).toBeInTheDocument();
     expect(screen.queryByText('34%')).toBeNull();
@@ -609,8 +608,8 @@ describe('App', () => {
     render(<App />);
 
     const warning = await screen.findByRole('alert', { name: 'Notification' });
-    const total = screen.getByText('Total Insurance Score').parentElement.querySelector('strong');
-    const available = screen.getByText('Available Score').parentElement.querySelector('strong');
+    const total = screen.getByText('Your Insurance Score').parentElement.querySelector('strong');
+    const available = screen.getByText('Your Available Score').parentElement.querySelector('strong');
     expect(total).toHaveTextContent('0');
     expect(available).toHaveTextContent(total.textContent);
     expect(available).not.toHaveTextContent('—');
@@ -827,7 +826,7 @@ describe('App', () => {
       availableScore: usd8Score,
       maturingScorePerSecond: '0',
       tokenScores: [{
-        token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+        token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
         grossEarnedScore: usd8Score,
         grossScorePerSecond: '0',
       }],
@@ -857,7 +856,7 @@ describe('App', () => {
     const firstAccount = '0x0000000000000000000000000000000000000001';
     const secondAccount = '0x0000000000000000000000000000000000000002';
     const root = `0x${'12'.repeat(32)}`;
-    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutAsset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
     const firstSettlement = deferred();
     const secondSettlement = deferred();
@@ -967,7 +966,7 @@ describe('App', () => {
 
   it('re-reads the authoritative claim before constructing payout calldata', async () => {
     const root = `0x${'12'.repeat(32)}`;
-    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutAsset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
     const accountData = (resolved) => ({
       balances: {
@@ -1027,7 +1026,7 @@ describe('App', () => {
     [3n, 100n, true], [3n, 100n, false], [0n, 100n, true], [3n, 0n, false], [11n, 100n, true],
   ])('uses proof-bound boosters (%s, score %s, accept %s) for finalization and the compact taken-into-account display', async (eligibleBoosters, score, accept) => {
     const root = `0x${'12'.repeat(32)}`;
-    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutAsset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -1114,7 +1113,7 @@ describe('App', () => {
 
   it('weights the committed-score share by settled boosted scores, not filed claims', async () => {
     const root = `0x${'12'.repeat(32)}`;
-    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutAsset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
@@ -1149,14 +1148,14 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
     await within(dialog).findByText(`10 base units of ${payoutAsset}`);
     expect(within(dialog).getByText(
-      'Effective insurance score after boosters 2200, 31% of all score committed.',
+      'Effective insurance score after boosters 2200, 31% of all score committed',
     )).toBeInTheDocument();
     expect(within(dialog).queryByText(/27% of all score committed/)).not.toBeInTheDocument();
   });
 
   it('rejects finalization calldata when the refreshed pool topology changed', async () => {
     const root = `0x${'12'.repeat(32)}`;
-    const payoutAsset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const payoutAsset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const payoutPool = '0x00000000000000000000000000000000000000c1';
     const replacementPool = '0x00000000000000000000000000000000000000c2';
     const accountData = (poolAddrs) => ({
@@ -1280,7 +1279,7 @@ describe('App', () => {
   it('requests settleIncident from the settlement-open UI for a nonclaimant', async () => {
     const zeroRoot = `0x${'00'.repeat(32)}`;
     const pool = '0x00000000000000000000000000000000000000c1';
-    const asset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const asset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const settlement = {
       incidentId: '1',
       root: `0x${'34'.repeat(32)}`,
@@ -1392,7 +1391,7 @@ describe('App', () => {
     const zeroRoot = `0x${'00'.repeat(32)}`;
     const standingRoot = `0x${'34'.repeat(32)}`;
     const pool = '0x00000000000000000000000000000000000000c1';
-    const asset = '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c';
+    const asset = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
     const replacementPool = '0x00000000000000000000000000000000000000c2';
     const accountData = (poolAddrs) => ({
       balances: {
@@ -1443,7 +1442,7 @@ describe('App', () => {
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 
-  it('maps the existing score response token breakdown to the USD8 and sUSD8 cards', async () => {
+  it('maps the score response token breakdown to the configured token cards only', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchInsuranceScore.mockResolvedValueOnce({
@@ -1454,7 +1453,7 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
           grossEarnedScore: '8',
           grossScorePerSecond: '0',
         },
@@ -1471,7 +1470,8 @@ describe('App', () => {
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     await waitFor(() => expect(within(usd8Card).getByText('Score Earned').nextElementSibling).toHaveTextContent('8.0'));
-    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('4.0');
+    // This deployment has no sUSD8 vault, so a score row for another token is not attributed to it.
+    expect(within(savingsCard).getByText('Score Earned').nextElementSibling).toHaveTextContent('0.0');
   });
 
   it('keeps the score loading until current chain balances are available', async () => {
@@ -1487,7 +1487,7 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
           balance: '20000000000000000000',
           grossEarnedScore: '60',
           grossScorePerSecond: '0',
@@ -1503,7 +1503,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const total = screen.getByText('Total Insurance Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
     await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalled());
     expect(within(total).getByRole('status', { name: 'Loading insurance score' })).toBeInTheDocument();
     expect(total).not.toHaveTextContent('100.0');
@@ -1529,7 +1529,7 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
           balance: '20000000000000000000',
           grossEarnedScore: '8',
           grossScorePerSecond: '0',
@@ -1546,8 +1546,9 @@ describe('App', () => {
       .mockResolvedValueOnce(staleScore)
       .mockResolvedValueOnce({ ...staleScore, cacheStatus: 'advanced' });
     mocks.fetchLandingChainData.mockResolvedValueOnce({
-      balances: { usdc: '0', usd8: '20', savings: '2', coverAsset: '0', poolShares: '0' },
-      scoreBalances: { usd8: '20000000000000000000', savings: '2000000000000000000' },
+      // The USD8 balance moved since the score snapshot (20 → 25).
+      balances: { usdc: '0', usd8: '25', savings: '0', coverAsset: '0', poolShares: '0' },
+      scoreBalances: { usd8: '25000000000000000000', savings: '0' },
       pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false })],
       activeIncidentId: '0',
     });
@@ -1571,7 +1572,7 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
           balance,
           grossEarnedScore,
           grossScorePerSecond: '0',
@@ -1600,7 +1601,9 @@ describe('App', () => {
       .mockReturnValueOnce(oldRefresh.promise)
       .mockResolvedValue(tokenScore('222', '30000000000000000000'));
     mocks.fetchLandingChainData
-      .mockResolvedValueOnce(landingData('20', '2'))
+      // The USD8 balance moved since the score snapshot (20 → 21), forcing a refresh.
+      // (No sUSD8 in this deployment, so savings never drives a refresh.)
+      .mockResolvedValueOnce(landingData('21', '0'))
       .mockResolvedValueOnce(landingData('30', '0'));
     const { rerender } = render(<App />);
 
@@ -1611,7 +1614,7 @@ describe('App', () => {
       '0x0000000000000000000000000000000000000002',
       expect.objectContaining({ chainId: 11155111 }),
     ));
-    const total = screen.getByText('Total Insurance Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
     await waitFor(() => expect(total).toHaveTextContent('222.0'));
 
     await act(async () => oldRefresh.resolve(tokenScore('111', '30000000000000000000')));
@@ -1631,7 +1634,7 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
           balance: '20000000000000000000',
           grossEarnedScore: '100',
           grossScorePerSecond: '1',
@@ -1655,7 +1658,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalledTimes(2));
-    const total = screen.getByText('Total Insurance Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
     await waitFor(() => expect(within(total).queryByRole('status', { name: 'Loading insurance score' })).not.toBeInTheDocument());
     const scoreAfterRefresh = total.textContent;
 
@@ -1675,7 +1678,7 @@ describe('App', () => {
       maturingScorePerSecond: '0',
       tokenScores: [
         {
-          token: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+          token: '0x2fe01f5e235eeab9045066f873f531de20f31947',
           balance: '0',
           grossEarnedScore: '0',
           grossScorePerSecond: '0',
@@ -1703,7 +1706,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalledTimes(2));
-    const total = screen.getByText('Total Insurance Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
     await waitFor(() => expect(within(total).queryByRole('status', { name: 'Loading insurance score' })).not.toBeInTheDocument());
     expect(total).toHaveTextContent('0.0');
 
@@ -1730,7 +1733,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchInsuranceScore).toHaveBeenCalledTimes(1));
-    const total = screen.getByText('Total Insurance Score').parentElement;
+    const total = screen.getByText('Your Insurance Score').parentElement;
     await waitFor(() => expect(within(total).queryByRole('status', { name: 'Loading insurance score' })).not.toBeInTheDocument());
     expect(total).toHaveTextContent('60.0');
 
@@ -1980,12 +1983,12 @@ describe('App', () => {
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
     fireEvent.click(poolCard().getByRole('button', { name: 'Deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
-    const poolCapacity = within(dialog).getByText('76.99 wstETH left in pool limit');
+    const poolCapacity = within(dialog).getByText('76.99 wstETH left in pool capacity');
     expect(poolCapacity).toHaveClass('usd8-dialog-pool-capacity');
     expect(poolCapacity.parentElement).toHaveClass('usd8-dialog-pool-availability');
     expect(within(dialog).queryByRole('button', { name: /Use full wstETH balance/ })).not.toBeInTheDocument();
     expect(within(dialog).getByText(/3.00 available/).closest('small'))
-      .toHaveTextContent('3.00 available. 76.99 wstETH left in pool limit');
+      .toHaveTextContent('3.00 available. 76.99 wstETH left in pool capacity');
     const submit = within(dialog).getByRole('button', { name: 'Deposit' });
     fireEvent.click(submit);
 
@@ -2053,8 +2056,8 @@ describe('App', () => {
 
 
     expect(poolCard().getByText('30D APY')).toBeInTheDocument();
-    // Tooltips portal to document.body, one per card.
-    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.')).toHaveLength(2);
+    // Tooltips portal to document.body, one per card (one configured pool).
+    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.')).toHaveLength(1);
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {
@@ -2133,30 +2136,12 @@ describe('App', () => {
     expect(await within(dialog).findByRole('alert', { name: 'Transaction status' })).toHaveTextContent('Rewards claimed on Sepolia.');
   });
 
-  it('submits a USD8 pool deposit to the selected pool address', async () => {
+  it('submits a cover pool deposit to the selected pool address', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
       balances: { usdc: '10', usd8: '25', savings: '0', coverAsset: '3', poolShares: '0' },
-      pools: [
-        coverPoolFixture(),
-        coverPoolFixture({
-          id: 'usd8',
-          name: 'USD8 Cover Pool',
-          address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
-          asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-          assetSymbol: 'USD8',
-          shareSymbol: 'USD8-cp-USD8',
-          apy: '—',
-          tvl: '—',
-          capacityPercent: 0,
-          deposit: '0',
-          earnings: '0',
-          hasEarnings: false,
-          assetBalance: '3',
-          availableForCooldown: '0',
-        }),
-      ],
+      pools: [coverPoolFixture({ apy: '—', tvl: '—', capacityPercent: 0, deposit: '0', earnings: '0', hasEarnings: false, assetBalance: '3', availableForCooldown: '0' })],
       activeIncidentId: '0',
     });
     mocks.readContract.mockResolvedValueOnce(0n);
@@ -2167,21 +2152,21 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Deposit' }));
+    fireEvent.click(poolCard('wstEth Cover Pool').getByRole('button', { name: 'Deposit' }));
     const dialog = screen.getByRole('dialog', { name: 'Deposit' });
-    fireEvent.change(within(dialog).getByLabelText('USD8 amount'), { target: { value: '1.5' } });
+    fireEvent.change(within(dialog).getByLabelText('wstETH amount'), { target: { value: '1.5' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Deposit' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
     expect(prompt).not.toHaveBeenCalled();
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      address: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+      address: '0x0539fcd774c5351da3c1d8efd64d4511f46662df',
       chainId: 11155111,
       functionName: 'approve',
-      args: ['0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf', 1_500_000_000_000_000_000n],
+      args: ['0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8', 1_500_000_000_000_000_000n],
     }));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
       chainId: 11155111,
       functionName: 'deposit',
       args: [1_500_000_000_000_000_000n, mocks.account.address],
@@ -2192,12 +2177,12 @@ describe('App', () => {
     expect(screen.queryByRole('alertdialog', { name: 'Notice' })).not.toBeInTheDocument();
   });
 
-  it('submits a USD8 pool cooldown request to the selected pool address', async () => {
+  it('submits a cover pool cooldown request to the selected pool address', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
       balances: { usdc: '10', usd8: '25', savings: '0' },
-      pools: [coverPoolFixture(), usd8PoolFixture({ deposit: '2.1', availableForCooldown: '2.1' })],
+      pools: [coverPoolFixture({ deposit: '2.1', availableForCooldown: '2.1' })],
       activeIncidentId: '0',
     });
     mocks.readContract.mockImplementation(({ functionName }) => Promise.resolve(
@@ -2207,62 +2192,62 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Withdraw' }));
+    fireEvent.click(poolCard('wstEth Cover Pool').getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
-    fireEvent.change(within(dialog).getByLabelText('USD8-cp-USD8 amount'), { target: { value: '2.1' } });
+    fireEvent.change(within(dialog).getByLabelText('USD8-cp-wstETH amount'), { target: { value: '2.1' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Start Cooldown' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
-      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
       functionName: 'requestRedeem',
       args: [2_100_000_000_000_000_000_000n],
     }));
   });
 
-  it('completes a USD8 pool withdrawal through the selected pool address', async () => {
+  it('completes a cover pool withdrawal through the selected pool address', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
       balances: { usdc: '10', usd8: '25', savings: '0' },
-      pools: [coverPoolFixture(), usd8PoolFixture({ availableForWithdraw: '12', availableForWithdrawAssets: '12' })],
+      pools: [coverPoolFixture({ availableForWithdraw: '12', availableForWithdrawAssets: '12' })],
       activeIncidentId: '0',
     });
     mocks.writeContractAsync.mockResolvedValueOnce('0x' + 'cd'.repeat(32));
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Withdraw' }));
+    fireEvent.click(poolCard('wstEth Cover Pool').getByRole('button', { name: 'Withdraw' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
-      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
       functionName: 'completeRedeem',
       args: [mocks.account.address],
     }));
   });
 
-  it('claims USD8 pool earnings through the selected pool address', async () => {
+  it('claims cover pool earnings through the selected pool address', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;
     mocks.fetchLandingChainData.mockResolvedValueOnce({
       balances: { usdc: '10', usd8: '25', savings: '0' },
-      pools: [coverPoolFixture(), usd8PoolFixture({ earnings: '7.5', earningsExact: '7.5', hasEarnings: true })],
+      pools: [coverPoolFixture({ earnings: '7.5', earningsExact: '7.5', hasEarnings: true })],
       activeIncidentId: '0',
     });
     mocks.writeContractAsync.mockResolvedValueOnce('0x' + 'ef'.repeat(32));
     render(<App />);
 
     await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
-    fireEvent.click(poolCard('USD8 Cover Pool').getByRole('button', { name: 'Withdraw Earnings' }));
+    fireEvent.click(poolCard('wstEth Cover Pool').getByRole('button', { name: 'Withdraw Earnings' }));
     const dialog = screen.getByRole('dialog', { name: 'Withdraw Earnings' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Withdraw Earnings' }));
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
-      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
       functionName: 'claimReward',
       args: [],
     }));
@@ -2437,13 +2422,13 @@ describe('App', () => {
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
       chainId: 11155111,
-      address: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
+      address: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
       functionName: 'approve',
-      args: ['0x2a722ed12982623dff64dc0adba40e734a5f59c3', 1_500_000n],
+      args: ['0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05', 1_500_000n],
     }));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(2, expect.objectContaining({
       chainId: 11155111,
-      address: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
+      address: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
       functionName: 'mintUSD8',
       args: [1_500_000n],
       gas: 150_000n,
@@ -2469,12 +2454,12 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledOnce());
     expect(mocks.readContract).toHaveBeenCalledWith(expect.objectContaining({
-      address: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
+      address: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
       functionName: 'usd8ToUsdcRate',
     }));
     expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
       chainId: 11155111,
-      address: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
+      address: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
       functionName: 'redeemUSD8',
       args: [1_500_000_000_000_000_000n, 1_500_000n],
     }));
@@ -2579,7 +2564,7 @@ describe('App', () => {
         throw Object.assign(new Error('execution reverted'), {
           code: 3,
           data: encodeErrorResult({ abi: claimWriteAbi, errorName: 'ERC1155MissingApprovalForAll',
-            args: ['0x4e346ccd0a46d51ebae6810d653791982968d502', mocks.account.address] }),
+            args: ['0xac1a522d0fdc1c39d455d1688ad54615de5b48b9', mocks.account.address] }),
         });
       }
       return '0x186a0';
@@ -2642,7 +2627,7 @@ describe('App', () => {
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
       address: boosterCollection,
       functionName: 'setApprovalForAll',
-      args: ['0x4e346ccd0a46d51ebae6810d653791982968d502', true],
+      args: ['0xac1a522d0fdc1c39d455d1688ad54615de5b48b9', true],
     }));
     expect(mocks.writeContractAsync).toHaveBeenNthCalledWith(2, expect.objectContaining({
       functionName: 'fileClaim',
@@ -2809,11 +2794,11 @@ describe('App', () => {
     expect(mocks.prepareIncidentOpen).not.toHaveBeenCalled();
     approval.resolve('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     await waitFor(() => expect(mocks.prepareIncidentOpen).toHaveBeenCalledWith(
-      '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+      '0x2fe01f5e235eeab9045066f873f531de20f31947',
       expect.objectContaining({
         chainId: 11155111,
-        registry: '0xb34d92cd05005df36050370433819597a9bac693',
-        defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',
+        registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430',
+        defiInsurance: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
       }),
     ));
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledTimes(2));
@@ -2828,10 +2813,10 @@ describe('App', () => {
     }));
     expect(mocks.writeContractAsync).toHaveBeenLastCalledWith(expect.objectContaining({
       chainId: 11155111,
-      address: '0x4e346ccd0a46d51ebae6810d653791982968d502',
+      address: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
       functionName: 'fileClaim',
       args: [
-        '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
+        '0x2fe01f5e235eeab9045066f873f531de20f31947',
         1_000_000_000_000_000_000n,
         128_600_000_000_000_000_000_000n,
         0n,
@@ -3100,7 +3085,7 @@ describe('App', () => {
 
     await waitFor(() => expect(mocks.writeContractAsync).toHaveBeenCalledWith(expect.objectContaining({
       chainId: 11155111,
-      address: '0x4e346ccd0a46d51ebae6810d653791982968d502'.toLowerCase(),
+      address: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9'.toLowerCase(),
       functionName: 'cancelClaim',
       args: [],
       gas: 150_000n,
@@ -3201,8 +3186,8 @@ describe('App', () => {
       root: `0x${'11'.repeat(32)}`,
       phaseDeadlineMilliseconds: Date.now() - 1_000,
       phaseWindowMilliseconds: 3_600_000,
-      poolAddrs: ['0x55cb69271da9937d0cb3c548409fd3f77586df79'],
-      poolOrder: ['0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa'],
+      poolAddrs: ['0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8'],
+      poolOrder: ['0x0539fcd774c5351da3c1d8efd64d4511f46662df'],
       totalScoreCommitted: '2000',
     };
     // Settlement delists the token, so the row only persists for an open claim.
@@ -3252,7 +3237,7 @@ describe('App', () => {
       grossScorePerSecond: '0',
       maturingScorePerSecond: '0',
       tokenScores: [
-        { token: '0xa5B32853235619B5e9AF364A40c0c6386Dbd6055', balance: '0', grossEarnedScore: '0', grossScorePerSecond: '0' },
+        { token: '0x2fe01f5e235eeab9045066f873f531de20f31947', balance: '0', grossEarnedScore: '0', grossScorePerSecond: '0' },
         { token: '0x7989B3EB6faD27e404b07433eBD265657359F4AB', balance: '0', grossEarnedScore: '0', grossScorePerSecond: '0' },
       ],
     };

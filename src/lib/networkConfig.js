@@ -1,45 +1,42 @@
 import { mainnet, sepolia } from './viemLite.js';
 
+// Step-01 CREATE3 deployment (deployments/sepolia/01-system-create3-plan.json).
+// Launch scope: one wstETH cover pool, USD8 as the only insured token, no sUSD8 yet.
+// Entries set to null are not deployed; chainData skips their reads.
 const SEPOLIA_CONTRACTS = Object.freeze({
-  registry: '0xb34d92cd05005df36050370433819597a9bac693',
-  usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
-  usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-  treasury: '0x2a722ed12982623dff64dc0adba40e734a5f59c3',
-  savingsVault: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
+  registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430',
+  usdc: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
+  usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+  treasury: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
+  // First Treasury block; bounds the reserve-history log scan.
+  treasuryDeployBlock: 11915255,
+  savingsVault: null,
   // Registry order. Each entry is rendered as its own cover-pool card.
   coverPools: Object.freeze([
     Object.freeze({
       id: 'wsteth',
       name: 'wstEth Cover Pool',
-      address: '0x55cb69271da9937d0cb3c548409fd3f77586df79',
-      asset: '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
+      asset: '0x0539fcd774c5351da3c1d8efd64d4511f46662df',
       assetSymbol: 'wstETH',
       shareSymbol: 'USD8-cp-wstETH',
-      usdOracle: '0x00e79afb10a84d153803f00e73900803179d594e',
-    }),
-    Object.freeze({
-      id: 'usd8',
-      name: 'USD8 Cover Pool',
-      address: '0x6388c3826902f7d7812e632d0b63ea44d9c1e5cf',
-      asset: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-      assetSymbol: 'USD8',
-      shareSymbol: 'USD8-cp-USD8',
-      usdOracle: '0xf4aedc595912ce5951c3a0afdd8a61ebb07a8634',
-      tint: 'green',
+      usdOracle: '0x6ae3bb0897f0b15e175ba96ba0aaa55ccb719a05',
+      // First block of the pool's history; bounds the APY log scan.
+      deployBlock: 11915276,
     }),
   ]),
-  defiInsurance: '0x4e346ccd0a46d51ebae6810d653791982968d502',
+  defiInsurance: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
   insuredTokens: Object.freeze({
-    usd8: '0xa5b32853235619b5e9af364a40c0c6386dbd6055',
-    susd8: '0x7989b3eb6fad27e404b07433ebd265657359f4ab',
-    'aave-sgho': '0x6e5eb99a5923bea10eb3990ec8da84e70007e668',
-    'sky-susds': '0x5279e60d104110db53b9d00a54f323e978be3757',
+    usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+    // Sepolia loss-test token (slashable ERC-4626), listed for claim E2E.
     'test-msloss': '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
   }),
 });
 
 // Keep metadata for retired payout assets so historical claims remain readable.
 const SEPOLIA_PAYOUT_ASSETS = Object.freeze({
+  '0x0539fcd774c5351da3c1d8efd64d4511f46662df': Object.freeze({ symbol: 'wstETH', decimals: 18 }),
+  '0x2fe01f5e235eeab9045066f873f531de20f31947': Object.freeze({ symbol: 'USD8', decimals: 18 }),
   '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': Object.freeze({ symbol: 'wstETH', decimals: 18 }),
   '0xbbd327336d5135e146312dd16f2491c1e6ce8822': Object.freeze({ symbol: 'mGHO-CP', decimals: 18 }),
   '0xa5b32853235619b5e9af364a40c0c6386dbd6055': Object.freeze({ symbol: 'USD8', decimals: 18 }),
@@ -54,6 +51,8 @@ const NETWORKS = Object.freeze({
     protocolAvailable: true,
     blockTimeSeconds: 12,
     rpcUrl: import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://rpc.sepolia.ethpandaops.io',
+    // HTTP index for the activity ticker. Reads here cost no RPC calls.
+    explorerApiUrl: 'https://eth-sepolia.blockscout.com/api/v2',
     contracts: SEPOLIA_CONTRACTS,
     payoutAssets: SEPOLIA_PAYOUT_ASSETS,
   }),

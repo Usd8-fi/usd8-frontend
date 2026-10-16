@@ -10,5 +10,6 @@ export const documentationAssets = [
   'murrayRothbard.jpg',
   'thomas_gresham.jpg',
   'usd8Logo.svg',
+  'usd8-wordmark.svg',
   'usdc.png',
 ];

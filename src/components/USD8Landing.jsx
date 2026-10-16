@@ -1,8 +1,9 @@
 import WalletNoticeProvider, { NoticeMessage } from './WalletNotice.jsx';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
+import usd8Wordmark from '../assets/usd8-wordmark.svg';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
 import { useSecondClock } from '../lib/secondClock.js';
 import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
@@ -10,8 +11,10 @@ import { MORPHO_VAULT_URL } from '../lib/morphoApi.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { durationPhrase } from '../lib/durations.js';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './AvailabilityAction.jsx';
-import CoveredProtocolsTable from './CoveredProtocolsTable.jsx';
+import CoveredProtocolsTable, { COVERED_PROTOCOL_ROWS } from './CoveredProtocolsTable.jsx';
+import SimulateClaimDialog from './SimulateClaimDialog.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
+import PercentRing from './PercentRing.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
 
 
@@ -61,8 +64,28 @@ function LiveScoreValue({ loading, score, valueKey, rateKey, keepMissing = false
   return <ScoreValue loading={loading} value={value} decimals={scoreRateDecimals(score?.[rateKey])} />;
 }
 
+/// Score earned but still inside the holding window: total − spent − available,
+/// advanced live with the same snapshot rates as the two figures above it.
+function LiveCooldownScore({ score, maturityPhrase }) {
+  const snapshotMilliseconds = scoreSnapshotMilliseconds(score);
+  const ready = snapshotMilliseconds > 0 && score?.availableScore != null && score?.grossEarnedScore != null;
+  const now = useSecondClock(ready);
+  if (!ready) return null;
+  const elapsed = Math.max(0, now - snapshotMilliseconds);
+  const total = wadUnits(liveScoreValue(score.grossEarnedScore, score.grossScorePerSecond, elapsed));
+  const available = wadUnits(liveScoreValue(score.availableScore, score.maturingScorePerSecond, elapsed));
+  const spent = wadUnits(score.scoreSpent || '0');
+  const cooling = total - spent - available;
+  if (cooling <= 0n) return null;
+  return (
+    <small className="score-cooldown-note">
+      {formatScore(formatWad(cooling, 18), scoreRateDecimals(score.grossScorePerSecond))} in cooldown, available within {maturityPhrase}
+    </small>
+  );
+}
+
 function LivePoolEarnings({ pool }) {
-  return `${displayValue(useLivePoolEarnings(pool).earnings)} USD8`;
+  return <>{displayValue(useLivePoolEarnings(pool).earnings)}<small className="cover-pool-unit"> USD8</small></>;
 }
 
 function WalletButton({ wallet }) {
@@ -99,6 +122,7 @@ function SiteFooter({ updatedAt }) {
     <footer className="landing-footer">
       <a className="landing-footer-logo" href="./" aria-label="USD8 footer home">
         <img src={usd8Logo} alt="" />
+        <img className="landing-footer-wordmark" src={usd8Wordmark} alt="USD8.fi" />
       </a>
       <nav className="landing-footer-links" aria-label="Footer">
         <div>
@@ -108,8 +132,9 @@ function SiteFooter({ updatedAt }) {
           <a className="site-nav-link" href="https://x.com/usd8_fi" target="_blank" rel="noreferrer">X.com</a>
         </div>
         <div>
-          <span className="landing-footer-unlinked">Audit Report</span>
+          <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core/tree/main/audit" target="_blank" rel="noreferrer">Audit Report</a>
           <a className="site-nav-link" href={docsUrl('faqs.html')}>FAQs</a>
+          <a className="site-nav-link" href="#system-dashboard">System Dashboard</a>
         </div>
         <div>
           <a className="site-nav-link" href={docsUrl('transparency.html')}>Transparency</a>
@@ -194,11 +219,31 @@ function AssetCard({
   );
 }
 
+function simulatorInsuredTokens(insuredTokenStates = {}) {
+  return COVERED_PROTOCOL_ROWS
+    .filter((row) => insuredTokenStates[row.id]?.enabled)
+    .map((row) => ({ id: row.id, symbol: row.symbol, maxCoverageBps: Number(insuredTokenStates[row.id].maxCoverageBps) }));
+}
+
+function simulatorPools(pools = []) {
+  return pools.flatMap((pool) => {
+    try {
+      const balance = BigInt(pool.withdrawalQuote?.totalAssets ?? '0');
+      const price = BigInt(pool.usdPrice ?? '0');
+      if (!Number.isInteger(pool.priceDecimals)) return [];
+      return [{ id: pool.id, symbol: pool.assetSymbol, balance, price, priceDecimals: pool.priceDecimals, assetDecimals: 18 }];
+    } catch {
+      return [];
+    }
+  });
+}
+
 function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, scoreMaturitySeconds, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreMaturityPhrase = durationPhrase(scoreMaturitySeconds) || 'the holding period';
   const scoreLoading = scoreStatus === 'loading';
   const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
   const [nowMilliseconds, setNowMilliseconds] = useState(Date.now());
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
 
   useEffect(() => {
     if (!incident) return undefined;
@@ -215,7 +260,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
         <p>Earn free insurance score with USD8 or sUSD8.</p>
         <div>
           <span className="metric-label-with-help">
-            Total Insurance Score
+            Your Insurance Score
             <InfoTooltip ariaLabel="About total insurance score" className="dashboard-help--align-right">
               Your total insurance score earned across all holdings. Score updates may be delayed by around 13–19 minutes while Ethereum blocks finalize.
             </InfoTooltip>
@@ -273,7 +318,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           <p>File claim with your insurance score.</p>
           <div>
             <span className="metric-label-with-help">
-              Available Score
+              Your Available Score
               <InfoTooltip ariaLabel="About available score" className="dashboard-help--align-right">
                 Score becomes available to use after {scoreMaturityPhrase}, minus any score already spent on claims.
               </InfoTooltip>
@@ -287,6 +332,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
                 keepMissing
               />
             </strong>
+            <LiveCooldownScore score={score} maturityPhrase={scoreMaturityPhrase} />
           </div>
         </div>
         <div className="covered-protocols-table-area">
@@ -296,9 +342,17 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
             incident={incident}
             insuredTokenStates={insuredTokenStates}
             nowMilliseconds={nowMilliseconds}
+            onSimulate={() => setSimulatorOpen(true)}
           />
         </div>
       </section>
+      {simulatorOpen ? (
+        <SimulateClaimDialog
+          onClose={() => setSimulatorOpen(false)}
+          insuredTokens={simulatorInsuredTokens(insuredTokenStates)}
+          pools={simulatorPools(pools)}
+        />
+      ) : null}
 
       <section className="cover-pools-section" aria-labelledby="cover-pools-title">
         <h2 className="landing-section-title" id="cover-pools-title">Cover Pools</h2>
@@ -331,17 +385,47 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
 
 function CapacityBar({ value = 0, uncapped = false, assets = '0', assetSymbol = 'wstETH' }) {
   if (uncapped) {
-    return <div className="landing-capacity" aria-label={`${assets} ${assetSymbol} deposited, uncapped`}>Uncapped</div>;
+    return <div className="landing-capacity landing-capacity--value" aria-label={`${assets} ${assetSymbol} deposited, uncapped`}>Uncapped</div>;
   }
   const bounded = Math.max(0, Math.min(100, Number(value) || 0));
   return (
-    <div className="landing-capacity" aria-label={`${Math.round(bounded)}% capacity filled`}>
-      <span><i style={{ width: `${bounded}%` }} /></span>
+    <div className="landing-capacity landing-capacity--value percent-with-ring" aria-label={`${Math.round(bounded)}% capacity filled`}>
+      {`${Math.round(bounded)}%`}
+      <PercentRing share={bounded / 100} />
     </div>
   );
 }
 
+function apyNumber(value) {
+  const number = Number.parseFloat(String(value ?? ''));
+  return Number.isFinite(number) ? number : null;
+}
+
+/// The choice is offered once both figures exist. While rewards are younger than
+/// the window, the tooltip says how much history the figure really uses.
+function apyWindowChoice(pool) {
+  const week = apyNumber(pool.apy7d);
+  const month = apyNumber(pool.apy);
+  const offered = week !== null && month !== null;
+  return { offered, preferred: offered && week > month ? '7D' : '30D' };
+}
+
+/// While rewards are younger than the APY window, say how much history it uses.
+function apyHistoryNote(windowSeconds, windowDays = 30) {
+  if (!Number.isFinite(windowSeconds) || windowSeconds <= 0 || windowSeconds >= windowDays * 86_400) return '';
+  const days = windowSeconds / 86_400;
+  const span = days >= 1
+    ? `${Math.floor(days)} day${Math.floor(days) === 1 ? '' : 's'}`
+    : `${Math.max(1, Math.floor(windowSeconds / 3_600))} hour${Math.floor(windowSeconds / 3_600) === 1 ? '' : 's'}`;
+  return ` Based on ${span} of rewards so far; becomes a ${windowDays}-day average after ${windowDays} days.`;
+}
+
 function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolAction }) {
+  const [chosenWindow, setChosenWindow] = useState(null);
+  const { offered: windowOffered, preferred: preferredWindow } = apyWindowChoice(pool);
+  // Starts on whichever average is higher; a click keeps the user's choice.
+  const apyWindow = windowOffered ? (chosenWindow ?? preferredWindow) : '30D';
+  const apyDays = apyWindow === '7D' ? 7 : 30;
   const cardClassName = pool.tint === 'green' ? 'cover-pool-card cover-pool-card--green' : 'cover-pool-card';
   return (
     <section className={cardClassName} aria-label={pool.name}>
@@ -350,42 +434,35 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
         <h2>{pool.name}</h2>
       </header>
 
-      <div className="cover-pool-overview">
-        <div className="cover-pool-metrics">
-          <div>
-            <span className="metric-label-with-help">
-              30D APY
-              <InfoTooltip ariaLabel={`About 30-day APY for ${pool.name}`}>
-                USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.
-              </InfoTooltip>
-            </span>
-            <strong><MetricValue loading={poolLoading} value={pool.apy} label="Loading pool data" /></strong>
-          </div>
-          <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={pool.tvl} label="Loading pool data" /></strong></div>
-        </div>
-
-        <div className="cover-pool-capacity-metric">
+      <div className="cover-pool-stats">
+        <div>
           <span className="metric-label-with-help">
-            Capacity Filled
-            <InfoTooltip ariaLabel={`About capacity filled for ${pool.name}`}>
-              {pool.capacityUncapped
-                ? 'Current pool deposits. This pool has no deposit cap.'
-                : 'Percentage of the pool\'s deposit capacity currently in use.'}
+            {windowOffered ? (
+              <span className="apy-window-label" role="group" aria-label={`APY window for ${pool.name}`}>
+                {['7D', '30D'].map((option, index) => (
+                  <Fragment key={option}>
+                    {index ? ' ' : ''}
+                    <button type="button" className="apy-window-option" aria-pressed={apyWindow === option} onClick={() => setChosenWindow(option)}>{option}</button>
+                  </Fragment>
+                ))}
+                {' APY'}
+              </span>
+            ) : `${apyWindow} APY`}
+            <InfoTooltip ariaLabel={`About ${apyDays}-day APY for ${pool.name}`}>
+              USD8 earnings accrued over the past {apyDays} days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.{apyHistoryNote(apyWindow === '7D' ? pool.apy7dWindowSeconds : pool.apyWindowSeconds, apyDays)}
             </InfoTooltip>
           </span>
-          {poolLoading && pool.capacityPercent === null
-            ? <LoadingSpinner label="Loading pool capacity" />
-            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} assetSymbol={pool.assetSymbol} />}
+          <strong>
+            <MetricValue loading={poolLoading} value={apyWindow === '7D' ? pool.apy7d : pool.apy} label="Loading pool data" />
+          </strong>
         </div>
-      </div>
-
-      <div className="cover-pool-account">
+        <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={pool.tvl} label="Loading pool data" /></strong></div>
         <div>
           <span>Your Deposit</span>
           <strong>
             {/^[—–-]$/.test(String(pool.deposit ?? '').trim())
               ? <LoadingSpinner label="Loading your deposit" />
-              : `${formatAssetBalance(pool.deposit, pool.assetSymbol)} ${pool.assetSymbol}`}
+              : <>{formatAssetBalance(pool.deposit, pool.assetSymbol)}<small className="cover-pool-unit"> {pool.assetSymbol}</small></>}
           </strong>
         </div>
         <div>
@@ -396,6 +473,19 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
             </InfoTooltip>
           </span>
           <strong><LivePoolEarnings pool={pool} /></strong>
+        </div>
+        <div className="cover-pool-capacity-metric">
+          <span className="metric-label-with-help">
+            Capacity
+            <InfoTooltip ariaLabel={`About capacity for ${pool.name}`} className="dashboard-help--align-right">
+              {pool.capacityUncapped
+                ? 'Current pool deposits. This pool has no deposit cap.'
+                : 'Percentage of the pool\'s deposit capacity currently in use.'}
+            </InfoTooltip>
+          </span>
+          {poolLoading && pool.capacityPercent === null
+            ? <LoadingSpinner label="Loading pool capacity" />
+            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} assetSymbol={pool.assetSymbol} />}
         </div>
       </div>
 
@@ -443,7 +533,7 @@ export default function USD8Landing({
         <div className="landing-brand-group">
           <a className="landing-brand" href="./" aria-label="USD8 home">
             <img src={usd8Logo} alt="USD8" />
-            <span className="landing-brand-label">USD8.fi</span>
+            <img className="landing-brand-wordmark" src={usd8Wordmark} alt="USD8.fi" />
           </a>
           <a className="landing-beta-link" href={docsUrl('faqs.html#whats-different-in-beta')}>beta</a>
         </div>
