@@ -213,3 +213,7 @@
 .sd-scores .sd-right { text-align: right; }
 .sd-scores small { color: var(--inactive); }
 .sd-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* TEE status */
+.sd-tee-sub { display: block; margin-top: 6px; color: var(--inactive); }
+.sd-warn td { color: var(--sd-amber); }

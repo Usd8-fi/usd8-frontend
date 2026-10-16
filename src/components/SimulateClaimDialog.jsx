@@ -99,8 +99,8 @@ export default function SimulateClaimDialog({
   pools = [],
 }) {
   const dialogRef = useDialogFocus(onClose);
-  const [claimedValue, setClaimedValue] = useState('10000');
-  const [weight, setWeight] = useState('20');
+  const [claimedValue, setClaimedValue] = useState('2000');
+  const [weight, setWeight] = useState('85');
   const [params, setParams] = useState({ payoutBps: DEFAULT_PAYOUT_BPS, feeShareBps: DEFAULT_FEE_SHARE_BPS, live: false });
 
   useEffect(() => {

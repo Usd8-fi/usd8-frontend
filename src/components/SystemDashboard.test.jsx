@@ -1,9 +1,10 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ load: vi.fn(), fetchActivity: vi.fn(), fetchScoreList: vi.fn() }));
+const mocks = vi.hoisted(() => ({ load: vi.fn(), fetchActivity: vi.fn(), fetchScoreList: vi.fn(), fetchTeeFleet: vi.fn(), fetchTeeOnchain: vi.fn() }));
 vi.mock('../lib/systemDashboard.js', async importOriginal => ({ ...(await importOriginal()), loadSystemDashboard: mocks.load }));
 vi.mock('../lib/scoreApi.js', async importOriginal => ({ ...(await importOriginal()), fetchScoreList: mocks.fetchScoreList }));
+vi.mock('../lib/teeStatus.js', async importOriginal => ({ ...(await importOriginal()), fetchTeeFleet: mocks.fetchTeeFleet, fetchTeeOnchain: mocks.fetchTeeOnchain }));
 vi.mock('../lib/activityFeed.js', async importOriginal => ({ ...(await importOriginal()), fetchActivity: mocks.fetchActivity }));
 import SystemDashboard from './SystemDashboard.jsx';
 
@@ -22,24 +23,57 @@ const snapshot = {
     { key: '0xaaaa', label: 'Aave USDC Vault', address: '0x00000000000000000000000000000000000000aa', amount: 40.5, percent: 75 },
   ] },
 };
+const TEE_FLEET = {
+  generatedAt: '2026-10-16T13:16:40Z', region: 'eu-central-1',
+  workers: { alive: [], aliveCount: 0, launchedLast24h: 0, instanceType: 'c6i.xlarge' },
+  approvedImages: [{ imageId: 'ami-014348d9871661e68', name: 'usd8-sepolia-1c6377a5-registry9bff-r4', createdAt: '2026-10-15T13:46:04.000Z', available: true }],
+  jobApi: { function: 'usd8-tee-job-api', lastModified: '2026-10-15T13:50:34.000+0000', timeoutSeconds: 30, invocationsLast24h: 51 },
+  janitor: { function: 'usd8-tee-janitor', schedule: 'rate(1 hour)', enabled: true, maxWorkerAgeSeconds: 7200, runsLast24h: 288 },
+};
 const activity = [{ id: '0xaa:mint', hash: '0xaa', at: 1, block: 11922388, actor: '0x8ca7…83a7', action: 'minted', amount: '20 USD8', target: null }];
 
 beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   mocks.fetchScoreList.mockResolvedValue([]);
+  mocks.fetchTeeFleet.mockResolvedValue(TEE_FLEET);
+  mocks.fetchTeeOnchain.mockResolvedValue({ pcrHash: `0x${'f4'.repeat(32)}`, signers: ['0x0140cc1e7a438f2f29f1345348ae5f1ae4f0cb0f'] });
 });
-afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); mocks.fetchScoreList.mockReset(); });
+afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); mocks.fetchScoreList.mockReset(); mocks.fetchTeeFleet.mockReset(); mocks.fetchTeeOnchain.mockReset(); });
 
 describe('SystemDashboard', () => {
-  it('shows the seven sections in order, with the reserve after insured supply and no exposure ladder', async () => {
+  it('shows the eight sections in order, with the reserve after insured supply and no exposure ladder', async () => {
     mocks.load.mockResolvedValue(snapshot);
     mocks.fetchActivity.mockResolvedValue(activity);
     render(<SystemDashboard />);
     await screen.findByText('Block 11926094', { exact: false });
     const names = screen.getAllByRole('region').map(region => region.getAttribute('aria-label')).filter(name => (
-      ['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover To Exposure', 'Pool Yield', 'Cover Pool Yield', 'Withdrawal Exit Queue', 'Cover Pool Withdrawal Exit Queue', 'Insurance Scores'].includes(name)));
-    expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Cover Pool Withdrawal Exit Queue', 'Insurance Scores']);
-    expect(screen.getAllByRole('region')).toHaveLength(7);
+      ['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover To Exposure', 'Pool Yield', 'Cover Pool Yield', 'Withdrawal Exit Queue', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE', 'Insurance Scores'].includes(name)));
+    expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE', 'Insurance Scores']);
+    expect(screen.getAllByRole('region')).toHaveLength(8);
+  });
+
+  it('shows the TEE fleet, approved image, onchain PCR and signers, and flags a worker on another image', async () => {
+    mocks.load.mockResolvedValue(snapshot);
+    mocks.fetchActivity.mockResolvedValue(activity);
+    mocks.fetchTeeFleet.mockResolvedValue({ ...TEE_FLEET, workers: { ...TEE_FLEET.workers, aliveCount: 1, alive: [
+      { instanceId: 'i-0abc', state: 'running', instanceType: 'c6i.xlarge', imageId: 'ami-0old', launchedAt: '2026-10-16T12:00:00Z' },
+    ] } });
+    render(<SystemDashboard />);
+    const panel = await screen.findByRole('region', { name: 'Claim Verification TEE' });
+    expect(await within(panel).findByText('usd8-sepolia-1c6377a5-registry9bff-r4')).toBeInTheDocument();
+    expect(within(panel).getByText('i-0abc')).toBeInTheDocument();
+    expect(within(panel).getByText(/not the approved image/)).toBeInTheDocument();
+    expect(within(panel).getByText('0xf4f4f4f4…f4f4f4')).toBeInTheDocument();
+    expect(within(panel).getByText(/0x0140…cb0f/)).toBeInTheDocument();
+    expect(within(panel).getByText(/every 1 hour/)).toBeInTheDocument();
+  });
+
+  it('says when no TEE worker is running', async () => {
+    mocks.load.mockResolvedValue(snapshot);
+    mocks.fetchActivity.mockResolvedValue(activity);
+    render(<SystemDashboard />);
+    const panel = await screen.findByRole('region', { name: 'Claim Verification TEE' });
+    expect(await within(panel).findByText('No TEE Worker Running')).toBeInTheDocument();
   });
 
   it('lists stored insurance scores with the time each was last updated', async () => {

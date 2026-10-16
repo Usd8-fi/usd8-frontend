@@ -8,6 +8,7 @@ import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 import { useSecondClock } from '../lib/secondClock.js';
 import { loadSystemDashboard, sumSeries } from '../lib/systemDashboard.js';
 import { fetchScoreList } from '../lib/scoreApi.js';
+import { fetchTeeFleet, fetchTeeOnchain } from '../lib/teeStatus.js';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import PercentRing from './PercentRing.jsx';
 import './SystemDashboard.css';
@@ -461,6 +462,66 @@ function InsuranceScores({ now }) {
   );
 }
 
+const shortHex = (value, head = 10, tail = 6) => (value ? `${value.slice(0, head)}…${value.slice(-tail)}` : '—');
+
+/// Claim-verification TEE: live workers and approved image from AWS (read-only
+/// status function), PCR hash and accepted signers from the chain.
+function TeeStatus({ now }) {
+  const [fleet, setFleet] = useState({ value: null, error: '' });
+  const [chain, setChain] = useState({ value: null, error: '' });
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchTeeFleet({ signal: controller.signal })
+      .then(value => setFleet({ value, error: '' }))
+      .catch(error => { if (!controller.signal.aborted) setFleet({ value: null, error: error?.message || 'Unavailable' }); });
+    fetchTeeOnchain(PROTOCOL_CHAIN_ID, { signal: controller.signal })
+      .then(value => setChain({ value, error: '' }))
+      .catch(error => { if (!controller.signal.aborted) setChain({ value: null, error: error?.message || 'Unavailable' }); });
+    return () => controller.abort();
+  }, []);
+  const nowSeconds = Math.floor(now / 1000);
+  const f = fleet.value;
+  const workers = f?.workers?.alive ?? [];
+  const image = f?.approvedImages?.[0] ?? null;
+  const ageOf = (iso) => (iso ? duration(Math.max(0, nowSeconds - Math.floor(Date.parse(iso) / 1000))) : '—');
+  return (
+    <Panel title="Claim Verification TEE" note={f ? `AWS ${f.region} · as of ${f.generatedAt.slice(11, 16)} UTC` : ''}>
+      <div className="sd-insured-grid">
+        <div>
+          <span className="sd-label">Workers Alive</span>
+          <div className={`sd-big ${workers.length ? 'sd-cyan' : ''}`}>
+            {fleet.error ? '—' : f ? workers.length : <LoadingSpinner label="Loading TEE status" />}
+          </div>
+          {f ? <span className="sd-tee-sub">{f.workers.launchedLast24h} launched in 24h · {f.workers.instanceType ?? '—'}</span> : null}
+        </div>
+        <div className="sd-metrics">
+          <Metric label="Enclave Image (AMI)">{f ? (image ? <span title={image.imageId}>{image.name ?? image.imageId}</span> : '—') : <LoadingSpinner />}</Metric>
+          <Metric label="Image Built">{f ? (image?.createdAt ? stamp(Math.floor(Date.parse(image.createdAt) / 1000)) : '—') : <LoadingSpinner />}</Metric>
+          <Metric label="Onchain PCR Hash">{chain.value ? <span className="sd-mono" title={chain.value.pcrHash}>{shortHex(chain.value.pcrHash)}</span> : chain.error ? '—' : <LoadingSpinner />}</Metric>
+          <Metric label="Accepted Signers">{chain.value ? (chain.value.signers.length ? chain.value.signers.map(signer => <span key={signer} className="sd-mono" title={signer}>{shortHex(signer, 6, 4)} </span>) : 'None') : chain.error ? '—' : <LoadingSpinner />}</Metric>
+          <Metric label="Job API Calls (24h)">{f ? f.jobApi.invocationsLast24h : <LoadingSpinner />}</Metric>
+          <Metric label="Janitor">{f ? `${f.janitor.enabled ? 'On' : 'Off'} · ${f.janitor.schedule.replace('rate(', 'every ').replace(')', '')} · kills workers over ${duration(f.janitor.maxWorkerAgeSeconds)}` : <LoadingSpinner />}</Metric>
+        </div>
+      </div>
+      {fleet.error ? <p className="sd-empty">AWS status unavailable</p> : null}
+      {f && workers.length ? (
+        <table className="sd-scores">
+          <thead><tr><th>Instance</th><th>State</th><th>Image</th><th className="sd-right">Running For</th></tr></thead>
+          <tbody>
+            {workers.map(worker => (
+              <tr key={worker.instanceId} className={worker.imageId && image && worker.imageId !== image.imageId ? 'sd-warn' : ''}>
+                <td className="sd-mono">{worker.instanceId}</td><td>{worker.state}</td>
+                <td className="sd-mono" title={worker.imageId}>{worker.imageId}{worker.imageId && image && worker.imageId !== image.imageId ? ' (not the approved image)' : ''}</td>
+                <td className="sd-right">{ageOf(worker.launchedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : f ? <p className="sd-empty">No TEE Worker Running</p> : null}
+    </Panel>
+  );
+}
+
 function ExitQueue({ data, stale, now }) {
   const nowSeconds = Math.floor(now / 1000);
   const epochs = data ? data.pools.flatMap(pool => pool.exits.map(exit => ({ ...exit, pool }))) : [];
@@ -551,6 +612,7 @@ export default function SystemDashboard() {
       <CoverPools data={data} stale={stale} />
       <PoolYield data={data} stale={stale} />
       <ExitQueue data={data} stale={stale} now={now || Date.now()} />
+      <TeeStatus now={now || Date.now()} />
       <InsuranceScores now={now || Date.now()} />
       <a className="sd-back" href="#">Back To App</a>
     </main>
