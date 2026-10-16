@@ -34,6 +34,8 @@
 
 .sd-brand { display: inline-flex; align-items: center; gap: 16px; text-decoration: none; }
 .sd-brand img { height: 36px; width: auto; }
+/* Same rollover as the main app's logo: dim, no highlight background. */
+.sd-brand:hover, .sd-brand:focus-visible { background: transparent; filter: brightness(0.82); }
 .sd-header h1 { margin: 0; font-size: var(--font-body); font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; }
 
 .sd-status {
