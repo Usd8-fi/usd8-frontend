@@ -1,7 +1,25 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchInsuranceScore, scoreApiBaseUrl, DEFAULT_SCORE_API_URL } from './scoreApi.js';
+import { fetchScoreList, fetchInsuranceScore, scoreApiBaseUrl, DEFAULT_SCORE_API_URL } from './scoreApi.js';
 
 afterEach(() => vi.restoreAllMocks());
+
+describe('fetchScoreList', () => {
+  it('maps stored rows and fails closed on another deployment', async () => {
+    const body = (registry) => ({ chainId: '11155111', registry, count: 1, accounts: [{
+      account: '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176', grossEarnedScore: '6318000000000000000',
+      availableScore: '5840000000000000000', scoreSpent: '0', referenceBlock: '1', snapshotTimestamp: '1792108800', lastRefreshAt: null,
+    }] });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({ ok: true, json: async () => body('0x9bff24a44bb20f8d1f1de86eca56295c5bb46430') });
+    await expect(fetchScoreList(11155111)).resolves.toEqual([{
+      account: '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176', total: 6.318, available: 5.84, spent: 0, updatedAtSeconds: 1792108800,
+    }]);
+    expect(String(globalThis.fetch.mock.calls[0][0])).toMatch(/\/scores$/);
+    vi.restoreAllMocks();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({ ok: true, json: async () => body('0xb34d92cd05005df36050370433819597a9bac693') });
+    await expect(fetchScoreList(11155111)).rejects.toThrow('different deployment');
+    vi.restoreAllMocks();
+  });
+});
 
 describe('fetchInsuranceScore', () => {
   it('refetches past a browser-cached snapshot from another deployment, then fails closed', async () => {

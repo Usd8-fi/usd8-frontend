@@ -107,3 +107,25 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
     tokenScores: tokenScores(payload, grossEarnedScore, grossScorePerSecond),
   };
 }
+
+/// Every account score the score service has stored for this deployment, as
+/// last saved (no recalculation). Each row carries the time its score is as of.
+export async function fetchScoreList(chainId = LEGACY_SEPOLIA_CHAIN_ID, { signal } = {}) {
+  const path = chainId === LEGACY_SEPOLIA_CHAIN_ID ? '/scores' : `/scores/${chainId}`;
+  const response = await fetch(`${scoreApiBaseUrl()}${path}`, { headers: { accept: 'application/json' }, signal });
+  if (!response.ok) throw new Error(`Score list request failed (${response.status})`);
+  const payload = await response.json();
+  const expectedRegistry = getProtocolNetwork(chainId)?.contracts?.registry?.toLowerCase();
+  if (!expectedRegistry || String(payload?.registry || '').toLowerCase() !== expectedRegistry) {
+    throw new Error('Score list is for a different deployment');
+  }
+  if (!Array.isArray(payload.accounts)) throw new Error('Score list is malformed');
+  const score = (value) => Number(formatUnits(BigInt(value), SCORE_DECIMALS));
+  return payload.accounts.map((row) => ({
+    account: String(row.account),
+    total: score(row.grossEarnedScore),
+    available: score(row.availableScore),
+    spent: score(row.scoreSpent),
+    updatedAtSeconds: Number(row.snapshotTimestamp) || null,
+  }));
+}

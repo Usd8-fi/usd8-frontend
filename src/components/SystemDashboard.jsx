@@ -7,6 +7,7 @@ import { onForegroundRefresh } from '../lib/foregroundRefresh.js';
 import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 import { useSecondClock } from '../lib/secondClock.js';
 import { loadSystemDashboard, sumSeries } from '../lib/systemDashboard.js';
+import { fetchScoreList } from '../lib/scoreApi.js';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import PercentRing from './PercentRing.jsx';
 import './SystemDashboard.css';
@@ -407,6 +408,59 @@ const EXIT_STATES = {
   settled: { label: 'Settled', color: '#34f5a0' },
 };
 
+const scoreText = value => (Number.isFinite(value) ? value.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—');
+
+function ago(seconds, nowSeconds) {
+  if (!seconds) return '—';
+  const span = Math.max(0, nowSeconds - seconds);
+  if (span < 3_600) return `${Math.max(1, Math.floor(span / 60))}m ago`;
+  if (span < 86_400) return `${Math.floor(span / 3_600)}h ago`;
+  return `${Math.floor(span / 86_400)}d ago`;
+}
+
+/// Stored scores from the score service, loaded once per visit. Each row is
+/// as of its own snapshot time and is never recalculated here.
+function InsuranceScores({ now }) {
+  const [state, setState] = useState({ rows: null, error: '' });
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchScoreList(PROTOCOL_CHAIN_ID, { signal: controller.signal })
+      .then(rows => setState({ rows, error: '' }))
+      .catch(error => { if (!controller.signal.aborted) setState({ rows: null, error: error?.message || 'Unavailable' }); });
+    return () => controller.abort();
+  }, []);
+  const nowSeconds = Math.floor(now / 1000);
+  const { rows, error } = state;
+  return (
+    <Panel title="Insurance Scores" note={rows ? `${rows.length} accounts · stored scores, not live` : ''}>
+      {error ? <p className="sd-empty">Score list unavailable</p> : null}
+      {!rows && !error ? <LoadingSpinner label="Loading insurance scores" /> : null}
+      {rows && !rows.length ? <p className="sd-empty">No Stored Scores Yet</p> : null}
+      {rows && rows.length ? (
+        <table className="sd-scores">
+          <thead>
+            <tr><th>#</th><th>Account</th><th className="sd-right">Total</th><th className="sd-right">Available</th><th className="sd-right">Spent</th><th className="sd-right">Last Updated</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={row.account}>
+                <td>{index + 1}</td>
+                <td className="sd-mono" title={row.account}>{`${row.account.slice(0, 6)}…${row.account.slice(-4)}`}</td>
+                <td className="sd-right">{scoreText(row.total)}</td>
+                <td className="sd-right">{scoreText(row.available)}</td>
+                <td className="sd-right">{scoreText(row.spent)}</td>
+                <td className="sd-right" title={row.updatedAtSeconds ? stamp(row.updatedAtSeconds) : ''}>
+                  {row.updatedAtSeconds ? <>{stamp(row.updatedAtSeconds)} <small>({ago(row.updatedAtSeconds, nowSeconds)})</small></> : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+    </Panel>
+  );
+}
+
 function ExitQueue({ data, stale, now }) {
   const nowSeconds = Math.floor(now / 1000);
   const epochs = data ? data.pools.flatMap(pool => pool.exits.map(exit => ({ ...exit, pool }))) : [];
@@ -497,6 +551,7 @@ export default function SystemDashboard() {
       <CoverPools data={data} stale={stale} />
       <PoolYield data={data} stale={stale} />
       <ExitQueue data={data} stale={stale} now={now || Date.now()} />
+      <InsuranceScores now={now || Date.now()} />
       <a className="sd-back" href="#">Back To App</a>
     </main>
   );

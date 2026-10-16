@@ -102,8 +102,8 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
     expect(within(footerNav).queryByRole('link', { name: 'DeFi Insurance' })).not.toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Cover Pools' })).not.toBeInTheDocument();
-    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportFAQsSystem Dashboard$/);
-    expect(footerNav.children[1].children).toHaveLength(3);
+    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportFAQs$/);
+    expect(footerNav.children[1].children).toHaveLength(2);
     expect(within(footerNav).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', './docs/faqs.html');
     expect(within(footerNav).getByRole('link', { name: 'Transparency' })).toHaveAttribute(
       'href',
@@ -753,10 +753,9 @@ describe('cover pool APY window', () => {
     expect(screen.getByText('30D APY')).toBeInTheDocument();
   });
 
-  it('links the system dashboard right after FAQs in the footer', () => {
+  it('keeps the system dashboard out of the footer (reachable by URL only)', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
-    const links = within(screen.getByRole('navigation', { name: 'Footer' })).getAllByRole('link').map(link => link.textContent);
-    expect(links[links.indexOf('FAQs') + 1]).toBe('System Dashboard');
-    expect(screen.getByRole('link', { name: 'System Dashboard' })).toHaveAttribute('href', '#system-dashboard');
+    const footer = screen.getByRole('navigation', { name: 'Footer' });
+    expect(within(footer).queryByRole('link', { name: 'System Dashboard' })).toBeNull();
   });
 });

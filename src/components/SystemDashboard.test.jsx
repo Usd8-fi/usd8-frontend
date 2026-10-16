@@ -1,8 +1,9 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ load: vi.fn(), fetchActivity: vi.fn() }));
+const mocks = vi.hoisted(() => ({ load: vi.fn(), fetchActivity: vi.fn(), fetchScoreList: vi.fn() }));
 vi.mock('../lib/systemDashboard.js', async importOriginal => ({ ...(await importOriginal()), loadSystemDashboard: mocks.load }));
+vi.mock('../lib/scoreApi.js', async importOriginal => ({ ...(await importOriginal()), fetchScoreList: mocks.fetchScoreList }));
 vi.mock('../lib/activityFeed.js', async importOriginal => ({ ...(await importOriginal()), fetchActivity: mocks.fetchActivity }));
 import SystemDashboard from './SystemDashboard.jsx';
 
@@ -23,19 +24,39 @@ const snapshot = {
 };
 const activity = [{ id: '0xaa:mint', hash: '0xaa', at: 1, block: 11922388, actor: '0x8ca7…83a7', action: 'minted', amount: '20 USD8', target: null }];
 
-beforeEach(() => { vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null); });
-afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); });
+beforeEach(() => {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+  mocks.fetchScoreList.mockResolvedValue([]);
+});
+afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); mocks.fetchScoreList.mockReset(); });
 
 describe('SystemDashboard', () => {
-  it('shows the six sections in order, with the reserve after insured supply and no exposure ladder', async () => {
+  it('shows the seven sections in order, with the reserve after insured supply and no exposure ladder', async () => {
     mocks.load.mockResolvedValue(snapshot);
     mocks.fetchActivity.mockResolvedValue(activity);
     render(<SystemDashboard />);
     await screen.findByText('Block 11926094', { exact: false });
     const names = screen.getAllByRole('region').map(region => region.getAttribute('aria-label')).filter(name => (
-      ['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover To Exposure', 'Pool Yield', 'Cover Pool Yield', 'Withdrawal Exit Queue', 'Cover Pool Withdrawal Exit Queue'].includes(name)));
-    expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Cover Pool Withdrawal Exit Queue']);
-    expect(screen.getAllByRole('region')).toHaveLength(6);
+      ['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover To Exposure', 'Pool Yield', 'Cover Pool Yield', 'Withdrawal Exit Queue', 'Cover Pool Withdrawal Exit Queue', 'Insurance Scores'].includes(name)));
+    expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Cover Pool Withdrawal Exit Queue', 'Insurance Scores']);
+    expect(screen.getAllByRole('region')).toHaveLength(7);
+  });
+
+  it('lists stored insurance scores with the time each was last updated', async () => {
+    mocks.load.mockResolvedValue(snapshot);
+    mocks.fetchActivity.mockResolvedValue(activity);
+    mocks.fetchScoreList.mockResolvedValue([
+      { account: '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176', total: 6.318, available: 5.84, spent: 0, updatedAtSeconds: 1_792_108_800 },
+      { account: '0x1111111111111111111111111111111111111111', total: 1.5, available: 1.5, spent: 0, updatedAtSeconds: null },
+    ]);
+    render(<SystemDashboard />);
+    const panel = await screen.findByRole('region', { name: 'Insurance Scores' });
+    expect(await within(panel).findByText('0xb446…4176')).toBeInTheDocument();
+    expect(within(panel).getByText('6.32')).toBeInTheDocument();
+    expect(within(panel).getByText('5.84')).toBeInTheDocument();
+    expect(within(panel).getByText(/10-16 00:00 UTC/)).toBeInTheDocument();
+    expect(within(panel).getByText('2 accounts · stored scores, not live')).toBeInTheDocument();
+    expect(mocks.fetchScoreList).toHaveBeenCalledOnce();
   });
 
   it('lists where the reserve sits, by share and amount', async () => {

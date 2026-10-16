@@ -203,3 +203,11 @@
 .sd-allocation-list li i { width: 10px; height: 10px; background: var(--slice); }
 .sd-allocation-list b { font-weight: 400; text-align: right; }
 .sd-allocation-list em { font-style: normal; color: var(--inactive); text-align: right; }
+
+/* Insurance scores */
+.sd-scores { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sd-scores th { color: var(--inactive); font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; text-align: left; padding: 0 8px 8px; }
+.sd-scores td { padding: 7px 8px; border-top: 1px dotted var(--sd-line); }
+.sd-scores .sd-right { text-align: right; }
+.sd-scores small { color: var(--inactive); }
+.sd-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

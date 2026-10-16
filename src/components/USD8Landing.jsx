@@ -134,7 +134,7 @@ function SiteFooter({ updatedAt }) {
         <div>
           <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core/tree/main/audit" target="_blank" rel="noreferrer">Audit Report</a>
           <a className="site-nav-link" href={docsUrl('faqs.html')}>FAQs</a>
-          <a className="site-nav-link" href="#system-dashboard">System Dashboard</a>
+          {/* System Dashboard is temporarily URL-only (#system-dashboard), not linked. */}
         </div>
         <div>
           <a className="site-nav-link" href={docsUrl('transparency.html')}>Transparency</a>
