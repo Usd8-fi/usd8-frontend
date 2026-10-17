@@ -1,6 +1,6 @@
 # Legal - Terms, Privacy and Risk Disclaimer
 
-**Last updated: October 15, 2026**
+**Last updated: October 17, 2026**
 
 Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.
 
@@ -228,7 +228,7 @@ Google processes analytics information under its own privacy notice. Hosting pro
 
 ### 7. International transfers and retention
 
-Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google's policies. Terms-acceptance records are kept for as long as these terms may apply to your use of the Services and for up to three years afterwards. Insurance-score snapshots expire automatically after 180 days. Public blockchain records are generally permanent and cannot be altered or deleted by us.
+Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google's policies. Terms-acceptance records are kept for as long as these terms may apply to your use of the Services and for up to three years afterwards. Public blockchain records are generally permanent and cannot be altered or deleted by us.
 
 ### 8. Security
 
