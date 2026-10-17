@@ -1706,16 +1706,25 @@ small a,
   text-align: center;
 }
 
+/* Line 1: logo and wordmark side by side, sized like the mobile site header. */
+.private-beta-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  font: inherit;
+}
+
 .private-beta-logo {
+  display: block;
   width: 56px;
   height: 56px;
 }
 
-.private-beta-panel h1 {
-  margin: 0;
-  font: inherit;
-  font-size: 22px;
-  font-weight: 400;
+.private-beta-wordmark {
+  display: block;
+  width: auto;
+  height: 21px;
 }
 
 .private-beta-form {

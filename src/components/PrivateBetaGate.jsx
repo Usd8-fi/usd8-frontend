@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import usd8Logo from '../assets/usd8Logo.svg';
+import usd8Wordmark from '../assets/usd8-wordmark.svg';
 
 // Client-side gate only: it hides the app from casual visitors, it is not real
 // security. The code itself is never in the repository: the build reads only
@@ -55,10 +56,13 @@ export default function PrivateBetaGate({ children }) {
   return (
     <main className="private-beta">
       <section className="private-beta-panel">
-        <img className="private-beta-logo" src={usd8Logo} alt="USD8" />
-        <h1>USD8 Private Beta</h1>
+        {/* Two lines: logo + USD8 wordmark, then the invitation-code label. */}
+        <h1 className="private-beta-brand">
+          <img className="private-beta-logo" src={usd8Logo} alt="" />
+          <img className="private-beta-wordmark" src={usd8Wordmark} alt="USD8" />
+        </h1>
         <form className="private-beta-form" onSubmit={submit}>
-          <label htmlFor="private-beta-code">Invitation code</label>
+          <label htmlFor="private-beta-code">Private Beta Invitation Code</label>
           <input
             id="private-beta-code"
             autoComplete="off"

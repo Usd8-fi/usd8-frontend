@@ -5,7 +5,7 @@ import PrivateBetaGate, { PRIVATE_BETA_STORAGE_KEY } from './PrivateBetaGate.jsx
 const protectedPage = <p>Protected USD8 app</p>;
 
 function submitCode(code) {
-  fireEvent.change(screen.getByLabelText('Invitation code'), { target: { value: code } });
+  fireEvent.change(screen.getByLabelText('Private Beta Invitation Code'), { target: { value: code } });
   fireEvent.click(screen.getByRole('button', { name: 'Access beta' }));
 }
 
@@ -23,8 +23,11 @@ describe('PrivateBetaGate', () => {
   it('shows the invitation code form directly before the app', () => {
     render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
 
-    expect(screen.getByRole('heading', { name: 'USD8 Private Beta' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Invitation code')).toBeInTheDocument();
+    // Two lines: logo + USD8 wordmark, then the invitation-code label.
+    const brand = screen.getByRole('heading', { name: 'USD8' });
+    expect(brand.querySelectorAll('img')).toHaveLength(2);
+    expect(screen.queryByRole('heading', { name: 'USD8 Private Beta' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Private Beta Invitation Code')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Access beta' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Access private beta' })).not.toBeInTheDocument();
     expect(screen.queryByText('Protected USD8 app')).not.toBeInTheDocument();
@@ -52,7 +55,7 @@ describe('PrivateBetaGate', () => {
 
   it('accepts letters and digits only, up to 32 characters', () => {
     render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
-    const input = screen.getByLabelText('Invitation code');
+    const input = screen.getByLabelText('Private Beta Invitation Code');
     fireEvent.change(input, { target: { value: 'aB3-x 9!' } });
     expect(input).toHaveValue('aB3x9');
 
