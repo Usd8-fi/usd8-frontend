@@ -247,6 +247,16 @@ describe('App', () => {
     mocks.writeContractAsync.mockReset();
   });
 
+  it('loads protocol data without a wallet even when the wallet library persisted another chain', async () => {
+    // A stale chain (here mainnet, outside this Sepolia test build) must not
+    // leave public data idle behind a network switch.
+    mocks.chainId = 1;
+    render(<App />);
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    expect(mocks.fetchLandingChainData.mock.calls[0][1]).toBe(11155111);
+    expect(screen.queryByRole('button', { name: /^Switch to / })).not.toBeInTheDocument();
+  });
+
   it('shows the RPC warning again when a connected-wallet request times out after Retry Data', async () => {
     mocks.account.address = '0x0000000000000000000000000000000000000001';
     mocks.account.isConnected = true;

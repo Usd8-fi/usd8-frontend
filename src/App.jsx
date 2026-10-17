@@ -77,10 +77,13 @@ const WALLET_CONNECT_UNAVAILABLE_REASON = 'Wallet connection is unavailable unti
 export default function App({ autoConnect = false }) {
   const { address = '', isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const chainId = useChainId();
+  const walletChainId = useChainId();
   const { writeContractAsync } = useWriteContract();
   const { open } = useAppKit();
   const connected = isConnected && Boolean(address);
+  // Without a connected wallet, read the protocol network regardless of the
+  // chain the wallet library last persisted, so public data always loads.
+  const chainId = connected ? walletChainId : PROTOCOL_CHAIN_ID;
   const { disconnectAsync } = useDisconnect();
   // Re-render after Agree; the browser flag itself lives in localStorage.
   const [, setTermsAcceptedAddress] = useState('');

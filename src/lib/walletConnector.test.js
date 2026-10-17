@@ -14,4 +14,10 @@ describe('wallet connector font loading', () => {
       expect(walletConnector).toMatch(new RegExp(`\\b${feature}: false,`));
     }
   });
+
+  it('offers the wallet only the protocol network, never mainnet and Sepolia together', () => {
+    expect(walletConnector).toContain("=== sepolia.id ? [sepolia] : [mainnet];");
+    expect(walletConnector).not.toMatch(/\[mainnet, sepolia\]|\[sepolia, mainnet\]/);
+    expect(walletConnector).toContain('defaultNetwork: walletNetworks[0],');
+  });
 });
