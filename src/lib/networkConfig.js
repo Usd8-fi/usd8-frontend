@@ -101,7 +101,9 @@ const NETWORKS = Object.freeze({
     scoreAvailable: true,
     protocolAvailable: true,
     blockTimeSeconds: 12,
-    rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || 'https://eth.drpc.org',
+    // PublicNode: keyless and CORS-open, and unlike the keyless dRPC endpoint it
+    // serves eth_getLogs (10k-block chunks), which the reserve and TEE panels need.
+    rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com',
     explorerApiUrl: 'https://eth.blockscout.com/api/v2',
     contracts: MAINNET_CONTRACTS,
     payoutAssets: MAINNET_PAYOUT_ASSETS,

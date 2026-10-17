@@ -42,7 +42,7 @@ describe('network configuration', () => {
       name: 'Ethereum',
       protocolAvailable: true,
       scoreAvailable: true,
-      rpcUrl: 'https://eth.drpc.org',
+      rpcUrl: 'https://ethereum-rpc.publicnode.com',
       explorerApiUrl: 'https://eth.blockscout.com/api/v2',
     });
     const contracts = getNetwork(1).contracts;

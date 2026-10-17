@@ -3,7 +3,9 @@
 GET / -> JSON describing the claim-verification TEE fleet as AWS sees it:
 workers currently alive, the enclave image the job API launches, its budgets,
 and the janitor schedule. Nothing here is a secret; nothing is mutable through
-this function. Identifiers that reveal network layout (subnet, security group,
+this function. Watches the MAINNET job API (env USD8_JOB_API_FUNCTION=
+usd8-tee-job-api-mainnet, ROLE=USD8TeeMainnetLambdaRole, POLICY=
+USD8TeeMainnetLambdaPolicy); the Sepolia job API is retired. Identifiers that reveal network layout (subnet, security group,
 bucket, account) are deliberately not returned.
 """
 import json
