@@ -280,6 +280,13 @@ describe('prepareIncidentOpen', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('routes Ethereum mainnet to its own claim service and every other chain to the default', async () => {
+    const { claimApiBaseUrlForChain, CLAIM_API_BASE_URL } = await import('./claimContext.js');
+    expect(claimApiBaseUrlForChain(1, 'usd8.fi')).toBe('https://c8cnx9estd.execute-api.eu-central-1.amazonaws.com');
+    expect(claimApiBaseUrlForChain(1, '127.0.0.1')).toBe('/api/claims-mainnet');
+    expect(claimApiBaseUrlForChain(11155111, 'usd8.fi')).toBe(CLAIM_API_BASE_URL);
+  });
+
   it('does not POST when the shared deadline is already exhausted', async () => {
     const { prepareIncidentOpen } = await loadClaimApi();
     vi.stubGlobal('fetch', vi.fn());

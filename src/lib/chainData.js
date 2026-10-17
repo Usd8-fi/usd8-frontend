@@ -18,7 +18,6 @@ const clients = new Map();
 const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
 const SHORT_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 const MIN_APY_WINDOW_SECONDS = 60 * 60;
-const SEPOLIA_BLOCKSCOUT_URL = 'https://eth-sepolia.blockscout.com/api/v2';
 
 const SEPOLIA_BLOCK_SECONDS = 12n;
 // Public Sepolia endpoints cap eth_getLogs spans — the default endpoint rejects
@@ -103,13 +102,23 @@ function holdingWindowFrom(params) {
   return typeof blocks === 'bigint' && blocks > 0n ? blocks.toString() : null;
 }
 
+// Latest on-chain rate as score per whole token per day, rounded to 4 decimals
+// (Registry rates are per block, so 1/day stores as 1e18 / 7200, rounded).
+function currentScorePerTokenPerDay(rateHistory) {
+  const rate = rateHistory.at(-1)?.rate ?? 0n;
+  const step = 10n ** 14n;
+  const perDay = (rate * (86_400n / SEPOLIA_BLOCK_SECONDS) + step / 2n) / step * step;
+  return formatUnits(perDay, 18);
+}
+
 function currentScorePerSecond(balance, rateHistory) {
   const rate = rateHistory.at(-1)?.rate ?? 0n;
   return balance * rate / WAD / SEPOLIA_BLOCK_SECONDS;
 }
 
-async function latestIndexedBalanceChangeTimestampMilliseconds(token, account, fromBlock, signal) {
-  const url = new URL(`${SEPOLIA_BLOCKSCOUT_URL}/addresses/${account}/token-transfers`);
+async function latestIndexedBalanceChangeTimestampMilliseconds(token, account, fromBlock, signal, explorerApiUrl) {
+  if (!explorerApiUrl) return null;
+  const url = new URL(`${explorerApiUrl}/addresses/${account}/token-transfers`);
   url.searchParams.set('type', 'ERC-20');
   url.searchParams.set('token', token);
   const payload = await fetchJson(url, { signal });
@@ -132,6 +141,7 @@ async function latestBalanceChangeTimestampMilliseconds(
   fallbackTimestampMilliseconds,
   signal,
   snapshotBlock,
+  explorerApiUrl,
 ) {
   try {
     const indexedTimestamp = await latestIndexedBalanceChangeTimestampMilliseconds(
@@ -139,6 +149,7 @@ async function latestBalanceChangeTimestampMilliseconds(
       account,
       fromBlock,
       signal,
+      explorerApiUrl,
     );
     if (indexedTimestamp !== null) return indexedTimestamp;
   } catch {
@@ -678,6 +689,16 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     // The score snapshot lags a spend until it finalizes, so the app compares
     // this against the snapshot's own scoreSpent to know when to re-fetch.
     scoreSpent: onchainScoreSpent.toString(),
+    // Full Registry rate history (already in the multicall above), so the score
+    // display can apply each rate from its own start block. No extra RPC call.
+    scoreRateHistory: resourceErrors.configuration ? null : {
+      usd8: usd8ScoreRates.map(({ fromBlock, rate }) => ({ fromBlock: fromBlock.toString(), rate: rate.toString() })),
+      savings: savingsScoreRates.map(({ fromBlock, rate }) => ({ fromBlock: fromBlock.toString(), rate: rate.toString() })),
+    },
+    scoreRatesPerTokenPerDay: resourceErrors.configuration ? null : {
+      usd8: currentScorePerTokenPerDay(usd8ScoreRates),
+      savings: currentScorePerTokenPerDay(savingsScoreRates),
+    },
     scoreRatesPerSecond: resourceErrors['account-balances'] || resourceErrors.configuration ? null : {
       usd8: formatUnits(currentScorePerSecond(usd8, usd8ScoreRates), 18),
       savings: formatUnits(currentScorePerSecond(savings, savingsScoreRates), 18),
@@ -938,7 +959,7 @@ export async function fetchScoreHistory(snapshot, account, chainId, { signal } =
     return cachedData(protocolKey(network, 'score-history', account.toLowerCase(), address, balance),
       ({ signal: querySignal }) => latestBalanceChangeTimestampMilliseconds(readClientFor(chainId), address, account,
         BigInt(snapshot.scoreHistoryInputs[`${token}FromBlock`]), snapshot.scoreBalancesSnapshotTimestampMilliseconds,
-        querySignal, BigInt(snapshot.blockNumber)), { signal, staleTime: 60_000 });
+        querySignal, BigInt(snapshot.blockNumber), network.explorerApiUrl), { signal, staleTime: 60_000 });
   }));
   return { usd8: timestamps[0], savings: timestamps[1] };
 }

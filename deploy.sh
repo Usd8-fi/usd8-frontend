@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 branch="$(git branch --show-current)"
 if [[ "$branch" == "main" ]]; then
-  echo "Refusing to build on main: Pages serves main:/docs, which holds the legacy site plus the app under /beta." >&2
+  echo "Refusing to build on main: Pages serves main:/docs, which holds the published site." >&2
   exit 1
 fi
 
@@ -21,29 +21,32 @@ fi
 git push
 
 # Pages serves main:/docs, so the build is only live once it lands in
-# main:docs/beta/. The legacy site at the root must survive untouched.
+# main:docs/. The app replaces the whole site at the domain root; the custom
+# domain (CNAME) is kept, and the old /beta/ and legacy page URLs redirect.
 git fetch --quiet origin main
 wt="$(mktemp -d)/publish"
 trap 'git worktree remove --force "$wt" >/dev/null 2>&1 || true' EXIT
 git worktree add --quiet --detach "$wt" origin/main
 
-rm -rf "$wt/docs/beta"
-mkdir -p "$wt/docs/beta"
-git archive HEAD docs | tar -x -C "$wt/docs/beta" --strip-components=1
-cp "$wt/docs/beta/robots.txt" "$wt/docs/robots.txt"
-cp "$wt/docs/beta/sitemap.xml" "$wt/docs/sitemap.xml"
+cname="$(mktemp)"
+cp "$wt/docs/CNAME" "$cname"
+rm -rf "$wt/docs"
+mkdir -p "$wt/docs"
+git archive HEAD docs | tar -x -C "$wt/docs" --strip-components=1
+cp "$cname" "$wt/docs/CNAME"
+node scripts/publish-redirects.mjs "$wt/docs"
 
 git -C "$wt" add -A
 if git -C "$wt" diff --cached --quiet; then
-  echo "Beta already matches main — nothing to publish."
+  echo "Site already matches main — nothing to publish."
   exit 0
 fi
 
 if ! git -C "$wt" diff --cached --name-only -z | node scripts/publish-scope.mjs --null; then
-  echo "Refusing to publish: the release touched files outside docs/beta and the root crawler files" >&2
+  echo "Refusing to publish: the release touched files outside docs/ or the CNAME" >&2
   exit 1
 fi
 
-git -C "$wt" commit -q -m "deploy: publish beta from ${branch} $(git rev-parse --short HEAD)"
+git -C "$wt" commit -q -m "deploy: publish site from ${branch} $(git rev-parse --short HEAD)"
 git -C "$wt" push --quiet origin HEAD:main
-echo "Published to main:docs/beta/ — https://usd8.fi/beta/"
+echo "Published to main:docs/ — https://usd8.fi/"

@@ -6,7 +6,8 @@ const PLACEHOLDER_PROJECT_IDS = new Set(['', 'YOUR_REOWN_PROJECT_ID']);
 const DEFAULT_REOWN_PROJECT_ID = '0a6111479b9c06dc90f816d4138a6c4e';
 const reownProjectId = String(import.meta.env.VITE_REOWN_PROJECT_ID || DEFAULT_REOWN_PROJECT_ID).trim();
 export const walletConnectorConfigured = Boolean(reownProjectId) && !PLACEHOLDER_PROJECT_IDS.has(reownProjectId);
-const walletNetworks = [sepolia, mainnet];
+// The protocol network comes first so AppKit offers it by default.
+const walletNetworks = Number(import.meta.env.VITE_PROTOCOL_CHAIN_ID || mainnet.id) === sepolia.id ? [sepolia, mainnet] : [mainnet, sepolia];
 
 const wagmiAdapter = walletConnectorConfigured
   ? new WagmiAdapter({
@@ -36,7 +37,7 @@ export function initializeWalletConnector() {
   createAppKit({
     adapters: [wagmiAdapter],
     networks: walletNetworks,
-    defaultNetwork: sepolia,
+    defaultNetwork: walletNetworks[0],
     projectId: reownProjectId,
     metadata: getMetadata(),
     themeMode: 'dark',

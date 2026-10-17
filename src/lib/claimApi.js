@@ -2,8 +2,8 @@ import {
   concatHex, encodeAbiParameters, getAddress, isAddress, isHex, keccak256, size,
 } from 'viem';
 
-import { CLAIM_API_BASE_URL, claimApiConfigured } from './claimContext.js';
-export { CLAIM_API_BASE_URL, claimApiConfigured, matchesSettlementContext } from './claimContext.js';
+import { claimApiBaseUrlForChain, claimApiConfigured } from './claimContext.js';
+export { CLAIM_API_BASE_URL, claimApiBaseUrlForChain, claimApiConfigured, matchesSettlementContext } from './claimContext.js';
 import { cachedData, checkAbort, queryClient } from './dataCache.js';
 
 const JOB_ID_PATTERN = /^[0-9a-f]{64}$/;
@@ -459,7 +459,7 @@ async function prepareSettlementUncached(incidentId, {
     }
     if (expectedRoot.toLowerCase() !== ZERO_ROOT) {
       const settlementUrl = [
-        CLAIM_API_BASE_URL,
+        claimApiBaseUrlForChain(chainId),
         'settlements',
         chainId,
         canonicalAddress(registry, 'Registry').toLowerCase(),
@@ -513,7 +513,7 @@ async function prepareSettlementUncached(incidentId, {
       [incidentIdText, ...expectedPoolSnapshot.poolAddrs, '|', ...expectedPoolSnapshot.poolOrder].join(':'), attemptKey);
     let accepted = rememberedJob(resumeKey);
     if (!accepted) {
-    const response = await fetchWithRateLimitRetry(`${CLAIM_API_BASE_URL}/jobs/settlement`, {
+    const response = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/settlement`, {
       method: 'POST',
       headers: { accept: 'application/json', 'content-type': 'application/json', 'Idempotency-Key': attemptKey },
       body: JSON.stringify({ incidentId: incidentIdText }),
@@ -524,7 +524,7 @@ async function prepareSettlementUncached(incidentId, {
     if (accepted?.accepted !== true || !validJobId(accepted.jobId)) throw new Error('Claim verification service returned an invalid job.');
     rememberJob(resumeKey, accepted);
     }
-    const jobUrl = `${CLAIM_API_BASE_URL}/jobs/${accepted.jobId}`;
+    const jobUrl = `${claimApiBaseUrlForChain(chainId)}/jobs/${accepted.jobId}`;
     spentTerminal = '';
     // A key already spent before this call reports its terminal on the first poll.
     // Anything that runs is a job this call launched, and its failure is final —
@@ -596,7 +596,7 @@ export async function prepareIncidentOpen(insuredToken, {
   const resumeKey = resumableJobKey('open', chainId, registry, defiInsurance, canonicalToken.toLowerCase());
   let accepted = rememberedJob(resumeKey);
   if (!accepted) {
-  const response = await fetchWithRateLimitRetry(`${CLAIM_API_BASE_URL}/jobs/open`, {
+  const response = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/open`, {
     method: 'POST',
     headers: {
       accept: 'application/json',
@@ -628,7 +628,7 @@ export async function prepareIncidentOpen(insuredToken, {
   }
 
   while (Date.now() <= deadline) {
-    const pollResponse = await fetchWithRateLimitRetry(`${CLAIM_API_BASE_URL}/jobs/${accepted.jobId}`, {
+    const pollResponse = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/${accepted.jobId}`, {
       headers: { accept: 'application/json' },
       cache: 'no-store',
       signal,

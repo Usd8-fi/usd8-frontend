@@ -151,10 +151,34 @@
         answer.hidden = false;
     }
 
+    // Anything that leaves the docs (other sites, Etherscan, and the app
+    // itself) opens in a new tab; links between docs pages stay in place.
+    function isOutsideDocs(link) {
+        var href = link.getAttribute("href");
+        if (!href || href.charAt(0) === "#" || /^(mailto|tel|javascript):/i.test(href)) return false;
+        var url;
+        try {
+            url = new URL(link.href, window.location.href);
+        } catch (error) {
+            return false;
+        }
+        if (url.origin !== window.location.origin) return true;
+        return url.pathname.indexOf("/docs/") !== 0;
+    }
+
+    function openOutsideLinksInNewTab(root) {
+        root.querySelectorAll("a[href]").forEach(function (link) {
+            if (!isOutsideDocs(link)) return;
+            link.setAttribute("target", "_blank");
+            if (!link.hasAttribute("rel")) link.setAttribute("rel", "noreferrer");
+        });
+    }
+
     function initialize() {
         injectSidebarLogo();
         injectAppLink();
         injectSocialLinks();
+        openOutsideLinksInNewTab(document);
         initializeFaqs();
         expandFaqFromHash();
     }

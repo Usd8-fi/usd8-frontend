@@ -17,6 +17,12 @@ const claimProxy = {
   rewrite: path => path.replace(/^\/api\/claims/, ''),
 };
 
+const mainnetClaimProxy = {
+  target: 'https://c8cnx9estd.execute-api.eu-central-1.amazonaws.com',
+  changeOrigin: true,
+  rewrite: path => path.replace(/^\/api\/claims-mainnet/, ''),
+};
+
 const documentationAssetTypes = { '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
 
 // Dev only: the docs (proxied from mdBook) load ../assets/<name>, which the build
@@ -43,6 +49,7 @@ export default defineConfig({
     hmr: false,
     proxy: {
       '/api/score': scoreProxy,
+      '/api/claims-mainnet': mainnetClaimProxy,
       '/api/claims': claimProxy,
       '/docs': {
         target: 'http://127.0.0.1:3000',
@@ -50,8 +57,10 @@ export default defineConfig({
       },
     },
   },
-  preview: { proxy: { '/api/score': scoreProxy, '/api/claims': claimProxy } },
+  preview: { proxy: { '/api/score': scoreProxy, '/api/claims-mainnet': mainnetClaimProxy, '/api/claims': claimProxy } },
   test: {
+    // The existing suites exercise the Sepolia deployment.
+    env: { VITE_PROTOCOL_CHAIN_ID: '11155111' },
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
   },

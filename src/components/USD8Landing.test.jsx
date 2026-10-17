@@ -102,8 +102,9 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
     expect(within(footerNav).queryByRole('link', { name: 'DeFi Insurance' })).not.toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Cover Pools' })).not.toBeInTheDocument();
-    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportFAQs$/);
-    expect(footerNav.children[1].children).toHaveLength(2);
+    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportAddressesFAQs$/);
+    expect(footerNav.children[1].children).toHaveLength(3);
+    expect(within(footerNav).getByRole('link', { name: 'Addresses' })).toHaveAttribute('href', './docs/addresses.html');
     expect(within(footerNav).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', './docs/faqs.html');
     expect(within(footerNav).getByRole('link', { name: 'Transparency' })).toHaveAttribute(
       'href',
@@ -479,8 +480,41 @@ describe('USD8 landing navigation', () => {
     expect(screen.queryByText(/seven days/i)).toBeNull();
   });
 
+  it('flags the USD8 card, and only the USD8 card, with the private beta boost', () => {
+    render(<USD8Landing wallet={wallet} pools={POOLS} />);
+    const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
+    const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
+    const flag = within(usd8Card).getByText('x300% for private beta');
+    expect(flag).toHaveClass('insurance-asset-flag');
+    // Sits beside the USD8 score rate, inside the Score Rate value.
+    expect(flag.closest('dd')).toBe(within(usd8Card).getByRole('button', { name: 'About score rate' }).closest('dd'));
+    expect(within(savingsCard).queryByText('x300% for private beta')).toBeNull();
+  });
+
+  it('states that all code is open sourced in the footer, with the data time when known', () => {
+    const { rerender } = render(<USD8Landing wallet={wallet} pools={POOLS} />);
+    expect(screen.getByText('All code open sourced')).toHaveClass('landing-data-freshness');
+    rerender(<USD8Landing wallet={wallet} pools={POOLS} updatedAt={new Date(2026, 9, 17, 14, 5).getTime()} />);
+    expect(document.querySelector('.landing-data-freshness').textContent).toMatch(/^All code open sourced\. Data as of \d{1,2}[:.]05/);
+  });
+
+  it('shows the live on-chain score rate per token per day, with a spinner while it loads', () => {
+    const { rerender } = render(<USD8Landing wallet={wallet} pools={POOLS} scoreRatesLoading />);
+    const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
+    expect(within(usd8Card).getByRole('status', { name: 'Loading score rate' })).toBeInTheDocument();
+
+    rerender(<USD8Landing wallet={wallet} pools={POOLS} scoreRatesPerTokenPerDay={{ usd8: '3', savings: '0.25' }} />);
+    const rates = screen.getAllByRole('button', { name: 'About score rate' });
+    expect(rates[0].closest('dd')).toHaveTextContent('3 per USD8 per day');
+    expect(rates[1].closest('dd')).toHaveTextContent('0.25 per sUSD8 per day');
+    expect(screen.getByRole('tooltip', {
+      name: 'You get 3 score per day for every USD8 you hold. Rewarded every block.',
+    })).toBeInTheDocument();
+  });
+
   it('explains score and pool metrics with question-mark tooltips', () => {
-    render(<USD8Landing wallet={wallet} pools={POOLS} scoreMaturitySeconds={604_800} />);
+    render(<USD8Landing wallet={wallet} pools={POOLS} scoreMaturitySeconds={604_800}
+      scoreRatesPerTokenPerDay={{ usd8: '1', savings: '0.1' }} />);
 
     expect(screen.getByRole('button', { name: 'About total insurance score' })).toHaveTextContent('?');
     const scoreRateHelp = screen.getAllByRole('button', { name: 'About score rate' });
@@ -589,10 +623,8 @@ describe('Free insurance table', () => {
     expect(within(savingsCard).queryByText('$76.94M')).not.toBeInTheDocument();
     expect(within(savingsCard).queryByText(/USDC/)).not.toBeInTheDocument();
     expect(within(savingsCard).getByText('3.24%')).toBeInTheDocument();
-    expect(within(savingsCard).getByRole('link', { name: 'Go to Morpho' })).toHaveAttribute(
-      'href',
-      'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
-    );
+    expect(within(savingsCard).getByRole('button', { name: 'Go to Morpho' })).toBeInTheDocument();
+    expect(within(savingsCard).queryByRole('link', { name: 'Go to Morpho' })).not.toBeInTheDocument();
     expect(within(savingsCard).queryByRole('button', { name: 'Deposit' })).not.toBeInTheDocument();
     expect(within(savingsCard).queryByRole('button', { name: 'Withdraw' })).not.toBeInTheDocument();
   });

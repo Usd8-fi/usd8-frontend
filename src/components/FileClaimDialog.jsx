@@ -214,7 +214,7 @@ export default function FileClaimDialog({
           <p className="file-claim-requirement">
             {selectedToken.symbol} must lose more than 20% of its value against its underlying,
             measured between its TWAP price immediately before and after the drop.{' '}
-            <a href={docsUrl('defi-insurance.html')}>Learn More</a>.
+            <a href={docsUrl('defi-insurance.html')} target="_blank" rel="noreferrer">Learn More</a>.
           </p>
         ) : null}
 

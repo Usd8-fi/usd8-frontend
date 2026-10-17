@@ -31,6 +31,7 @@ import {
   scoreBalanceRefreshKey,
   scoreSnapshotStale,
   scoreWithCurrentBalanceRates,
+  scoreRateChangedSinceSnapshot,
   scoreWithTokenBreakdown,
 } from './lib/scoreRules.js';
 import { matchesSettlementTopology, normalizedAddressOrder, settlementPayoutDetails } from './lib/settlement.js';
@@ -50,6 +51,8 @@ const EMPTY_CHAIN_DATA = {
   insurance: { tokens: {} },
   scoreBalances: null,
   scoreRatesPerSecond: null,
+  scoreRatesPerTokenPerDay: null,
+  scoreRateHistory: null,
   scoreBalanceChangeTimestampMilliseconds: null,
   scoreBalancesSnapshotTimestampMilliseconds: 0,
   balances: {
@@ -154,7 +157,7 @@ export default function App({ autoConnect = false }) {
     claimAbortController.current = null;
     setScore(null);
     setScoreError('');
-    setScoreStatus(connected && activeNetwork?.scoreAvailable ? 'loading' : 'idle');
+    setScoreStatus(connected && protocolNetwork?.scoreAvailable ? 'loading' : 'idle');
     setScoreRefreshCompletedKey('');
     setChainData(EMPTY_CHAIN_DATA);
     setChainDataStatus(protocolNetwork ? 'loading' : 'idle');
@@ -196,7 +199,7 @@ export default function App({ autoConnect = false }) {
   }, [address, chainId, connected]);
 
   useEffect(() => {
-    if (!connected || !activeNetwork?.scoreAvailable) return;
+    if (!connected || !protocolNetwork?.scoreAvailable) return;
     const controller = new AbortController();
     const requestedWalletScope = walletScopeKey;
     setScoreStatus('loading');
@@ -266,7 +269,7 @@ export default function App({ autoConnect = false }) {
   }, [claimToken, claimContextKey, protocolNetwork, claimSettlement?.contextKey, claimStatus.failed]);
 
   useEffect(() => {
-    if (!connected || !activeNetwork?.scoreAvailable || scoreStatus !== 'ready') {
+    if (!connected || !protocolNetwork?.scoreAvailable || scoreStatus !== 'ready') {
       scoreRefreshAttempt.current = '';
       setScoreRefreshCompletedKey('');
       return undefined;
@@ -1120,7 +1123,7 @@ export default function App({ autoConnect = false }) {
     ? 'loading'
     : scoreStatus;
   const scoreStatusForDisplay = connected
-    && activeNetwork?.scoreAvailable
+    && protocolNetwork?.scoreAvailable
     && displayedScoreStatus === 'idle'
     ? 'loading'
     : displayedScoreStatus;
@@ -1130,13 +1133,29 @@ export default function App({ autoConnect = false }) {
   const poolLoading = Boolean(protocolNetwork)
     && chainDataStatus !== 'ready'
     && chainDataStatus !== 'error';
-  const displayedScore = scoreNeedsBalanceRefresh
-    && scoreRefreshCompletedKey === currentScoreRefreshKey
+  const scoreRateHistoryInputs = {
+    rateHistory: chainData.scoreRateHistory,
+    headBlock: chainData.blockNumber,
+    balances: chainData.scoreBalances,
+    contracts: activeNetwork?.contracts,
+  };
+  // A Registry rate change after the snapshot block: re-anchor the score at the
+  // chain-data read so each rate applies from its own start block.
+  const scoreRateChangedAfterSnapshot = connected
+    && scoreStatus === 'ready'
+    && chainDataStatus === 'ready'
+    && !scoreNeedsBalanceRefresh
+    && chainData.scoreBalancesSnapshotTimestampMilliseconds > 0
+    && Boolean(chainData.scoreRatesPerSecond)
+    && scoreRateChangedSinceSnapshot(score, chainData.scoreRateHistory);
+  const displayedScore = (scoreNeedsBalanceRefresh
+    && scoreRefreshCompletedKey === currentScoreRefreshKey) || scoreRateChangedAfterSnapshot
     ? scoreWithCurrentBalanceRates(
       score,
       chainData.scoreRatesPerSecond,
       chainData.scoreBalanceChangeTimestampMilliseconds,
       chainData.scoreBalancesSnapshotTimestampMilliseconds,
+      scoreRateHistoryInputs,
     )
     : canSimulateCurrentScore && !score
       ? scoreWithCurrentBalanceRates(
@@ -1273,6 +1292,8 @@ export default function App({ autoConnect = false }) {
         incident={actionableIncident}
         insuredTokenStates={insuredTokenStates}
         scoreMaturitySeconds={chainData.insurance?.scoreMaturitySeconds}
+        scoreRatesPerTokenPerDay={chainData.scoreRatesPerTokenPerDay}
+        scoreRatesLoading={!chainData.scoreRatesPerTokenPerDay && chainDataStatus !== 'error'}
         onFileClaim={fileClaimAction}
         fileClaimUnavailableReason={connected ? protocolUnavailableReason || (chainDataStatus === 'error' ? 'Refresh unavailable data before continuing.' : '') : CONNECT_WALLET_REASON}
         onPoolAction={openPoolAction}

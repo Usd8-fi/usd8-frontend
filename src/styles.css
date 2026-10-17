@@ -325,6 +325,38 @@ a:focus-visible {
   background: var(--panel);
 }
 
+/* Small promo flag beside a score rate, floating gently up and down. When the
+   rate and flag do not fit on one line, the flag wraps to sit just below it. */
+.insurance-asset-terms dd.metric-label-with-help:has(.insurance-asset-flag) {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.insurance-asset-flag {
+  margin-left: 2px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #08b18f;
+  color: var(--text);
+  font-size: var(--font-small);
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  animation: insurance-asset-flag-float 3.2s ease-in-out infinite;
+}
+
+@keyframes insurance-asset-flag-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insurance-asset-flag { animation: none; }
+}
+
 .insurance-asset-card header {
   display: flex;
   align-items: center;
@@ -1398,6 +1430,7 @@ small a,
   .insurance-asset-terms dd {
     white-space: normal;
   }
+
 
   .insurance-asset-values {
     gap: 45px;

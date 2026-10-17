@@ -7,13 +7,13 @@ import usd8Wordmark from '../assets/usd8-wordmark.svg';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
 import { useSecondClock } from '../lib/secondClock.js';
 import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
-import { MORPHO_VAULT_URL } from '../lib/morphoApi.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { durationPhrase } from '../lib/durations.js';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './AvailabilityAction.jsx';
 import CoveredProtocolsTable, { COVERED_PROTOCOL_ROWS } from './CoveredProtocolsTable.jsx';
 import SimulateClaimDialog from './SimulateClaimDialog.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
+import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 import PercentRing from './PercentRing.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
 
@@ -33,6 +33,10 @@ const formatAssetBalance = (value, assetSymbol) => groupDecimalString(displayVal
 const POOL_ACTION_LABELS = { deposit: 'Deposit', withdraw: 'Withdraw', claimReward: 'Withdraw Earnings' };
 const formatScore = (value, decimals = 1) => groupDecimalString(value, { decimals });
 
+// Live on-chain rate per token per day; already rounded to 4 decimals, shown without trailing zeros.
+const formatScoreRate = (value) => groupDecimalString(value, {
+  decimals: Math.min(4, (String(value).split('.')[1] || '').replace(/0+$/, '').length),
+});
 const scoreRateDecimals = (rate) => rateDecimals(rate, { max: 4, whenZero: 1 });
 const liveScoreValue = (base, rate, elapsedMilliseconds) => formatWad(
   wadUnits(base) + wadUnits(rate) * BigInt(elapsedMilliseconds) / 1_000n,
@@ -126,24 +130,28 @@ function SiteFooter({ updatedAt }) {
       </a>
       <nav className="landing-footer-links" aria-label="Footer">
         <div>
-          <a className="site-nav-link" href={docsUrl()}>Docs</a>
+          <a className="site-nav-link" href={docsUrl()} target="_blank" rel="noreferrer">Docs</a>
           <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core" target="_blank" rel="noreferrer">Github</a>
           <a className="site-nav-link" href="https://t.me/+e84i2oYk1ao1MTk1" target="_blank" rel="noreferrer">Telegram</a>
           <a className="site-nav-link" href="https://x.com/usd8_fi" target="_blank" rel="noreferrer">X.com</a>
         </div>
         <div>
           <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core/tree/main/audit" target="_blank" rel="noreferrer">Audit Report</a>
-          <a className="site-nav-link" href={docsUrl('faqs.html')}>FAQs</a>
+          <a className="site-nav-link" href={docsUrl('addresses.html')} target="_blank" rel="noreferrer">Addresses</a>
+          <a className="site-nav-link" href={docsUrl('faqs.html')} target="_blank" rel="noreferrer">FAQs</a>
           {/* System Dashboard is temporarily URL-only (#system-dashboard), not linked. */}
         </div>
         <div>
-          <a className="site-nav-link" href={docsUrl('transparency.html')}>Transparency</a>
-          <a className="site-nav-link" href={docsUrl('usd8.html#contact')}>Contacts</a>
-          <a className="site-nav-link" href={docsUrl('legal.html')}>Legal</a>
+          <a className="site-nav-link" href={docsUrl('transparency.html')} target="_blank" rel="noreferrer">Transparency</a>
+          <a className="site-nav-link" href={docsUrl('usd8.html#contact')} target="_blank" rel="noreferrer">Contacts</a>
+          <a className="site-nav-link" href={docsUrl('legal.html')} target="_blank" rel="noreferrer">Legal</a>
           <button className="site-nav-link analytics-settings-link" type="button" data-analytics-settings>Cookie Settings</button>
         </div>
       </nav>
-      {updatedAt ? <small className="landing-data-freshness">Data as of {new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small> : null}
+      <small className="landing-data-freshness">
+        All code open sourced
+        {updatedAt ? `. Data as of ${new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+      </small>
     </footer>
   );
 }
@@ -159,9 +167,11 @@ function AssetCard({
   scoreKey,
   scoreRateKey,
   scoreLoading = false,
-  scoreRate,
-  scoreRateHelp = 'Insurance score earned per eligible token held per day.',
+  scoreRatePerDay,
+  scoreRateLoading = false,
+  scoreRateUnit,
   apy,
+  flag,
   children,
 }) {
   return (
@@ -184,10 +194,17 @@ function AssetCard({
         <div>
           <dt>Score Rate</dt>
           <dd className="metric-label-with-help">
-            {scoreRate}
+            <MetricValue
+              loading={scoreRateLoading}
+              value={scoreRatePerDay ? `${formatScoreRate(scoreRatePerDay)} per ${scoreRateUnit} per day` : null}
+              label="Loading score rate"
+            />
             <InfoTooltip ariaLabel="About score rate">
-              {scoreRateHelp}
+              {scoreRatePerDay
+                ? `You get ${formatScoreRate(scoreRatePerDay)} score per day for every ${scoreRateUnit} you hold. Rewarded every block.`
+                : `Score earned per day for every ${scoreRateUnit} you hold. Rewarded every block.`}
             </InfoTooltip>
+            {flag ? <span className="insurance-asset-flag">{flag}</span> : null}
           </dd>
         </div>
       </dl>
@@ -238,7 +255,7 @@ function simulatorPools(pools = []) {
   });
 }
 
-function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, scoreMaturitySeconds, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
+function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, scoreMaturitySeconds, scoreRatesPerTokenPerDay, scoreRatesLoading, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreMaturityPhrase = durationPhrase(scoreMaturitySeconds) || 'the holding period';
   const scoreLoading = scoreStatus === 'loading';
   const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
@@ -281,8 +298,10 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           scoreKey="usd8Score"
           scoreRateKey="usd8ScorePerSecond"
           scoreLoading={scoreLoading}
-          scoreRate="1 per USD8 per day"
-          scoreRateHelp="You get 1 score per day for every USD8 you hold. Rewarded every block."
+          scoreRatePerDay={scoreRatesPerTokenPerDay?.usd8}
+          scoreRateLoading={scoreRatesLoading}
+          scoreRateUnit="USD8"
+          flag="x300% for private beta"
         >
           <AvailabilityAction type="button" onClick={() => onUsd8Action?.('mint')} unavailableReason={walletUnavailableReason}>
             Mint
@@ -303,13 +322,15 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           scoreKey="sUsd8Score"
           scoreRateKey="sUsd8ScorePerSecond"
           scoreLoading={scoreLoading}
-          scoreRate="0.1 per sUSD8 per day"
-          scoreRateHelp="You get 0.1 score per day for every sUSD8 you hold. Rewarded every block."
+          scoreRatePerDay={scoreRatesPerTokenPerDay?.savings}
+          scoreRateLoading={scoreRatesLoading}
+          scoreRateUnit="sUSD8"
           apy={savingsVault.apy}
         >
-          <a className="landing-gold-button" href={MORPHO_VAULT_URL} target="_blank" rel="noreferrer">
+          {/* Unlinked until the USD8 Morpho vault is deployed; then link MORPHO_VAULT_URL again. */}
+          <button type="button" className="landing-gold-button">
             Go to Morpho
-          </a>
+          </button>
         </AssetCard>
       </section>
 
@@ -358,7 +379,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
         <h2 className="landing-section-title" id="cover-pools-title">Cover Pools</h2>
         <p className="cover-pool-warning">
           Be aware: Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
-          <a href={docsUrl('cover-pools.html')}>risk involved</a>.
+          <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">risk involved</a>.
         </p>
 
         {pools.map((pool) => (
@@ -376,7 +397,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
         <h2 className="landing-section-title" id="white-hat-economy-title">White Hat Economy</h2>
         <p className="white-hat-economy-message">
           The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process.{' '}
-          <a href={docsUrl('white-hat-economy.html')}>Learn More</a>.
+          <a href={docsUrl('white-hat-economy.html')} target="_blank" rel="noreferrer">Learn More</a>.
         </p>
       </section>
     </main>
@@ -521,6 +542,9 @@ export default function USD8Landing({
   incident = null,
   insuredTokenStates = {},
   scoreMaturitySeconds = null,
+  scoreRatesPerTokenPerDay = null,
+  // Spin until the caller says the on-chain rate read finished (or failed).
+  scoreRatesLoading = true,
   onFileClaim,
   fileClaimUnavailableReason = '',
   onPoolAction,
@@ -535,10 +559,10 @@ export default function USD8Landing({
             <img src={usd8Logo} alt="USD8" />
             <img className="landing-brand-wordmark" src={usd8Wordmark} alt="USD8.fi" />
           </a>
-          <a className="landing-beta-link" href={docsUrl('faqs.html#whats-different-in-beta')}>beta</a>
+          <a className="landing-beta-link" href={docsUrl('faqs.html#whats-different-in-beta')} target="_blank" rel="noreferrer">beta</a>
         </div>
         <WalletButton wallet={wallet} />
-        {wallet.networkUnavailableReason && wallet.onSwitchNetwork ? <button type="button" className="landing-wallet-button" onClick={wallet.onSwitchNetwork}>Switch to Sepolia</button> : null}
+        {wallet.networkUnavailableReason && wallet.onSwitchNetwork ? <button type="button" className="landing-wallet-button" onClick={wallet.onSwitchNetwork}>{`Switch to ${getProtocolNetwork(PROTOCOL_CHAIN_ID)?.name ?? 'Ethereum'}`}</button> : null}
       </header>
 
       {dataError ? (
@@ -558,6 +582,8 @@ export default function USD8Landing({
         incident={incident}
         insuredTokenStates={insuredTokenStates}
         scoreMaturitySeconds={scoreMaturitySeconds}
+        scoreRatesPerTokenPerDay={scoreRatesPerTokenPerDay}
+        scoreRatesLoading={scoreRatesLoading}
         onFileClaim={onFileClaim}
         fileClaimUnavailableReason={fileClaimUnavailableReason}
         onPoolAction={onPoolAction}

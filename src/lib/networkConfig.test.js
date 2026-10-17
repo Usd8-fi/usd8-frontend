@@ -36,14 +36,25 @@ describe('network configuration', () => {
     });
   });
 
-  it('recognizes Ethereum without pretending that USD8 contracts are deployed there', () => {
+  it('carries the mainnet v1 deployment but serves only the configured chain', () => {
     expect(getNetwork(1)).toMatchObject({
       id: 1,
       name: 'Ethereum',
-      protocolAvailable: false,
-      scoreAvailable: false,
+      protocolAvailable: true,
+      scoreAvailable: true,
       rpcUrl: 'https://eth.drpc.org',
+      explorerApiUrl: 'https://eth.blockscout.com/api/v2',
     });
+    const contracts = getNetwork(1).contracts;
+    expect(contracts.registry).toBe('0x9bff24a44bb20f8d1f1de86eca56295c5bb46430');
+    expect(contracts.usdc).toBe('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
+    expect(contracts.coverPools[0]).toMatchObject({
+      asset: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+      usdOracle: '0x164b276057258d81941e97b0a900d4c7b358bce0',
+      deployBlock: 26211040,
+    });
+    expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8']);
+    // The test environment serves Sepolia, so mainnet is not the protocol network here.
     expect(getProtocolNetwork(1)).toBeNull();
   });
 });

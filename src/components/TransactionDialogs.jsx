@@ -219,7 +219,7 @@ export function PoolActionDialog({
                 {mode === 'withdraw' ? (
                   <small className="usd8-dialog-pool-availability usd8-dialog-withdrawal-availability">
                     {displayAvailableBalance(available)} shares available. {exitCooldownLabel ? `${exitCooldownLabel} cooldown` : 'Cooldown'} if no pending claims. Otherwise after the claims are all finalized.{' '}
-                    <a href={docsUrl('cover-pools.html')}>Learn More</a>.
+                    <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">Learn More</a>.
                   </small>
                 ) : (
                   <small className="usd8-dialog-pool-availability">

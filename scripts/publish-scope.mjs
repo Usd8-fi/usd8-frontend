@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
+/// The app owns the whole Pages site (main:docs/) except the custom-domain file.
 export function isAllowedPublishPath(path) {
-  return path.startsWith('docs/beta/')
-    || path === 'docs/robots.txt'
-    || path === 'docs/sitemap.xml';
+  return path.startsWith('docs/')
+    && path !== 'docs/CNAME'
+    && !path.split('/').includes('..');
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

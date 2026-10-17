@@ -19,6 +19,16 @@ export function claimApiBaseUrl(hostname = globalThis.location?.hostname, config
 export const CLAIM_API_BASE_URL = claimApiBaseUrl().replace(/\/$/, '');
 export const claimApiConfigured = Boolean(CLAIM_API_BASE_URL);
 
+// Ethereum mainnet has its own TEE job service (separate enclave release,
+// signer and KMS key); every other chain uses the default service above.
+export const MAINNET_CLAIM_API_URL = 'https://c8cnx9estd.execute-api.eu-central-1.amazonaws.com';
+
+export function claimApiBaseUrlForChain(chainId, hostname = globalThis.location?.hostname) {
+  if (Number(chainId) !== 1) return CLAIM_API_BASE_URL;
+  const localPreview = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(hostname);
+  return localPreview ? '/api/claims-mainnet' : MAINNET_CLAIM_API_URL;
+}
+
 export function matchesSettlementContext(settlement, incidentId, root) {
   return settlement?.incidentId === String(incidentId)
     && typeof settlement.root === 'string'

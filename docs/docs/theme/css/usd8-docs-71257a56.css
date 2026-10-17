@@ -741,3 +741,8 @@ body {
 #mdbook-sidebar .chapter > li.sidebar-app-link {
     margin-top: 28px;
 }
+
+/* Addresses page: keep every address on one line. */
+.address-table table { width: auto; }
+.address-table td { white-space: nowrap; }
+.address-table td code { white-space: nowrap; }

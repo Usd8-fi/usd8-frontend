@@ -14,16 +14,16 @@ describe('browser page titles', () => {
     expect(docsTheme).toContain('document.title = "USD8 docs";');
   });
 
-  it('publishes canonical search and social metadata for the beta app', () => {
+  it('publishes canonical search and social metadata for the app at the domain root', () => {
     expect(appHtml).toContain(`<meta name="description" content="${description}" />`);
-    expect(appHtml).toContain('<link rel="canonical" href="https://usd8.fi/beta/" />');
+    expect(appHtml).toContain('<link rel="canonical" href="https://usd8.fi/" />');
     expect(appHtml).toContain('<meta property="og:type" content="website" />');
     expect(appHtml).toContain('<meta property="og:title" content="USD8" />');
     expect(appHtml).toContain(`<meta property="og:description" content="${description}" />`);
-    expect(appHtml).toContain('<meta property="og:url" content="https://usd8.fi/beta/" />');
-    expect(appHtml).toContain('<meta property="og:image" content="https://usd8.fi/beta/og-image.png" />');
+    expect(appHtml).toContain('<meta property="og:url" content="https://usd8.fi/" />');
+    expect(appHtml).toContain('<meta property="og:image" content="https://usd8.fi/og-image.png" />');
     expect(appHtml).toContain('<meta name="twitter:card" content="summary_large_image" />');
-    expect(appHtml).toContain('<meta name="twitter:image" content="https://usd8.fi/beta/og-image.png" />');
+    expect(appHtml).toContain('<meta name="twitter:image" content="https://usd8.fi/og-image.png" />');
   });
 
   it('ships a 1200 by 630 PNG social preview', () => {

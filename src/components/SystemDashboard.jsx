@@ -250,7 +250,7 @@ function InsuredSupply({ data, stale }) {
   const insured = data?.insured;
   const coverSeries = sumSeries((data?.pools ?? []).map(pool => pool.series.tvl));
   return (
-    <Panel title="USD8 Insured Supply" note="Live From Sepolia" stale={stale} className="sd-insured">
+    <Panel title="USD8 Insured Supply" note={`Live From ${getProtocolNetwork(PROTOCOL_CHAIN_ID)?.name ?? 'Chain'}`} stale={stale} className="sd-insured">
       <div className="sd-insured-grid">
         <div>
           <span className="sd-label">Insured Supply</span>

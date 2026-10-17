@@ -498,6 +498,8 @@ describe('fetchLandingChainData', () => {
       usd8: '0.000289351851851852',
       savings: '0',
     });
+    // Per-block 1e18/7200 rounds to exactly 1 per token per day for the label.
+    expect(data.scoreRatesPerTokenPerDay).toEqual({ usd8: '1', savings: '0' });
     expect(data.scoreBalanceChangeTimestampMilliseconds).toEqual({
       usd8: 1_800_000_100_000,
       savings: 0,
