@@ -313,7 +313,7 @@ function Reserve({ data, stale }) {
       </div>
       <span className="sd-label">Where The Reserve Sits</span>
       <ReserveAllocation rows={data ? reserve?.allocation : undefined} />
-      <span className="sd-label">Reserve Over Time</span>
+      <span className="sd-label">Reserve Over Time (Last 90 Days)</span>
       <Sparkline points={reserve?.series ?? []} color="#35e6ff" />
     </Panel>
   );

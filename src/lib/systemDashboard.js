@@ -5,7 +5,6 @@ import { erc20Abi } from './abis.js';
 import { poolAbi } from './readAbis.js';
 import { fetchJson } from './requestUtils.js';
 import { formatUnits, zeroAddress } from './viemLite.js';
-import { fetchLogsInChunks } from './history.js';
 import { getProtocolNetwork } from './networkConfig.js';
 import { UNKNOWN_VALUE } from './units.js';
 
@@ -57,14 +56,13 @@ async function readReserveAllocation(client, network, blockNumber) {
     percent: total > 0n ? Number((row.assets * 1_000_000n) / total) / 10_000 : null,
   }));
 }
-const treasuryFlowEvents = [
-  { type: 'event', name: 'Minted', inputs: [
-    { name: 'user', type: 'address', indexed: true }, { name: 'usdcAmount', type: 'uint256', indexed: false },
-    { name: 'usd8Amount', type: 'uint256', indexed: false }] },
-  { type: 'event', name: 'Redeemed', inputs: [
-    { name: 'user', type: 'address', indexed: true }, { name: 'usd8Amount', type: 'uint256', indexed: false },
-    { name: 'usdcAmount', type: 'uint256', indexed: false }] },
-];
+// Treasury Minted(user, usdcAmount, usd8Amount) / Redeemed(user, usd8Amount, usdcAmount).
+const MINTED_TOPIC = '0x25b428dfde728ccfaddad7e29e4ac23c24ed7fd1a6e3e3f91894a9a073f5dfff';
+const REDEEMED_TOPIC = '0xf3a670cd3af7d64b488926880889d08a8585a138ff455227af6737339a1ec262';
+/// The reserve chart covers at most this window; older history is not shown.
+export const RESERVE_HISTORY_SECONDS = 90 * 24 * 60 * 60;
+const RESERVE_HISTORY_MAX_PAGES = 20;
+const BLOCK_SECONDS = 12;
 const USDC_DECIMALS = 6;
 
 /// USD8 reserve (USDC held by the Treasury and its strategies) over time.
@@ -86,6 +84,32 @@ export function reserveSeries({ flows, current, nowSeconds, startSeconds, points
   });
 }
 
+/// USDC flows (Minted +, Redeemed -) into the Treasury since `sinceSeconds`,
+/// from the Blockscout log index: newest first, 50 per page, timestamps
+/// included, so no RPC log scan or per-block timestamp lookups. Paging stops at
+/// the window start; `complete` is false if the page cap cut the window short.
+export async function fetchReserveFlows(explorerApiUrl, treasury, sinceSeconds, { signal } = {}) {
+  const flows = [];
+  let params = null;
+  for (let page = 0; page < RESERVE_HISTORY_MAX_PAGES; page += 1) {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    const body = await fetchJson(`${explorerApiUrl}/addresses/${treasury}/logs${query}`, { signal });
+    let reachedStart = false;
+    for (const item of body?.items || []) {
+      const timestamp = Math.floor(Date.parse(item.block_timestamp) / 1000);
+      if (!Number.isFinite(timestamp)) continue;
+      if (timestamp < sinceSeconds) { reachedStart = true; break; }
+      const topic = String(item.topics?.[0] || '').toLowerCase();
+      const words = String(item.data || '').replace(/^0x/, '').match(/.{64}/g) || [];
+      if (topic === MINTED_TOPIC && words[0]) flows.push({ timestamp, delta: BigInt(`0x${words[0]}`) });
+      else if (topic === REDEEMED_TOPIC && words[1]) flows.push({ timestamp, delta: -BigInt(`0x${words[1]}`) });
+    }
+    params = body?.next_page_params;
+    if (reachedStart || !params) return { flows, complete: true };
+  }
+  return { flows, complete: false };
+}
+
 async function readReserve(client, network, signal) {
   const treasury = network.contracts.treasury;
   const head = await client.getBlock({ blockTag: 'latest' });
@@ -94,23 +118,19 @@ async function readReserve(client, network, signal) {
     client.readContract({ address: treasury, abi: treasuryReserveAbi, functionName: 'getReserveBalance', blockNumber: head.number }),
     readReserveAllocation(client, network, head.number).catch(() => { checkAbort(signal); return null; }),
   ]);
+  const reserve = toNumber(current, USDC_DECIMALS);
   const deployBlock = network.contracts.treasuryDeployBlock;
-  if (deployBlock === undefined) {
-    return { reserve: toNumber(current, USDC_DECIMALS), allocation, series: [] };
-  }
-  const logs = await fetchLogsInChunks(client, { address: treasury, events: treasuryFlowEvents }, BigInt(deployBlock), head.number, { signal });
-  const blockNumbers = [...new Set([BigInt(deployBlock), ...logs.map((log) => log.blockNumber)])];
-  const blocks = await Promise.all(blockNumbers.map((blockNumber) => client.getBlock({ blockNumber })));
-  const timeOf = new Map(blocks.map((block) => [block.number, Number(block.timestamp)]));
-  const flows = logs.map((log) => ({
-    timestamp: timeOf.get(log.blockNumber),
-    delta: log.eventName === 'Minted' ? log.args.usdcAmount : -log.args.usdcAmount,
-  }));
-  return {
-    reserve: toNumber(current, USDC_DECIMALS),
-    allocation,
-    series: reserveSeries({ flows, current, nowSeconds: Number(head.timestamp), startSeconds: timeOf.get(BigInt(deployBlock)) }),
-  };
+  if (deployBlock === undefined || !network.explorerApiUrl) return { reserve, allocation, series: [] };
+  const nowSeconds = Number(head.timestamp);
+  // Deploy time estimated from the slot time: avoids an archive block read.
+  const deploySeconds = nowSeconds - Number(head.number - BigInt(deployBlock)) * BLOCK_SECONDS;
+  const sinceSeconds = Math.max(deploySeconds, nowSeconds - RESERVE_HISTORY_SECONDS);
+  const history = await fetchReserveFlows(network.explorerApiUrl, treasury, sinceSeconds, { signal })
+    .catch(() => { checkAbort(signal); return null; });
+  if (!history) return { reserve, allocation, series: [] };
+  const startSeconds = history.complete || !history.flows.length
+    ? sinceSeconds : Math.min(...history.flows.map((flow) => flow.timestamp));
+  return { reserve, allocation, series: reserveSeries({ flows: history.flows, current, nowSeconds, startSeconds }) };
 }
 
 const registryTimingAbi = [{

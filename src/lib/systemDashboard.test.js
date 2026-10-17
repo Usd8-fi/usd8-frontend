@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { exitEpochRows, sumSeries, trailingSeries } from './systemDashboard.js';
 
 const DAY = 86_400;
@@ -60,5 +60,45 @@ describe('sumSeries', () => {
     const total = sumSeries([[{ t: 0, v: 10 }, { t: 100, v: 20 }], [{ t: 50, v: 5 }, { t: 100, v: 5 }]], 3);
     expect(total).toEqual([{ t: 0, v: 10 }, { t: 50, v: 15 }, { t: 100, v: 25 }]);
     expect(sumSeries([])).toEqual([]);
+  });
+});
+
+describe('reserve history (90-day window from Blockscout)', () => {
+  const word = (value) => BigInt(value).toString(16).padStart(64, '0');
+  const MINT = '0x25b428dfde728ccfaddad7e29e4ac23c24ed7fd1a6e3e3f91894a9a073f5dfff';
+  const REDEEM = '0xf3a670cd3af7d64b488926880889d08a8585a138ff455227af6737339a1ec262';
+  const at = (seconds) => new Date(seconds * 1000).toISOString();
+  const log = (topic, data, seconds) => ({ topics: [topic, '0x00'], data: `0x${data}`, block_timestamp: at(seconds) });
+
+  it('decodes USDC mints and redeems, newest first, and stops at the window start', async () => {
+    const { fetchReserveFlows } = await import('./systemDashboard.js');
+    const pages = [
+      { items: [log(MINT, word(50_000_000) + word(50n * 10n ** 18n), 1_000), log(REDEEM, word(5n * 10n ** 18n) + word(5_000_000), 900)], next_page_params: { block_number: 1 } },
+      { items: [log(MINT, word(7_000_000) + word(7n * 10n ** 18n), 500), log(MINT, word(1) + word(1), 100)], next_page_params: { block_number: 0 } },
+    ];
+    const urls = [];
+    globalThis.fetch = vi.fn(async (url) => { urls.push(String(url)); return new Response(JSON.stringify(pages[urls.length - 1])); });
+    const result = await fetchReserveFlows('https://explorer.example/api/v2', '0xtreasury', 400);
+    expect(result.complete).toBe(true);
+    expect(result.flows).toEqual([
+      { timestamp: 1_000, delta: 50_000_000n },
+      { timestamp: 900, delta: -5_000_000n },
+      { timestamp: 500, delta: 7_000_000n },
+    ]);
+    expect(urls).toEqual(['https://explorer.example/api/v2/addresses/0xtreasury/logs', 'https://explorer.example/api/v2/addresses/0xtreasury/logs?block_number=1']);
+  });
+
+  it('caps paging and reports an incomplete window instead of scanning forever', async () => {
+    const { fetchReserveFlows } = await import('./systemDashboard.js');
+    let calls = 0;
+    globalThis.fetch = vi.fn(async () => { calls += 1; return new Response(JSON.stringify({ items: [log(MINT, word(1) + word(1), 10_000 - calls)], next_page_params: { page: calls } })); });
+    const result = await fetchReserveFlows('https://explorer.example/api/v2', '0xtreasury', 0);
+    expect(result.complete).toBe(false);
+    expect(calls).toBe(20);
+  });
+
+  it('limits the chart to 90 days', async () => {
+    const { RESERVE_HISTORY_SECONDS } = await import('./systemDashboard.js');
+    expect(RESERVE_HISTORY_SECONDS).toBe(90 * 86_400);
   });
 });
