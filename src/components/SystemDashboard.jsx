@@ -465,7 +465,7 @@ function InsuranceScores({ now }) {
 const shortHex = (value, head = 10, tail = 6) => (value ? `${value.slice(0, head)}…${value.slice(-tail)}` : '—');
 
 /// Claim-verification TEE: live workers and approved image from AWS (read-only
-/// status function), PCR hash and accepted signers from the chain.
+/// status function) and the PCR hash from the chain.
 function TeeStatus({ now }) {
   const [fleet, setFleet] = useState({ value: null, error: '' });
   const [chain, setChain] = useState({ value: null, error: '' });
@@ -474,8 +474,8 @@ function TeeStatus({ now }) {
     fetchTeeFleet({ signal: controller.signal })
       .then(value => setFleet({ value, error: '' }))
       .catch(error => { if (!controller.signal.aborted) setFleet({ value: null, error: error?.message || 'Unavailable' }); });
-    fetchTeeOnchain(PROTOCOL_CHAIN_ID, { signal: controller.signal })
-      .then(value => setChain({ value, error: '' }))
+    fetchTeeOnchain(PROTOCOL_CHAIN_ID)
+      .then(value => { if (!controller.signal.aborted) setChain({ value, error: '' }); })
       .catch(error => { if (!controller.signal.aborted) setChain({ value: null, error: error?.message || 'Unavailable' }); });
     return () => controller.abort();
   }, []);
@@ -498,7 +498,6 @@ function TeeStatus({ now }) {
           <Metric label="Enclave Image (AMI)">{f ? (image ? <span title={image.imageId}>{image.name ?? image.imageId}</span> : '—') : <LoadingSpinner />}</Metric>
           <Metric label="Image Built">{f ? (image?.createdAt ? stamp(Math.floor(Date.parse(image.createdAt) / 1000)) : '—') : <LoadingSpinner />}</Metric>
           <Metric label="Onchain PCR Hash">{chain.value ? <span className="sd-mono" title={chain.value.pcrHash}>{shortHex(chain.value.pcrHash)}</span> : chain.error ? '—' : <LoadingSpinner />}</Metric>
-          <Metric label="Accepted Signers">{chain.value ? (chain.value.signers.length ? chain.value.signers.map(signer => <span key={signer} className="sd-mono" title={signer}>{shortHex(signer, 6, 4)} </span>) : 'None') : chain.error ? '—' : <LoadingSpinner />}</Metric>
           <Metric label="Job API Calls (24h)">{f ? f.jobApi.invocationsLast24h : <LoadingSpinner />}</Metric>
           <Metric label="Janitor">{f ? `${f.janitor.enabled ? 'On' : 'Off'} · ${f.janitor.schedule.replace('rate(', 'every ').replace(')', '')} · kills workers over ${duration(f.janitor.maxWorkerAgeSeconds)}` : <LoadingSpinner />}</Metric>
         </div>

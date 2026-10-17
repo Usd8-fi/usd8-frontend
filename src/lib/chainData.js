@@ -19,9 +19,11 @@ const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
 const SHORT_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 const MIN_APY_WINDOW_SECONDS = 60 * 60;
 
-const SEPOLIA_BLOCK_SECONDS = 12n;
-// Public Sepolia endpoints cap eth_getLogs spans — the default endpoint rejects
-// anything wider than 30k blocks — so every log read is chunked below this width.
+// Post-merge Ethereum slot time; the same on mainnet and Sepolia.
+const BLOCK_SECONDS = 12n;
+// Public RPC endpoints cap eth_getLogs spans (and keyless PublicNode serves only
+// recent history; older ranges fall through to the fallback RPC), so every log
+// read is chunked below this width.
 const LOG_QUERY_BLOCK_RANGE = 10_000n;
 
 function protocolUnavailableError(chainId) {
@@ -111,13 +113,13 @@ function holdingWindowFrom(params) {
 function currentScorePerTokenPerDay(rateHistory) {
   const rate = rateHistory.at(-1)?.rate ?? 0n;
   const step = 10n ** 14n;
-  const perDay = (rate * (86_400n / SEPOLIA_BLOCK_SECONDS) + step / 2n) / step * step;
+  const perDay = (rate * (86_400n / BLOCK_SECONDS) + step / 2n) / step * step;
   return formatUnits(perDay, 18);
 }
 
 function currentScorePerSecond(balance, rateHistory) {
   const rate = rateHistory.at(-1)?.rate ?? 0n;
-  return balance * rate / WAD / SEPOLIA_BLOCK_SECONDS;
+  return balance * rate / WAD / BLOCK_SECONDS;
 }
 
 async function latestIndexedBalanceChangeTimestampMilliseconds(token, account, fromBlock, signal, explorerApiUrl) {
@@ -350,7 +352,7 @@ export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, 
     const client = readClientFor(chainId);
     const head = await client.getBlock({ blockTag: 'latest' });
     checkAbort(querySignal);
-    const windowBlocks = BigInt(TRAILING_WINDOW_SECONDS) / SEPOLIA_BLOCK_SECONDS;
+    const windowBlocks = BigInt(TRAILING_WINDOW_SECONDS) / BLOCK_SECONDS;
     const earliest = head.number > windowBlocks ? head.number - windowBlocks : 0n;
     const deployBlock = config?.deployBlock === undefined ? earliest : BigInt(config.deployBlock);
     const startBlock = deployBlock > earliest ? deployBlock : earliest;

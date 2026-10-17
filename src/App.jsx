@@ -1263,7 +1263,7 @@ export default function App({ autoConnect = false }) {
         tone={transaction?.refreshError || claimStatus.failed || usd8Status.failed || poolStatus.failed || transaction?.phase === 'failed' ? 'error' : 'status'}
         label={claimStatus.message ? 'Claim submission status' : 'Transaction status'}
         busy={operationBusy && transaction?.phase !== 'confirmed' && transaction?.phase !== 'failed'}
-        href={transaction?.hash ? `${getNetwork(transaction.chainId)?.chain.blockExplorers?.default.url || 'https://sepolia.etherscan.io'}/tx/${transaction.hash}` : undefined}
+        href={transaction?.hash ? `${getNetwork(transaction.chainId)?.chain.blockExplorers?.default.url || 'https://etherscan.io'}/tx/${transaction.hash}` : undefined}
       />
       <NoticeMessage message={scoreError} actionLabel="Retry Score" onAction={() => {
         scoreRetryForcesRefresh.current = true;

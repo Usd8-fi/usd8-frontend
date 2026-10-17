@@ -26,8 +26,8 @@ const snapshot = {
 const TEE_FLEET = {
   generatedAt: '2026-10-16T13:16:40Z', region: 'eu-central-1',
   workers: { alive: [], aliveCount: 0, launchedLast24h: 0, instanceType: 'c6i.xlarge' },
-  approvedImages: [{ imageId: 'ami-014348d9871661e68', name: 'usd8-sepolia-1c6377a5-registry9bff-r4', createdAt: '2026-10-15T13:46:04.000Z', available: true }],
-  jobApi: { function: 'usd8-tee-job-api', lastModified: '2026-10-15T13:50:34.000+0000', timeoutSeconds: 30, invocationsLast24h: 51 },
+  approvedImages: [{ imageId: 'ami-03c91d587c052afe0', name: 'usd8-mainnet-0057b276-registry9bff-b1', createdAt: '2026-10-15T13:46:04.000Z', available: true }],
+  jobApi: { function: 'usd8-tee-job-api-mainnet', lastModified: '2026-10-15T13:50:34.000+0000', timeoutSeconds: 30, invocationsLast24h: 51 },
   janitor: { function: 'usd8-tee-janitor', schedule: 'rate(1 hour)', enabled: true, maxWorkerAgeSeconds: 7200, runsLast24h: 288 },
 };
 const activity = [{ id: '0xaa:mint', hash: '0xaa', at: 1, block: 11922388, actor: '0x8ca7…83a7', action: 'minted', amount: '20 USD8', target: null }];
@@ -36,7 +36,7 @@ beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   mocks.fetchScoreList.mockResolvedValue([]);
   mocks.fetchTeeFleet.mockResolvedValue(TEE_FLEET);
-  mocks.fetchTeeOnchain.mockResolvedValue({ pcrHash: `0x${'f4'.repeat(32)}`, signers: ['0x0140cc1e7a438f2f29f1345348ae5f1ae4f0cb0f'] });
+  mocks.fetchTeeOnchain.mockResolvedValue({ pcrHash: `0x${'f4'.repeat(32)}` });
 });
 afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); mocks.fetchScoreList.mockReset(); mocks.fetchTeeFleet.mockReset(); mocks.fetchTeeOnchain.mockReset(); });
 
@@ -52,7 +52,7 @@ describe('SystemDashboard', () => {
     expect(screen.getAllByRole('region')).toHaveLength(8);
   });
 
-  it('shows the TEE fleet, approved image, onchain PCR and signers, and flags a worker on another image', async () => {
+  it('shows the TEE fleet, approved image and onchain PCR (no signer list), and flags a worker on another image', async () => {
     mocks.load.mockResolvedValue(snapshot);
     mocks.fetchActivity.mockResolvedValue(activity);
     mocks.fetchTeeFleet.mockResolvedValue({ ...TEE_FLEET, workers: { ...TEE_FLEET.workers, aliveCount: 1, alive: [
@@ -60,11 +60,11 @@ describe('SystemDashboard', () => {
     ] } });
     render(<SystemDashboard />);
     const panel = await screen.findByRole('region', { name: 'Claim Verification TEE' });
-    expect(await within(panel).findByText('usd8-sepolia-1c6377a5-registry9bff-r4')).toBeInTheDocument();
+    expect(await within(panel).findByText('usd8-mainnet-0057b276-registry9bff-b1')).toBeInTheDocument();
     expect(within(panel).getByText('i-0abc')).toBeInTheDocument();
     expect(within(panel).getByText(/not the approved image/)).toBeInTheDocument();
     expect(within(panel).getByText('0xf4f4f4f4…f4f4f4')).toBeInTheDocument();
-    expect(within(panel).getByText(/0x0140…cb0f/)).toBeInTheDocument();
+    expect(within(panel).queryByText('Accepted Signers')).not.toBeInTheDocument();
     expect(within(panel).getByText(/every 1 hour/)).toBeInTheDocument();
   });
 
