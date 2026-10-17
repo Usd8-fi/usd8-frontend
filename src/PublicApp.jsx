@@ -49,5 +49,7 @@ export default function PublicApp({ onConnect, connecting = false, connectError 
     savingsVault={vault} dataError={connectError || error} updatedAt={data.updatedAt}
     onRetry={() => { setError(''); setRetry(value => value + 1); }} insuredTokenStates={data.insurance?.tokens}
     scoreMaturitySeconds={data.insurance?.scoreMaturitySeconds}
+    scoreRatesPerTokenPerDay={data.scoreRatesPerTokenPerDay}
+    scoreRatesLoading={!data.scoreRatesPerTokenPerDay && !error}
     incident={data.incident} fileClaimUnavailableReason={CONNECT_WALLET_REASON} />;
 }
