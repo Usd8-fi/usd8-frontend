@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { createReadStream } from 'node:fs';
 import { extname } from 'node:path';
 import { documentationAssets } from './scripts/documentationAssets.mjs';
+import { contentSecurityPolicy } from './scripts/contentSecurityPolicy.mjs';
 
 const scoreProxy = {
   target: 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com',
@@ -44,7 +45,7 @@ export default defineConfig({
   base: './',
   // viem's ESM build by module file; see src/lib/viemLite.js.
   resolve: { alias: { 'viem-esm': fileURLToPath(new URL('./node_modules/viem/_esm', import.meta.url)) } },
-  plugins: [react(), documentationAssetsInDev],
+  plugins: [react(), documentationAssetsInDev, contentSecurityPolicy()],
   server: {
     hmr: false,
     proxy: {
