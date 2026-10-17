@@ -6,7 +6,7 @@ import { fetchJson } from './requestUtils.js';
 import { fetchLogsInChunks, incrementalLogs } from './history.js';
 export { fetchLogsInChunks } from './history.js';
 import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimCancelledEvent } from './readAbis.js';
-import { formatUnits, http, zeroAddress } from './viemLite.js';
+import { fallback, formatUnits, http, zeroAddress } from './viemLite.js';
 import { createReadClient } from './readClient.js';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
@@ -36,8 +36,12 @@ function throwIfRequestAborted(signal) {
   throw error;
 }
 
-export function rpcTransportFor(rpcUrl) {
-  return http(rpcUrl, { timeout: 15_000 });
+export function rpcTransportFor(rpcUrl, fallbackUrls = []) {
+  const urls = [rpcUrl, ...fallbackUrls].filter((url, index, all) => url && all.indexOf(url) === index);
+  if (urls.length <= 1) return http(rpcUrl, { timeout: 15_000 });
+  // Primary first; viem moves to the next endpoint only when a request fails at
+  // the transport level, so contract reverts never trigger a switch.
+  return fallback(urls.map((url) => http(url, { timeout: 15_000 })), { rank: false });
 }
 
 export function readClientFor(chainId) {
@@ -48,7 +52,7 @@ export function readClientFor(chainId) {
   if (!client) {
     client = createReadClient({
       chain: network.chain,
-      transport: rpcTransportFor(network.rpcUrl),
+      transport: rpcTransportFor(network.rpcUrl, network.rpcFallbackUrls),
     });
     clients.set(network.id, client);
   }

@@ -104,6 +104,9 @@ const NETWORKS = Object.freeze({
     // PublicNode: keyless and CORS-open, and unlike the keyless dRPC endpoint it
     // serves eth_getLogs (10k-block chunks), which the reserve and TEE panels need.
     rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com',
+    // Used only when the primary fails (network error, timeout, HTTP 429/5xx).
+    // Verified: CORS for usd8.fi, JSON-RPC batches, and 10k-block eth_getLogs.
+    rpcFallbackUrls: ['https://mainnet.gateway.tenderly.co'],
     explorerApiUrl: 'https://eth.blockscout.com/api/v2',
     contracts: MAINNET_CONTRACTS,
     payoutAssets: MAINNET_PAYOUT_ASSETS,

@@ -12,7 +12,7 @@ export function transactionClientFor(chainId) {
   if (!network) throw new Error('USD8 is not deployed on the selected network');
   let client = clients.get(network.id);
   if (!client) {
-    client = createPublicClient({ chain: network.chain, transport: rpcTransportFor(network.rpcUrl) });
+    client = createPublicClient({ chain: network.chain, transport: rpcTransportFor(network.rpcUrl, network.rpcFallbackUrls) });
     clients.set(network.id, client);
   }
   return client;

@@ -11,6 +11,7 @@ export { zeroAddress } from 'viem-esm/constants/address.js';
 export { formatUnits } from 'viem-esm/utils/unit/formatUnits.js';
 export { parseUnits } from 'viem-esm/utils/unit/parseUnits.js';
 export { http } from 'viem-esm/clients/transports/http.js';
+export { fallback } from 'viem-esm/clients/transports/fallback.js';
 export { createClient } from 'viem-esm/clients/createClient.js';
 export { getBlock } from 'viem-esm/actions/public/getBlock.js';
 export { getBlockNumber } from 'viem-esm/actions/public/getBlockNumber.js';
