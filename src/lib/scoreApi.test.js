@@ -44,6 +44,33 @@ describe('fetchInsuranceScore', () => {
       .rejects.toThrow('different deployment');
   });
 
+  it('refetches once past a browser-cached snapshot without a maturing schedule (pre-v4)', async () => {
+    const base = {
+      network: 'Ethereum', chainId: '1', account: '0x1111111111111111111111111111111111111111',
+      registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430', scoreCutoffBlock: '100',
+      grossEarnedScore: '1', maturedGrossEarnedScore: '1', scoreSpent: '0', availableScore: '1',
+      snapshotTimestamp: '1786320000', grossScorePerSecond: '0', maturingScorePerSecond: '0',
+      tokenScores: [{ token: '0x3333333333333333333333333333333333333333', balance: '1', grossEarnedScore: '1', grossScorePerSecond: '0' }],
+    };
+    const schedule = [{ fromBlock: '100', scorePerSecond: '5' }];
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => base })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ...base, maturingSchedule: schedule }) });
+    const score = await fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1].cache).toBeUndefined();
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ cache: 'no-store' });
+    expect(score.maturingSchedule).toEqual([{ fromBlock: '100', scorePerSecond: '0.000000000000000005' }]);
+    expect(score.maturingAnchorMilliseconds).toBe(1786320000 * 1000);
+    vi.restoreAllMocks();
+
+    // A current snapshot is used straight from the cache: one request.
+    const once = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ ...base, maturingSchedule: schedule }) });
+    await fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 });
+    expect(once).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+
   it('loads the local proxy score route and normalizes its string fields', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,

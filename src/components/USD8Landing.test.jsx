@@ -365,6 +365,29 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText(/in cooldown, available within/)).toHaveTextContent('3.0 in cooldown');
   });
 
+  it('moves available score along the maturing schedule after the snapshot (new depositor)', () => {
+    // Snapshot 2 h old: nothing matured at the cutoff, deposit matured 30 min
+    // (150 blocks) after it, earning 1 per second. Total grew 7200 s at 1/s.
+    const anchor = Date.now() - 7_200_000;
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={POOLS}
+        score={{
+          grossEarnedScore: '3600', availableScore: '0', maturedGrossEarnedScore: '0', scoreSpent: '0',
+          grossScorePerSecond: '1', maturingScorePerSecond: '0',
+          snapshotTimestampMilliseconds: anchor, maturingAnchorMilliseconds: anchor,
+          maturingSchedule: [{ fromBlock: '1000', scorePerSecond: '0' }, { fromBlock: '1150', scorePerSecond: '1' }],
+        }}
+      />,
+    );
+    // Available = (7200 − 1800) s at 1/s; cooldown = 3600 + 7200 − 5400.
+    const metric = screen.getByText('Your Available Score').closest('div');
+    expect(Number(metric.querySelector('strong').textContent)).toBeGreaterThanOrEqual(5400);
+    expect(Number(metric.querySelector('strong').textContent)).toBeLessThan(5410);
+    expect(screen.getByText(/in cooldown, available within/).textContent).toMatch(/^540\d/);
+  });
+
   it('hides the cooldown note when nothing is cooling down', () => {
     render(
       <USD8Landing
@@ -508,7 +531,8 @@ describe('USD8 landing navigation', () => {
     rerender(<USD8Landing wallet={wallet} pools={POOLS} scoreRatesPerTokenPerDay={{ usd8: '3', savings: '0.25' }} />);
     const rates = screen.getAllByRole('button', { name: 'About score rate' });
     expect(rates[0].closest('dd')).toHaveTextContent('3 per USD8 per day');
-    expect(rates[1].closest('dd')).toHaveTextContent('0.25 per sUSD8 per day');
+    // sUSD8 vault not deployed yet: the card shows the planned 0.1, not the chain value.
+    expect(rates[1].closest('dd')).toHaveTextContent('0.1 per sUSD8 per day');
     expect(screen.getByRole('tooltip', {
       name: 'You get 3 score per day for every USD8 you hold. Rewarded every block.',
     })).toBeInTheDocument();
@@ -625,8 +649,9 @@ describe('Free insurance table', () => {
     expect(within(savingsCard).queryByText('$76.94M')).not.toBeInTheDocument();
     expect(within(savingsCard).queryByText(/USDC/)).not.toBeInTheDocument();
     expect(within(savingsCard).getByText('3.24%')).toBeInTheDocument();
-    expect(within(savingsCard).getByRole('button', { name: 'Go to Morpho' })).toBeInTheDocument();
-    expect(within(savingsCard).queryByRole('link', { name: 'Go to Morpho' })).not.toBeInTheDocument();
+    expect(within(savingsCard).getByRole('button', { name: 'Coming Soon' })).toBeInTheDocument();
+    expect(within(savingsCard).queryByRole('link')).not.toBeInTheDocument();
+    expect(within(savingsCard).queryByText('Go to Morpho')).not.toBeInTheDocument();
     expect(within(savingsCard).queryByRole('button', { name: 'Deposit' })).not.toBeInTheDocument();
     expect(within(savingsCard).queryByRole('button', { name: 'Withdraw' })).not.toBeInTheDocument();
   });

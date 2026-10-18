@@ -24,6 +24,25 @@ function scoreValue(payload, key) {
   return formatUnits(BigInt(requiredString(payload, key)), SCORE_DECIMALS);
 }
 
+/// Matured-score rate changes inside the holding window (score API snapshot
+/// version 4+): [{ fromBlock, scorePerSecond }], first point at the score cutoff.
+/// Anything malformed returns null, and the display falls back to the single
+/// maturingScorePerSecond rate.
+export function parseMaturingSchedule(payload) {
+  const raw = payload?.maturingSchedule;
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const points = [];
+  for (const point of raw) {
+    const fromBlock = String(point?.fromBlock ?? '');
+    const rate = String(point?.scorePerSecond ?? '');
+    if (!/^\d+$/.test(fromBlock) || !/^\d+$/.test(rate)) return null;
+    if (points.length && BigInt(fromBlock) <= BigInt(points.at(-1).fromBlock)) return null;
+    points.push({ fromBlock, scorePerSecond: formatUnits(BigInt(rate), SCORE_DECIMALS) });
+  }
+  if (points[0].fromBlock !== String(payload.scoreCutoffBlock ?? '')) return null;
+  return points;
+}
+
 function tokenScores(payload, grossEarnedScore, grossScorePerSecond) {
   if (!Array.isArray(payload?.tokenScores) || payload.tokenScores.length === 0) {
     throw new Error('Score API response is missing tokenScores');
@@ -79,6 +98,10 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
   // A browser-cached snapshot can outlive a redeploy (it is cacheable until the
   // next UTC day). Never mix another deployment's score with this one.
   if (wrongDeployment(payload)) payload = await request(true);
+  // Snapshots before version 4 have no maturing schedule, so the available
+  // score could not move forward correctly; a browser may still hold one from
+  // before the score API update. Fetch the current snapshot once instead.
+  else if (!refresh && !Array.isArray(payload?.maturingSchedule)) payload = await request(true);
   if (wrongDeployment(payload)) throw new Error('Score API returned a different deployment');
   if (String(payload.chainId) !== expectedChainId) {
     throw new Error(`Unexpected score API network: ${payload.chainId ?? 'unknown'}`);
@@ -104,6 +127,11 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
     availableScore: scoreValue(payload, 'availableScore'),
     grossScorePerSecond: formatUnits(BigInt(grossScorePerSecond), SCORE_DECIMALS),
     maturingScorePerSecond: scoreValue(payload, 'maturingScorePerSecond'),
+    // The snapshot's own anchor for the available score. Kept apart from the
+    // display anchor (snapshotTimestampMilliseconds), which moves when the
+    // total is re-anchored to current balances.
+    maturingSchedule: parseMaturingSchedule(payload),
+    maturingAnchorMilliseconds: snapshotTimestamp * 1_000,
     tokenScores: tokenScores(payload, grossEarnedScore, grossScorePerSecond),
   };
 }

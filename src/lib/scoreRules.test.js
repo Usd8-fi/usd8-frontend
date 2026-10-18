@@ -32,6 +32,18 @@ describe('scoreRules', () => {
     expect(scoreSnapshotStale(snapshot, { ...current, scoreSpent: '2000000000000000000' }, contracts)).toBe(true);
   });
 
+  it('is stale when the onchain holding window differs from the snapshot\'s', () => {
+    const current = { scoreBalances: { usd8: '100', savings: '50' }, scoreSpent: '1000000000000000000' };
+    const windowed = { ...snapshot, minHoldingRequired: '50400' };
+    expect(scoreSnapshotStale(windowed, { ...current, insurance: { minHoldingRequiredBlocks: '50400' } }, contracts)).toBe(false);
+    expect(scoreSnapshotStale(windowed, { ...current, insurance: { minHoldingRequiredBlocks: '300' } }, contracts)).toBe(true);
+    // Unknown on either side never forces a refresh.
+    expect(scoreSnapshotStale(windowed, { ...current, insurance: { minHoldingRequiredBlocks: null } }, contracts)).toBe(false);
+    expect(scoreSnapshotStale(snapshot, { ...current, insurance: { minHoldingRequiredBlocks: '300' } }, contracts)).toBe(false);
+    expect(scoreBalanceRefreshKey(windowed, { ...current, insurance: { minHoldingRequiredBlocks: '300' } }, contracts, 1, '0xAbC'))
+      .toMatch(/:300$/);
+  });
+
   it('keys a refresh only while stale, so one balance change triggers one refetch', () => {
     const fresh = { scoreBalances: { usd8: '100', savings: '50' }, scoreSpent: '1000000000000000000' };
     expect(scoreBalanceRefreshKey(snapshot, fresh, contracts, 1, '0xAbC')).toBe('');

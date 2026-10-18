@@ -41,9 +41,22 @@ function scoreSpentChanged(score, onchainScoreSpent) {
   }
 }
 
+// The holding window decides how much score has matured. If governance changes
+// it after the snapshot block, the snapshot's cutoff and maturing schedule are
+// measured against the old window, so a fresh snapshot is needed.
+function holdingWindowChanged(score, onchainHoldingBlocks) {
+  if (typeof onchainHoldingBlocks !== 'string' || typeof score?.minHoldingRequired !== 'string') return false;
+  try {
+    return BigInt(score.minHoldingRequired) !== BigInt(onchainHoldingBlocks);
+  } catch {
+    return false;
+  }
+}
+
 export function scoreSnapshotStale(score, chainData, contracts) {
   return scoredTokenBalancesChanged(score, chainData?.scoreBalances, contracts)
-    || scoreSpentChanged(score, chainData?.scoreSpent);
+    || scoreSpentChanged(score, chainData?.scoreSpent)
+    || holdingWindowChanged(score, chainData?.insurance?.minHoldingRequiredBlocks);
 }
 
 export function scoreBalanceRefreshKey(score, chainData, contracts, chainId, address) {
@@ -56,6 +69,7 @@ export function scoreBalanceRefreshKey(score, chainData, contracts, chainId, add
     chainData.scoreBalances?.usd8,
     chainData.scoreBalances?.savings,
     chainData.scoreSpent,
+    chainData.insurance?.minHoldingRequiredBlocks,
   ].join(':');
 }
 
@@ -65,6 +79,40 @@ function advanceScoreValue(value, rate, elapsedMilliseconds) {
     parseUnits(value || '0', 18) + parseUnits(rate || '0', 18) * elapsed / 1_000n,
     18,
   );
+}
+
+/// Available score at `nowMilliseconds`. Score matures once held for the holding
+/// window, so the cutoff moves forward with the clock: the snapshot's matured
+/// score grows by each maturingSchedule rate as the cutoff passes that block
+/// (12-second blocks), and by the last rate (the snapshot's live rate) after it
+/// passes the snapshot block. With a steady balance the score in cooldown stays
+/// flat once the window has passed; it only moves after a balance change.
+/// Without a schedule (older snapshots), falls back to advancing availableScore
+/// at maturingScorePerSecond from `fallbackAnchorMilliseconds`.
+export function liveAvailableScore(score, nowMilliseconds, fallbackAnchorMilliseconds = null) {
+  if (!score || score.availableScore == null) return score?.availableScore ?? null;
+  const anchor = Number(score.maturingAnchorMilliseconds);
+  const schedule = score.maturingSchedule;
+  if (!Array.isArray(schedule) || schedule.length === 0 || !Number.isSafeInteger(anchor) || anchor <= 0
+    || score.maturedGrossEarnedScore == null) {
+    const fallback = Number(fallbackAnchorMilliseconds
+      ?? score.snapshotTimestampMilliseconds ?? Number(score.snapshotTimestamp || 0) * 1_000);
+    return Number.isSafeInteger(fallback) && fallback > 0
+      ? advanceScoreValue(score.availableScore, score.maturingScorePerSecond, nowMilliseconds - fallback)
+      : score.availableScore;
+  }
+  const cutoff = BigInt(schedule[0].fromBlock);
+  const elapsed = BigInt(Math.max(0, Math.floor(nowMilliseconds - anchor)));
+  let matured = parseUnits(score.maturedGrossEarnedScore, 18);
+  schedule.forEach((point, index) => {
+    const start = (BigInt(point.fromBlock) - cutoff) * BLOCK_MILLISECONDS;
+    const next = schedule[index + 1];
+    const end = next ? (BigInt(next.fromBlock) - cutoff) * BLOCK_MILLISECONDS : elapsed;
+    const until = elapsed < end ? elapsed : end;
+    if (until > start) matured += parseUnits(point.scorePerSecond, 18) * (until - start) / 1_000n;
+  });
+  const spent = parseUnits(score.scoreSpent || '0', 18);
+  return formatUnits(matured > spent ? matured - spent : 0n, 18);
 }
 
 // ─── Rate history ───────────────────────────────────────────────────────────

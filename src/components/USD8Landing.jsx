@@ -6,6 +6,7 @@ import usd8Logo from '../assets/usd8Logo.svg';
 import usd8Wordmark from '../assets/usd8-wordmark.svg';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
 import { useSecondClock } from '../lib/secondClock.js';
+import { liveAvailableScore } from '../lib/scoreRules.js';
 import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { durationPhrase } from '../lib/durations.js';
@@ -68,8 +69,18 @@ function LiveScoreValue({ loading, score, valueKey, rateKey, keepMissing = false
   return <ScoreValue loading={loading} value={value} decimals={scoreRateDecimals(score?.[rateKey])} />;
 }
 
-/// Score earned but still inside the holding window: total − spent − available,
-/// advanced live with the same snapshot rates as the two figures above it.
+/// Available score, moved forward every second along the snapshot's maturing
+/// schedule (the holding cutoff advances with the clock).
+function LiveAvailableScoreValue({ loading, score }) {
+  const snapshotMilliseconds = scoreSnapshotMilliseconds(score);
+  const canAdvance = snapshotMilliseconds > 0 && score?.availableScore != null;
+  const now = useSecondClock(canAdvance);
+  const value = canAdvance ? liveAvailableScore(score, now, snapshotMilliseconds) : score?.availableScore;
+  return <ScoreValue loading={loading} value={value} decimals={scoreRateDecimals(score?.grossScorePerSecond)} />;
+}
+
+/// Score earned but still inside the holding window: total − spent − available.
+/// With a steady balance it stays flat once the window has passed.
 function LiveCooldownScore({ score, maturityPhrase }) {
   const snapshotMilliseconds = scoreSnapshotMilliseconds(score);
   const ready = snapshotMilliseconds > 0 && score?.availableScore != null && score?.grossEarnedScore != null;
@@ -77,7 +88,7 @@ function LiveCooldownScore({ score, maturityPhrase }) {
   if (!ready) return null;
   const elapsed = Math.max(0, now - snapshotMilliseconds);
   const total = wadUnits(liveScoreValue(score.grossEarnedScore, score.grossScorePerSecond, elapsed));
-  const available = wadUnits(liveScoreValue(score.availableScore, score.maturingScorePerSecond, elapsed));
+  const available = wadUnits(liveAvailableScore(score, now, snapshotMilliseconds));
   const spent = wadUnits(score.scoreSpent || '0');
   const cooling = total - spent - available;
   if (cooling <= 0n) return null;
@@ -255,6 +266,11 @@ function simulatorPools(pools = []) {
   });
 }
 
+// The sUSD8 Morpho vault is not deployed or registered yet, so there is no
+// on-chain rate to read. Show the planned rate until it is; then pass
+// scoreRatesPerTokenPerDay?.savings again (and its loading flag).
+const SUSD8_PLANNED_SCORE_RATE_PER_DAY = '0.1';
+
 function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, scoreMaturitySeconds, scoreRatesPerTokenPerDay, scoreRatesLoading, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
   const scoreMaturityPhrase = durationPhrase(scoreMaturitySeconds) || 'the holding period';
   const scoreLoading = scoreStatus === 'loading';
@@ -322,14 +338,14 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           scoreKey="sUsd8Score"
           scoreRateKey="sUsd8ScorePerSecond"
           scoreLoading={scoreLoading}
-          scoreRatePerDay={scoreRatesPerTokenPerDay?.savings}
-          scoreRateLoading={scoreRatesLoading}
+          scoreRatePerDay={SUSD8_PLANNED_SCORE_RATE_PER_DAY}
+          scoreRateLoading={false}
           scoreRateUnit="sUSD8"
           apy={savingsVault.apy}
         >
           {/* Unlinked until the USD8 Morpho vault is deployed; then link MORPHO_VAULT_URL again. */}
           <button type="button" className="landing-gold-button">
-            Go to Morpho
+            Coming Soon
           </button>
         </AssetCard>
       </section>
@@ -345,13 +361,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
               </InfoTooltip>
             </span>
             <strong>
-              <LiveScoreValue
-                loading={availableScoreLoading ?? scoreLoading}
-                score={score}
-                valueKey="availableScore"
-                rateKey="maturingScorePerSecond"
-                keepMissing
-              />
+              <LiveAvailableScoreValue loading={availableScoreLoading ?? scoreLoading} score={score} />
             </strong>
             <LiveCooldownScore score={score} maturityPhrase={scoreMaturityPhrase} />
           </div>

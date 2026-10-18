@@ -1,5 +1,5 @@
 import WalletNoticeProvider, { NoticeMessage } from './components/WalletNotice.jsx';
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { zeroAddress } from 'viem';
 import { useAccount, useChainId, useDisconnect, useSwitchChain, useWriteContract } from 'wagmi';
@@ -33,6 +33,7 @@ import {
   scoreWithCurrentBalanceRates,
   scoreRateChangedSinceSnapshot,
   scoreWithTokenBreakdown,
+  liveAvailableScore,
 } from './lib/scoreRules.js';
 import { matchesSettlementTopology, normalizedAddressOrder, settlementPayoutDetails } from './lib/settlement.js';
 import { PoolActionDialog, Usd8ActionDialog } from './components/TransactionDialogs.jsx';
@@ -1179,6 +1180,12 @@ export default function App({ autoConnect = false }) {
         chainData.scoreBalancesSnapshotTimestampMilliseconds,
       )
     : score;
+  // Live available score, read once when the claim dialog opens (and when a new
+  // snapshot arrives) so the prefilled spend never resets while the user types.
+  const claimAvailableScore = useMemo(
+    () => (claimToken ? liveAvailableScore(score, Date.now()) : null),
+    [claimToken, score],
+  );
   const selectedSettlementRow = chainData.claim
       && claimSettlement?.contextKey === claimContextKey
       && matchesSettlementContext(claimSettlement, chainData.incident?.id, chainData.incident?.root)
@@ -1327,7 +1334,7 @@ export default function App({ autoConnect = false }) {
                 ? chainData.balances.savings
                 : chainData.balances.insuredTokens?.[row.id] || '0',
           }))}
-          availableScore={score?.availableScore ?? '0'}
+          availableScore={claimAvailableScore ?? '0'}
           availableBoosters={chainData.balances.boosters || '0'}
           minHoldingRequiredBlocks={actionableIncident?.tokenId === claimToken.id
             ? actionableIncident.minHoldingRequiredBlocks : chainData.insurance?.minHoldingRequiredBlocks}

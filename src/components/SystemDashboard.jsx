@@ -11,6 +11,7 @@ import { fetchScoreList } from '../lib/scoreApi.js';
 import { fetchTeeFleet, fetchTeeOnchain } from '../lib/teeStatus.js';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import PercentRing from './PercentRing.jsx';
+import AppErrors from './AppErrors.jsx';
 import ExternalServices from './ExternalServices.jsx';
 import { Metric, Panel } from './SystemDashboardParts.jsx';
 import './SystemDashboard.css';
@@ -598,6 +599,7 @@ export default function SystemDashboard() {
       <ExitQueue data={data} stale={stale} now={now || Date.now()} />
       <TeeStatus now={now || Date.now()} />
       <InsuranceScores now={now || Date.now()} />
+      <AppErrors now={now || Date.now()} />
       <ExternalServices now={now || Date.now()} />
       <a className="sd-back" href="#">Back To App</a>
     </main>
