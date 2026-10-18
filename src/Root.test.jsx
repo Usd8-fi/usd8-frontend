@@ -29,12 +29,11 @@ describe('wallet startup', () => {
     expect(mocks.prepare).not.toHaveBeenCalled();
     await waitFor(() => expect(mocks.prepare).toHaveBeenCalledTimes(1));
   });
-  it('opens the system dashboard from its link and returns to the app', async () => {
+  it('does not serve the system dashboard on the public site (local-only now)', async () => {
     window.location.hash = '#system-dashboard';
     render(<Root />);
-    expect(await screen.findByText('System dashboard')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
-    window.location.hash = '#';
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument();
+    expect(screen.queryByText('System dashboard')).toBeNull();
+    window.location.hash = '';
   });
 });

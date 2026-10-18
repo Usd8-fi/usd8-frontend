@@ -1,27 +1,8 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PublicApp from './PublicApp.jsx';
 import ActivityTicker from './components/ActivityTicker.jsx';
-import LoadingSpinner from './components/LoadingSpinner.jsx';
-
-// The dashboard and its charts load only when its page is opened.
-const SystemDashboard = lazy(() => import('./components/SystemDashboard.jsx'));
-export const SYSTEM_DASHBOARD_HASH = '#system-dashboard';
-
-function useDashboardRoute() {
-  const [open, setOpen] = useState(() => window.location.hash === SYSTEM_DASHBOARD_HASH);
-  useEffect(() => {
-    const onChange = () => {
-      setOpen(window.location.hash === SYSTEM_DASHBOARD_HASH);
-      window.scrollTo?.(0, 0);
-    };
-    window.addEventListener('hashchange', onChange);
-    return () => window.removeEventListener('hashchange', onChange);
-  }, []);
-  return open;
-}
 
 export default function Root() {
-  const dashboardOpen = useDashboardRoute();
   const [runtime, setRuntime] = useState(null);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
@@ -49,9 +30,6 @@ export default function Root() {
     const timer = setTimeout(() => connect(false), 100);
     return () => clearTimeout(timer);
   }, []);
-  if (dashboardOpen) {
-    return <Suspense fallback={<LoadingSpinner label="Loading system dashboard" />}><SystemDashboard /></Suspense>;
-  }
   return (
     <>
       {runtime ? <runtime.Component autoConnect={runtime.autoConnect} />
