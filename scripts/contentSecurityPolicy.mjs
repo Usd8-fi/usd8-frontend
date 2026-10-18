@@ -68,9 +68,17 @@ export function cspContent(directives = CSP_DIRECTIVES) {
     .join('; ');
 }
 
+/// Add origins that depend on build configuration (e.g. the Sentry ingest host
+/// from VITE_SENTRY_DSN) to connect-src.
+export function withConnectOrigins(origins = []) {
+  const extra = origins.filter(Boolean).filter((origin) => !CSP_DIRECTIVES['connect-src'].includes(origin));
+  return { ...CSP_DIRECTIVES, 'connect-src': [...CSP_DIRECTIVES['connect-src'], ...extra] };
+}
+
 /// Vite plugin: inject the policy as the first <head> child of the production
 /// build only. The dev server needs inline module scripts and is left alone.
-export function contentSecurityPolicy() {
+export function contentSecurityPolicy({ connectOrigins = [] } = {}) {
+  const directives = withConnectOrigins(connectOrigins);
   return {
     name: 'usd8-content-security-policy',
     apply: 'build',
@@ -78,9 +86,20 @@ export function contentSecurityPolicy() {
       order: 'post',
       handler: () => [{
         tag: 'meta',
-        attrs: { 'http-equiv': 'Content-Security-Policy', content: cspContent() },
+        attrs: { 'http-equiv': 'Content-Security-Policy', content: cspContent(directives) },
         injectTo: 'head-prepend',
       }],
     },
   };
+}
+
+/// Sentry ingest origin for the Content-Security-Policy, from a DSN like
+/// https://<key>@o123.ingest.de.sentry.io/456.
+export function sentryIngestOrigin(dsn = '') {
+  try {
+    const url = new URL(dsn);
+    return url.protocol === 'https:' && /(^|\.)sentry\.io$/.test(url.hostname) ? `https://${url.hostname}` : null;
+  } catch {
+    return null;
+  }
 }

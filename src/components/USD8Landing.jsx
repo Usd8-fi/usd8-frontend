@@ -139,6 +139,7 @@ function SiteFooter({ updatedAt }) {
           <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core/tree/main/audit" target="_blank" rel="noreferrer">Audit Report</a>
           <a className="site-nav-link" href={docsUrl('addresses.html')} target="_blank" rel="noreferrer">Addresses</a>
           <a className="site-nav-link" href={docsUrl('faqs.html')} target="_blank" rel="noreferrer">FAQs</a>
+          <a className="site-nav-link" href={docsUrl('defi-insurance.html#boosters')} target="_blank" rel="noreferrer">Check Boosters</a>
         </div>
         <div>
           <a className="site-nav-link" href={docsUrl('transparency.html')} target="_blank" rel="noreferrer">Transparency</a>

@@ -1,6 +1,6 @@
 // Terms acceptance after wallet connect. The server record (write-only, no
 // lookup endpoint) is the evidence; the browser flag only avoids asking again.
-export const TERMS_VERSION = '2026-10-17';
+export const TERMS_VERSION = '2026-10-18';
 export const TERMS_URL = './docs/legal.html#terms';
 export const RISK_URL = './docs/legal.html#risk-disclaimer';
 const STORAGE_KEY = 'usd8.termsAccepted';

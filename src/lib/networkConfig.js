@@ -33,6 +33,13 @@ const SEPOLIA_CONTRACTS = Object.freeze({
   }),
 });
 
+/// Mainnet E2E "Test Token" (TEST, usd8-core script/e2e). Shown ONLY by the
+/// local dev server with VITE_LOCAL_E2E_TEST_TOKEN=1 (gitignored
+/// .env.development.local). `import.meta.env.DEV` is statically false in
+/// production builds, so the address never reaches the usd8.fi bundle.
+export const LOCAL_E2E_TEST_TOKEN = import.meta.env.DEV === true
+  && import.meta.env.VITE_LOCAL_E2E_TEST_TOKEN === '1';
+
 // Mainnet step-01 CREATE3 deployment (usd8-core tag v1,
 // deployments/mainnet/01-system-create3-plan.json, blocks 26211008-26211082).
 // CREATE3 gives the protocol contracts the same addresses as on Sepolia; the
@@ -62,6 +69,8 @@ const MAINNET_CONTRACTS = Object.freeze({
   // Launch scope: USD8 is the only insured token.
   insuredTokens: Object.freeze({
     usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+    // Mainnet E2E test token, local dev server only (see LOCAL_E2E_TEST_TOKEN).
+    ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? { 'test-test': '0x116e4336047c97703f84619de03b6bf893667de1' } : {}),
   }),
 });
 

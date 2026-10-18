@@ -427,6 +427,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   const hasAccount = Boolean(account) && account.toLowerCase() !== zeroAddress;
   account = hasAccount ? account.toLowerCase() : zeroAddress;
   const insuredTokenEntries = Object.entries(contracts.insuredTokens);
+  const testTokenId = contracts.insuredTokens['test-test'] ? 'test-test' : 'test-msloss';
   const coverPools = contracts.coverPools;
   const FIXED_READS = 12;
   const POOL_READS = 13;
@@ -439,7 +440,8 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'activeIncidentId' },
     { address: contracts.insuredTokens['aave-sgho'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
     { address: contracts.insuredTokens['sky-susds'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
-    { address: contracts.insuredTokens['test-msloss'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+    // Test-token slot: Sepolia msLOSS, or the local-only mainnet E2E token.
+    { address: contracts.insuredTokens[testTokenId], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
     { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.usd8] },
     { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.savingsVault] },
     { address: contracts.registry, abi: registryBoosterAbi, functionName: 'boosterConfig' },
@@ -725,7 +727,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       insuredTokens: {
         'aave-sgho': formatted(sGho),
         'sky-susds': formatted(sUsds),
-        'test-msloss': formatted(msloss),
+        [testTokenId]: formatted(msloss),
       },
     },
     pools: pools.map((pool, index) => ({ ...pool,

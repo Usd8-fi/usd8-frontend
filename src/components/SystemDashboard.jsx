@@ -11,6 +11,8 @@ import { fetchScoreList } from '../lib/scoreApi.js';
 import { fetchTeeFleet, fetchTeeOnchain } from '../lib/teeStatus.js';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import PercentRing from './PercentRing.jsx';
+import ExternalServices from './ExternalServices.jsx';
+import { Metric, Panel } from './SystemDashboardParts.jsx';
 import './SystemDashboard.css';
 
 // The dashboard is a slow-moving overview: one round of RPC reads per hour
@@ -107,23 +109,6 @@ function AnimatedNumber({ value, format, fallback = null }) {
   }, [value]);
   if (value === null || value === undefined) return fallback;
   return <span key={flash} className={flash ? 'sd-flash' : undefined}>{format(shown ?? value)}</span>;
-}
-
-function Metric({ label, children }) {
-  return <div className="sd-metric"><span>{label}</span><strong>{children}</strong></div>;
-}
-
-function Panel({ title, note, stale, children, className = '' }) {
-  return (
-    <section className={`sd-panel ${className}`} aria-label={title}>
-      <header className="sd-panel-head">
-        <h2>{title}</h2>
-        {stale ? <span className="sd-stale"><LoadingSpinner />Stale</span> : null}
-        {note ? <span className="sd-note">{note}</span> : null}
-      </header>
-      {children}
-    </section>
-  );
 }
 
 /// Pool value over time with a glowing head, a sweep and a draw-in.
@@ -613,6 +598,7 @@ export default function SystemDashboard() {
       <ExitQueue data={data} stale={stale} now={now || Date.now()} />
       <TeeStatus now={now || Date.now()} />
       <InsuranceScores now={now || Date.now()} />
+      <ExternalServices now={now || Date.now()} />
       <a className="sd-back" href="#">Back To App</a>
     </main>
   );

@@ -9,6 +9,7 @@ import skyLogo from '../assets/sky-susds.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
+import { LOCAL_E2E_TEST_TOKEN } from '../lib/networkConfig.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import PercentRing from './PercentRing.jsx';
@@ -57,6 +58,15 @@ export const COVERED_PROTOCOL_ROWS = [
     token: <>Sepolia Test Loss<br />msLOSS</>,
     address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
   },
+  // Mainnet E2E test token: local dev server only (never in a production build).
+  // `import.meta.env.DEV` is inlined so production builds drop this row entirely.
+  ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? [{
+    id: 'test-test',
+    symbol: 'TEST',
+    iconSrc: msLossLogo,
+    token: <>Test Token<br />TEST</>,
+    address: '0x116e4336047C97703F84619dE03b6Bf893667DE1',
+  }] : []),
 ];
 
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;

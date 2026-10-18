@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CSP_DIRECTIVES, cspContent } from '../scripts/contentSecurityPolicy.mjs';
+import { CSP_DIRECTIVES, cspContent, sentryIngestOrigin, withConnectOrigins } from '../scripts/contentSecurityPolicy.mjs';
 import { NETWORKS } from './lib/networkConfig.js';
 
 const allowed = (origin) => CSP_DIRECTIVES['connect-src'].some((entry) => {
@@ -45,7 +45,18 @@ describe('content security policy', () => {
 
   it('is injected into the production build only', () => {
     const config = readFileSync(resolve(process.cwd(), 'vite.config.mjs'), 'utf8');
-    expect(config).toContain('contentSecurityPolicy()');
+    expect(config).toContain('contentSecurityPolicy({ connectOrigins: [sentryIngestOrigin(env.VITE_SENTRY_DSN)] })');
     expect(readFileSync(resolve(process.cwd(), 'scripts/contentSecurityPolicy.mjs'), 'utf8')).toContain("apply: 'build'");
+  });
+
+  it('adds the Sentry ingest host from the DSN to connect-src only', () => {
+    const origin = sentryIngestOrigin('https://abc123@o4500000000000000.ingest.de.sentry.io/4500000000000001');
+    expect(origin).toBe('https://o4500000000000000.ingest.de.sentry.io');
+    expect(sentryIngestOrigin('')).toBeNull();
+    expect(sentryIngestOrigin('https://key@evil.example/1')).toBeNull();
+    const directives = withConnectOrigins([origin, null]);
+    expect(directives['connect-src']).toContain(origin);
+    expect(directives['script-src']).toEqual(CSP_DIRECTIVES['script-src']);
+    expect(CSP_DIRECTIVES['connect-src']).not.toContain(origin);
   });
 });

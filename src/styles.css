@@ -2213,3 +2213,26 @@ body:has(.activity-ticker) { padding-bottom: 28px; }
 /* On a cover pool card the ring uses the card's own darker shade, like the old capacity bar fill. */
 .cover-pool-card .percent-ring-arc { stroke: var(--pool-capacity-fill); }
 .cover-pool-card .percent-ring-track { stroke: rgba(255, 255, 255, 0.28); }
+
+/* Crash fallback (AppErrorBoundary) */
+.app-crash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 100vh;
+  padding: 24px;
+  color: var(--text);
+  font-family: var(--font-family);
+  text-align: center;
+}
+
+.app-crash button {
+  padding: 10px 20px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}

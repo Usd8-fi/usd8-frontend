@@ -1,10 +1,12 @@
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { execSync } from 'node:child_process';
+import { defineConfig, loadEnv } from 'vite';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import react from '@vitejs/plugin-react';
 import { createReadStream } from 'node:fs';
 import { extname } from 'node:path';
 import { documentationAssets } from './scripts/documentationAssets.mjs';
-import { contentSecurityPolicy } from './scripts/contentSecurityPolicy.mjs';
+import { contentSecurityPolicy, sentryIngestOrigin } from './scripts/contentSecurityPolicy.mjs';
 
 const scoreProxy = {
   target: 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com',
@@ -41,11 +43,38 @@ const documentationAssetsInDev = {
   },
 };
 
-export default defineConfig({
+function gitRelease() {
+  try {
+    return execSync('git rev-parse --short=12 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const release = `usd8-frontend@${gitRelease()}`;
+  // Source maps are built only when they can be uploaded to Sentry, and are
+  // deleted after upload so they are never published with the site.
+  const uploadSourceMaps = Boolean(env.SENTRY_AUTH_TOKEN && env.VITE_SENTRY_DSN);
+  return {
   base: './',
+  define: { 'import.meta.env.VITE_APP_RELEASE': JSON.stringify(release) },
   // viem's ESM build by module file; see src/lib/viemLite.js.
   resolve: { alias: { 'viem-esm': fileURLToPath(new URL('./node_modules/viem/_esm', import.meta.url)) } },
-  plugins: [react(), documentationAssetsInDev, contentSecurityPolicy()],
+  plugins: [
+    react(),
+    documentationAssetsInDev,
+    contentSecurityPolicy({ connectOrigins: [sentryIngestOrigin(env.VITE_SENTRY_DSN)] }),
+    ...(uploadSourceMaps ? [sentryVitePlugin({
+      org: env.SENTRY_ORG || 'usd8fi',
+      project: env.SENTRY_PROJECT || 'usd8-frontend',
+      authToken: env.SENTRY_AUTH_TOKEN,
+      release: { name: release },
+      sourcemaps: { filesToDeleteAfterUpload: ['docs/**/*.map'] },
+      telemetry: false,
+    })] : []),
+  ],
   server: {
     hmr: false,
     proxy: {
@@ -68,5 +97,7 @@ export default defineConfig({
   build: {
     outDir: 'docs',
     emptyOutDir: true,
+    sourcemap: uploadSourceMaps ? 'hidden' : false,
   },
+  };
 });

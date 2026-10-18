@@ -1,11 +1,12 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ load: vi.fn(), fetchActivity: vi.fn(), fetchScoreList: vi.fn(), fetchTeeFleet: vi.fn(), fetchTeeOnchain: vi.fn() }));
+const mocks = vi.hoisted(() => ({ load: vi.fn(), fetchActivity: vi.fn(), fetchScoreList: vi.fn(), fetchTeeFleet: vi.fn(), fetchTeeOnchain: vi.fn(), fetchServices: vi.fn() }));
 vi.mock('../lib/systemDashboard.js', async importOriginal => ({ ...(await importOriginal()), loadSystemDashboard: mocks.load }));
 vi.mock('../lib/scoreApi.js', async importOriginal => ({ ...(await importOriginal()), fetchScoreList: mocks.fetchScoreList }));
 vi.mock('../lib/teeStatus.js', async importOriginal => ({ ...(await importOriginal()), fetchTeeFleet: mocks.fetchTeeFleet, fetchTeeOnchain: mocks.fetchTeeOnchain }));
 vi.mock('../lib/activityFeed.js', async importOriginal => ({ ...(await importOriginal()), fetchActivity: mocks.fetchActivity }));
+vi.mock('../lib/servicesStatus.js', async importOriginal => ({ ...(await importOriginal()), fetchServices: mocks.fetchServices }));
 import SystemDashboard from './SystemDashboard.jsx';
 
 const pool = {
@@ -37,11 +38,12 @@ beforeEach(() => {
   mocks.fetchScoreList.mockResolvedValue([]);
   mocks.fetchTeeFleet.mockResolvedValue(TEE_FLEET);
   mocks.fetchTeeOnchain.mockResolvedValue({ pcrHash: `0x${'f4'.repeat(32)}` });
+  mocks.fetchServices.mockRejectedValue(new Error('LOCAL_ONLY'));
 });
 afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); mocks.fetchScoreList.mockReset(); mocks.fetchTeeFleet.mockReset(); mocks.fetchTeeOnchain.mockReset(); });
 
 describe('SystemDashboard', () => {
-  it('shows the eight sections in order, with the reserve after insured supply and no exposure ladder', async () => {
+  it('shows the eight protocol sections in order, then external services, with the reserve after insured supply and no exposure ladder', async () => {
     mocks.load.mockResolvedValue(snapshot);
     mocks.fetchActivity.mockResolvedValue(activity);
     render(<SystemDashboard />);
@@ -49,7 +51,10 @@ describe('SystemDashboard', () => {
     const names = screen.getAllByRole('region').map(region => region.getAttribute('aria-label')).filter(name => (
       ['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover To Exposure', 'Pool Yield', 'Cover Pool Yield', 'Withdrawal Exit Queue', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE', 'Insurance Scores'].includes(name)));
     expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE', 'Insurance Scores']);
-    expect(screen.getAllByRole('region')).toHaveLength(8);
+    // Plus the External Services section, which says it is local-only here.
+    expect(screen.getAllByRole('region')).toHaveLength(9);
+    expect(screen.getAllByRole('region').at(-1)).toHaveAccessibleName('External Services');
+    expect(await screen.findByText('External services are shown only by the local dashboard server')).toBeInTheDocument();
   });
 
   it('shows the TEE fleet, approved image and onchain PCR (no signer list), and flags a worker on another image', async () => {

@@ -37,6 +37,7 @@ import {
 import { matchesSettlementTopology, normalizedAddressOrder, settlementPayoutDetails } from './lib/settlement.js';
 import { PoolActionDialog, Usd8ActionDialog } from './components/TransactionDialogs.jsx';
 import { walletConnectorConfigured } from './lib/walletConnector.js';
+import { reportError } from './lib/errorReporting.js';
 import TermsAcceptanceDialog from './components/TermsAcceptanceDialog.jsx';
 import { hasAcceptedTerms, recordTermsAcceptance, rememberTermsAccepted } from './lib/termsAcceptance.js';
 
@@ -215,6 +216,7 @@ export default function App({ autoConnect = false }) {
       })
       .catch(error => {
         if (controller.signal.aborted || walletScopeRef.current !== requestedWalletScope || error.name === 'AbortError') return;
+        reportError(error, 'score-load');
         setScoreStatus('error');
         setScoreError('Insurance Score could not be loaded. Retry to get your available score.');
       });
@@ -310,6 +312,7 @@ export default function App({ autoConnect = false }) {
         if (walletScopeRef.current === requestedWalletScope
             && scoreRefreshAttempt.current === refreshKey
             && error.name !== 'AbortError') {
+          reportError(error, 'score-refresh');
           setScoreError('Insurance Score could not be refreshed. Retry to update your available score.');
         }
       })
@@ -328,6 +331,7 @@ export default function App({ autoConnect = false }) {
     try {
       await open({ view: 'Connect' });
     } catch (error) {
+      reportError(error, 'wallet-connect');
       setDataError(error?.shortMessage || error?.message || 'Wallet connection failed.');
     } finally {
       setConnecting(false);
@@ -511,6 +515,7 @@ export default function App({ autoConnect = false }) {
     }
     return receipt;
     } catch (error) {
+      reportError(error, 'transaction', { functionName: request.functionName });
       if (walletScopeRef.current === expectedWalletScope) setTransaction(previous => ({ ...previous, phase: 'failed', message: error.shortMessage || error.message }));
       throw error;
     }
@@ -604,6 +609,7 @@ export default function App({ autoConnect = false }) {
       else if (action === 'withdraw') await completePoolWithdrawal();
       else if (action === 'claimReward') await claimPoolRewards();
     } catch (error) {
+      reportError(error, 'pool-action', { action });
       poolStatusLine.fail(error?.shortMessage || error?.message || 'Transaction failed.');
     }
   }
@@ -825,6 +831,7 @@ export default function App({ autoConnect = false }) {
       if (claimAbortController.current === controller
         && walletScopeRef.current === expectedWalletScope
         && error?.name !== 'AbortError') {
+        reportError(error, 'claim-file', { step: claimStep });
         let stepLabel = {
           requirements: 'Claim requirements check failed',
           'token-approval': 'Token approval failed',
@@ -887,6 +894,7 @@ export default function App({ autoConnect = false }) {
       claimStatusLine.clear();
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
+      reportError(error, 'claim-cancel');
       claimStatusLine.fail(error?.shortMessage || error?.message || 'Claim cancellation failed.');
     }
   }
@@ -959,6 +967,7 @@ export default function App({ autoConnect = false }) {
       }
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
+      reportError(error, 'claim-settle');
       claimStatusLine.fail(error?.shortMessage || error?.message || 'Claim settlement failed.');
     }
   }
@@ -1029,6 +1038,7 @@ export default function App({ autoConnect = false }) {
         reason = messages[cause.data?.errorName];
         if (reason) break;
       }
+      reportError(error, 'claim-finalize');
       claimStatusLine.fail(reason || error?.shortMessage || error?.message || 'Claim finalization failed.');
     }
   }
@@ -1095,6 +1105,7 @@ export default function App({ autoConnect = false }) {
       }, 'Confirm the USD8 mint in your wallet.', usd8StatusLine.show);
       usd8StatusLine.show(`Mint confirmed on ${network.name}.`);
     } catch (error) {
+      reportError(error, 'usd8-action');
       usd8StatusLine.fail(error?.shortMessage || error?.message || 'Transaction failed.');
     }
   }

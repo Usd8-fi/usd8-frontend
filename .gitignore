@@ -10,3 +10,4 @@ worker/.dev.vars
 
 # Lambda deployment bundle (build artifact)
 terms-api/fn.zip
+.env.*.local

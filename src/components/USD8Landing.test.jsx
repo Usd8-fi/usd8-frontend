@@ -102,8 +102,10 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
     expect(within(footerNav).queryByRole('link', { name: 'DeFi Insurance' })).not.toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Cover Pools' })).not.toBeInTheDocument();
-    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportAddressesFAQs$/);
-    expect(footerNav.children[1].children).toHaveLength(3);
+    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportAddressesFAQsCheck Boosters$/);
+    expect(footerNav.children[1].children).toHaveLength(4);
+    expect(within(footerNav).getByRole('link', { name: 'Check Boosters' })).toHaveAttribute('href', './docs/defi-insurance.html#boosters');
+    expect(within(footerNav).getByRole('link', { name: 'Check Boosters' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).getByRole('link', { name: 'Addresses' })).toHaveAttribute('href', './docs/addresses.html');
     expect(within(footerNav).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', './docs/faqs.html');
     expect(within(footerNav).getByRole('link', { name: 'Transparency' })).toHaveAttribute(

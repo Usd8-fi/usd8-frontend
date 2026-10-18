@@ -9,7 +9,18 @@ if [[ "$branch" == "main" ]]; then
   exit 1
 fi
 
+# Sentry source maps: upload only when the auth token is in the macOS Keychain
+# (security add-generic-password -a "$USER" -s usd8-sentry-auth-token -w).
+# The maps are deleted after upload, so they never reach docs/ or GitHub.
+if [ -z "${SENTRY_AUTH_TOKEN:-}" ] && command -v security >/dev/null 2>&1; then
+  SENTRY_AUTH_TOKEN="$(security find-generic-password -s usd8-sentry-auth-token -w 2>/dev/null || true)"
+  if [ -n "$SENTRY_AUTH_TOKEN" ]; then export SENTRY_AUTH_TOKEN; fi
+fi
 npm run build
+if find docs -name '*.map' -print -quit | grep -q .; then
+  echo "Refusing to publish: source maps found in docs/" >&2
+  exit 1
+fi
 
 if git diff --quiet && git diff --cached --quiet; then
   echo "No source changes — skipping commit."

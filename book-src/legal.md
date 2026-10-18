@@ -1,6 +1,6 @@
 # Legal - Terms, Privacy and Risk Disclaimer
 
-**Last updated: October 17, 2026**
+**Last updated: October 18, 2026**
 
 Please read this page carefully before accessing usd8.fi, its documentation, interfaces, APIs, or any smart contracts, tokens, vaults, pools, claim mechanisms, settlement services, or other software associated with USD8.
 
@@ -113,7 +113,7 @@ Good-faith security research is permitted only when expressly authorized by, and
 
 ### 8. Third-party services and content
 
-The Services depend on or link to third parties, potentially including wallet providers, Ethereum and other blockchain networks, RPC and API providers, block explorers, USDC and its issuer, Morpho, ERC-4626 strategies, Chainlink and other oracle providers, Amazon Web Services and enclave infrastructure, GitHub, Google Analytics, bridges, decentralized exchanges, and other protocols.
+The Services depend on or link to third parties, potentially including wallet providers, Ethereum and other blockchain networks, RPC and API providers, block explorers, USDC and its issuer, Morpho, ERC-4626 strategies, Chainlink and other oracle providers, Amazon Web Services and enclave infrastructure, GitHub, Google Analytics, Sentry, bridges, decentralized exchanges, and other protocols.
 
 We do not control and are not responsible for third-party code, assets, services, terms, privacy practices, uptime, solvency, security, accuracy, or conduct. A link, integration, token listing, strategy approval, audit reference, or mention is not an endorsement or warranty. Your use of a third party is governed by its own terms and is at your own risk.
 
@@ -183,7 +183,7 @@ Nothing in these terms limits non-waivable rights available under applicable law
 
 ### 1. Scope and controller
 
-This Privacy section explains the limited information USD8 currently collects when you visit its website, documentation, or interface: optional website analytics through Google Analytics, a record of your acceptance of these terms, and insurance-score snapshots for wallet addresses that are looked up. Public blockchains and independent third parties may process information under their own rules and privacy notices; their processing is not collection by USD8.
+This Privacy section explains the limited information USD8 currently collects when you visit its website, documentation, or interface: optional website analytics through Google Analytics, error reports when the interface encounters a problem, a record of your acceptance of these terms, and insurance-score snapshots for wallet addresses that are looked up. Public blockchains and independent third parties may process information under their own rules and privacy notices; their processing is not collection by USD8.
 
 The controller responsible for the processing described in this section is the operator of the relevant website or interface identified in these terms (see [Terms §1](#terms)). Privacy requests may be sent to [info@usd8.fi](mailto:info@usd8.fi).
 
@@ -192,6 +192,7 @@ The controller responsible for the processing described in this section is the o
 USD8 currently processes:
 
 - **Website analytics data** through Google Analytics, only if you accept analytics cookies. Depending on Google's operation and configuration, this may include IP address, approximate location derived from IP, browser and device type, operating system, language, referring page, pages viewed, access times, interactions, cookies, and similar identifiers.
+- **Error reports** through Sentry, when the interface encounters an error: technical details of the error, such as the error message, browser, operating system, and app version. Wallet addresses and transaction hashes are shortened before sending, and IP addresses are not stored.
 - **Terms-acceptance records.** When you connect a wallet and select **Agree**, we record the connected wallet address, the version of these terms (with a fingerprint of their text), and the time of acceptance. We do not record your IP address, device information, or a signature, and there is no public way to look up whether an address has accepted.
 - **Insurance-score snapshots.** When the interface requests an insurance score for a wallet address, our score service stores a snapshot computed from public blockchain data (the address, network, score values, and processing timestamps) so that it does not have to be recomputed on every request.
 
@@ -201,7 +202,7 @@ The interface may request public blockchain information or send a public wallet 
 
 ### 3. How information may be used
 
-Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services; this processing is based on your consent. Terms-acceptance records are used to document that the terms were accepted, based on the performance of these terms and our legitimate interest in being able to demonstrate acceptance. Insurance-score snapshots are used to provide the score service efficiently, based on our legitimate interest in operating the Services. USD8 does not sell personal information for money.
+Google Analytics information is used to understand website and documentation usage, measure performance, identify errors, and improve the Services; this processing is based on your consent. Terms-acceptance records are used to document that the terms were accepted, based on the performance of these terms and our legitimate interest in being able to demonstrate acceptance. Insurance-score snapshots are used to provide the score service efficiently, based on our legitimate interest in operating the Services. Error reports are used to find and fix problems in the interface, based on our legitimate interest in operating reliable Services. USD8 does not sell personal information for money.
 
 ### 4. Cookies, browser storage, analytics, and choices
 
@@ -218,17 +219,17 @@ The interface stores your analytics choice in first-party local storage. Rejecti
 
 ### 5. How information may be shared
 
-Analytics information is shared with Google as the analytics provider and may be disclosed when legally required. Terms-acceptance records and insurance-score snapshots are stored with our hosting provider, Amazon Web Services, in the EU (Frankfurt), and are not sold or shared with third parties except where legally required.
+Analytics information is shared with Google as the analytics provider, and error reports with Sentry as our error-monitoring provider; both may be disclosed when legally required. Terms-acceptance records and insurance-score snapshots are stored with our hosting provider, Amazon Web Services, in the EU (Frankfurt), and are not sold or shared with third parties except where legally required.
 
 Public blockchain information is independently public and can be viewed, copied, analyzed, and shared by anyone. We cannot control downstream use of public blockchain data.
 
 ### 6. Third-party processing
 
-Google processes analytics information under its own privacy notice. Hosting providers, wallet providers, RPC providers, blockchain networks, block explorers, and linked sites or protocols may also independently process information when you use their services. Their processing is governed by their own privacy notices and is not controlled by USD8.
+Google processes analytics information, and Sentry processes error reports, under their own privacy notices. Hosting providers, wallet providers, RPC providers, blockchain networks, block explorers, and linked sites or protocols may also independently process information when you use their services. Their processing is governed by their own privacy notices and is not controlled by USD8.
 
 ### 7. International transfers and retention
 
-Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google's policies. Terms-acceptance records are kept for as long as these terms may apply to your use of the Services and for up to three years afterwards. Public blockchain records are generally permanent and cannot be altered or deleted by us.
+Google may process analytics information in countries other than where you live, which may provide different levels of data protection. Analytics information is retained according to the applicable Google Analytics settings and Google's policies. Error reports are processed by Sentry in the United States and deleted according to Sentry's retention for our plan. Terms-acceptance records are kept for as long as these terms may apply to your use of the Services and for up to three years afterwards. Public blockchain records are generally permanent and cannot be altered or deleted by us.
 
 ### 8. Security
 
