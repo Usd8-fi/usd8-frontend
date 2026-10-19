@@ -7,5 +7,5 @@
 - [White Hat Economy](white-hat-economy.md)
 - [FAQs](faqs.md)
 - [Transparency](transparency.md)
-- [Addresses](addresses.md)
+- [System Stats](addresses.md)
 - [Legal](legal.md)

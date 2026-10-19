@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cachedData, protocolKey } from '../lib/dataCache.js';
 import { fetchActivity } from '../lib/activityFeed.js';
 import { onForegroundRefresh } from '../lib/foregroundRefresh.js';
 import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
+import { useStickToVisualBottom } from '../lib/visualViewport.js';
 
 const REFRESH_MS = 60_000;
 const SPEED_PX_PER_SECOND = 55;
@@ -33,6 +34,8 @@ function Entry({ item, explorer, interactive }) {
 export default function ActivityTicker() {
   const network = getProtocolNetwork(PROTOCOL_CHAIN_ID);
   const [items, setItems] = useState([]);
+  const tickerRef = useRef(null);
+  useStickToVisualBottom(tickerRef, items.length > 0);
   useEffect(() => {
     if (!network?.explorerApiUrl) return undefined;
     const controller = new AbortController();
@@ -57,7 +60,7 @@ export default function ActivityTicker() {
   const characters = items.reduce((sum, item) => sum + `${item.actor || ''} ${item.action} ${item.amount || ''} ${item.target || ''} · block 00000000`.length, 0);
   const cyclePixels = Math.max(MIN_CYCLE_PX, characters * 7.3 + items.length * 56);
   return (
-    <aside className="activity-ticker" aria-label="Recent protocol activity">
+    <aside ref={tickerRef} className="activity-ticker" aria-label="Recent protocol activity">
       <div className="activity-ticker-track" style={{ '--ticker-seconds': `${Math.round(cyclePixels / SPEED_PX_PER_SECOND)}s` }}>
         <ul className="activity-ticker-list">
           {items.map(item => <Entry key={item.id} item={item} explorer={explorer} interactive />)}

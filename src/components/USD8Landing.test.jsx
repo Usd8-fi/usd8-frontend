@@ -102,11 +102,13 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
     expect(within(footerNav).queryByRole('link', { name: 'DeFi Insurance' })).not.toBeInTheDocument();
     expect(within(footerNav).queryByRole('link', { name: 'Cover Pools' })).not.toBeInTheDocument();
-    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportAddressesFAQsCheck Boosters$/);
-    expect(footerNav.children[1].children).toHaveLength(4);
+    expect(footerNav.children[1]).toHaveTextContent(/^Audit ReportAddressesTimelock QueuesFAQsCheck Boosters$/);
+    expect(footerNav.children[1].children).toHaveLength(5);
     expect(within(footerNav).getByRole('link', { name: 'Check Boosters' })).toHaveAttribute('href', './docs/defi-insurance.html#boosters');
     expect(within(footerNav).getByRole('link', { name: 'Check Boosters' })).toHaveAttribute('target', '_blank');
-    expect(within(footerNav).getByRole('link', { name: 'Addresses' })).toHaveAttribute('href', './docs/addresses.html');
+    expect(within(footerNav).getByRole('link', { name: 'Addresses' })).toHaveAttribute('href', './docs/addresses.html#addresses');
+    expect(within(footerNav).getByRole('link', { name: 'Timelock Queues' })).toHaveAttribute('href', './docs/addresses.html#timelock-queues');
+    expect(within(footerNav).getByRole('link', { name: 'Timelock Queues' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', './docs/faqs.html');
     expect(within(footerNav).getByRole('link', { name: 'Transparency' })).toHaveAttribute(
       'href',
@@ -136,6 +138,8 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText('Earn free insurance score with USD8 or sUSD8.')).toBeInTheDocument();
     expect(screen.getByText('File claim with your insurance score.', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cover Pools', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'About Cover Pools' })).toBeInTheDocument();
+    expect(screen.getByText(/the pool backs insured tokens: if one drops 20% or more/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'wstEth Cover Pool' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'White Hat Economy', level: 2 })).toBeInTheDocument();
     expect(screen.getByText(/The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process\./)).toBeInTheDocument();
@@ -360,9 +364,10 @@ describe('USD8 landing navigation', () => {
           grossScorePerSecond: '0', maturingScorePerSecond: '0',
           snapshotTimestampMilliseconds: Date.now(),
         }}
+        scoreMaturitySeconds={604800}
       />,
     );
-    expect(screen.getByText(/in cooldown, available within/)).toHaveTextContent('3.0 in cooldown');
+    expect(screen.getByText(/^\+.* available in /)).toHaveTextContent('+3.0 available in 7 days');
   });
 
   it('moves available score along the maturing schedule after the snapshot (new depositor)', () => {
@@ -385,7 +390,7 @@ describe('USD8 landing navigation', () => {
     const metric = screen.getByText('Your Available Score').closest('div');
     expect(Number(metric.querySelector('strong').textContent)).toBeGreaterThanOrEqual(5400);
     expect(Number(metric.querySelector('strong').textContent)).toBeLessThan(5410);
-    expect(screen.getByText(/in cooldown, available within/).textContent).toMatch(/^540\d/);
+    expect(screen.getByText(/^\+.* available /).textContent).toMatch(/^\+540\d/);
   });
 
   it('hides the cooldown note when nothing is cooling down', () => {
@@ -400,7 +405,7 @@ describe('USD8 landing navigation', () => {
         }}
       />,
     );
-    expect(screen.queryByText(/in cooldown/)).toBeNull();
+    expect(screen.queryByText(/^\+.* available /)).toBeNull();
   });
 
   it('shows numeric zero for absent connected-wallet scores', () => {

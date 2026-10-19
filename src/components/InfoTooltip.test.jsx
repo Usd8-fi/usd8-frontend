@@ -36,4 +36,38 @@ describe('InfoTooltip', () => {
 
     expect(wrapper).not.toHaveClass('dashboard-help--align-right');
   });
+
+  it('opens on a tap and stays open until the next tap or a tap elsewhere', () => {
+    render(<><InfoTooltip ariaLabel="About tap">Tap help</InfoTooltip><p>elsewhere</p></>);
+    const button = screen.getByRole('button', { name: 'About tap' });
+    const wrapper = button.closest('.dashboard-help');
+    const tooltip = screen.getByRole('tooltip');
+    const tap = () => {
+      fireEvent.pointerDown(wrapper, { pointerType: 'touch' });
+      fireEvent.pointerEnter(wrapper, { pointerType: 'touch' });
+      fireEvent.pointerLeave(wrapper, { pointerType: 'touch' });
+      fireEvent.click(button);
+    };
+
+    tap();
+    expect(tooltip).toHaveClass('dashboard-help-tooltip--visible');
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+
+    tap();
+    expect(tooltip).not.toHaveClass('dashboard-help-tooltip--visible');
+
+    tap();
+    fireEvent.pointerDown(screen.getByText('elsewhere'), { pointerType: 'touch' });
+    expect(tooltip).not.toHaveClass('dashboard-help-tooltip--visible');
+  });
+
+  it('keeps hover behaviour for a mouse', () => {
+    render(<InfoTooltip ariaLabel="About hover">Hover help</InfoTooltip>);
+    const wrapper = screen.getByRole('button', { name: 'About hover' }).closest('.dashboard-help');
+    const tooltip = screen.getByRole('tooltip');
+    fireEvent.pointerEnter(wrapper, { pointerType: 'mouse' });
+    expect(tooltip).toHaveClass('dashboard-help-tooltip--visible');
+    fireEvent.pointerLeave(wrapper, { pointerType: 'mouse' });
+    expect(tooltip).not.toHaveClass('dashboard-help-tooltip--visible');
+  });
 });

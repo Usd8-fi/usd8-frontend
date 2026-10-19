@@ -7,9 +7,9 @@ Yes, that's the benefit of USD8 comparing to other stable coins. You get Insuran
 The rate of accumulating score differs, currently 1 USD8 gets you 1 score per day, while 1 sUSD8 gets you 0.1 score per day.
 
 
-## Is there a min holding requirement before claim?
+## When can I use my insurance score for a claim?
 
-Yes. Insurance score needs to be 7 days old when making a claim. You also need to hold the insured token for min 7 days before price drops.
+Insurance score becomes available 7 days after you earn it, and only available score can be used for a claim.
   
 ## I had USD8 before but not now, am I still insured?
 
@@ -65,7 +65,7 @@ USD8 has several revenue models,
 
 ## How can I contribute to USD8?
 
-We welcome community contributions across mechanism design, partnerships, marketing, and more. The best place to post proposals, critiques, and ideas is our [GitHub Discussions](https://github.com/orgs/Usd8-fi/discussions). Contributors can earn [Boosters](defi-insurance.md#boosters).
+We welcome community contributions across mechanism design, partnerships, marketing, and more. To share proposals, critiques, or ideas, [open an issue in the usd8-core repository](https://github.com/Usd8-fi/usd8-core/issues) or join our [Telegram group](https://t.me/+e84i2oYk1ao1MTk1) to discuss them with the team. Contributors can earn [Boosters](defi-insurance.md#boosters).
 
   
   

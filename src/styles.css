@@ -42,6 +42,14 @@
   font-weight: inherit;
 }
 
+/* The full-bleed header/footer bands are 100vw wide, and 100vw includes a
+   classic (always-visible) vertical scrollbar. Clip that sliver rather than
+   letting it add a horizontal scrollbar on Windows and macOS set to always show
+   scroll bars. `clip` (unlike `hidden`) keeps sticky positioning working. */
+html {
+  overflow-x: clip;
+}
+
 html,
 body,
 #root {
@@ -254,6 +262,18 @@ a:focus-visible {
   margin-top: 172px;
 }
 
+/* A section title with a help "?" beside it; the row carries the title's spacing. */
+.landing-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 86px;
+}
+
+.landing-section-title-row > .landing-section-title {
+  margin-top: 0;
+}
+
 .insurance-summary,
 .insurance-claim-summary {
   display: flex;
@@ -323,6 +343,14 @@ a:focus-visible {
   flex-direction: column;
   border: 1px solid var(--gold);
   background: var(--panel);
+}
+
+/* Two cards side by side need about 1000px; tablets stack them like phones. */
+@media (max-width: 1023px) {
+  .insurance-assets {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+  }
 }
 
 /* Small promo flag beside a score rate, floating gently up and down. When the
@@ -492,12 +520,13 @@ a:focus-visible {
 
 .landing-shell .covered-protocols-table th:first-child,
 .landing-shell .covered-protocols-table td:first-child {
-  width: 44%;
+  width: 36%;
 }
 
+/* Wide enough for the "Max Coverage ?" heading down to the 720px phone table. */
 .landing-shell .covered-protocols-table th:nth-child(2),
 .landing-shell .covered-protocols-table td:nth-child(2) {
-  width: 18%;
+  width: 26%;
 }
 
 .landing-shell .covered-protocols-table th:last-child,
@@ -1433,7 +1462,8 @@ small a,
 
 
   .insurance-asset-values {
-    gap: 45px;
+    flex-wrap: wrap;
+    gap: 24px 45px;
     margin-top: 65px;
   }
 
@@ -2129,21 +2159,30 @@ small a,
 }
 
 /* Activity ticker: one small line along the bottom edge, scrolling right to left. */
-body:has(.activity-ticker) { padding-bottom: 28px; }
+body:has(.activity-ticker) { padding-bottom: 29px; }
 
+/* The bar's panel runs 120px below the screen edge (out of sight), so if a
+   mobile browser collapses its toolbar faster than the bar can follow, the
+   panel, not the page, fills the space underneath. --visual-bottom-offset
+   (set from visualViewport) moves the line itself onto the visible bottom. */
 .activity-ticker {
   position: fixed;
   z-index: 90;
   right: 0;
-  bottom: 0;
+  bottom: -120px;
   left: 0;
-  height: 28px;
+  height: 149px;
+  transform: translateY(var(--visual-bottom-offset, 0px));
   overflow: hidden;
   border-top: 1px solid #292929;
   background: var(--panel);
   color: var(--inactive);
-  font-size: var(--font-small);
-  line-height: 27px;
+  /* One size for the whole line (links would otherwise take the global 14px
+     link size inside a 12px line, which shifts the baseline). 29px visible strip
+     = 1px border + 28px line: the 12px-tall strokes then sit exactly 9px from the
+     border and 9px from the screen edge (measured in Chrome, Safari, Firefox). */
+  font-size: var(--font-body);
+  line-height: 28px;
   white-space: nowrap;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
   mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
@@ -2168,12 +2207,17 @@ body:has(.activity-ticker) { padding-bottom: 28px; }
 }
 
 .activity-ticker-item { flex: 0 0 auto; padding-right: 56px; }
-.activity-ticker-item a { color: inherit; text-decoration: none; }
+.activity-ticker-item a { color: inherit; font-size: inherit; text-decoration: none; }
 .activity-ticker-item a:hover,
 .activity-ticker-item a:focus-visible { color: var(--text); }
 .activity-ticker-actor { color: var(--text); }
 .activity-ticker-item b { color: var(--accent); font-weight: 400; }
 .activity-ticker-age { color: var(--inactive); }
+
+/* Firefox places Blex Mono glyphs half a pixel lower than Chrome and Safari. */
+@supports (-moz-appearance: none) {
+  .activity-ticker-list { position: relative; top: -0.5px; }
+}
 
 @keyframes activity-ticker-scroll {
   from { transform: translateX(0); }

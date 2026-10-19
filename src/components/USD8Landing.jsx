@@ -81,7 +81,7 @@ function LiveAvailableScoreValue({ loading, score }) {
 
 /// Score earned but still inside the holding window: total − spent − available.
 /// With a steady balance it stays flat once the window has passed.
-function LiveCooldownScore({ score, maturityPhrase }) {
+function LiveCooldownScore({ score, maturitySeconds }) {
   const snapshotMilliseconds = scoreSnapshotMilliseconds(score);
   const ready = snapshotMilliseconds > 0 && score?.availableScore != null && score?.grossEarnedScore != null;
   const now = useSecondClock(ready);
@@ -92,9 +92,10 @@ function LiveCooldownScore({ score, maturityPhrase }) {
   const spent = wadUnits(score.scoreSpent || '0');
   const cooling = total - spent - available;
   if (cooling <= 0n) return null;
+  const maturityPhrase = durationPhrase(maturitySeconds);
   return (
     <small className="score-cooldown-note">
-      {formatScore(formatWad(cooling, 18), scoreRateDecimals(score.grossScorePerSecond))} in cooldown, available within {maturityPhrase}
+      +{formatScore(formatWad(cooling, 18), scoreRateDecimals(score.grossScorePerSecond))} available {maturityPhrase ? `in ${maturityPhrase}` : 'after the holding period'}
     </small>
   );
 }
@@ -148,7 +149,8 @@ function SiteFooter({ updatedAt }) {
         </div>
         <div>
           <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core/tree/main/audit" target="_blank" rel="noreferrer">Audit Report</a>
-          <a className="site-nav-link" href={docsUrl('addresses.html')} target="_blank" rel="noreferrer">Addresses</a>
+          <a className="site-nav-link" href={docsUrl('addresses.html#addresses')} target="_blank" rel="noreferrer">Addresses</a>
+          <a className="site-nav-link" href={docsUrl('addresses.html#timelock-queues')} target="_blank" rel="noreferrer">Timelock Queues</a>
           <a className="site-nav-link" href={docsUrl('faqs.html')} target="_blank" rel="noreferrer">FAQs</a>
           <a className="site-nav-link" href={docsUrl('defi-insurance.html#boosters')} target="_blank" rel="noreferrer">Check Boosters</a>
         </div>
@@ -363,7 +365,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
             <strong>
               <LiveAvailableScoreValue loading={availableScoreLoading ?? scoreLoading} score={score} />
             </strong>
-            <LiveCooldownScore score={score} maturityPhrase={scoreMaturityPhrase} />
+            <LiveCooldownScore score={score} maturitySeconds={scoreMaturitySeconds} />
           </div>
         </div>
         <div className="covered-protocols-table-area">
@@ -386,7 +388,12 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
       ) : null}
 
       <section className="cover-pools-section" aria-labelledby="cover-pools-title">
-        <h2 className="landing-section-title" id="cover-pools-title">Cover Pools</h2>
+        <div className="landing-section-title-row">
+          <h2 className="landing-section-title" id="cover-pools-title">Cover Pools</h2>
+          <InfoTooltip ariaLabel="About Cover Pools">
+            Deposit a pool's token (e.g. wstETH) to earn yield in USD8, paid from USD8's treasury yield. In return, the pool backs insured tokens: if one drops 20% or more and an incident opens, pool assets pay valid claims, up to a capped share of the pool per incident. Withdrawals have a 7-day cooldown, and assets waiting to withdraw still cover claims.
+          </InfoTooltip>
+        </div>
         <p className="cover-pool-warning">
           Be aware: Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
           <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">risk involved</a>.

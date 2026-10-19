@@ -16,7 +16,7 @@ no-section-label = true
 git-repository-url = "https://github.com/Usd8-fi/usd8-core"
 site-url = "/docs/"
 additional-css = ["theme/css/link-theme.css", "theme/css/usd8-docs.css"]
-additional-js = ["analytics.js", "docs-theme.js", "booster-check.js"]
+additional-js = ["analytics.js", "docs-theme.js", "booster-check.js", "timelock-selectors.js", "timelock-queue.js"]
 
 [output.html.search]
 enable = true

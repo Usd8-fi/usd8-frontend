@@ -746,3 +746,27 @@ body {
 .address-table table { width: auto; }
 .address-table td { white-space: nowrap; }
 .address-table td code { white-space: nowrap; }
+
+/* Timelock Queues (System Stats page), filled in by timelock-queue.js. */
+/* Shared docs table look (same as Addresses); long descriptions wrap with breathing room. */
+.content .timelock-queue table td.timelock-queue-description { padding-top: 14px; padding-bottom: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.timelock-queue-description div + div { margin-top: 8px; }
+.content .timelock-queue table td.timelock-queue-status { white-space: nowrap; }
+.content .timelock-queue table td.timelock-queue-status a { color: inherit; }
+.timelock-status-dot { display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%; background: #666; vertical-align: middle; }
+.timelock-queue-status[data-status="queued"] .timelock-status-dot { --status-color: var(--accent); --status-glow: rgba(255, 204, 0, 0.55); }
+.timelock-queue-status[data-status="ready"] .timelock-status-dot { --status-color: #08b18f; --status-glow: rgba(8, 177, 143, 0.55); }
+.timelock-queue-status[data-status="queued"] .timelock-status-dot,
+.timelock-queue-status[data-status="ready"] .timelock-status-dot { background: var(--status-color); animation: timelock-status-blaze 1.6s ease-out infinite; }
+.timelock-status-tick { display: inline-block; width: 5px; height: 10px; margin: 0 13px 3px 3px; border-right: 2px solid #08b18f; border-bottom: 2px solid #08b18f; transform: rotate(45deg); vertical-align: middle; }
+@keyframes timelock-status-blaze {
+    0% { box-shadow: 0 0 0 0 var(--status-glow); }
+    70% { box-shadow: 0 0 0 7px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+.content .timelock-queue table td.timelock-queue-message { color: var(--fg); opacity: 0.7; text-align: center; }
+.content .timelock-queue[data-state="error"] table td.timelock-queue-message { color: #dc2626; opacity: 1; }
+.timelock-queue-retry { margin-left: 12px; padding: 2px 10px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font: inherit; cursor: pointer; }
+.timelock-queue-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: timelock-queue-spin 0.8s linear infinite; vertical-align: middle; }
+@keyframes timelock-queue-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .timelock-queue-spinner, .timelock-status-dot { animation: none !important; } }
