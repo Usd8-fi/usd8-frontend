@@ -1,5 +1,4 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { REDIRECTS, redirectPage } from '../scripts/publish-redirects.mjs';
@@ -13,15 +12,6 @@ const robots = source('public/robots.txt');
 const sitemap = source('public/sitemap.xml');
 const summary = source('book-src/SUMMARY.md');
 const deploy = source('deploy.sh');
-
-const validatePublishScope = (paths, { nullSeparated = false } = {}) => {
-  const separator = nullSeparated ? '\0' : '\n';
-  return spawnSync(
-    process.execPath,
-    [resolve(root, 'scripts/publish-scope.mjs'), ...(nullSeparated ? ['--null'] : [])],
-    { cwd: root, encoding: 'utf8', input: `${paths.join(separator)}${separator}` },
-  );
-};
 
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
 const chapterUrls = [...summary.matchAll(/\[[^\]]+\]\(([^)]+)\.md\)/g)]
@@ -44,42 +34,18 @@ describe('search crawler publication', () => {
     expect(new Set(sitemapUrls).size).toBe(sitemapUrls.length);
   });
 
-  it('publishes the whole site at the domain root, keeping the custom domain', () => {
-    expect(deploy).toContain('rm -rf "$wt/docs"');
-    expect(deploy).toContain('git archive HEAD docs | tar -x -C "$wt/docs" --strip-components=1');
-    expect(deploy).toContain('cp "$wt/docs/CNAME" "$cname"');
-    expect(deploy).toContain('cp "$cname" "$wt/docs/CNAME"');
-    expect(deploy).toContain('node scripts/publish-redirects.mjs "$wt/docs"');
-    expect(deploy).toContain('node scripts/publish-scope.mjs');
-    expect(deploy).not.toContain('docs/beta');
-  });
-
-  it('allows any site output under docs/ but never the CNAME or paths outside docs/', () => {
-    expect(validatePublishScope([
-      'docs/index.html',
-      'docs/404.html',
-      'docs/assets/app.js',
-      'docs/docs/faqs.html',
-      'docs/beta/index.html',
-      'docs/robots.txt',
-      'docs/sitemap.xml',
-    ], { nullSeparated: true }).status).toBe(0);
-
-    for (const path of ['docs/CNAME', 'deploy.sh', 'src/App.jsx', 'docsx/index.html', 'docs/../deploy.sh']) {
-      const result = validatePublishScope([path]);
-      expect(result.status, path).toBe(1);
-      expect(result.stderr, path).toContain(path);
-    }
+  it('builds and publishes from main at the domain root, keeping the custom domain', () => {
+    expect(deploy).toContain('if [[ "$branch" != "main" ]]; then');
+    expect(deploy).toContain('git push origin main');
+    expect(deploy).toContain('node scripts/publish-redirects.mjs docs');
+    expect(deploy).toContain('docs/CNAME is not usd8.fi');
+    expect(deploy).not.toContain('beta');
   });
 });
 
 describe('old URL redirects', () => {
-  it('forwards the retired /beta/ app and every beta docs page to the root', () => {
-    expect(REDIRECTS['beta/index.html']).toBe('/');
-    expect(REDIRECTS['beta/docs/index.html']).toBe('/docs/');
-    for (const [, chapter] of summary.matchAll(/\[[^\]]+\]\(([^)]+)\.md\)/g)) {
-      expect(REDIRECTS[`beta/docs/${chapter}.html`], chapter).toBe(`/docs/${chapter}.html`);
-    }
+  it('has no /beta/ redirects: the retired path is removed entirely', () => {
+    expect(Object.keys(REDIRECTS).filter((path) => path.startsWith('beta/'))).toEqual([]);
   });
 
   it('forwards the legacy site pages, the booster check to its docs section', () => {

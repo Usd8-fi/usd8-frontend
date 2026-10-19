@@ -3,17 +3,9 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /// Old URLs that must keep working after the app replaced the legacy site at
-/// the domain root: the retired /beta/ app path and the legacy mdBook pages.
-/// Each maps to its closest page on the new site (root-relative).
-export const DOCS_PAGES = [
-  'index.html', 'philosophy.html', 'defi-insurance.html', 'cover-pools.html', 'white-hat-economy.html',
-  'faqs.html', 'transparency.html', 'addresses.html', 'legal.html', 'usd8.html', 'print.html', 'toc.html',
-];
-
+/// the domain root: the legacy mdBook pages. The retired /beta/ path is gone
+/// entirely (no redirects). Each maps to its closest page on the new site.
 export const REDIRECTS = Object.freeze({
-  // Retired app path: the app now lives at the root.
-  'beta/index.html': '/',
-  ...Object.fromEntries(DOCS_PAGES.map((page) => [`beta/docs/${page}`, page === 'index.html' ? '/docs/' : `/docs/${page}`])),
   // Legacy site pages (the previous usd8.fi root).
   'boosters.html': '/docs/defi-insurance.html#boosters',
   'contact.html': '/docs/usd8.html#contact',
@@ -31,7 +23,7 @@ export const REDIRECTS = Object.freeze({
 const escapeHtml = (value) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 /// A static redirect page: instant meta refresh plus a script that keeps any
-/// #fragment of the old URL (e.g. /beta/#system-dashboard) unless the target has its own.
+/// #fragment of the old URL (e.g. /boosters.html#check) unless the target has its own.
 export function redirectPage(target) {
   const href = escapeHtml(target);
   return `<!doctype html>
