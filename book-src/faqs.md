@@ -7,9 +7,9 @@ Yes, that's the benefit of USD8 comparing to other stable coins. You get Insuran
 The rate of accumulating score differs, currently 1 USD8 gets you 1 score per day, while 1 sUSD8 gets you 0.1 score per day.
 
 
-## Is there a min holding requirement before claim?
+## When can I use my insurance score for a claim?
 
-Yes. Insurance score needs to be 7 days old when making a claim. You also need to hold the insured token for min 7 days before price drops.
+Insurance score becomes available 7 days after you earn it, and only available score can be used for a claim.
   
 ## I had USD8 before but not now, am I still insured?
 
@@ -45,14 +45,16 @@ Claims are not expected to occur often, but there is always a possibility.
 
 
 ## What's different in beta?
-Beta has a few safety training wheels which we plan to remove afterwards, which means during beta admin has special rights and privileges. 
-- Admin or Timelock can dispute an incident payout settlement by submitting a new settlement root. However the new root still needs to be signed by TEE key which is saved in our smart contract, a malicious  admin can't just forge a random root. This also adds a 3 day dispute window to the claim process, which will be removed after beta.
+Beta has a few safety training wheels which we plan to remove afterwards, during beta admin/Timelock has special rights and privileges.
+- Admin or Timelock can dispute an incident payout settlement by submitting a new settlement root. This also adds a 3 day dispute window to the claim process, which will be removed after beta.
 - Timelock can upgrade Registry, USD8, Treasury, and DefiInsurance, we plan to remove upgradability after beta.
 
 
 ## Does USD8 has a governance token?
 Not at the moment.
 
+## Show all the risk involved in USD8?
+Sure, see [Transparency](./transparency.md)
 
 ## How does USD8 make money?
 USD8 has several revenue models, 
@@ -63,15 +65,13 @@ USD8 has several revenue models,
 
 ## How can I contribute to USD8?
 
-We welcome community contributions across mechanism design, partnerships, marketing, and more. The best place to post proposals, critiques, and ideas is our [GitHub Discussions](https://github.com/orgs/Usd8-fi/discussions). Contributors can earn [Boosters](defi-insurance.md#boosters).
+We welcome community contributions across mechanism design, partnerships, marketing, and more. To share proposals, critiques, or ideas, [open an issue in the usd8-core repository](https://github.com/Usd8-fi/usd8-core/issues) or join our [Telegram group](https://t.me/+e84i2oYk1ao1MTk1) to discuss them with the team. Contributors can earn [Boosters](defi-insurance.md#boosters).
 
   
   
 
 ## Who is behind USD8?
 
-<img src="/assets/my_avatar.png" width="100px" />
-
-Hi my name is Rick, I am the core dev behind USD8, during the day I work as a Security Researcher. You can reach out to me via x - [@codephobic](https://x.com/codephobic) or email rick[at]usd8.fi.
+USD8 is built by [@codephobic](https://x.com/codephobic) - a Security Researcher with over 7 years experience auditing top Defi protocols and L2s. 
   
 

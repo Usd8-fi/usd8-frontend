@@ -1,6 +1,4 @@
-<img src="/assets/usd8Logo.svg" width="100px">
-
-# USD8
+<span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 logo"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
 USD8 is a stable coin backed 1:1 by USDC. 
 
@@ -9,7 +7,7 @@ It is designed to correct the mis-aligned incentive design in current Defi lands
 
 ## Why USD8
 
-| | <span class="comparison-token"><img src="/assets/usd8Logo.svg" alt="USD8 logo">USD8</span> | <span class="comparison-token"><img src="/assets/usdc.png" alt="USDC logo">USDC</span> |
+| | <span class="comparison-token"><img src="../assets/usd8Logo.svg" alt="USD8 logo">USD8</span> | <span class="comparison-token"><img src="../assets/usdc.png" alt="USDC logo">USDC</span> |
 | --- | --- | --- |
 | Stable property | <span class="comparison-yes" aria-label="Yes">✓</span><br><small>Backed 1:1 by USDC</small> | <span class="comparison-yes" aria-label="Yes">✓</span> |
 | Yield opportunities | <span class="comparison-yes" aria-label="Yes">✓</span> | <span class="comparison-yes" aria-label="Yes">✓</span> |
@@ -23,8 +21,10 @@ Low risk defi users - hold or yield with USD8 to get free defi insurance for a r
 
 High apy seekers with high risk appetite - deposit into USD8's Cover Pools for high APY while backing the Defi insurance.
 
-## Open-sourced
-This Docs aims to explain USD8 in simple terms. USD8 is fully open-sourced, for technical details and code implementation, visit our [Github repo](https://github.com/Usd8-fi/usd8-core).
+## Onchain + Open-sourced
+USD8 system has onchain and offchain two parts, all codes open-sourced. Onchain part follows general Defi practice with sensitive settings through a time lock. Offchain part uses a TEE with open-sourced algorithms for computation and results are verifiable by anyone. 
+
+This Doc aims to explain USD8 in simple terms. For technical details and code implementation, visit our [Github repo](https://github.com/Usd8-fi/usd8-core).
 
 ## Contact
 You can reach us through the following channels

@@ -22,18 +22,18 @@ function formatCompactBalance(totalAssets, decimals) {
   if (!Number.isFinite(balance)) throw new Error('Morpho API returned an invalid vault balance');
 
   if (balance >= 1_000_000) {
-    return `${(balance / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })}M`;
+    return `${(balance / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2, useGrouping: false })}M`;
   }
   if (balance >= 1_000) {
-    return `${(balance / 1_000).toLocaleString('en-US', { maximumFractionDigits: 2 })}K`;
+    return `${(balance / 1_000).toLocaleString('en-US', { maximumFractionDigits: 2, useGrouping: false })}K`;
   }
-  return balance.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  return balance.toLocaleString('en-US', { maximumFractionDigits: 4, useGrouping: false });
 }
 
 function formatApy(netApy) {
   const apy = Number(netApy) * 100;
   if (!Number.isFinite(apy)) throw new Error('Morpho API returned an invalid net APY');
-  return `${apy.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  return `${apy.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false })}%`;
 }
 
 export async function fetchMorphoVault({ signal } = {}) {

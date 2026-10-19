@@ -6,26 +6,55 @@ describe('network configuration', () => {
     const network = getProtocolNetwork(11155111);
 
     expect(network).toMatchObject({ id: 11155111, name: 'Sepolia', protocolAvailable: true });
-    expect(network.contracts).toEqual({
-      registry: '0x7d09c1e9ee03350a177c2a542e90285b55e8a218',
-      usdc: '0x31cd4d9299ac2d55bb8590c9557edd3ff08cf35c',
-      usd8: '0xfdb7546dea188d52e8ee98b789da2d695da702a7',
-      treasury: '0x26f85ec30a753451d218f4dc526f696d2d805097',
-      savingsVault: '0x830e05aa59f71d5f2977c8089fad14c0e6ad1440',
-      coverPool: '0xecbfc3b78cd4b29ed589b78c46a8819da8924432',
-      coverAsset: '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa',
-      coverAssetUsdOracle: '0x00e79afb10a84d153803f00e73900803179d594e',
-      defiInsurance: '0xc74439a7a3d5db8a48766a5fc2d200bd2858026d',
+    expect(network.rpcUrl).toBe('https://rpc.sepolia.ethpandaops.io');
+    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth']);
+    expect(network.contracts.coverPools[0]).toEqual({
+      id: 'wsteth',
+      name: 'wstEth Cover Pool',
+      address: '0x4bf47e25e8b42579c5cbaf84edaefb1a0f30c1b8',
+      asset: '0x0539fcd774c5351da3c1d8efd64d4511f46662df',
+      assetSymbol: 'wstETH',
+      shareSymbol: 'USD8-cp-wstETH',
+      usdOracle: '0x6ae3bb0897f0b15e175ba96ba0aaa55ccb719a05',
+      deployBlock: 11915276,
+    });
+    expect(network.payoutAssets).toMatchObject({
+      '0x0539fcd774c5351da3c1d8efd64d4511f46662df': { symbol: 'wstETH', decimals: 18 },
+      '0x2fe01f5e235eeab9045066f873f531de20f31947': { symbol: 'USD8', decimals: 18 },
+    });
+    expect(network.contracts).toMatchObject({
+      registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430',
+      usdc: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
+      usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+      treasury: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05',
+      savingsVault: null,
+      defiInsurance: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
+      insuredTokens: {
+        usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+        'test-msloss': '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+      },
     });
   });
 
-  it('recognizes Ethereum without pretending that USD8 contracts are deployed there', () => {
+  it('carries the mainnet v1 deployment but serves only the configured chain', () => {
     expect(getNetwork(1)).toMatchObject({
       id: 1,
       name: 'Ethereum',
-      protocolAvailable: false,
-      scoreAvailable: false,
+      protocolAvailable: true,
+      scoreAvailable: true,
+      rpcUrl: 'https://ethereum-rpc.publicnode.com',
+      explorerApiUrl: 'https://eth.blockscout.com/api/v2',
     });
+    const contracts = getNetwork(1).contracts;
+    expect(contracts.registry).toBe('0x9bff24a44bb20f8d1f1de86eca56295c5bb46430');
+    expect(contracts.usdc).toBe('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
+    expect(contracts.coverPools[0]).toMatchObject({
+      asset: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+      usdOracle: '0x164b276057258d81941e97b0a900d4c7b358bce0',
+      deployBlock: 26211040,
+    });
+    expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8']);
+    // The test environment serves Sepolia, so mainnet is not the protocol network here.
     expect(getProtocolNetwork(1)).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-<img src="/assets/tyche.png" width="300px" />
+<img src="../assets/tyche-300.webp" srcset="../assets/tyche-300.webp 300w, ../assets/tyche-600.webp 600w" sizes="(max-width: 700px) 100vw, 300px" width="300" height="415" alt="Classical bust of Tyche framed by a cyan triangle" />
   
 
 ## The Broken Dream
@@ -7,7 +7,7 @@ As we embrace decentralized dream to resist the abuses of centralized power, we 
 
 This dystopia is slowly killing the decentralized industry following [Gresham's Law](https://en.wikipedia.org/wiki/Gresham%27s_law), where good actors are gradually driven out till only bad actors left.
 
-<img src="/assets/thomas_gresham.jpg" width="800px" />
+<img src="../assets/thomas_gresham.jpg" width="500" height="265" loading="lazy" decoding="async" alt="Portrait of Sir Thomas Gresham" />
 
 Sir Thomas Gresham (1519–1579)
   
@@ -29,7 +29,7 @@ Now that the crypto space is flawed, we didn't come up with a new solution but i
 
 We need a new solution, one without centralized power while still be able to deter malicious actors. USD8 is our attempt at this, our mission is to restore the missing layer of order enforcement in DeFi security.
 
-<img src="/assets/murrayRothbard.jpg" width="800px" />
+<img src="../assets/murrayRothbard.jpg" width="800" height="444" loading="lazy" decoding="async" alt="Portrait of Murray Rothbard" />
 
 Murray Rothbard (1926–1995), founder and primary theoretician of anarcho-capitalism.
 
@@ -44,13 +44,11 @@ We adapted this model and made it crypto native, to provide the last missing pie
 
 ## The Insurance
 
-USD8 offers coverage to DeFi users based on their USD8 usage history, covering a range of DeFi protocols vetted by the USD8 team. The more you use USD8, the more you are covered. If a hack occurs in any covered DeFi protocol, users can claim coverage (up to 80% value) with their covered LP token.
+USD8 offers [free insurance](./defi-insurance.md) to DeFi users according to their insurance score based on USD8 usage history, covering a range of DeFi tokens vetted by our team and third party security partners. The more you use USD8, the more you are covered. If any insured Defi token drops significantly(currently 20%), users can claim up to 80% value back.
 
-E.g., if Aave USDC market is hacked and 1 aUSDC drops to 0.3 USDC, users can claim up to 0.8 USDC with their aUSDC.
+The actual payout depends the user's USD8 history vs other claimers, and the Cover Pool size.
 
-The actual coverage depends on 3 factors - the user's USD8 history, how many other users are also claiming, and the Cover Pool size.
-
-The coverage funds come from USD8's [Cover Pool](cover-pools.md), a public vault with different asset types, incentivized by USD8's revenue. Any LPs depositing into this vault will get stable coin yield in USD8, however assets in the Cover Pool might be deployed to cover any potential losses.
+Payouts come from USD8's [Cover Pools](cover-pools.md) which are public vaults with different asset types, incentivized by USD8's treasury revenue. Any LPs depositing into Cover Pools will get stable coin yield in USD8, however assets in the Cover Pool might be deployed to cover any potential losses.
 
 This insurance system is exciting because:
 
@@ -66,4 +64,4 @@ This insurance system is exciting because:
 
 Since USD8 sits on a pile of hacked LP tokens after users claim, this puts USD8 in a unique position with significant financial incentives to recover these funds. USD8 will be cultivating a [White Hat Economy](white-hat-economy.md) as opposed to the current crypto system rewarding black hats. This white hat economy will involve the public in tracing and recovering the lost funds — read more on the [White Hat Economy](white-hat-economy.md) page.
 
-This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, potentially leads to perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.
+This system could cultivate a positive culture with significant incentives for good actors and extra burden to deter malicious ones, leading to a perception reality to further reduce malicious acts for the industry as a whole - If hackers know they will be forever chased by the public and professionals for their wrongdoing, their decision to hack and steal might change at the moment of committing the crime.

@@ -1,164 +1,258 @@
-import { createPublicClient, formatUnits, http } from 'viem';
+import { exitAssetAmount } from './poolWithdrawal.js';
+import { unresolvedHistoricalClaim } from './claimHistory.js';
+import { multicall, snapshotReads } from './snapshotReads.js';
+import { cachedData, checkAbort, protocolKey, queryClient } from './dataCache.js';
+import { fetchJson } from './requestUtils.js';
+import { fetchLogsInChunks, incrementalLogs } from './history.js';
+export { fetchLogsInChunks } from './history.js';
+import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimCancelledEvent } from './readAbis.js';
+import { fallback, formatUnits, http, zeroAddress } from './viemLite.js';
+import { createReadClient } from './readClient.js';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
+import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
+import { boostedScore, liveEarningsDecimals, UNKNOWN_VALUE, WAD } from './units.js';
+
+export { erc20Abi };
 
 const clients = new Map();
+const TRAILING_WINDOW_SECONDS = 30 * 24 * 60 * 60;
+const SHORT_WINDOW_SECONDS = 7 * 24 * 60 * 60;
+const MIN_APY_WINDOW_SECONDS = 60 * 60;
+
+// Post-merge Ethereum slot time; the same on mainnet and Sepolia.
+const BLOCK_SECONDS = 12n;
+// Public RPC endpoints cap eth_getLogs spans (and keyless PublicNode serves only
+// recent history; older ranges fall through to the fallback RPC), so every log
+// read is chunked below this width.
+const LOG_QUERY_BLOCK_RANGE = 10_000n;
 
 function protocolUnavailableError(chainId) {
   const network = getNetwork(chainId);
   return new Error(network ? `USD8 is not deployed on ${network.name}` : 'USD8 is not deployed on the selected network');
 }
 
-export function publicClientFor(chainId) {
+function throwIfRequestAborted(signal) {
+  if (!signal?.aborted) return;
+  const error = new Error('Wallet snapshot request aborted.');
+  error.name = 'AbortError';
+  throw error;
+}
+
+export function rpcTransportFor(rpcUrl, fallbackUrls = []) {
+  const urls = [rpcUrl, ...fallbackUrls].filter((url, index, all) => url && all.indexOf(url) === index);
+  if (urls.length <= 1) return http(rpcUrl, { timeout: 15_000 });
+  // Primary first; viem moves to the next endpoint only when a request fails at
+  // the transport level, so contract reverts never trigger a switch.
+  return fallback(urls.map((url) => http(url, { timeout: 15_000 })), { rank: false });
+}
+
+export function readClientFor(chainId) {
   const network = getProtocolNetwork(chainId);
   if (!network) throw protocolUnavailableError(chainId);
 
   let client = clients.get(network.id);
   if (!client) {
-    client = createPublicClient({
+    client = createReadClient({
       chain: network.chain,
-      transport: http(network.rpcUrl, { timeout: 15_000 }),
+      transport: rpcTransportFor(network.rpcUrl, network.rpcFallbackUrls),
     });
     clients.set(network.id, client);
   }
   return client;
 }
 
-// Compatibility export for callers that explicitly operate on the canonical Sepolia deployment.
-export const publicClient = publicClientFor(11155111);
 export { SEPOLIA_CONTRACTS };
 
-export const erc20Abi = [
-  {
-    type: 'function',
-    name: 'balanceOf',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'decimals',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint8' }],
-  },
-  {
-    type: 'function',
-    name: 'totalSupply',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-];
+const erc20TransferEvent = erc20Abi.find((item) => item.type === 'event' && item.name === 'Transfer');
 
-export const poolAbi = [
-  ...erc20Abi,
-  {
-    type: 'function',
-    name: 'totalAssets',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'depositCap',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'convertToAssets',
-    stateMutability: 'view',
-    inputs: [{ name: 'shares', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'earned',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'rewardRate',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'periodFinish',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint64' }],
-  },
-  {
-    type: 'function',
-    name: 'exitRequests',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: 'shares', type: 'uint256' }, { name: 'exitEpoch', type: 'uint64' }],
-  },
-  {
-    type: 'function',
-    name: 'exitEpochs',
-    stateMutability: 'view',
-    inputs: [{ name: 'exitEpoch', type: 'uint64' }],
-    outputs: [
-      { name: 'totalShares', type: 'uint256' },
-      { name: 'totalAssets', type: 'uint256' },
-      { name: 'remainingShares', type: 'uint256' },
-      { name: 'remainingAssets', type: 'uint256' },
+const registryScoreSpentAbi = [{
+  type: 'function',
+  name: 'scoreSpent',
+  stateMutability: 'view',
+  inputs: [{ name: 'account', type: 'address' }],
+  outputs: [{ name: '', type: 'uint256' }],
+}];
+
+const registryExitTimingAbi = [{
+  type: 'function',
+  name: 'exitTimingConfig',
+  stateMutability: 'view',
+  inputs: [],
+  outputs: [{
+    name: 'config',
+    type: 'tuple',
+    components: [
+      { name: 'unstakeCooldown', type: 'uint64' },
+      { name: 'exitBatchInterval', type: 'uint64' },
     ],
-  },
-];
+  }],
+}];
 
-const defiInsuranceAbi = [
-  {
-    type: 'function',
-    name: 'activeIncidentId',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-];
-
-const priceOracleAbi = [
-  {
-    type: 'function',
-    name: 'decimals',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint8' }],
-  },
-  {
-    type: 'function',
-    name: 'latestRoundData',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'roundId', type: 'uint80' },
-      { name: 'answer', type: 'int256' },
-      { name: 'startedAt', type: 'uint256' },
-      { name: 'updatedAt', type: 'uint256' },
-      { name: 'answeredInRound', type: 'uint80' },
+const registryScoreAbi = [{
+  type: 'function',
+  name: 'getScoredRateHistory',
+  stateMutability: 'view',
+  inputs: [{ name: 'token', type: 'address' }],
+  outputs: [{
+    name: '',
+    type: 'tuple[]',
+    components: [
+      { name: 'fromBlock', type: 'uint64' },
+      { name: 'rate', type: 'uint128' },
     ],
-  },
-];
+  }],
+}];
 
-function formatted(value, decimals = 18, maximumFractionDigits = 4) {
-  const decimal = Number(formatUnits(value, decimals));
-  if (!Number.isFinite(decimal)) return '0';
-  return decimal.toLocaleString('en-US', { maximumFractionDigits });
+function holdingWindowFrom(params) {
+  const blocks = params?.minHoldingRequired ?? params?.[1];
+  return typeof blocks === 'bigint' && blocks > 0n ? blocks.toString() : null;
+}
+
+// Latest on-chain rate as score per whole token per day, rounded to 4 decimals
+// (Registry rates are per block, so 1/day stores as 1e18 / 7200, rounded).
+function currentScorePerTokenPerDay(rateHistory) {
+  const rate = rateHistory.at(-1)?.rate ?? 0n;
+  const step = 10n ** 14n;
+  const perDay = (rate * (86_400n / BLOCK_SECONDS) + step / 2n) / step * step;
+  return formatUnits(perDay, 18);
+}
+
+function currentScorePerSecond(balance, rateHistory) {
+  const rate = rateHistory.at(-1)?.rate ?? 0n;
+  return balance * rate / WAD / BLOCK_SECONDS;
+}
+
+async function latestIndexedBalanceChangeTimestampMilliseconds(token, account, fromBlock, signal, explorerApiUrl) {
+  if (!explorerApiUrl) return null;
+  const url = new URL(`${explorerApiUrl}/addresses/${account}/token-transfers`);
+  url.searchParams.set('type', 'ERC-20');
+  url.searchParams.set('token', token);
+  const payload = await fetchJson(url, { signal });
+  const transfer = Array.isArray(payload?.items)
+    ? payload.items.find((item) => (
+      item?.token?.address_hash?.toLowerCase() === token.toLowerCase()
+      && Number.isSafeInteger(item.block_number)
+      && BigInt(item.block_number) >= fromBlock
+      && Number.isFinite(Date.parse(item.timestamp))
+    ))
+    : null;
+  return transfer ? Date.parse(transfer.timestamp) : null;
+}
+
+async function latestBalanceChangeTimestampMilliseconds(
+  client,
+  token,
+  account,
+  fromBlock,
+  fallbackTimestampMilliseconds,
+  signal,
+  snapshotBlock,
+  explorerApiUrl,
+) {
+  try {
+    const indexedTimestamp = await latestIndexedBalanceChangeTimestampMilliseconds(
+      token,
+      account,
+      fromBlock,
+      signal,
+      explorerApiUrl,
+    );
+    if (indexedTimestamp !== null) return indexedTimestamp;
+  } catch {
+    checkAbort(signal);
+    // Fall through to RPC logs when the explorer index is unavailable or behind.
+  }
+  try {
+    let toBlock = snapshotBlock ?? await client.getBlockNumber();
+    let chunks = 0;
+    while (toBlock >= fromBlock && chunks++ < 12) {
+      checkAbort(signal);
+      const chunkFromBlock = toBlock - fromBlock + 1n > LOG_QUERY_BLOCK_RANGE
+        ? toBlock - LOG_QUERY_BLOCK_RANGE + 1n
+        : fromBlock;
+      const [sent, received] = await Promise.all([
+        client.getLogs({
+          address: token,
+          event: erc20TransferEvent,
+          args: { from: account },
+          fromBlock: chunkFromBlock,
+          toBlock,
+        }),
+        client.getLogs({
+          address: token,
+          event: erc20TransferEvent,
+          args: { to: account },
+          fromBlock: chunkFromBlock,
+          toBlock,
+        }),
+      ]);
+      const latest = [...sent, ...received]
+        .filter((log) => typeof log.blockNumber === 'bigint')
+        .sort((left, right) => (
+          left.blockNumber === right.blockNumber
+            ? Number(right.logIndex ?? 0) - Number(left.logIndex ?? 0)
+            : left.blockNumber > right.blockNumber ? -1 : 1
+        ))[0];
+      if (latest) {
+        const block = await client.getBlock({ blockNumber: latest.blockNumber });
+        return Number(block.timestamp) * 1_000;
+      }
+      if (chunkFromBlock === fromBlock) break;
+      toBlock = chunkFromBlock - 1n;
+    }
+    return fallbackTimestampMilliseconds;
+  } catch {
+    checkAbort(signal);
+    return fallbackTimestampMilliseconds;
+  }
+}
+
+function formatted(value, decimals = 18, maximumFractionDigits = decimals) {
+  const [whole, fraction = ''] = formatUnits(value, decimals).split('.');
+  const visible = fraction.slice(0, maximumFractionDigits).replace(/0+$/, '');
+  return visible ? `${whole}.${visible}` : whole;
+}
+
+function insuranceCoverageCap(value) {
+  if ((typeof value !== 'bigint' && typeof value !== 'number')
+    || (typeof value === 'number' && (!Number.isSafeInteger(value) || value < 0))) {
+    throw new Error('Invalid insurance coverage cap.');
+  }
+  const cap = BigInt(value);
+  if (cap <= 0n || cap > 10_000n) throw new Error('Invalid insurance coverage cap.');
+  return cap;
+}
+
+function insuranceTokenState(tokenId, address, config, claimantCoverageCapBps) {
+  const rawCoverageBps = config?.maxCoverageBps ?? config?.[0];
+  if ((typeof rawCoverageBps !== 'bigint' && typeof rawCoverageBps !== 'number')
+    || (typeof rawCoverageBps === 'number'
+      && (!Number.isSafeInteger(rawCoverageBps) || rawCoverageBps < 0))) {
+    throw new Error(`Invalid insurance configuration for ${tokenId}.`);
+  }
+  const maxCoverageBps = BigInt(rawCoverageBps);
+  if (maxCoverageBps < 0n || maxCoverageBps > claimantCoverageCapBps) {
+    throw new Error(`Invalid insurance configuration for ${tokenId}.`);
+  }
+  return {
+    address: address.toLowerCase(),
+    enabled: maxCoverageBps !== 0n,
+    maxCoverageBps: maxCoverageBps.toString(),
+  };
+}
+
+// A live claim is always part of its own total, so a zero denominator means the
+// registration logs were unavailable, not that the share is zero. Report the gap
+// rather than an impossible 0%.
+export function claimPercentage(amount, total) {
+  if (total === 0n) return UNKNOWN_VALUE;
+  return `${(amount * 100n + total / 2n) / total}%`;
 }
 
 function formattedUsd(assetAmount, price, priceDecimals) {
-  if (price <= 0n) return '—';
+  if (price <= 0n) return UNKNOWN_VALUE;
   const value = Number(formatUnits(assetAmount * price, 18 + Number(priceDecimals)));
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return UNKNOWN_VALUE;
   return value.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -166,116 +260,714 @@ function formattedUsd(assetAmount, price, priceDecimals) {
     compactDisplay: 'short',
     minimumFractionDigits: 0,
     maximumFractionDigits: 1,
+    useGrouping: false,
   });
 }
 
-function formattedAnnualRewardRate(rewardRate, assetAmount, price, priceDecimals) {
-  if (assetAmount === 0n || price <= 0n) return '—';
-  const poolValue = (assetAmount * price) / (10n ** BigInt(priceDecimals));
-  if (poolValue === 0n) return '—';
-  const annualReward = rewardRate * 365n * 24n * 60n * 60n;
-  const basisPoints = (annualReward * 10_000n + poolValue / 2n) / poolValue;
+export function calculateTrailingRewardApr({
+  events,
+  nowSeconds,
+  windowSeconds,
+  deploymentTimestamp,
+  currentAssetUsdPrice,
+  priceDecimals,
+}) {
+  if (currentAssetUsdPrice <= 0n) return UNKNOWN_VALUE;
+  const windowStart = Math.max(deploymentTimestamp, nowSeconds - windowSeconds);
+  let cursor = deploymentTimestamp;
+  let assets = 0n;
+  let rewardRate = 0n;
+  let periodFinish = 0;
+  let assetSeconds = 0n;
+  let accruedRewards = 0n;
+
+  const integrateUntil = (timestamp) => {
+    const end = Math.min(timestamp, nowSeconds);
+    const start = Math.max(cursor, windowStart);
+    if (end > start) {
+      assetSeconds += assets * BigInt(end - start);
+      const rewardEnd = Math.min(end, periodFinish);
+      if (rewardEnd > start) accruedRewards += rewardRate * BigInt(rewardEnd - start);
+    }
+    cursor = timestamp;
+  };
+
+  [...events]
+    .sort((a, b) => a.timestamp - b.timestamp || a.logIndex - b.logIndex)
+    .forEach((event) => {
+      integrateUntil(event.timestamp);
+      if (event.type === 'deposit') assets += event.assets;
+      if (event.type === 'exit' || event.type === 'claim') {
+        assets = event.assets >= assets ? 0n : assets - event.assets;
+      }
+      if (event.type === 'reward') {
+        rewardRate = event.rate;
+        periodFinish = event.periodFinish;
+      }
+    });
+  integrateUntil(nowSeconds);
+
+  const poolValueSeconds = (assetSeconds * currentAssetUsdPrice) / (10n ** BigInt(priceDecimals));
+  if (poolValueSeconds === 0n) return UNKNOWN_VALUE;
+  const annualSeconds = 365n * 24n * 60n * 60n;
+  const basisPoints = (accruedRewards * annualSeconds * 10_000n + poolValueSeconds / 2n) / poolValueSeconds;
   const percent = Number(basisPoints) / 100;
-  return `${percent.toLocaleString('en-US', { maximumFractionDigits: 2 })}%`;
+  return `${percent.toLocaleString('en-US', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    useGrouping: false,
+  })}%`;
 }
 
-export async function fetchLandingChainData(account, chainId) {
+// Pool events that change staked assets or the reward stream, decoded locally
+// from our own ABI so the APY never depends on a third-party indexer.
+const poolHistoryEvents = [
+  { type: 'event', name: 'Deposit', inputs: [
+    { name: 'sender', type: 'address', indexed: true }, { name: 'owner', type: 'address', indexed: true },
+    { name: 'assets', type: 'uint256', indexed: false }, { name: 'shares', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'ExitEpochSettled', inputs: [
+    { name: 'exitEpoch', type: 'uint64', indexed: true }, { name: 'shares', type: 'uint256', indexed: false },
+    { name: 'assets', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'ClaimPaid', inputs: [
+    { name: 'to', type: 'address', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'RewardNotified', inputs: [
+    { name: 'amount', type: 'uint256', indexed: false }, { name: 'newRate', type: 'uint128', indexed: false },
+    { name: 'newPeriodFinish', type: 'uint64', indexed: false }] },
+];
+const rewardStateAbi = [
+  { type: 'function', name: 'totalAssets', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'rewardRate', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'periodFinish', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+];
+
+/// Trailing reward APY from the chain itself. Reads the pool's assets and reward
+/// stream at the window start, then replays its own events up to the head.
+/// The window is the last 30 days, or the pool's whole life if it is younger:
+/// the rate earned so far is annualized as if it continued.
+export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal } = {}) {
+  const network = getProtocolNetwork(chainId);
+  const address = poolAddress.toLowerCase();
+  const config = network.contracts.coverPools.find((pool) => pool.address.toLowerCase() === address);
+  return cachedData(protocolKey(network, 'apr-rpc', address), async ({ signal: querySignal }) => {
+    const client = readClientFor(chainId);
+    const head = await client.getBlock({ blockTag: 'latest' });
+    checkAbort(querySignal);
+    const windowBlocks = BigInt(TRAILING_WINDOW_SECONDS) / BLOCK_SECONDS;
+    const earliest = head.number > windowBlocks ? head.number - windowBlocks : 0n;
+    const deployBlock = config?.deployBlock === undefined ? earliest : BigInt(config.deployBlock);
+    const startBlock = deployBlock > earliest ? deployBlock : earliest;
+    const read = (functionName) => client.readContract({ address, abi: rewardStateAbi, functionName, blockNumber: startBlock });
+    const [start, assets, rate, finish] = await Promise.all([
+      client.getBlock({ blockNumber: startBlock }), read('totalAssets'), read('rewardRate'), read('periodFinish'),
+    ]);
+    const logs = await fetchLogsInChunks(client, { address, events: poolHistoryEvents }, startBlock + 1n, head.number, { signal: querySignal });
+    const blockNumbers = [...new Set(logs.map((log) => log.blockNumber))];
+    const blocks = await Promise.all(blockNumbers.map((blockNumber) => client.getBlock({ blockNumber })));
+    const timeOf = new Map(blocks.map((block) => [block.number, Number(block.timestamp)]));
+    const startSeconds = Number(start.timestamp);
+    const events = [
+      { timestamp: startSeconds, logIndex: -2, type: 'deposit', assets },
+      { timestamp: startSeconds, logIndex: -1, type: 'reward', rate, periodFinish: Number(finish) },
+      ...logs.flatMap((log) => {
+        const timestamp = timeOf.get(log.blockNumber);
+        const logIndex = Number(log.logIndex);
+        if (log.eventName === 'Deposit') return [{ timestamp, logIndex, type: 'deposit', assets: log.args.assets }];
+        if (log.eventName === 'ExitEpochSettled') return [{ timestamp, logIndex, type: 'exit', assets: log.args.assets }];
+        if (log.eventName === 'ClaimPaid') return [{ timestamp, logIndex, type: 'claim', assets: log.args.amount }];
+        if (log.eventName === 'RewardNotified') {
+          return [{ timestamp, logIndex, type: 'reward', rate: log.args.newRate, periodFinish: Number(log.args.newPeriodFinish) }];
+        }
+        return [];
+      }),
+    ];
+    // Measure from when rewards began, not from deployment: time before the
+    // first reward stream would only dilute the realized rate.
+    const nowSeconds = Number(head.timestamp);
+    const streamingAtStart = rate > 0n && Number(finish) > startSeconds;
+    const firstReward = events.find((event) => event.type === 'reward' && event.logIndex >= 0);
+    const rewardsSince = streamingAtStart ? startSeconds : firstReward?.timestamp;
+    if (rewardsSince === undefined) {
+      return { apy: '0.0%', windowSeconds: nowSeconds - startSeconds, apy7d: '0.0%', apy7dWindowSeconds: nowSeconds - startSeconds };
+    }
+    // Both windows replay the same events, so 7D costs no extra requests. A
+    // window is the shorter of its length and the time rewards have been paid.
+    const trailing = (limitSeconds) => {
+      const windowSeconds = Math.min(limitSeconds, nowSeconds - rewardsSince);
+      // Too little reward history for a stable figure yet.
+      if (windowSeconds < MIN_APY_WINDOW_SECONDS) return { apy: null, windowSeconds };
+      return {
+        apy: calculateTrailingRewardApr({
+          events,
+          nowSeconds,
+          windowSeconds: limitSeconds,
+          deploymentTimestamp: rewardsSince,
+          currentAssetUsdPrice: price,
+          priceDecimals,
+        }),
+        windowSeconds,
+      };
+    };
+    const month = trailing(TRAILING_WINDOW_SECONDS);
+    const week = trailing(SHORT_WINDOW_SECONDS);
+    // The replayed events let the system dashboard chart history without more requests.
+    return { ...month, apy7d: week.apy, apy7dWindowSeconds: week.windowSeconds, history: { events, nowSeconds, rewardsSince } };
+  }, { signal, staleTime: 5 * 60_000 });
+}
+
+/// Resolves the full snapshot, but invokes `onPartial` with balances and pool
+/// figures as soon as they are known — before the Blockscout APR walk and the
+/// incident reads, which are far slower and not needed to render the wallet.
+export async function fetchLandingChainData(account, chainId, { signal, onPartial, refresh = false, resources, minBlock } = {}) {
   const network = getProtocolNetwork(chainId);
   if (!network) throw protocolUnavailableError(chainId);
+  throwIfRequestAborted(signal);
   const { contracts } = network;
-  const client = publicClientFor(chainId);
+  const client = readClientFor(chainId);
   const zero = 0n;
-  const calls = [
+  const hasAccount = Boolean(account) && account.toLowerCase() !== zeroAddress;
+  account = hasAccount ? account.toLowerCase() : zeroAddress;
+  const insuredTokenEntries = Object.entries(contracts.insuredTokens);
+  const testTokenId = contracts.insuredTokens['test-test'] ? 'test-test' : 'test-msloss';
+  const coverPools = contracts.coverPools;
+  const FIXED_READS = 12;
+  const POOL_READS = 13;
+  // Fixed account/protocol reads first, then a fixed-width block per cover pool
+  // so adding a pool cannot shift the earlier positions.
+  const landingCalls = [
     { address: contracts.usdc, abi: erc20Abi, functionName: 'balanceOf', args: [account] },
     { address: contracts.usd8, abi: erc20Abi, functionName: 'balanceOf', args: [account] },
     { address: contracts.savingsVault, abi: erc20Abi, functionName: 'balanceOf', args: [account] },
-    { address: contracts.coverAsset, abi: erc20Abi, functionName: 'balanceOf', args: [account] },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'balanceOf', args: [account] },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'totalAssets' },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'depositCap' },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'earned', args: [account] },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'decimals' },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'rewardRate' },
-    { address: contracts.coverAssetUsdOracle, abi: priceOracleAbi, functionName: 'latestRoundData' },
-    { address: contracts.coverAssetUsdOracle, abi: priceOracleAbi, functionName: 'decimals' },
     { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'activeIncidentId' },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'totalSupply' },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'balanceOf', args: [contracts.coverPool] },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'periodFinish' },
-    { address: contracts.coverPool, abi: poolAbi, functionName: 'exitRequests', args: [account] },
+    { address: contracts.insuredTokens['aave-sgho'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+    { address: contracts.insuredTokens['sky-susds'], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+    // Test-token slot: Sepolia msLOSS, or the local-only mainnet E2E token.
+    { address: contracts.insuredTokens[testTokenId], abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+    { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.usd8] },
+    { address: contracts.registry, abi: registryScoreAbi, functionName: 'getScoredRateHistory', args: [contracts.savingsVault] },
+    { address: contracts.registry, abi: registryBoosterAbi, functionName: 'boosterConfig' },
+    { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'nextIncidentId' },
+    { address: contracts.registry, abi: registryScoreSpentAbi, functionName: 'scoreSpent', args: [account] },
+    ...coverPools.flatMap((pool) => [
+      { address: pool.asset, abi: erc20Abi, functionName: 'balanceOf', args: [account] },
+      { address: pool.address, abi: poolAbi, functionName: 'balanceOf', args: [account] },
+      { address: pool.address, abi: poolAbi, functionName: 'totalAssets' },
+      { address: pool.address, abi: poolAbi, functionName: 'depositCap' },
+      { address: pool.address, abi: poolAbi, functionName: 'earned', args: [account] },
+      { address: pool.address, abi: poolAbi, functionName: 'decimals' },
+      { address: pool.address, abi: poolAbi, functionName: 'rewardRate' },
+      { address: pool.address, abi: poolAbi, functionName: 'totalSupply' },
+      { address: pool.address, abi: poolAbi, functionName: 'balanceOf', args: [pool.address] },
+      { address: pool.address, abi: poolAbi, functionName: 'periodFinish' },
+      { address: pool.address, abi: poolAbi, functionName: 'exitRequests', args: [account] },
+      { address: pool.usdOracle, abi: priceOracleAbi, functionName: 'latestRoundData' },
+      { address: pool.usdOracle, abi: priceOracleAbi, functionName: 'decimals' },
+    ]),
   ];
 
-  const [usdc, usd8, savings, coverAsset, poolShares, totalAssets, depositCap, earnings, shareDecimals, rewardRate, [, wstEthUsdPrice], wstEthUsdDecimals, activeIncidentId, totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch]] = await client.multicall({
-    contracts: calls,
-    allowFailure: false,
+  const insuranceCalls = [
+    {
+      address: contracts.defiInsurance,
+      abi: defiInsuranceAbi,
+      functionName: 'MAX_CLAIMANT_COVERAGE_BPS',
+    },
+    ...insuredTokenEntries.map(([, insuredToken]) => ({
+      address: contracts.defiInsurance,
+      abi: defiInsuranceAbi,
+      functionName: 'getInsuredToken',
+      args: [insuredToken],
+    })),
+  ];
+
+  const protocolCalls = [
+    { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'settlementParams' },
+    { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimBondAmount' },
+    // Rides the existing batch, so the displayed cooldown costs no extra request.
+    { address: contracts.registry, abi: registryExitTimingAbi, functionName: 'exitTimingConfig' },
+  ];
+
+  const allCalls = [...landingCalls, ...insuranceCalls, ...protocolCalls];
+  const fixedResources = ['account-balances', 'account-balances', 'account-balances', 'head',
+    'account-balances', 'account-balances', 'account-balances', 'configuration', 'configuration', 'configuration', 'head', 'account-balances'];
+  const protocolResources = ['settlement-params', 'claim-bond', 'exit-timing'];
+  const protocolStart = landingCalls.length + insuranceCalls.length;
+  const poolAccountOffsets = [0, 1, 4, 10];
+  const descriptors = allCalls.map((call, index) => {
+    let resource = index < FIXED_READS ? fixedResources[index]
+      : index >= protocolStart ? protocolResources[index - protocolStart] : 'configuration';
+    if (index >= FIXED_READS && index < landingCalls.length) {
+      const poolIndex = Math.floor((index - FIXED_READS) / POOL_READS);
+      const offset = (index - FIXED_READS) % POOL_READS;
+      resource = `${poolAccountOffsets.includes(offset) ? 'account-pool' : 'pool'}:${coverPools[poolIndex].id}`;
+    }
+    const fallback = call.functionName === 'exitRequests' ? [0n, 0n]
+      : call.functionName === 'latestRoundData' ? [0n, 0n, 0n, 0n, 0n]
+      : call.functionName === 'boosterConfig' ? [zeroAddress, 0n, 0n]
+      : call.functionName === 'getScoredRateHistory' ? [] : index >= protocolStart ? null : 0n;
+    return { call, resource, fallback, index };
+  });
+  // Contracts absent from this deployment (null config entries) keep their zero fallback.
+  const deployed = (call) => Boolean(call.address) && !(call.args || []).some(arg => arg == null);
+  const selected = descriptors.filter(entry => deployed(entry.call) && (hasAccount || !entry.resource.startsWith('account')));
+  // Retrying the incident's archived settlement parameters also needs the
+  // current incident ID and configuration required to reconstruct that cache.
+  const requestedResources = resources?.includes('incident-settlement-params')
+    ? [...new Set([...resources, 'head', 'configuration'])]
+    : resources;
+  // One multicall: the head block number is read inside it, so there is no
+  // separate eth_blockNumber call.
+  const readResult = await snapshotReads(client, network, selected, {
+    account, signal, minBlock, refresh, resources: requestedResources,
+  });
+  const landingValues = descriptors.map(entry => entry.fallback);
+  selected.forEach((entry, index) => { landingValues[entry.index] = readResult.values[index]; });
+  const resourceErrors = readResult.errors;
+  if (resourceErrors.head) throw new Error(resourceErrors.head);
+  throwIfRequestAborted(signal);
+  const blockNumber = readResult.blockNumber;
+  if (typeof blockNumber !== 'bigint') throw new Error('Block number unavailable.');
+  const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
+    usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
+    onchainScoreSpent] = landingValues.slice(0, FIXED_READS);
+  const poolReads = coverPools.map((config, index) => {
+    const [assetBalance, shares, totalAssets, depositCap, earned, shareDecimals, rewardRate,
+      totalSupply, escrowedShares, periodFinish, [pendingExitShares, exitEpoch],
+      [, assetUsdPrice], assetUsdDecimals] = landingValues.slice(
+      FIXED_READS + index * POOL_READS,
+      FIXED_READS + (index + 1) * POOL_READS,
+    );
+    return {
+      config,
+      assetBalance,
+      shares,
+      totalAssets,
+      depositCap,
+      earned,
+      shareDecimals,
+      rewardRate,
+      totalSupply,
+      escrowedShares,
+      periodFinish,
+      pendingExitShares,
+      exitEpoch,
+      assetUsdPrice,
+      assetUsdDecimals,
+    };
+  });
+  const [rawClaimantCoverageCapBps, ...insuranceValues] = landingValues.slice(landingCalls.length);
+  const insuranceTokens = resourceErrors.configuration ? {} : Object.fromEntries(insuredTokenEntries.map(
+    ([tokenId, insuredToken], index) => [tokenId, insuranceTokenState(tokenId, insuredToken, insuranceValues[index], insuranceCoverageCap(rawClaimantCoverageCapBps))],
+  ));
+  const scoreBalancesSnapshotTimestampMilliseconds = Date.now();
+  // Timestamp history is optional enrichment; never gate usable balances on it.
+  const usd8BalanceChangeTimestamp = usd8 === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
+  const savingsBalanceChangeTimestamp = savings === zero ? 0 : scoreBalancesSnapshotTimestampMilliseconds;
+  const [settlementParams, claimBond, exitTiming] = landingValues.slice(protocolStart);
+  const exitCooldown = exitTiming?.unstakeCooldown ?? exitTiming?.[0];
+  const exitCooldownSeconds = !resourceErrors['exit-timing'] && typeof exitCooldown === 'bigint' && exitCooldown > 0n
+    ? Number(exitCooldown) : null;
+  const minHoldingRequiredBlocks = resourceErrors['settlement-params'] ? null : holdingWindowFrom(settlementParams);
+
+  // Depend on balances from the multicall above but not on each other, so the
+  // savings conversion, booster balance, and every pool's conversion/exit read
+  // resolve together in one batch.
+  const boosterCall = hasAccount && !resourceErrors.configuration && boosterPolicy[0] !== zeroAddress ? {
+    address: boosterPolicy[0], abi: erc1155Abi, functionName: 'balanceOf', args: [account, boosterPolicy[1]],
+  } : null;
+  const derivedCalls = [
+    savings === zero ? null : {
+      address: contracts.savingsVault, abi: poolAbi, functionName: 'convertToAssets', args: [savings],
+    },
+    ...poolReads.flatMap((read) => [
+      read.shares === zero ? null : {
+        address: read.config.address, abi: poolAbi, functionName: 'convertToAssets', args: [read.shares],
+      },
+      read.pendingExitShares === zero ? null : {
+        address: read.config.address, abi: poolAbi, functionName: 'exitEpochs', args: [read.exitEpoch],
+      },
+      read.pendingExitShares === zero ? null : {
+        address: read.config.address, abi: poolAbi, functionName: 'convertToAssets', args: [read.pendingExitShares],
+      },
+    ]),
+  ];
+  const derivedDescriptors = derivedCalls.flatMap((call, index) => call ? [{ call,
+    resource: index === 0 ? 'account-savings-conversion' : `account-pool-derived:${coverPools[Math.floor((index - 1) / 3)].id}`,
+    fallback: call.functionName === 'exitEpochs' ? [0n, 0n, 0n, 0n] : 0n,
+  }] : []);
+  for (const descriptor of derivedDescriptors) descriptor.cacheScope = derivedDescriptors.filter(item => item.resource === descriptor.resource).map(item => item.call.args.map(String).join(',')).join('|');
+  if (boosterCall) derivedDescriptors.push({ call: boosterCall, resource: 'account-boosters', fallback: null,
+    cacheScope: `${boosterPolicy[0].toLowerCase()}:${boosterPolicy[1]}` });
+  const derivedResult = await snapshotReads(client, network, derivedDescriptors, { account, blockNumber, signal, refresh,
+    resources: resources?.flatMap(resource => resource === 'account-balances' ? [resource, 'account-savings-conversion']
+      : resource === 'incident' ? [resource, 'account-boosters']
+      : resource.startsWith('account-pool:') ? [resource, resource.replace('account-pool:', 'account-pool-derived:')] : [resource]),
+  });
+  const { 'account-boosters': boosterError, ...derivedErrors } = derivedResult.errors;
+  Object.assign(resourceErrors, derivedErrors);
+  if (boosterError) resourceErrors.boosters = boosterError;
+  const boosterBalance = !hasAccount || resourceErrors.configuration ? (resourceErrors.configuration && hasAccount ? null : 0n)
+    : boosterCall ? derivedResult.values.at(-1) : 0n;
+  const derived = boosterCall ? derivedResult.values.slice(0, -1) : derivedResult.values;
+  let derivedIndex = 0;
+  const savingsAssets = savings === zero ? zero : derived[derivedIndex++];
+
+  const pools = poolReads.map((read) => {
+    const depositedAssets = read.shares === zero ? zero : derived[derivedIndex++];
+    const exitEpoch = read.pendingExitShares === zero
+      ? [zero, zero, zero, zero]
+      : derived[derivedIndex++];
+    const pendingEstimate = read.pendingExitShares === zero ? zero : derived[derivedIndex++];
+    const remainingExitShares = exitEpoch[2];
+    const exitAssets = read.pendingExitShares === zero ? zero : exitAssetAmount(read.pendingExitShares, exitEpoch,
+      read.pendingExitShares === read.totalSupply ? read.totalAssets : pendingEstimate);
+    const conversionUnavailable = Boolean(resourceErrors[`account-pool-derived:${read.config.id}`]);
+    const exitMatured = Date.now() >= Number(read.exitEpoch) * 1_000;
+    const exitAvailable = read.pendingExitShares > zero
+      && (remainingExitShares > zero || (exitMatured && activeIncidentId === zero));
+    const capacityPercent = read.depositCap === zero
+      ? 0
+      : Number((read.totalAssets * 10_000n) / read.depositCap) / 100;
+    const earningShares = read.totalSupply > read.escrowedShares
+      ? read.totalSupply - read.escrowedShares
+      : zero;
+    const earningsPerSecond = earningShares === zero
+      ? zero
+      : (read.shares * read.rewardRate) / earningShares;
+    const activeEarningsRate = Number(read.periodFinish) * 1_000 > Date.now()
+      ? formatUnits(earningsPerSecond, 18)
+      : '0';
+    const earningsDecimals = liveEarningsDecimals(activeEarningsRate);
+    const shareDecimals = Number(read.shareDecimals);
+    return {
+      id: read.config.id,
+      name: read.config.name,
+      address: read.config.address,
+      asset: read.config.asset,
+      assetSymbol: read.config.assetSymbol,
+      shareSymbol: read.config.shareSymbol,
+      tint: read.config.tint,
+      assetBalance: formatted(read.assetBalance),
+      apy: null,
+      tvl: formattedUsd(read.totalAssets, read.assetUsdPrice, read.assetUsdDecimals),
+      capacityPercent: Math.min(100, capacityPercent),
+      capacityUncapped: read.depositCap === zero,
+      remainingDepositCapacity: read.depositCap === zero
+        ? ''
+        : formatted(read.depositCap > read.totalAssets ? read.depositCap - read.totalAssets : zero),
+      assets: formatted(read.totalAssets),
+      // Pending exits remain claim-exposed until completion, so keep them in
+      // the user's displayed deposit alongside active pool assets.
+      deposit: formatted(depositedAssets + exitAssets, 18, 2),
+      availableForCooldownAssets: conversionUnavailable ? null : formatUnits(depositedAssets, 18),
+      availableForWithdrawAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? exitAssets : zero, 18),
+      inCooldownAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? zero : exitAssets, 18),
+      exitSettled: remainingExitShares > zero,
+      withdrawalQuote: resourceErrors[`pool:${read.config.id}`] ? null : { totalAssets: read.totalAssets.toString(), totalSupply: read.totalSupply.toString() },
+      availableForCooldown: formatUnits(read.shares, shareDecimals),
+      availableForWithdraw: formatted(exitAvailable ? read.pendingExitShares : zero, shareDecimals),
+      inCooldown: formatted(exitAvailable ? zero : read.pendingExitShares, shareDecimals),
+      cooldownEndsAtMilliseconds: read.pendingExitShares > zero ? Number(read.exitEpoch) * 1_000 : 0,
+      earnings: formatted(read.earned, 18, earningsDecimals),
+      earningsExact: formatUnits(read.earned, 18),
+      earningsPerSecond: formatUnits(earningsPerSecond, 18),
+      earningsSnapshotTimestampMilliseconds: Date.now(),
+      earningsPeriodFinishMilliseconds: Number(read.periodFinish) * 1_000,
+      hasEarnings: read.earned > zero,
+      shareDecimals,
+    };
   });
 
-  const savingsAssets = savings === zero
-    ? zero
-    : await client.readContract({
-      address: contracts.savingsVault,
-      abi: poolAbi,
-      functionName: 'convertToAssets',
-      args: [savings],
-    });
-  const depositedAssets = poolShares === zero
-    ? zero
-    : await client.readContract({
-      address: contracts.coverPool,
-      abi: poolAbi,
-      functionName: 'convertToAssets',
-      args: [poolShares],
-    });
-  const [, , remainingExitShares] = pendingExitShares === zero
-    ? [zero, zero, zero, zero]
-    : await client.readContract({
-      address: contracts.coverPool,
-      abi: poolAbi,
-      functionName: 'exitEpochs',
-      args: [exitEpoch],
-    });
-  const exitMatured = Date.now() >= Number(exitEpoch) * 1_000;
-  const exitAvailable = pendingExitShares > zero
-    && (remainingExitShares > zero || (exitMatured && activeIncidentId === zero));
-  const capacityPercent = depositCap === zero
-    ? 0
-    : Number((totalAssets * 10_000n) / depositCap) / 100;
-  const earningShares = totalSupply > escrowedShares ? totalSupply - escrowedShares : zero;
-  const earningsPerSecond = earningShares === zero
-    ? zero
-    : (poolShares * rewardRate) / earningShares;
-
-  return {
+  const snapshot = ({ pools: poolExtras, ...extra } = {}) => ({
+    blockNumber: blockNumber.toString(),
+    updatedAt: readResult.updatedAt,
+    resourceErrors,
+    scoreHistoryInputs: { usd8FromBlock: String(usd8ScoreRates[0]?.fromBlock ?? 0n), savingsFromBlock: String(savingsScoreRates[0]?.fromBlock ?? 0n) },
     activeIncidentId: activeIncidentId.toString(),
-    scoreBalances: {
-      usd8: usd8.toString(),
-      savings: savings.toString(),
+    incident: null,
+    claim: null,
+    insurance: {
+      tokens: insuranceTokens,
+      minHoldingRequiredBlocks,
+      scoreMaturitySeconds: minHoldingRequiredBlocks && network.blockTimeSeconds
+        ? Number(minHoldingRequiredBlocks) * network.blockTimeSeconds : null,
+      exitCooldownSeconds,
+      claimBond: claimBond === null ? null : formatted(claimBond),
+      boosterBoostBps: Number(boosterPolicy[2] ?? 0),
     },
-    balances: {
+    scoreBalances: resourceErrors['account-balances'] ? null : { usd8: usd8.toString(), savings: savings.toString() },
+    // The score snapshot lags a spend until it finalizes, so the app compares
+    // this against the snapshot's own scoreSpent to know when to re-fetch.
+    scoreSpent: onchainScoreSpent.toString(),
+    // Full Registry rate history (already in the multicall above), so the score
+    // display can apply each rate from its own start block. No extra RPC call.
+    scoreRateHistory: resourceErrors.configuration ? null : {
+      usd8: usd8ScoreRates.map(({ fromBlock, rate }) => ({ fromBlock: fromBlock.toString(), rate: rate.toString() })),
+      savings: savingsScoreRates.map(({ fromBlock, rate }) => ({ fromBlock: fromBlock.toString(), rate: rate.toString() })),
+    },
+    scoreRatesPerTokenPerDay: resourceErrors.configuration ? null : {
+      usd8: currentScorePerTokenPerDay(usd8ScoreRates),
+      savings: currentScorePerTokenPerDay(savingsScoreRates),
+    },
+    scoreRatesPerSecond: resourceErrors['account-balances'] || resourceErrors.configuration ? null : {
+      usd8: formatUnits(currentScorePerSecond(usd8, usd8ScoreRates), 18),
+      savings: formatUnits(currentScorePerSecond(savings, savingsScoreRates), 18),
+    },
+    scoreBalanceChangeTimestampMilliseconds: {
+      usd8: usd8BalanceChangeTimestamp,
+      savings: savingsBalanceChangeTimestamp,
+    },
+    scoreBalancesSnapshotTimestampMilliseconds,
+    balances: resourceErrors['account-balances'] ? { usdc: UNKNOWN_VALUE, usd8: UNKNOWN_VALUE, savings: UNKNOWN_VALUE, savingsAssets: UNKNOWN_VALUE, insuredTokens: {} } : {
       usdc: formatted(usdc, 6),
       usd8: formatted(usd8),
       savings: formatted(savings),
-      savingsAssets: formatted(savingsAssets),
-      coverAsset: formatted(coverAsset),
-      poolShares: formatted(poolShares, Number(shareDecimals)),
+      savingsAssets: resourceErrors['account-savings-conversion'] ? UNKNOWN_VALUE : formatted(savingsAssets),
+      coverAsset: pools[0]?.assetBalance ?? '0',
+      poolShares: pools[0]?.availableForCooldown ?? '0',
+      boosters: boosterBalance === null ? UNKNOWN_VALUE : boosterBalance.toString(),
+      insuredTokens: {
+        'aave-sgho': formatted(sGho),
+        'sky-susds': formatted(sUsds),
+        [testTokenId]: formatted(msloss),
+      },
     },
-    pool: {
-      apy: formattedAnnualRewardRate(rewardRate, totalAssets, wstEthUsdPrice, wstEthUsdDecimals),
-      tvl: formattedUsd(totalAssets, wstEthUsdPrice, wstEthUsdDecimals),
-      capacityPercent: Math.min(100, capacityPercent),
-      capacityUncapped: depositCap === zero,
-      assets: formatted(totalAssets),
-      deposit: formatted(depositedAssets),
-      availableForCooldown: formatted(poolShares, Number(shareDecimals)),
-      availableForWithdraw: formatted(exitAvailable ? pendingExitShares : zero, Number(shareDecimals)),
-      inCooldown: formatted(exitAvailable ? zero : pendingExitShares, Number(shareDecimals)),
-      earnings: formatted(earnings),
-      earningsExact: formatUnits(earnings, 18),
-      earningsPerSecond: formatUnits(earningsPerSecond, 18),
-      earningsSnapshotTimestampMilliseconds: Date.now(),
-      earningsPeriodFinishMilliseconds: Number(periodFinish) * 1_000,
-      hasEarnings: earnings > zero,
-      shareDecimals: Number(shareDecimals),
-    },
+    pools: pools.map((pool, index) => ({ ...pool,
+      usdPrice: poolReads[index].assetUsdPrice.toString(), priceDecimals: Number(poolReads[index].assetUsdDecimals),
+      ...(resourceErrors[`pool:${pool.id}`] ? { tvl: null, capacityPercent: null, apy: UNKNOWN_VALUE, dataUnavailable: true } : {}),
+      ...(resourceErrors[`account-pool:${pool.id}`] || resourceErrors[`account-pool-derived:${pool.id}`] ? { deposit: UNKNOWN_VALUE, earnings: UNKNOWN_VALUE, assetBalance: UNKNOWN_VALUE, dataUnavailable: true } : {}),
+      ...poolExtras?.[index] })),
+    ...extra,
+  });
+  onPartial?.(snapshot());
+
+  const headBlock = blockNumber;
+  throwIfRequestAborted(signal);
+
+  const incidentKey = protocolKey(network, 'incident', account);
+  const incidentRequested = !resources
+    || resources.includes('incident')
+    || resources.includes('incident-settlement-params');
+  if (refresh && incidentRequested) {
+    await queryClient.cancelQueries({ queryKey: incidentKey, exact: true });
+    await queryClient.invalidateQueries({ queryKey: incidentKey, exact: true, refetchType: 'none' });
+  }
+  const cachedIncident = queryClient.getQueryData(incidentKey);
+  const { incident, claim } = resources && !incidentRequested && cachedIncident
+    ? cachedIncident : await cachedData(incidentKey, ({ signal: querySignal }) => readIncident({
+      client, network, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy,
+      chainId, headBlock, blockNumber, signal: querySignal,
+      onIncidentHoldingWindowError: error => { resourceErrors['incident-settlement-params'] = error.shortMessage || error.message; },
+      onIncident: extra => { if (!signal?.aborted) onPartial?.(snapshot({ ...extra, incidentReady: true })); },
+    }), { signal }).catch(error => {
+      checkAbort(signal);
+      resourceErrors.incident = error.shortMessage || error.message;
+      return { incident: null, claim: null };
+    });
+
+  throwIfRequestAborted(signal);
+
+  return snapshot({ incident, claim });
+}
+
+// Facts fixed when an incident opens: its pools, their assets, the phase window,
+// and the holding window at the opening block. Read once per incident.
+async function incidentStaticFacts({ client, network, incidentId, openBlock, signal, onIncidentHoldingWindowError }) {
+  const key = protocolKey(network, 'incident-static', String(incidentId));
+  const cached = queryClient.getQueryData(key);
+  if (cached) return cached;
+  const { contracts } = network;
+  const [phaseWindow, rawPools] = await multicall(client, {
+    contracts: [
+      { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPhaseWindow', args: [incidentId] },
+      { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidentPools', args: [incidentId] },
+    ],
+    allowFailure: false,
+  });
+  checkAbort(signal);
+  const poolAddrs = rawPools.map((pool) => String(pool).toLowerCase());
+  if (poolAddrs.length === 0 || new Set(poolAddrs).size !== poolAddrs.length) {
+    throw new Error('Invalid incident pool snapshot.');
+  }
+  // Pool assets are immutable, so they are read at the opening block together
+  // with the holding window that applied to this incident.
+  const openReads = await multicall(client, {
+    contracts: [
+      ...poolAddrs.map((pool) => ({ address: pool, abi: poolAbi, functionName: 'asset' })),
+      { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'settlementParams' },
+    ],
+    allowFailure: true, blockNumber: openBlock,
+  });
+  checkAbort(signal);
+  const assetReads = openReads.slice(0, poolAddrs.length);
+  const failedAsset = assetReads.find(read => read.status !== 'success');
+  if (failedAsset) throw failedAsset.error || new Error('Invalid incident asset order.');
+  const poolOrder = assetReads.map(read => String(read.result).toLowerCase());
+  if (poolOrder.length !== poolAddrs.length || new Set(poolOrder).size !== poolOrder.length) {
+    throw new Error('Invalid incident asset order.');
+  }
+  const holding = openReads.at(-1);
+  const facts = {
+    poolAddrs, poolOrder, phaseWindowSeconds: phaseWindow,
+    minHoldingRequiredBlocks: holding.status === 'success' ? holdingWindowFrom(holding.result) : null,
   };
+  if (holding.status !== 'success') {
+    // Leave it uncached so the next refresh retries the archive read.
+    onIncidentHoldingWindowError?.(holding.error || new Error('Holding window unavailable.'));
+    return facts;
+  }
+  queryClient.setQueryData(key, facts);
+  return facts;
+}
+
+async function readIncident({ client, network, account, hasAccount, activeIncidentId, nextIncidentId, boosterPolicy, chainId, headBlock, blockNumber, signal, onIncident, onIncidentHoldingWindowError }) {
+  const { contracts } = network;
+  const zero = 0n;
+  let incident = null;
+  let claim = null;
+  let displayedIncidentId = activeIncidentId;
+  let historicalClaimId = zero;
+  let historicalClaimState = null;
+  if (hasAccount && displayedIncidentId === zero && nextIncidentId > 1n) {
+    const historical = await unresolvedHistoricalClaim({
+      key: `${chainId}:${contracts.defiInsurance.toLowerCase()}:${account}`,
+      account, nextIncidentId, signal,
+      readClaimIds: ids => multicall(client, {
+        contracts: ids.map((incidentId) => ({
+          address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [incidentId, account],
+        })),
+        allowFailure: false, blockNumber,
+      }),
+      readClaims: claimIds => multicall(client, {
+        contracts: claimIds.map((claimId) => ({
+          address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId],
+        })),
+        allowFailure: false, blockNumber,
+      }),
+    });
+    if (historical) {
+      displayedIncidentId = historical.incidentId;
+      historicalClaimId = historical.claimId;
+      historicalClaimState = historical.state;
+    }
+  }
+  if (displayedIncidentId !== zero) {
+    // The claim ID seen last time lets its state ride in the same batch.
+    const claimIdKey = protocolKey(network, 'claim-id', String(displayedIncidentId), account);
+    const knownClaimId = historicalClaimId || (hasAccount ? queryClient.getQueryData(claimIdKey) ?? zero : zero);
+    const incidentValues = await multicall(client, {
+      contracts: [
+        { address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'incidents', args: [displayedIncidentId] },
+        ...(hasAccount && historicalClaimId === zero ? [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claimIdByIncidentAndUser', args: [displayedIncidentId, account] }] : []),
+        ...(knownClaimId !== zero && !historicalClaimState ? [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [knownClaimId] }] : []),
+      ],
+      allowFailure: false, blockNumber,
+    });
+    checkAbort(signal);
+    const [incidentState] = incidentValues;
+    const claimId = historicalClaimId !== zero ? historicalClaimId
+      : hasAccount ? incidentValues[1] : zero;
+    if (hasAccount && historicalClaimId === zero) queryClient.setQueryData(claimIdKey, claimId);
+    const [tokenAddress, , , openBlock, phaseDeadline, root, unresolvedClaims] = incidentState;
+    const facts = await incidentStaticFacts({ client, network, incidentId: displayedIncidentId, openBlock, signal, onIncidentHoldingWindowError });
+    const tokenId = Object.entries(contracts.insuredTokens)
+      .find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase())?.[0] || '';
+    const boosterBoostBps = boosterPolicy[2] ?? 0;
+    incident = {
+      id: displayedIncidentId.toString(),
+      tokenId,
+      tokenAddress: tokenAddress.toLowerCase(),
+      minHoldingRequiredBlocks: facts.minHoldingRequiredBlocks,
+      phaseDeadlineMilliseconds: Number(phaseDeadline) * 1_000,
+      phaseWindowMilliseconds: Number(facts.phaseWindowSeconds) * 1_000,
+      root,
+      unresolvedClaims: unresolvedClaims.toString(),
+      totalScoreCommitted: UNKNOWN_VALUE,
+      boosterBoostBps: Number(boosterBoostBps),
+      poolAddrs: facts.poolAddrs,
+      poolOrder: facts.poolOrder,
+    };
+
+    if (claimId !== zero) {
+      const claimState = historicalClaimState
+        || (claimId === knownClaimId ? incidentValues.at(-1) : undefined)
+        || (await multicall(client, {
+          contracts: [{ address: contracts.defiInsurance, abi: defiInsuranceAbi, functionName: 'claims', args: [claimId] }],
+          allowFailure: false, blockNumber,
+        }))[0];
+      const [, claimIncidentId, insuredTokenAmount, boosterAmount, bondAmount, resolved] = claimState;
+      claim = {
+        id: claimId.toString(),
+        incidentId: claimIncidentId.toString(),
+        insuredTokenAmount: formatted(insuredTokenAmount),
+        bondAmount: formatted(bondAmount),
+        boosterAmount: boosterAmount.toString(),
+        scoreToSpend: UNKNOWN_VALUE,
+        scoreCommitmentPercentage: UNKNOWN_VALUE,
+        resolved,
+      };
+    }
+    onIncident?.({ incident, claim });
+    const claimLogs = await incrementalLogs(client, `claims:${chainId}:${contracts.defiInsurance}:${displayedIncidentId}`, {
+      address: contracts.defiInsurance,
+      events: [claimRegisteredEvent, claimCancelledEvent],
+    }, openBlock, headBlock, { signal }).catch(() => { checkAbort(signal); return []; });
+    const cancelledClaimIds = new Set(
+      claimLogs
+        .filter((log) => log.eventName === 'ClaimCancelled')
+        .map((log) => log.args.claimId.toString()),
+    );
+    const activeRegistrations = claimLogs.filter((log) => (
+      log.eventName === 'ClaimRegistered'
+      && log.args.incidentId === displayedIncidentId
+      && !cancelledClaimIds.has(log.args.claimId.toString())
+    ));
+    const totalScoreCommitted = activeRegistrations.reduce(
+      (total, log) => total + boostedScore(log.args.scoreToSpend, log.args.boosterAmount, boosterBoostBps),
+      zero,
+    );
+    incident = { ...incident, totalScoreCommitted: claimLogs.length ? formatUnits(totalScoreCommitted, 18) : UNKNOWN_VALUE };
+    if (claim) {
+      const scoreToSpend = activeRegistrations.find(log => log.args.claimId === claimId)?.args.scoreToSpend;
+      claim = { ...claim, scoreToSpend: scoreToSpend === undefined ? UNKNOWN_VALUE : formatted(scoreToSpend),
+        scoreCommitmentPercentage: scoreToSpend === undefined ? UNKNOWN_VALUE : claimPercentage(boostedScore(scoreToSpend, BigInt(claim.boosterAmount), boosterBoostBps), totalScoreCommitted) };
+    }
+
+  }
+
+  return { incident, claim };
+}
+
+export async function fetchLandingAnalytics(snapshot, account, chainId, { signal } = {}) {
+  const pools = await Promise.all((snapshot.pools || []).map(async pool => {
+    if (pool.usdPrice === undefined) return { id: pool.id, apy: pool.apy, apy7d: pool.apy7d };
+    // A pool that has never received a reward stream (periodFinish is still 0
+    // onchain) has earned nothing: its trailing APY is exactly 0%.
+    if (pool.earningsPeriodFinishMilliseconds === 0) return { id: pool.id, apy: '0.0%', apy7d: '0.0%' };
+    const result = await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal })
+      .catch(() => { checkAbort(signal); return { apy: null, windowSeconds: null }; });
+    // null (not the em-dash) means "could not be computed": shown as a static
+    // dash once loading ends, instead of a spinner that never resolves.
+    return {
+      id: pool.id,
+      apy: result.apy === UNKNOWN_VALUE ? null : result.apy,
+      apyWindowSeconds: result.windowSeconds,
+      apy7d: result.apy7d === UNKNOWN_VALUE ? null : (result.apy7d ?? null),
+      apy7dWindowSeconds: result.apy7dWindowSeconds ?? null,
+    };
+  }));
+  return { pools };
+}
+
+export async function fetchScoreHistory(snapshot, account, chainId, { signal } = {}) {
+  if (!account || account === zeroAddress || !snapshot.scoreHistoryInputs || !snapshot.scoreBalances) return null;
+  const network = getProtocolNetwork(chainId);
+  const timestamps = await Promise.all(['usd8', 'savings'].map(token => {
+    const balance = snapshot.scoreBalances[token];
+    if (balance === '0') return 0;
+    const address = token === 'usd8' ? network.contracts.usd8 : network.contracts.savingsVault;
+    return cachedData(protocolKey(network, 'score-history', account.toLowerCase(), address, balance),
+      ({ signal: querySignal }) => latestBalanceChangeTimestampMilliseconds(readClientFor(chainId), address, account,
+        BigInt(snapshot.scoreHistoryInputs[`${token}FromBlock`]), snapshot.scoreBalancesSnapshotTimestampMilliseconds,
+        querySignal, BigInt(snapshot.blockNumber), network.explorerApiUrl), { signal, staleTime: 60_000 });
+  }));
+  return { usd8: timestamps[0], savings: timestamps[1] };
 }

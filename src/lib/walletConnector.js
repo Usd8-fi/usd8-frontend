@@ -4,11 +4,16 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 
 const PLACEHOLDER_PROJECT_IDS = new Set(['', 'YOUR_REOWN_PROJECT_ID']);
 const DEFAULT_REOWN_PROJECT_ID = '0a6111479b9c06dc90f816d4138a6c4e';
-export const reownProjectId = String(import.meta.env.VITE_REOWN_PROJECT_ID || DEFAULT_REOWN_PROJECT_ID).trim();
+const reownProjectId = String(import.meta.env.VITE_REOWN_PROJECT_ID || DEFAULT_REOWN_PROJECT_ID).trim();
 export const walletConnectorConfigured = Boolean(reownProjectId) && !PLACEHOLDER_PROJECT_IDS.has(reownProjectId);
-export const walletNetworks = [sepolia, mainnet];
+// Only the protocol network is offered. Listing Sepolia next to mainnet let
+// AppKit restore a Sepolia choice persisted from the retired /beta app on the
+// same origin, which left the app idle behind a "Switch to Ethereum" button.
+// With one network, a stale stored chain falls back to it and connecting asks
+// the wallet for it.
+export const walletNetworks = Number(import.meta.env.VITE_PROTOCOL_CHAIN_ID || mainnet.id) === sepolia.id ? [sepolia] : [mainnet];
 
-export const wagmiAdapter = walletConnectorConfigured
+const wagmiAdapter = walletConnectorConfigured
   ? new WagmiAdapter({
       networks: walletNetworks,
       projectId: reownProjectId,
@@ -36,7 +41,7 @@ export function initializeWalletConnector() {
   createAppKit({
     adapters: [wagmiAdapter],
     networks: walletNetworks,
-    defaultNetwork: sepolia,
+    defaultNetwork: walletNetworks[0],
     projectId: reownProjectId,
     metadata: getMetadata(),
     themeMode: 'dark',
@@ -57,6 +62,15 @@ export function initializeWalletConnector() {
       receive: false,
       send: false,
       history: false,
+      // Wallets only. Reown's cloud config returns no per-feature settings for
+      // this project, so these local values are the ones applied; each paid or
+      // account feature is switched off explicitly so a dashboard default can't
+      // add it to the popup.
+      emailCapture: false,
+      payWithExchange: false,
+      payments: false,
+      reownAuthentication: false,
+      reownBranding: false,
     },
   });
 

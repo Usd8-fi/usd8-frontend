@@ -1,0 +1,3 @@
+{"Version":"2012-10-17","Statement":[
+ {"Effect":"Allow","Action":"dynamodb:UpdateItem","Resource":"arn:aws:dynamodb:eu-central-1:<AWS_ACCOUNT_ID>:table/usd8-terms-acceptance"},
+ {"Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Resource":"arn:aws:logs:eu-central-1:<AWS_ACCOUNT_ID>:log-group:/aws/lambda/usd8-terms-acceptance*"}]}

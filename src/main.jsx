@@ -1,30 +1,18 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
-import App from './App.jsx';
-import { initializeWalletConnector, wagmiConfig, walletConnectorConfigured } from './lib/walletConnector.js';
+import Root from './Root.jsx';
+import PrivateBetaGate from './components/PrivateBetaGate.jsx';
+import AppErrorBoundary from './components/AppErrorBoundary.jsx';
+import { startErrorReporting } from './lib/errorReporting.js';
 import './styles.css';
 import '../theme/css/link-theme.css';
 
-const queryClient = new QueryClient();
-
-initializeWalletConnector();
-
-function Root() {
-  if (!walletConnectorConfigured || !wagmiConfig) return <App />;
-
-  return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </WagmiProvider>
-  );
-}
+startErrorReporting();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Root />
+    <AppErrorBoundary>
+      <PrivateBetaGate><Root /></PrivateBetaGate>
+    </AppErrorBoundary>
   </StrictMode>,
 );

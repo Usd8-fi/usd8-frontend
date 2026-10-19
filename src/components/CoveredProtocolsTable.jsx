@@ -1,8 +1,18 @@
+import { UNKNOWN_VALUE } from '../lib/units.js';
+import { Fragment } from 'react';
 import aaveLogo from '../assets/aavelogo.svg';
+// Raster icons stay separate cached files; base64-inlining them would add
+// ~6.5 KB gzip of incompressible data to the public page's first-load JS.
+import curveLogo from '../assets/curve-scrvusd.webp?no-inline';
+import msLossLogo from '../assets/msloss-test.svg';
+import skyLogo from '../assets/sky-susds.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
+import { remainingTimeParts } from '../lib/claimLifecycle.js';
+import { LOCAL_E2E_TEST_TOKEN } from '../lib/networkConfig.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
+import PercentRing from './PercentRing.jsx';
 import TableTokenCell from './TableTokenCell.jsx';
 
 export const COVERED_PROTOCOL_ROWS = [
@@ -12,7 +22,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: usd8Logo,
     token: 'USD8',
     address: 'TBD',
-    reimbursement: '80%',
   },
   {
     id: 'susd8',
@@ -20,7 +29,6 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: sUsd8Logo,
     token: <>USD8 Protected<br />Savings sUSD8</>,
     address: 'TBD',
-    reimbursement: '80%',
   },
   {
     id: 'aave-sgho',
@@ -28,32 +36,101 @@ export const COVERED_PROTOCOL_ROWS = [
     iconSrc: aaveLogo,
     token: <>Aave Savings Gho<br />sGHO</>,
     address: <>0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d<br />impl 0x50f9d4e28309303f0cdcac8af0b569e8b75ab857</>,
-    reimbursement: '80%',
   },
   {
     id: 'curve-scrvusd',
     symbol: 'scrvUSD',
-    iconSrc: 'https://cdn.jsdelivr.net/gh/curvefi/curve-assets/branding/logo.png',
+    iconSrc: curveLogo,
     token: <>Curve Savings<br />scrvUSD</>,
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
-    reimbursement: '80%',
   },
   {
     id: 'sky-susds',
     symbol: 'sUSDS',
-    iconSrc: 'https://assets.coingecko.com/coins/images/39925/large/sky.jpg',
+    iconSrc: skyLogo,
     token: 'Sky Savings sUSDS',
     address: <>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br />impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</>,
-    reimbursement: '80%',
   },
+  {
+    id: 'test-msloss',
+    symbol: 'msLOSS',
+    iconSrc: msLossLogo,
+    token: <>Sepolia Test Loss<br />msLOSS</>,
+    address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
+  },
+  // Mainnet E2E test token: local dev server only (never in a production build).
+  // `import.meta.env.DEV` is inlined so production builds drop this row entirely.
+  ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? [{
+    id: 'test-test',
+    symbol: 'TEST',
+    iconSrc: msLossLogo,
+    token: <>Test Token<br />TEST</>,
+    address: '0x116e4336047C97703F84619dE03b6Bf893667DE1',
+  }] : []),
 ];
 
-export default function CoveredProtocolsTable({ onFileClaim, fileClaimUnavailableReason = '' }) {
+const ZERO_ROOT = `0x${'00'.repeat(32)}`;
+
+function timedLabel(label, deadline, nowMilliseconds) {
+  const { daysLeft, hoursLeft, minutesLeft } = remainingTimeParts(deadline, nowMilliseconds);
+  if (daysLeft === 0 && hoursLeft === 0) return `${label} (${minutesLeft}m left)`;
+  return `${label} (${daysLeft}d ${hoursLeft}h left)`;
+}
+
+function incidentActionLabel(incident, nowMilliseconds) {
+  const deadline = Number(incident.phaseDeadlineMilliseconds);
+  const phaseWindow = Number(incident.phaseWindowMilliseconds);
+  if (!Number.isFinite(deadline) || !Number.isFinite(phaseWindow)) return 'File Claim';
+
+  if (String(incident.root).toLowerCase() === ZERO_ROOT) {
+    if (nowMilliseconds <= deadline) return timedLabel('Claim Open', deadline, nowMilliseconds);
+    if (nowMilliseconds <= deadline + phaseWindow) {
+      return timedLabel('Settle Claims', deadline + phaseWindow, nowMilliseconds);
+    }
+    return 'Finalise Payout';
+  }
+  if (nowMilliseconds <= deadline) return timedLabel('Settle & Dispute', deadline, nowMilliseconds);
+  if (nowMilliseconds <= deadline + phaseWindow) {
+    return timedLabel('Finalise Payout', deadline + phaseWindow, nowMilliseconds);
+  }
+  return 'Finalise Payout';
+}
+
+function coverageShare(value) {
+  try { return Number(BigInt(value)) / 10_000; } catch { return NaN; }
+}
+
+function formatCoverageBps(value) {
+  try {
+    const basisPoints = BigInt(value);
+    if (basisPoints < 0n || basisPoints > 10_000n) return UNKNOWN_VALUE;
+    const whole = basisPoints / 100n;
+    const fraction = String(basisPoints % 100n).padStart(2, '0').replace(/0+$/, '');
+    return `${whole}${fraction ? `.${fraction}` : ''}%`;
+  } catch {
+    return UNKNOWN_VALUE;
+  }
+}
+
+export default function CoveredProtocolsTable({
+  onFileClaim,
+  fileClaimUnavailableReason = '',
+  incident = null,
+  insuredTokenStates = {},
+  nowMilliseconds = Date.now(),
+  onSimulate,
+}) {
+  const displayedRows = COVERED_PROTOCOL_ROWS.filter((row) => (
+    insuredTokenStates[row.id]?.enabled || row.id === incident?.tokenId
+  ));
+
   return (
-    <table
-      className="cover-table covered-protocols-table covered-protocols-table--claims"
-      aria-label="Insured tokens"
-    >
+    <Fragment>
+      <div className="landing-table-shell">
+        <table
+          className="cover-table covered-protocols-table covered-protocols-table--claims"
+          aria-label="Insured tokens"
+        >
       <thead>
         <tr>
           <th scope="col">
@@ -68,33 +145,58 @@ export default function CoveredProtocolsTable({ onFileClaim, fileClaimUnavailabl
             <span className="table-heading-with-help">
               Max Coverage
               <InfoTooltip ariaLabel="About max coverage" className="dashboard-help--table">
-                Maximum reimbursement possible: 80% of the insured token&apos;s underlying value. Actual payout depends on the user&apos;s insurance score and cover pool limits.
+                Current onchain maximum reimbursement for each listed token. Actual payout depends on the user&apos;s insurance score and cover pool limits.
               </InfoTooltip>
             </span>
           </th>
-          <th scope="col" className="table-action-cell covered-protocols-action-cell">File Claim</th>
+          <th scope="col" className="table-action-cell covered-protocols-action-cell">Claim</th>
         </tr>
       </thead>
       <tbody>
-        {COVERED_PROTOCOL_ROWS.map((row) => (
+        {displayedRows.map((row) => {
+          const insuranceState = insuredTokenStates?.[row.id];
+          const reimbursement = insuranceState?.enabled
+            ? formatCoverageBps(insuranceState.maxCoverageBps)
+            : UNKNOWN_VALUE;
+          const actionLabel = row.id === incident?.tokenId
+            ? incidentActionLabel(incident, nowMilliseconds)
+            : 'File Claim';
+          const actionAriaLabel = actionLabel === 'File Claim'
+            ? `File claim for ${row.id}`
+            : `${actionLabel} for ${row.id}`;
+          return (
           <tr key={row.id}>
             <td><TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell></td>
-            <td>{row.reimbursement}</td>
+            <td>
+              <span className="percent-with-ring">
+                {reimbursement}
+                {insuranceState?.enabled ? <PercentRing share={coverageShare(insuranceState.maxCoverageBps)} /> : null}
+              </span>
+            </td>
             <td className="table-action-cell covered-protocols-action-cell">
               <AvailabilityAction
-                className="dashboard-action-button dashboard-table-action-button"
+                unavailableReason={fileClaimUnavailableReason}
+                className={`dashboard-action-button dashboard-table-action-button${actionLabel === 'File Claim' ? '' : ' dashboard-table-action-button--claim-status'}`}
                 type="button"
                 onClick={() => onFileClaim?.(row)}
-                aria-label={`File claim for ${row.id}`}
-                unavailableReason={fileClaimUnavailableReason}
-                tooltipAlign="right"
+                aria-label={actionAriaLabel}
               >
-                file claim
+                {actionLabel}
               </AvailabilityAction>
             </td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
-    </table>
+        </table>
+      </div>
+      {onSimulate ? (
+        <div className="covered-protocols-footer">
+          <button className="covered-protocols-simulate-link" type="button" onClick={onSimulate}>
+            Simulate Claim
+          </button>
+        </div>
+      ) : null}
+    </Fragment>
   );
 }

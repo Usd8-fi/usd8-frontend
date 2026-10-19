@@ -1,4 +1,4 @@
-![](/assets/booster.png)  
+<img src="../assets/booster-600.webp" srcset="../assets/booster-600.webp 600w, ../assets/booster-1200.webp 1200w" sizes="(max-width: 700px) 100vw, 600px" width="600" height="578" alt="USD8 Booster NFT artwork" />
 
 # Boosters
 
@@ -21,7 +21,7 @@ Boosters are not for sale. They are distributed only to users who help USD8 grow
 
 -   post on social media about USD8 (do not spam)
 -   follow our [X](https://x.com/usd8_fi) and [Telegram](https://t.me/+e84i2oYk1ao1MTk1) and engage in meaningful discussions
--   contribute proposals, critiques, or code through [GitHub Discussions](https://github.com/orgs/Usd8-fi/discussions)
+-   contribute proposals, critiques, or code through [issues in the usd8-core repository](https://github.com/Usd8-fi/usd8-core/issues)
 
 Our team monitors social channels will reach out to offer Boosters. If your posts has lots of impact, you will get multiple Boosters.
 

@@ -89,34 +89,33 @@
 .booster-check input {
     width: 480px;
     max-width: 100%;
-    padding: 12px 16px;
-    font-family: inherit;
-    font-size: 16px;
-    border: 1px solid var(--sidebar-spacer, #3b4556);
-    border-radius: 6px;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--accent);
+    border-radius: 0;
     background: transparent;
-    color: inherit;
+    color: var(--accent);
+    font: inherit;
     outline: none;
 }
 
 .booster-check input:focus {
-    border-color: #16a34a;
+    box-shadow: 0 0 0 1px var(--accent);
 }
 
 .booster-check button {
-    padding: 12px 22px;
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    border-radius: 6px;
-    background: #16a34a;
-    color: #fff;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--accent);
+    border-radius: 0;
+    background: var(--accent);
+    color: var(--link-inverse);
+    font: inherit;
     cursor: pointer;
 }
 
 .booster-check button:hover:not(:disabled) {
-    background: #15803d;
+    background: var(--accent-hover);
 }
 
 .booster-check button:disabled {
@@ -126,7 +125,6 @@
 
 .booster-result {
     flex-basis: 100%;
-    font-size: 16px;
     line-height: 1.4;
     min-height: 1.2em;
 }
@@ -150,7 +148,7 @@
 }
 
 .booster-result[data-state="error"] { color: #dc2626; }
-.booster-result[data-state="success"] { color: #16a34a; }
+.booster-result[data-state="success"] { color: var(--accent); }
 .booster-result[data-state="empty"] { opacity: 0.7; }
 .booster-result[data-state="loading"] { opacity: 0.7; }
 
@@ -175,7 +173,7 @@
 /* USD8 docs shell: mirrors the current usd8.fi mdBook theme while retaining mdBook 0.5 search. */
 @font-face {
     font-family: "BlexMono Nerd Font Mono";
-    src: url("/assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
+    src: url("../../../assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
     font-style: normal;
     font-weight: 200;
     font-display: swap;
@@ -183,7 +181,7 @@
 
 @font-face {
     font-family: "BlexMono Nerd Font Mono";
-    src: url("/assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
+    src: url("../../../assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
     font-style: normal;
     font-weight: 400;
     font-display: swap;
@@ -191,10 +189,18 @@
 
 @font-face {
     font-family: "BlexMono Nerd Font Mono";
-    src: url("/assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
+    src: url("../../../assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
     font-style: normal;
     font-weight: 600;
     font-display: swap;
+}
+
+@font-face {
+    font-family: "FontAwesome";
+    src: url("../../../assets/fonts/fontawesome-webfont.woff2") format("woff2");
+    font-style: normal;
+    font-weight: normal;
+    font-display: block;
 }
 
 :root {
@@ -527,15 +533,21 @@ dt:target::before {
 }
 
 .sidebar-logo {
-    display: block;
-    width: 73px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
     flex: 0 0 auto;
 }
 
 .sidebar-logo img {
     display: block;
-    width: 100%;
+    width: 40px;
     height: auto;
+}
+
+.sidebar-logo img.sidebar-wordmark {
+    width: auto;
+    height: 18px;
 }
 
 .sidebar-logo:hover,
@@ -550,8 +562,9 @@ dt:target::before {
 .sidebar-beta-link:active,
 .sidebar-beta-link:hover,
 .sidebar-beta-link:focus-visible {
-    width: 55px;
-    height: 26px;
+  font-size: 12px;
+    width: 44px;
+    height: 22px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -603,6 +616,49 @@ dt:target::before {
 }
 
 .sidebar-github { font-size: 26px; }
+
+.sidebar-telegram > span,
+.sidebar-github > span {
+    font-family: "FontAwesome";
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+}
+
+.sidebar-telegram > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+}
+
+.sidebar-github > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    line-height: 1;
+}
+
+.sidebar-social .sidebar-telegram,
+.sidebar-social .sidebar-x,
+.sidebar-social .sidebar-github {
+    color: rgb(255, 255, 255);
+    background: transparent;
+}
+
+.sidebar-social .sidebar-telegram:hover,
+.sidebar-social .sidebar-telegram:focus-visible,
+.sidebar-social .sidebar-x:hover,
+.sidebar-social .sidebar-x:focus-visible,
+.sidebar-social .sidebar-github:hover,
+.sidebar-social .sidebar-github:focus-visible {
+    color: rgb(255, 212, 0);
+    background: transparent;
+}
 
 .sidebar-x .x-mark {
     display: block;
@@ -658,3 +714,59 @@ body {
 }
 
 
+
+/* First docs page: big logo with the USD8.fi wordmark beside it. */
+.docs-hero-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.docs-hero-brand img {
+    display: block;
+}
+
+.docs-hero-brand img.docs-hero-wordmark {
+    width: auto;
+    height: 44px;
+}
+
+@media (max-width: 760px) {
+    .docs-hero-brand { gap: 16px; }
+    .docs-hero-brand img:first-child { width: 72px; height: 72px; }
+    .docs-hero-brand img.docs-hero-wordmark { height: 32px; }
+}
+
+/* USD8 App is an external destination, not a docs chapter: set it apart. */
+#mdbook-sidebar .chapter > li.sidebar-app-link {
+    margin-top: 28px;
+}
+
+/* Addresses page: keep every address on one line. */
+.address-table table { width: auto; }
+.address-table td { white-space: nowrap; }
+.address-table td code { white-space: nowrap; }
+
+/* Timelock Queues (System Stats page), filled in by timelock-queue.js. */
+/* Shared docs table look (same as Addresses); long descriptions wrap with breathing room. */
+.content .timelock-queue table td.timelock-queue-description { padding-top: 14px; padding-bottom: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.timelock-queue-description div + div { margin-top: 8px; }
+.content .timelock-queue table td.timelock-queue-status { white-space: nowrap; }
+.content .timelock-queue table td.timelock-queue-status a { color: inherit; }
+.timelock-status-dot { display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%; background: #666; vertical-align: middle; }
+.timelock-queue-status[data-status="queued"] .timelock-status-dot { --status-color: var(--accent); --status-glow: rgba(255, 204, 0, 0.55); }
+.timelock-queue-status[data-status="ready"] .timelock-status-dot { --status-color: #08b18f; --status-glow: rgba(8, 177, 143, 0.55); }
+.timelock-queue-status[data-status="queued"] .timelock-status-dot,
+.timelock-queue-status[data-status="ready"] .timelock-status-dot { background: var(--status-color); animation: timelock-status-blaze 1.6s ease-out infinite; }
+.timelock-status-tick { display: inline-block; width: 5px; height: 10px; margin: 0 13px 3px 3px; border-right: 2px solid #08b18f; border-bottom: 2px solid #08b18f; transform: rotate(45deg); vertical-align: middle; }
+@keyframes timelock-status-blaze {
+    0% { box-shadow: 0 0 0 0 var(--status-glow); }
+    70% { box-shadow: 0 0 0 7px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+.content .timelock-queue table td.timelock-queue-message { color: var(--fg); opacity: 0.7; text-align: center; }
+.content .timelock-queue[data-state="error"] table td.timelock-queue-message { color: #dc2626; opacity: 1; }
+.timelock-queue-retry { margin-left: 12px; padding: 2px 10px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font: inherit; cursor: pointer; }
+.timelock-queue-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: timelock-queue-spin 0.8s linear infinite; vertical-align: middle; }
+@keyframes timelock-queue-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .timelock-queue-spinner, .timelock-status-dot { animation: none !important; } }

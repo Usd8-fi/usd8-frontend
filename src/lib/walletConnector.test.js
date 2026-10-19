@@ -8,4 +8,16 @@ describe('wallet connector font loading', () => {
   it('uses the self-hosted site font instead of Reown font assets', () => {
     expect(walletConnector).toContain(`'--w3m-font-family': '"BlexMono Nerd Font Mono", monospace'`);
   });
+
+  it('shows wallets only: no email, social login, swaps, onramp, payments or account features', () => {
+    for (const feature of ['email', 'socials', 'swaps', 'onramp', 'emailCapture', 'payWithExchange', 'payments', 'reownAuthentication']) {
+      expect(walletConnector).toMatch(new RegExp(`\\b${feature}: false,`));
+    }
+  });
+
+  it('offers the wallet only the protocol network, never mainnet and Sepolia together', () => {
+    expect(walletConnector).toContain("=== sepolia.id ? [sepolia] : [mainnet];");
+    expect(walletConnector).not.toMatch(/\[mainnet, sepolia\]|\[sepolia, mainnet\]/);
+    expect(walletConnector).toContain('defaultNetwork: walletNetworks[0],');
+  });
 });

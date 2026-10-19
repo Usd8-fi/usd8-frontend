@@ -1,51 +1,408 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getProtocolNetwork } from './networkConfig.js';
 
 const mocks = vi.hoisted(() => ({
   multicall: vi.fn(),
   readContract: vi.fn(),
+  getLogs: vi.fn(),
+  getBlock: vi.fn(),
+  getBlockNumber: vi.fn(),
+  http: vi.fn(),
+  fallback: vi.fn(),
 }));
 
-vi.mock('viem', async (importOriginal) => {
+vi.mock('./readClient.js', () => ({
+  createReadClient: vi.fn(() => ({
+    // Single-value reads that ride inside a batch are answered by the
+    // matching single-read mock, so fixtures stay focused on the batch shape.
+    multicall: async (request) => {
+      const routed = request.contracts.map(call => routedRead(call, request.blockNumber));
+      const rest = request.contracts.filter((_, index) => !routed[index]);
+      const batch = rest.length ? await mocks.multicall({ ...request, contracts: rest }) : [];
+      let next = 0;
+      const settled = await Promise.all(request.contracts.map(async (call, index) => {
+        if (!routed[index]) return { status: 'success', result: batch[next++] };
+        try { return { status: 'success', result: await routed[index]() }; }
+        catch (error) { return { status: 'failure', error }; }
+      }));
+      if (request.allowFailure) return settled;
+      const failed = settled.find(entry => entry.status === 'failure');
+      if (failed) throw failed.error;
+      return settled.map(entry => entry.result);
+    },
+    readContract: mocks.readContract,
+    getLogs: mocks.getLogs,
+    getBlock: mocks.getBlock,
+    getBlockNumber: mocks.getBlockNumber,
+  })),
+}));
+
+vi.mock('./viemLite.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    createPublicClient: vi.fn(() => ({
-      multicall: mocks.multicall,
-      readContract: mocks.readContract,
-    })),
-    http: vi.fn(),
+    http: mocks.http,
+    fallback: mocks.fallback,
   };
 });
 
-import { fetchLandingChainData } from './chainData.js';
+function routedRead(call, blockNumber) {
+  if (call.functionName === 'getBlockNumber') return () => mocks.getBlockNumber();
+  if (['settlementParams', 'claimBondAmount', 'exitTimingConfig'].includes(call.functionName)
+    || (call.functionName === 'balanceOf' && call.args?.length === 2)) {
+    return () => mocks.readContract({ ...call, blockNumber });
+  }
+  return null;
+}
+
+import {
+  calculateTrailingRewardApr,
+  claimPercentage,
+  fetchLandingChainData,
+  fetchLandingAnalytics,
+  fetchScoreHistory,
+  fetchLogsInChunks,
+  rpcTransportFor,
+} from './chainData.js';
+
+describe('claimPercentage', () => {
+  it('renders score commitment shares as rounded whole percentages', () => {
+    expect(claimPercentage(10n, 10n)).toBe('100%');
+    expect(claimPercentage(31n, 100n)).toBe('31%');
+    expect(claimPercentage(5n, 200n)).toBe('3%');
+  });
+});
+
+function insuredTokenConfig(maxCoverageBps) {
+  return {
+    maxCoverageBps,
+    underlyingPriceOracle: '0x0000000000000000000000000000000000000001',
+    underlyingConversionAddress: '0x0000000000000000000000000000000000000000',
+    underlyingConversionCallData: '0x',
+  };
+}
+
+const BOOSTER_POLICY = ['0xc0012770848fcd350ab11906e93ba9fdfda19f4c', 1n, 100];
+const INCIDENT_POOL_A = '0x55cb69271da9937d0cb3c548409fd3f77586df79';
+const INCIDENT_POOL_B = '0x8917f4c377dd0e5bd4909d8a00b508f38c0f3f4f';
+const INCIDENT_ASSET_A = '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa';
+const INCIDENT_ASSET_B = '0xbbd327336d5135e146312dd16f2491c1e6ce8822';
+
+describe('rpcTransportFor', () => {
+  beforeEach(() => {
+    mocks.http.mockReset();
+    mocks.fallback.mockReset();
+  });
+
+  it('builds a single transport with no fallback layer', () => {
+    const transport = Symbol('transport');
+    mocks.http.mockReturnValue(transport);
+
+    expect(rpcTransportFor('https://sepolia.example')).toBe(transport);
+    expect(mocks.http).toHaveBeenCalledWith('https://sepolia.example', { timeout: 15_000 });
+    expect(mocks.fallback).not.toHaveBeenCalled();
+  });
+});
+
+describe('calculateTrailingRewardApr', () => {
+  it('annualizes rewards accrued over the trailing window against time-weighted pool assets', () => {
+    const day = 24 * 60 * 60;
+    const apr = calculateTrailingRewardApr({
+      nowSeconds: 30 * day,
+      windowSeconds: 30 * day,
+      deploymentTimestamp: 0,
+      currentAssetUsdPrice: 2_000_00000000n,
+      priceDecimals: 8,
+      events: [
+        { timestamp: 0, logIndex: 0, type: 'deposit', assets: 10n * 10n ** 18n },
+        {
+          timestamp: 0,
+          logIndex: 1,
+          type: 'reward',
+          rate: 1_000n * 10n ** 18n / BigInt(30 * day),
+          periodFinish: 30 * day,
+        },
+      ],
+    });
+
+    expect(apr).toBe('60.8%');
+  });
+
+  it('measures 7-day and 30-day windows from the same events', () => {
+    const day = 24 * 60 * 60;
+    const events = [
+      { timestamp: 0, logIndex: 0, type: 'deposit', assets: 10n * 10n ** 18n },
+      { timestamp: 0, logIndex: 1, type: 'reward', rate: 100n * 10n ** 18n / BigInt(23 * day), periodFinish: 23 * day },
+      { timestamp: 23 * day, logIndex: 0, type: 'reward', rate: 700n * 10n ** 18n / BigInt(7 * day), periodFinish: 30 * day },
+    ];
+    const apr = windowSeconds => calculateTrailingRewardApr({
+      nowSeconds: 30 * day, windowSeconds, deploymentTimestamp: 0,
+      currentAssetUsdPrice: 2_000_00000000n, priceDecimals: 8, events,
+    });
+    // 700 of the 800 rewards fall in the last week, so the shorter window annualizes higher.
+    expect(Number.parseFloat(apr(7 * day))).toBeGreaterThan(Number.parseFloat(apr(30 * day)));
+    expect(apr(30 * day)).toBe('48.7%');
+    expect(apr(7 * day)).toBe('182.5%');
+  });
+
+  it('returns unavailable when the pool had no assets in the trailing window', () => {
+    expect(calculateTrailingRewardApr({
+      nowSeconds: 100,
+      windowSeconds: 100,
+      deploymentTimestamp: 0,
+      currentAssetUsdPrice: 2_000_00000000n,
+      priceDecimals: 8,
+      events: [],
+    })).toBe('—');
+  });
+});
+
+const EMPTY_POOL = {
+  assetBalance: 0n, shares: 0n, totalAssets: 0n, depositCap: 0n, earned: 0n,
+  shareDecimals: 21, rewardRate: 0n, totalSupply: 0n, escrowedShares: 0n,
+  periodFinish: 0n, exit: [0n, 0n], price: 0n, priceDecimals: 8,
+};
+
+/// Builds the landing multicall response: 12 fixed reads then 13 per cover pool,
+/// matching fetchLandingChainData's layout without hand-ordering values.
+const landingSnapshot = ({
+  usdc = 0n, usd8 = 0n, savings = 0n, activeIncidentId = 0n,
+  sGho = 0n, sUsds = 0n, msloss = 0n,
+  usd8Rates = [], savingsRates = [], nextIncidentId = 7n, scoreSpent = 0n,
+  pools = [{}, {}],
+  insurance = [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(8_000),
+    insuredTokenConfig(8_000), insuredTokenConfig(8_000), insuredTokenConfig(8_000)],
+} = {}) => {
+  // The batch only carries reads for contracts this deployment has: reads for
+  // null config entries (no savings vault, unlisted insured tokens) are skipped,
+  // and only the configured cover pools and insured tokens are read.
+  const { contracts } = getProtocolNetwork(11155111);
+  const insured = contracts.insuredTokens;
+  const fixed = [
+    usdc, usd8, contracts.savingsVault ? savings : SKIP, activeIncidentId,
+    insured['aave-sgho'] ? sGho : SKIP, insured['sky-susds'] ? sUsds : SKIP, insured['test-msloss'] ? msloss : SKIP,
+    usd8Rates, contracts.savingsVault ? savingsRates : SKIP, BOOSTER_POLICY, nextIncidentId, scoreSpent,
+  ].filter((value) => value !== SKIP);
+  return [
+    ...fixed,
+    ...poolValues(pools.slice(0, contracts.coverPools.length)),
+    ...insurance.slice(0, 1 + Object.keys(insured).length),
+  ];
+};
+const SKIP = Symbol('not deployed');
+const poolValues = (pools) => pools.flatMap((overrides) => {
+    const pool = { ...EMPTY_POOL, ...overrides };
+    return [
+      pool.assetBalance, pool.shares, pool.totalAssets, pool.depositCap, pool.earned,
+      pool.shareDecimals, pool.rewardRate, pool.totalSupply, pool.escrowedShares,
+      pool.periodFinish, pool.exit, [1n, pool.price, 0n, 0n, 1n], pool.priceDecimals,
+    ];
+  });
 
 describe('fetchLandingChainData', () => {
   beforeEach(() => {
     mocks.multicall.mockReset();
     mocks.readContract.mockReset();
+    mocks.readContract.mockResolvedValue(0n);
+    mocks.getLogs.mockReset();
+    mocks.getBlock.mockReset();
+    mocks.getBlockNumber.mockReset();
+    // Claim-log reads are chunked against a concrete head block.
+    mocks.getBlockNumber.mockResolvedValue(115_430_000n);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('history unavailable')));
+  });
+
+  it('reads the live holding window and pins incident guidance to its opening block', async () => {
+    mocks.readContract.mockImplementation(({ functionName, blockNumber }) =>
+      Promise.resolve(functionName === 'settlementParams' ? [600n, blockNumber === 100n ? 300n : 50400n, 10n] : 0n));
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce([['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 0n]).mockResolvedValueOnce([3600n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    mocks.getLogs.mockResolvedValue([]);
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    expect(data.insurance.minHoldingRequiredBlocks).toBe('50400');
+    expect(data.incident.minHoldingRequiredBlocks).toBe('300');
+    const reads = mocks.readContract.mock.calls.map(([call]) => call).filter(call => call.functionName === 'settlementParams');
+    // The current window rides in the head batch; the incident's is pinned to its opening block.
+    expect(reads.map(call => call.blockNumber)).toEqual([undefined, 100n]);
+    expect(reads[0].abi.find(item => item.name === 'settlementParams').outputs).toEqual([
+      { name: 'twapLookbackBlocks', type: 'uint64' },
+      { name: 'minHoldingRequired', type: 'uint64' },
+      { name: 'sampleStepBlocks', type: 'uint64' },
+    ]);
+  });
+
+  it('marks incident filing unavailable when the opening-block holding window cannot be read', async () => {
+    mocks.readContract.mockImplementation(({ functionName, blockNumber }) => {
+      if (functionName !== 'settlementParams') return Promise.resolve(0n);
+      return blockNumber === 100n
+        ? Promise.reject(new Error('archive holding window unavailable'))
+        : Promise.resolve([600n, 50400n, 10n]);
+    });
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce([['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 0n]).mockResolvedValueOnce([3600n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    mocks.getLogs.mockResolvedValue([]);
+
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+
+    expect(data.incident.minHoldingRequiredBlocks).toBe(null);
+    expect(data.resourceErrors['incident-settlement-params']).toBe('archive holding window unavailable');
+  });
+
+  it('invalidates the incident cache and recovers an opening-block holding-window retry', async () => {
+    let archiveAttempts = 0;
+    mocks.readContract.mockImplementation(({ functionName, blockNumber }) => {
+      if (functionName !== 'settlementParams') return Promise.resolve(0n);
+      if (blockNumber === 100n && archiveAttempts++ === 0) {
+        return Promise.reject(new Error('archive holding window unavailable'));
+      }
+      return Promise.resolve([600n, blockNumber === 100n ? 300n : 50400n, 10n]);
+    });
+    const incidentState = [['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 0n];
+    const incidentStatic = [3600n, [INCIDENT_POOL_A]];
+    mocks.multicall
+      .mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce(incidentState)
+      .mockResolvedValueOnce(incidentStatic)
+      .mockResolvedValueOnce([INCIDENT_ASSET_A])
+      .mockImplementationOnce(({ contracts }) => contracts.map(call => {
+        if (call.functionName === 'activeIncidentId') return 7n;
+        if (call.functionName === 'nextIncidentId') return 7n;
+        if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+        if (call.functionName === 'getScoredRateHistory') return [];
+        if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8_000n;
+        if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8_000);
+        if (call.functionName === 'latestRoundData') return [1n, 0n, 0n, 0n, 1n];
+        if (call.functionName === 'exitRequests') return [0n, 0n];
+        return 0n;
+      }))
+      .mockResolvedValueOnce(incidentState)
+      // The failed archive read was not cached, so the static facts are read again.
+      .mockResolvedValueOnce(incidentStatic)
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    mocks.getLogs.mockResolvedValue([]);
+
+    const failed = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    expect(failed.incident.minHoldingRequiredBlocks).toBe(null);
+    expect(failed.resourceErrors['incident-settlement-params']).toBe('archive holding window unavailable');
+
+    const recovered = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111, {
+      refresh: true,
+      resources: ['incident-settlement-params'],
+    });
+    expect(recovered.incident.minHoldingRequiredBlocks).toBe('300');
+    expect(recovered.resourceErrors['incident-settlement-params']).toBeUndefined();
+    expect(archiveAttempts).toBe(2);
+  });
+
+  it('makes no account-specific reads for anonymous visitors', async () => {
+    mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
+      if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
+      if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8000n;
+      if (call.functionName === 'getScoredRateHistory') return [];
+      if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+      if (call.functionName === 'latestRoundData') return [1n, 2000_00000000n, 0n, 0n, 1n];
+      if (call.functionName === 'nextIncidentId') return 500n;
+      return 0n;
+    }));
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000000', 11155111);
+    const calls = mocks.multicall.mock.calls.flatMap(([request]) => request.contracts);
+    expect(calls.some(call => call.args?.includes('0x0000000000000000000000000000000000000000'))).toBe(false);
+    expect(calls.some(call => ['scoreSpent', 'earned', 'exitRequests', 'claims', 'claimIdByIncidentAndUser'].includes(call.functionName))).toBe(false);
+    expect(data.claim).toBe(null);
+  });
+
+  it('publishes balances and the current incident before historical claim logs finish', async () => {
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({ usdc: 10_000_000n, activeIncidentId: 7n }))
+      .mockResolvedValueOnce([['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 0n], 0n]).mockResolvedValueOnce([259_200n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    let finishLogs;
+    mocks.getLogs.mockImplementation(() => new Promise(resolve => { finishLogs = resolve; }));
+    mocks.getBlockNumber.mockResolvedValue(200n);
+    const partial = vi.fn();
+    const request = fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111, { onPartial: partial });
+    // Wait for the log call, without ever resolving it during the critical read.
+    await vi.waitFor(() => expect(mocks.getLogs).toHaveBeenCalled());
+    expect(partial.mock.calls[0][0].balances.usdc).toBe('10');
+    expect(partial.mock.calls.at(-1)[0]).toMatchObject({ incidentReady: true, incident: { id: '7' } });
+    // The fixture spans one bounded RPC chunk.
+    finishLogs([]);
+    await request;
+  });
+
+  it('fails closed when token coverage exceeds the contract-reported claimant cap', async () => {
+    mocks.multicall.mockResolvedValueOnce(landingSnapshot({
+      insurance: [8_000n, insuredTokenConfig(8_001), insuredTokenConfig(8_000),
+        insuredTokenConfig(8_000), insuredTokenConfig(7_000), insuredTokenConfig(0)],
+    }));
+
+    await expect(fetchLandingChainData(
+      '0x0000000000000000000000000000000000000001',
+      11155111,
+    )).rejects.toThrow('Invalid insurance configuration for usd8.');
   });
 
   it('reports wstETH pool TVL in USD using the configured onchain oracle', async () => {
-    mocks.multicall.mockResolvedValue([
-      10_000_000n,
-      25_000_000_000_000_000_000n,
-      4_000_000_000_000_000_000n,
-      0n,
-      2_100_000_000_000_000_000_000n,
-      10_000_000_000_000_000_000n,
-      100_000_000_000_000_000_000n,
-      0n,
-      21,
-      221_968_543_886_352n,
-      [1n, 2_000_000_000_00n, 0n, 0n, 1n],
-      8,
-      7n,
-      23_010_000_000_000_000_000_000n,
-      0n,
-      1_800_000_000n,
-      [12_000_000_000_000_000_000_000n, 1_800_000_000n],
-    ]);
+    mocks.multicall
+      .mockResolvedValueOnce(landingSnapshot({
+        usdc: 10_000_000n,
+        usd8: 25_000_000_000_000_000_000n,
+        savings: 4_000_000_000_000_000_000n,
+        activeIncidentId: 7n,
+        sGho: 345_000_000_000_000_000_000n,
+        sUsds: 678_000_000_000_000_000_000n,
+        msloss: 5_000_000_000_000_000_000_000n,
+        usd8Rates: [{ fromBlock: 1n, rate: 138_888_888_888_889n }],
+        savingsRates: [{ fromBlock: 1n, rate: 13_888_888_888_889n }],
+        pools: [{
+          shares: 2_100_000_000_000_000_000_000n,
+          totalAssets: 10_000_000_000_000_000_000n,
+          depositCap: 100_000_000_000_000_000_000n,
+          rewardRate: 221_968_543_886_352n,
+          totalSupply: 23_010_000_000_000_000_000_000n,
+          periodFinish: 1_800_000_000n,
+          exit: [12_000_000_000_000_000_000_000n, 1_800_000_000n],
+          price: 2_000_000_000_00n,
+        }, {}],
+        insurance: [8_000n, insuredTokenConfig(8_000), insuredTokenConfig(7_500),
+          insuredTokenConfig(6_000), insuredTokenConfig(5_050), insuredTokenConfig(8_000)],
+      }))
+      // derived batch: active pool assets, exit receipt, pending pool assets
+      // (no savings-vault read: this deployment has no sUSD8)
+      .mockResolvedValueOnce([
+        2_123_456_789_012_345_678n,
+        [12_000_000_000_000_000_000_000n, 0n, 0n, 0n],
+        6_000_000_000_000_000_000n,
+      ])
+      .mockResolvedValueOnce([[
+        '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+        0n,
+        115_426_632n,
+        115_428_912n,
+        1_800_259_200n,
+        `0x${'00'.repeat(32)}`,
+        1n,
+        `0x${'11'.repeat(32)}`,
+        `0x${'22'.repeat(32)}`,
+      ], 42n]).mockResolvedValueOnce([259_200n, [INCIDENT_POOL_A, INCIDENT_POOL_B]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A, INCIDENT_ASSET_B])
+      .mockResolvedValueOnce([[
+        '0x0000000000000000000000000000000000000001',
+        7n,
+        345_000_000_000_000_000_000n,
+        2n,
+        10_000_000_000_000_000_000n,
+        false,
+      ]]);
     mocks.readContract.mockImplementation(({ functionName, args }) => {
+      if (functionName === 'boosterConfig') {
+        return ['0xc0012770848fcd350ab11906e93ba9fdfda19f4c', 1n, 100n];
+      }
+      if (functionName === 'balanceOf' && args.length === 2) return 100n;
       if (functionName === 'convertToAssets' && args[0] === 4_000_000_000_000_000_000n) {
         return 4_200_000_000_000_000_000n;
       }
@@ -55,35 +412,495 @@ describe('fetchLandingChainData', () => {
       }
       throw new Error(`Unexpected read: ${functionName}`);
     });
+    const claimLogs = [
+      {
+        eventName: 'ClaimRegistered',
+        args: {
+          claimId: 42n,
+          incidentId: 7n,
+          user: '0x0000000000000000000000000000000000000001',
+          insuredTokenAmount: 345_000_000_000_000_000_000n,
+          scoreToSpend: 2_344_322_000_000_000_000_000_000n,
+          boosterAmount: 2n,
+        },
+      },
+      {
+        eventName: 'ClaimRegistered',
+        args: {
+          claimId: 43n,
+          incidentId: 7n,
+          user: '0x0000000000000000000000000000000000000002',
+          insuredTokenAmount: 9_655_000_000_000_000_000_000n,
+          scoreToSpend: 91_428_558_000_000_000_000_000_000n,
+          boosterAmount: 0n,
+        },
+      },
+      {
+        eventName: 'ClaimRegistered',
+        args: {
+          claimId: 44n,
+          incidentId: 7n,
+          user: '0x0000000000000000000000000000000000000003',
+          insuredTokenAmount: 1_000_000_000_000_000_000_000n,
+          scoreToSpend: 1_000_000_000_000_000_000_000_000n,
+          boosterAmount: 0n,
+        },
+      },
+      {
+        eventName: 'ClaimCancelled',
+        args: {
+          claimId: 44n,
+          user: '0x0000000000000000000000000000000000000003',
+        },
+      },
+    ];
+    mocks.getLogs.mockImplementation(({ event }) => {
+      if (event?.name !== 'Transfer') return Promise.resolve(claimLogs);
+      return Promise.resolve([]);
+    });
+    vi.mocked(fetch).mockImplementation((url) => {
+      if (!String(url).includes('/token-transfers?')) {
+        return Promise.reject(new Error('history unavailable'));
+      }
+      const token = new URL(String(url)).searchParams.get('token');
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          items: [{
+            block_number: 123,
+            timestamp: '2027-01-15T08:01:40.000000Z',
+            token: { address_hash: token },
+          }],
+        }),
+      });
+    });
+    mocks.getBlock.mockResolvedValue({ timestamp: 1_800_000_100n });
 
     const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    const analytics = await fetchLandingAnalytics(data, '', 11155111);
+    data.pools = data.pools.map((pool, i) => ({ ...pool, ...analytics.pools[i] }));
+    const history = await fetchScoreHistory(data, '0x0000000000000000000000000000000000000001', 11155111);
+    if (history) data.scoreBalanceChangeTimestampMilliseconds = history;
 
-    expect(data.pool.tvl).toBe('$20K');
-    expect(data.pool.apy).toBe('35%');
-    expect(data.pool.capacityUncapped).toBe(false);
-    expect(data.pool.assets).toBe('10');
+    expect(data.pools[0].tvl).toBe('$20K');
+    // History reads fail in this fixture, so the APY is unknown (null), shown as a static dash.
+    expect(data.pools[0].apy).toBeNull();
+    expect(data.pools[0].capacityUncapped).toBe(false);
+    expect(data.pools[0].assets).toBe('10');
+    expect(data.pools[0].remainingDepositCapacity).toBe('90');
+    expect(data.pools).toHaveLength(1);
+    // No savings vault in this deployment: its score inputs stay at zero.
     expect(data.scoreBalances).toEqual({
       usd8: '25000000000000000000',
-      savings: '4000000000000000000',
+      savings: '0',
     });
-    expect(data.balances.savings).toBe('4');
-    expect(data.balances.savingsAssets).toBe('4.2');
-    expect(data.pool.hasEarnings).toBe(false);
-    expect(data.pool.shareDecimals).toBe(21);
-    expect(data.pool.earningsExact).toBe('0');
-    expect(data.pool.earningsPerSecond).toBe('0.000020257885361205');
-    expect(data.pool.earningsPeriodFinishMilliseconds).toBe(1_800_000_000_000);
-    expect(Number.isSafeInteger(data.pool.earningsSnapshotTimestampMilliseconds)).toBe(true);
+    expect(data.scoreRatesPerSecond).toEqual({
+      usd8: '0.000289351851851852',
+      savings: '0',
+    });
+    // Per-block 1e18/7200 rounds to exactly 1 per token per day for the label.
+    expect(data.scoreRatesPerTokenPerDay).toEqual({ usd8: '1', savings: '0' });
+    expect(data.scoreBalanceChangeTimestampMilliseconds).toEqual({
+      usd8: 1_800_000_100_000,
+      savings: 0,
+    });
+    expect(Number.isSafeInteger(data.scoreBalancesSnapshotTimestampMilliseconds)).toBe(true);
+    expect(data.balances.savings).toBe('0');
+    expect(data.balances.savingsAssets).toBe('0');
+    // Pending exits remain claim-exposed until completion, so the deposit line
+    // includes both active assets and the current pending-exit estimate.
+    expect(data.pools[0].deposit).toBe('8.12');
+    expect(data.balances.boosters).toBe('100');
+    // Unlisted insured tokens are not read and stay at zero.
+    expect(data.balances.insuredTokens).toEqual({
+      'aave-sgho': '0',
+      'sky-susds': '0',
+      'test-msloss': '5000',
+    });
+    expect(data.insurance.tokens).toEqual({
+      usd8: {
+        address: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+        enabled: true,
+        maxCoverageBps: '8000',
+      },
+      'test-msloss': {
+        address: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+        enabled: true,
+        maxCoverageBps: '7500',
+      },
+    });
+    const firstBatch = mocks.multicall.mock.calls[0][0].contracts;
+    expect(firstBatch.filter((call) => call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS')).toHaveLength(1);
+    expect(firstBatch.filter((call) => call.functionName === 'getInsuredToken').map((call) => ({
+      functionName: call.functionName,
+      token: call.args[0],
+    }))).toEqual([
+      { functionName: 'getInsuredToken', token: '0x2fe01f5e235eeab9045066f873f531de20f31947' },
+      { functionName: 'getInsuredToken', token: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc' },
+    ]);
+    expect(data.pools[0].hasEarnings).toBe(false);
+    expect(data.pools[0].shareDecimals).toBe(21);
+    expect(data.pools[0].earningsExact).toBe('0');
+    expect(data.pools[0].earningsPerSecond).toBe('0.000020257885361205');
+    expect(data.pools[0].earningsPeriodFinishMilliseconds).toBe(1_800_000_000_000);
+    expect(Number.isSafeInteger(data.pools[0].earningsSnapshotTimestampMilliseconds)).toBe(true);
     expect(data.balances.poolShares).toBe('2.1');
-    expect(data.pool.availableForCooldown).toBe('2.1');
-    expect(data.pool.availableForWithdraw).toBe('0');
-    expect(data.pool.inCooldown).toBe('12');
+    expect(data.pools[0].availableForCooldown).toBe('2.1');
+    expect(data.pools[0].availableForWithdraw).toBe('0');
+    expect(data.pools[0].inCooldown).toBe('12');
+    expect(data.pools[0].availableForCooldownAssets).toBe('2.123456789012345678');
+    expect(data.pools[0].inCooldownAssets).toBe('6');
+    expect(data.pools[0].exitSettled).toBe(false);
+    expect(data.pools[0].cooldownEndsAtMilliseconds).toBe(1_800_000_000_000);
     expect(data.activeIncidentId).toBe('7');
+    expect(data.insurance.boosterBoostBps).toBe(100);
+    expect(data.incident).toEqual({
+      minHoldingRequiredBlocks: null,
+      id: '7',
+      tokenId: 'test-msloss',
+      tokenAddress: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+      phaseDeadlineMilliseconds: 1_800_259_200_000,
+      phaseWindowMilliseconds: 259_200_000,
+      root: `0x${'00'.repeat(32)}`,
+      unresolvedClaims: '1',
+      // 2,344,322 raw + 2 boosters at 100 bps = 2,391,208.44 booster-adjusted.
+      totalScoreCommitted: '93819766.44',
+      boosterBoostBps: 100,
+      poolAddrs: [INCIDENT_POOL_A, INCIDENT_POOL_B],
+      poolOrder: [INCIDENT_ASSET_A, INCIDENT_ASSET_B],
+    });
+    // Located by shape, not call order, so batching changes cannot silently skip it.
+    const assetCall = mocks.multicall.mock.calls
+      .find(([{ contracts }]) => contracts.every((call) => call.functionName === 'asset'));
+    expect(assetCall[0].contracts).toEqual([
+      expect.objectContaining({ address: INCIDENT_POOL_A, functionName: 'asset' }),
+      expect.objectContaining({ address: INCIDENT_POOL_B, functionName: 'asset' }),
+    ]);
+    expect(data.claim).toEqual({
+      id: '42',
+      incidentId: '7',
+      insuredTokenAmount: '345',
+      bondAmount: '10',
+      boosterAmount: '2',
+      scoreToSpend: '2344322',
+      scoreCommitmentPercentage: '3%',
+      resolved: false,
+    });
+    expect(mocks.getLogs).toHaveBeenCalledTimes(1);
+    expect(mocks.getBlock).toHaveBeenCalledWith({ blockNumber: 115_429_872n });
+  });
+
+  it('loads incident claim totals for a wallet that has not filed a claim', async () => {
+    mocks.multicall
+      .mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 7n }))
+      .mockResolvedValueOnce([[
+        '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+        0n,
+        115_426_632n,
+        115_428_912n,
+        1_800_259_200n,
+        `0x${'00'.repeat(32)}`,
+        2n,
+        `0x${'11'.repeat(32)}`,
+        `0x${'22'.repeat(32)}`,
+      ], 0n]).mockResolvedValueOnce([259_200n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.getLogs.mockResolvedValue([{
+      eventName: 'ClaimRegistered',
+      args: {
+        claimId: 42n,
+        incidentId: 7n,
+        user: '0x0000000000000000000000000000000000000002',
+        insuredTokenAmount: 9_655_000_000_000_000_000_000n,
+        scoreToSpend: 91_428_558_000_000_000_000_000_000n,
+      },
+    }]);
+
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000001', 11155111);
+    const analytics = await fetchLandingAnalytics(data, '', 11155111);
+    data.pools = data.pools.map((pool, i) => ({ ...pool, ...analytics.pools[i] }));
+    const history = await fetchScoreHistory(data, '0x0000000000000000000000000000000000000001', 11155111);
+    if (history) data.scoreBalanceChangeTimestampMilliseconds = history;
+
+    expect(data.claim).toBeNull();
+    expect(data.incident).toEqual(expect.objectContaining({
+      totalScoreCommitted: '91428558',
+      poolAddrs: [INCIDENT_POOL_A],
+      poolOrder: [INCIDENT_ASSET_A],
+    }));
+    expect(mocks.getLogs).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads an unresolved historical claim after the active incident expires', async () => {
+    const account = '0x0000000000000000000000000000000000000001';
+    mocks.multicall
+      .mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 0n }))
+      .mockResolvedValueOnce([0n, 0n, 0n, 0n, 0n, 42n])
+      .mockResolvedValueOnce([[
+        account,
+        6n,
+        100_000_000_000_000_000_000n,
+        0n,
+        10_000_000_000_000_000_000n,
+        false,
+      ]])
+      .mockResolvedValueOnce([[
+        '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+        0n,
+        115_426_632n,
+        115_428_912n,
+        1_800_259_200n,
+        `0x${'00'.repeat(32)}`,
+        1n,
+        `0x${'11'.repeat(32)}`,
+        `0x${'22'.repeat(32)}`,
+      ] ]).mockResolvedValueOnce([259_200n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.readContract.mockImplementation(({ functionName }) => {
+      if (functionName === 'boosterConfig') {
+        return ['0x0000000000000000000000000000000000000000', 0n, 0n];
+      }
+      throw new Error(`Unexpected read: ${functionName}`);
+    });
+    mocks.getLogs.mockResolvedValue([{
+      eventName: 'ClaimRegistered',
+      args: {
+        claimId: 42n,
+        incidentId: 6n,
+        user: account,
+        insuredTokenAmount: 100_000_000_000_000_000_000n,
+        scoreToSpend: 200_000_000_000_000_000_000n,
+        boosterAmount: 0n,
+      },
+    }]);
+
+    const data = await fetchLandingChainData(account, 11155111);
+
+    expect(data.activeIncidentId).toBe('0');
+    expect(data.incident).toEqual(expect.objectContaining({ id: '6', unresolvedClaims: '1' }));
+    expect(data.claim).toEqual(expect.objectContaining({
+      id: '42',
+      incidentId: '6',
+      insuredTokenAmount: '100',
+      bondAmount: '10',
+      resolved: false,
+    }));
+  });
+
+  it('splits a wide claim-log span into ranges the public endpoints accept', async () => {
+    const client = { getLogs: vi.fn().mockResolvedValue([]) };
+
+    await fetchLogsInChunks(client, { address: '0xabc' }, 11_576_840n, 11_626_677n);
+
+    // The default Sepolia endpoint rejects anything wider than 30k blocks.
+    const spans = client.getLogs.mock.calls.map(([call]) => call.toBlock - call.fromBlock + 1n);
+    expect(spans.every((span) => span <= 10_000n)).toBe(true);
+    expect(client.getLogs.mock.calls[0][0].fromBlock).toBe(11_576_840n);
+    expect(client.getLogs.mock.calls.at(-1)[0].toBlock).toBe(11_626_677n);
+    // Contiguous, no gaps and no overlap.
+    client.getLogs.mock.calls.slice(1).forEach(([call], index) => {
+      expect(call.fromBlock).toBe(client.getLogs.mock.calls[index][0].toBlock + 1n);
+    });
+  });
+
+  it('reports an unknown share instead of an impossible zero when claim logs are missing', async () => {
+    const account = '0x0000000000000000000000000000000000000001';
+    mocks.multicall
+      .mockResolvedValueOnce(landingSnapshot({ activeIncidentId: 0n }))
+      .mockResolvedValueOnce([0n, 0n, 0n, 0n, 0n, 42n])
+      .mockResolvedValueOnce([[
+        account, 6n, 100_000_000_000_000_000_000n, 0n, 10_000_000_000_000_000_000n, false,
+      ]])
+      .mockResolvedValueOnce([[
+        '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+        0n, 115_426_632n, 115_428_912n, 1_800_259_200n,
+        `0x${'00'.repeat(32)}`, 1n, `0x${'11'.repeat(32)}`, `0x${'22'.repeat(32)}`,
+      ] ]).mockResolvedValueOnce([259_200n, [INCIDENT_POOL_A]])
+      .mockResolvedValueOnce([INCIDENT_ASSET_A]);
+    mocks.readContract.mockImplementation(({ functionName }) => {
+      if (functionName === 'boosterConfig') {
+        return ['0x0000000000000000000000000000000000000000', 0n, 0n];
+      }
+      throw new Error(`Unexpected read: ${functionName}`);
+    });
+    // A pruned or capped endpoint returns nothing for the incident's span.
+    mocks.getLogs.mockResolvedValue([]);
+
+    const data = await fetchLandingChainData(account, 11155111);
+
+    expect(data.claim.insuredTokenAmount).toBe('100');
+    // Score committed exists only in the event; report the gap, never 0.
+    expect(data.claim.scoreToSpend).toBe('—');
+    expect(data.claim.scoreCommitmentPercentage).toBe('—');
+  });
+
+  it('reads the landing snapshot, settlement parameters, and claim bond in one batch without eth_blockNumber', async () => {
+    mocks.readContract.mockImplementation(({ functionName }) => Promise.resolve(
+      functionName === 'settlementParams' ? [600n, 50400n, 10n] : functionName === 'claimBondAmount' ? 10n ** 19n : 0n));
+    mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
+      if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
+      if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8000n;
+      if (call.functionName === 'getScoredRateHistory') return [];
+      if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+      if (call.functionName === 'latestRoundData') return [1n, 2000_00000000n, 0n, 0n, 1n];
+      if (call.functionName === 'exitRequests') return [0n, 0n];
+      if (call.functionName === 'nextIncidentId') return 1n;
+      return 0n;
+    }));
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000000', 11155111);
+    expect(mocks.multicall).toHaveBeenCalledTimes(1);
+    expect(mocks.getBlockNumber).toHaveBeenCalledTimes(1);
+    const names = mocks.multicall.mock.calls[0][0].contracts.map(call => call.functionName);
+    expect(names).not.toContain('settlementParams');
+    expect(data.insurance.minHoldingRequiredBlocks).toBe('50400');
+    expect(data.insurance.claimBond).toBe('10');
+    expect(data.blockNumber).toBe('115430000');
+  });
+
+  it('derives displayed score-maturity and exit-cooldown durations from deployment config in the same batch', async () => {
+    mocks.readContract.mockImplementation(({ functionName }) => Promise.resolve(
+      functionName === 'settlementParams' ? [600n, 300n, 10n]
+        : functionName === 'exitTimingConfig' ? { unstakeCooldown: 300n, exitBatchInterval: 120n } : 0n));
+    mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
+      if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
+      if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8000n;
+      if (call.functionName === 'getScoredRateHistory') return [];
+      if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+      if (call.functionName === 'latestRoundData') return [1n, 2000_00000000n, 0n, 0n, 1n];
+      if (call.functionName === 'exitRequests') return [0n, 0n];
+      if (call.functionName === 'nextIncidentId') return 1n;
+      return 0n;
+    }));
+    const data = await fetchLandingChainData('0x0000000000000000000000000000000000000000', 11155111);
+    expect(mocks.multicall).toHaveBeenCalledTimes(1);
+    // 300 blocks at Sepolia's 12-second slot time.
+    expect(data.insurance.scoreMaturitySeconds).toBe(3_600);
+    expect(data.insurance.exitCooldownSeconds).toBe(300);
+  });
+
+  it('keeps a quiet 30-second refresh to one batch when no incident is active', async () => {
+    const account = '0x0000000000000000000000000000000000000001';
+    mocks.readContract.mockImplementation(({ functionName, args }) => Promise.resolve(
+      functionName === 'settlementParams' ? [600n, 50400n, 10n] : functionName === 'balanceOf' && args.length === 2 ? 3n : 0n));
+    mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
+      if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
+      if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8000n;
+      if (call.functionName === 'getScoredRateHistory') return [];
+      if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+      if (call.functionName === 'latestRoundData') return [1n, 2000_00000000n, 0n, 0n, 1n];
+      if (call.functionName === 'exitRequests') return [0n, 0n];
+      if (call.functionName === 'nextIncidentId') return 3n;
+      if (call.functionName === 'claimIdByIncidentAndUser') return call.args[0] === 1n ? 5n : 0n;
+      if (call.functionName === 'claims') return [account, 1n, 0n, 0n, 0n, true];
+      return 0n;
+    }));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const first = await fetchLandingChainData(account, 11155111);
+      expect(first.balances.boosters).toBe('3');
+      expect(first.claim).toBe(null);
+      const firstBatches = mocks.multicall.mock.calls.length;
+      vi.setSystemTime(Date.now() + 30_000);
+      mocks.multicall.mockClear();
+      mocks.getBlockNumber.mockClear();
+      mocks.readContract.mockClear();
+      await fetchLandingChainData(account, 11155111);
+      // One landing batch carries the block number; the booster balance rides
+      // in the follow-up batch (answered by the single-read mock here).
+      // Resolved historical claims are not read again.
+      const functionNames = mocks.multicall.mock.calls.flatMap(([request]) => request.contracts.map(call => call.functionName));
+      expect(functionNames).not.toContain('claimIdByIncidentAndUser');
+      expect(functionNames).not.toContain('claims');
+      expect(mocks.multicall.mock.calls.length).toBeLessThan(firstBatches);
+      expect(mocks.multicall.mock.calls.length).toBe(1);
+      expect(mocks.getBlockNumber).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reads an incident's pools, assets, and phase window once, then only its live state", async () => {
+    const account = '0x0000000000000000000000000000000000000001';
+    const state = ['0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc', 0n, 100n, 100n, 1_800_259_200n, '0x' + '00'.repeat(32), 1n];
+    mocks.readContract.mockImplementation(({ functionName }) => Promise.resolve(functionName === 'settlementParams' ? [600n, 300n, 10n] : 0n));
+    mocks.getLogs.mockResolvedValue([]);
+    mocks.getBlock.mockResolvedValue({ hash: '0xaaa' });
+    mocks.multicall.mockImplementation(({ contracts }) => contracts.map(call => {
+      if (call.functionName === 'activeIncidentId') return 7n;
+      if (call.functionName === 'getInsuredToken') return insuredTokenConfig(8000);
+      if (call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS') return 8000n;
+      if (call.functionName === 'getScoredRateHistory') return [];
+      if (call.functionName === 'boosterConfig') return BOOSTER_POLICY;
+      if (call.functionName === 'latestRoundData') return [1n, 2000_00000000n, 0n, 0n, 1n];
+      if (call.functionName === 'exitRequests') return [0n, 0n];
+      if (call.functionName === 'nextIncidentId') return 8n;
+      if (call.functionName === 'incidents') return state;
+      if (call.functionName === 'claimIdByIncidentAndUser') return 42n;
+      if (call.functionName === 'claims') return [account, 7n, 5n, 0n, 1n, false];
+      if (call.functionName === 'incidentPhaseWindow') return 3600n;
+      if (call.functionName === 'incidentPools') return [INCIDENT_POOL_A];
+      if (call.functionName === 'asset') return INCIDENT_ASSET_A;
+      return 0n;
+    }));
+    const first = await fetchLandingChainData(account, 11155111);
+    expect(first.claim).toMatchObject({ id: '42', resolved: false });
+    mocks.multicall.mockClear();
+    const next = await fetchLandingChainData(account, 11155111, { refresh: true, resources: ['incident'] });
+    expect(next.incident).toMatchObject({ id: '7', poolOrder: [INCIDENT_ASSET_A], minHoldingRequiredBlocks: '300', phaseWindowMilliseconds: 3_600_000 });
+    expect(next.claim).toMatchObject({ id: '42', resolved: false });
+    const functionNames = mocks.multicall.mock.calls.flatMap(([request]) => request.contracts.map(call => call.functionName));
+    expect(functionNames).not.toContain('incidentPools');
+    expect(functionNames).not.toContain('incidentPhaseWindow');
+    expect(functionNames).not.toContain('asset');
+    // The claim state rides in the same batch as the incident state.
+    const incidentBatch = mocks.multicall.mock.calls.find(([request]) => request.contracts.some(call => call.functionName === 'incidents'));
+    expect(incidentBatch[0].contracts.map(call => call.functionName)).toEqual(['incidents', 'claimIdByIncidentAndUser', 'claims']);
   });
 
   it('never reads Sepolia contracts for a wallet connected to Ethereum', async () => {
     await expect(fetchLandingChainData('0x0000000000000000000000000000000000000001', 1))
       .rejects.toThrow('USD8 is not deployed on Ethereum');
     expect(mocks.multicall).not.toHaveBeenCalled();
+  });
+
+  it('stops before contract reads when the wallet snapshot request is aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(fetchLandingChainData(
+      '0x0000000000000000000000000000000000000001',
+      11155111,
+      { signal: controller.signal },
+    )).rejects.toMatchObject({ name: 'AbortError' });
+    expect(mocks.multicall).not.toHaveBeenCalled();
+  });
+
+  it('stops after an in-flight snapshot RPC when the wallet request is aborted', async () => {
+    let resolveMulticall;
+    mocks.multicall.mockReturnValueOnce(new Promise((resolve) => {
+      resolveMulticall = resolve;
+    }));
+    const controller = new AbortController();
+
+    const request = fetchLandingChainData(
+      '0x0000000000000000000000000000000000000001',
+      11155111,
+      { signal: controller.signal },
+    );
+    controller.abort();
+    resolveMulticall([]);
+
+    await expect(request).rejects.toMatchObject({ name: 'AbortError' });
+    expect(mocks.getLogs).not.toHaveBeenCalled();
+  });
+
+  it('reports 0% APY for a pool that has never received rewards, without querying history', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const analytics = await fetchLandingAnalytics({ pools: [{
+      id: 'wsteth', address: '0x00000000000000000000000000000000000000c1',
+      usdPrice: '400000000000', priceDecimals: 8, earningsPeriodFinishMilliseconds: 0,
+    }] }, '', 11155111);
+    expect(analytics.pools).toEqual([{ id: 'wsteth', apy: '0.0%', apy7d: '0.0%' }]);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

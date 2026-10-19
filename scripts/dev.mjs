@@ -10,7 +10,7 @@ const processes = [
     '--port',
     '3000',
   ], { stdio: 'inherit' }),
-  spawn('./node_modules/.bin/vite', ['--host', '0.0.0.0'], { stdio: 'inherit' }),
+  spawn('./node_modules/.bin/vite', ['--configLoader', 'native', '--host', '0.0.0.0'], { stdio: 'inherit' }),
 ];
 
 let stopping = false;

@@ -1,12 +1,16 @@
 import { formatUnits, getAddress, isAddress } from 'viem';
+import { sepolia } from './viemLite.js';
+import { getProtocolNetwork } from './networkConfig.js';
 
-export const SCORE_API_BASE_URL = (
-  import.meta.env.VITE_SCORE_API_URL
-  || 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com'
-).replace(/\/$/, '');
+export const DEFAULT_SCORE_API_URL = 'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com';
+
+export function scoreApiBaseUrl(hostname = globalThis.location?.hostname, override = import.meta.env.VITE_SCORE_API_URL) {
+  if (override) return override.replace(/\/$/, '');
+  return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(hostname) ? '/api' : DEFAULT_SCORE_API_URL;
+}
 
 const SCORE_DECIMALS = 18;
-const LEGACY_SEPOLIA_CHAIN_ID = 11_155_111;
+const LEGACY_SEPOLIA_CHAIN_ID = sepolia.id;
 
 function requiredString(payload, key) {
   const value = payload?.[key];
@@ -18,6 +22,25 @@ function requiredString(payload, key) {
 
 function scoreValue(payload, key) {
   return formatUnits(BigInt(requiredString(payload, key)), SCORE_DECIMALS);
+}
+
+/// Matured-score rate changes inside the holding window (score API snapshot
+/// version 4+): [{ fromBlock, scorePerSecond }], first point at the score cutoff.
+/// Anything malformed returns null, and the display falls back to the single
+/// maturingScorePerSecond rate.
+export function parseMaturingSchedule(payload) {
+  const raw = payload?.maturingSchedule;
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const points = [];
+  for (const point of raw) {
+    const fromBlock = String(point?.fromBlock ?? '');
+    const rate = String(point?.scorePerSecond ?? '');
+    if (!/^\d+$/.test(fromBlock) || !/^\d+$/.test(rate)) return null;
+    if (points.length && BigInt(fromBlock) <= BigInt(points.at(-1).fromBlock)) return null;
+    points.push({ fromBlock, scorePerSecond: formatUnits(BigInt(rate), SCORE_DECIMALS) });
+  }
+  if (points[0].fromBlock !== String(payload.scoreCutoffBlock ?? '')) return null;
+  return points;
 }
 
 function tokenScores(payload, grossEarnedScore, grossScorePerSecond) {
@@ -55,17 +78,31 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
   const scorePath = chainId === LEGACY_SEPOLIA_CHAIN_ID
     ? `/score/${canonicalAccount}`
     : `/score/${expectedChainId}/${canonicalAccount}`;
-  const response = await fetch(`${SCORE_API_BASE_URL}${scorePath}${refresh ? '?refresh=1' : ''}`, {
-    ...(refresh ? { cache: 'no-store' } : {}),
-    headers: { accept: 'application/json' },
-    signal,
-  });
+  const expectedRegistry = getProtocolNetwork(chainId)?.contracts?.registry?.toLowerCase();
+  const request = async (bypassCache) => {
+    const response = await fetch(`${scoreApiBaseUrl()}${scorePath}${refresh ? '?refresh=1' : ''}`, {
+      ...(refresh || bypassCache ? { cache: 'no-store' } : {}),
+      headers: { accept: 'application/json' },
+      signal,
+    });
+    if (!response.ok) {
+      throw new Error(response.status === 503 ? 'Insurance Score is temporarily unavailable' : `Insurance Score request failed (${response.status})`);
+    }
+    return response.json();
+  };
+  const wrongDeployment = (value) => Boolean(expectedRegistry)
+    && typeof value?.registry === 'string'
+    && value.registry.toLowerCase() !== expectedRegistry;
 
-  if (!response.ok) {
-    throw new Error(response.status === 503 ? 'Insurance Score is temporarily unavailable' : `Insurance Score request failed (${response.status})`);
-  }
-
-  const payload = await response.json();
+  let payload = await request(false);
+  // A browser-cached snapshot can outlive a redeploy (it is cacheable until the
+  // next UTC day). Never mix another deployment's score with this one.
+  if (wrongDeployment(payload)) payload = await request(true);
+  // Snapshots before version 4 have no maturing schedule, so the available
+  // score could not move forward correctly; a browser may still hold one from
+  // before the score API update. Fetch the current snapshot once instead.
+  else if (!refresh && !Array.isArray(payload?.maturingSchedule)) payload = await request(true);
+  if (wrongDeployment(payload)) throw new Error('Score API returned a different deployment');
   if (String(payload.chainId) !== expectedChainId) {
     throw new Error(`Unexpected score API network: ${payload.chainId ?? 'unknown'}`);
   }
@@ -90,6 +127,33 @@ export async function fetchInsuranceScore(account, { chainId, signal, refresh = 
     availableScore: scoreValue(payload, 'availableScore'),
     grossScorePerSecond: formatUnits(BigInt(grossScorePerSecond), SCORE_DECIMALS),
     maturingScorePerSecond: scoreValue(payload, 'maturingScorePerSecond'),
+    // The snapshot's own anchor for the available score. Kept apart from the
+    // display anchor (snapshotTimestampMilliseconds), which moves when the
+    // total is re-anchored to current balances.
+    maturingSchedule: parseMaturingSchedule(payload),
+    maturingAnchorMilliseconds: snapshotTimestamp * 1_000,
     tokenScores: tokenScores(payload, grossEarnedScore, grossScorePerSecond),
   };
+}
+
+/// Every account score the score service has stored for this deployment, as
+/// last saved (no recalculation). Each row carries the time its score is as of.
+export async function fetchScoreList(chainId = LEGACY_SEPOLIA_CHAIN_ID, { signal } = {}) {
+  const path = chainId === LEGACY_SEPOLIA_CHAIN_ID ? '/scores' : `/scores/${chainId}`;
+  const response = await fetch(`${scoreApiBaseUrl()}${path}`, { headers: { accept: 'application/json' }, signal });
+  if (!response.ok) throw new Error(`Score list request failed (${response.status})`);
+  const payload = await response.json();
+  const expectedRegistry = getProtocolNetwork(chainId)?.contracts?.registry?.toLowerCase();
+  if (!expectedRegistry || String(payload?.registry || '').toLowerCase() !== expectedRegistry) {
+    throw new Error('Score list is for a different deployment');
+  }
+  if (!Array.isArray(payload.accounts)) throw new Error('Score list is malformed');
+  const score = (value) => Number(formatUnits(BigInt(value), SCORE_DECIMALS));
+  return payload.accounts.map((row) => ({
+    account: String(row.account),
+    total: score(row.grossEarnedScore),
+    available: score(row.availableScore),
+    spent: score(row.scoreSpent),
+    updatedAtSeconds: Number(row.snapshotTimestamp) || null,
+  }));
 }

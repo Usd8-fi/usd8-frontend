@@ -1,17 +1,84 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchInsuranceScore } from './scoreApi.js';
+import { fetchScoreList, fetchInsuranceScore, scoreApiBaseUrl, DEFAULT_SCORE_API_URL } from './scoreApi.js';
 
 afterEach(() => vi.restoreAllMocks());
 
+describe('fetchScoreList', () => {
+  it('maps stored rows and fails closed on another deployment', async () => {
+    const body = (registry) => ({ chainId: '11155111', registry, count: 1, accounts: [{
+      account: '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176', grossEarnedScore: '6318000000000000000',
+      availableScore: '5840000000000000000', scoreSpent: '0', referenceBlock: '1', snapshotTimestamp: '1792108800', lastRefreshAt: null,
+    }] });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({ ok: true, json: async () => body('0x9bff24a44bb20f8d1f1de86eca56295c5bb46430') });
+    await expect(fetchScoreList(11155111)).resolves.toEqual([{
+      account: '0xb446b0c85cc4ef5f5ebf495c4fdd38ecc5284176', total: 6.318, available: 5.84, spent: 0, updatedAtSeconds: 1792108800,
+    }]);
+    expect(String(globalThis.fetch.mock.calls[0][0])).toMatch(/\/scores$/);
+    vi.restoreAllMocks();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({ ok: true, json: async () => body('0xb34d92cd05005df36050370433819597a9bac693') });
+    await expect(fetchScoreList(11155111)).rejects.toThrow('different deployment');
+    vi.restoreAllMocks();
+  });
+});
+
 describe('fetchInsuranceScore', () => {
-  it('loads the public AWS score route and normalizes its string fields', async () => {
+  it('refetches past a browser-cached snapshot from another deployment, then fails closed', async () => {
+    const payload = (registry) => ({
+      network: 'sepolia', chainId: '11155111', account: '0x1111111111111111111111111111111111111111', registry,
+      grossEarnedScore: '1', maturedGrossEarnedScore: '1', scoreSpent: '0', availableScore: '1',
+      snapshotTimestamp: '1786320000', grossScorePerSecond: '0', maturingScorePerSecond: '0',
+      tokenScores: [{ token: '0x3333333333333333333333333333333333333333', balance: '1', grossEarnedScore: '1', grossScorePerSecond: '0' }],
+    });
+    const stale = '0xb34d92cd05005df36050370433819597a9bac693';
+    const current = '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430';
+    let fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => payload(stale) })
+      .mockResolvedValueOnce({ ok: true, json: async () => payload(current) });
+    await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 }))
+      .resolves.toMatchObject({ registry: current });
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ cache: 'no-store' });
+
+    vi.restoreAllMocks();
+    fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => payload(stale) });
+    await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 }))
+      .rejects.toThrow('different deployment');
+  });
+
+  it('refetches once past a browser-cached snapshot without a maturing schedule (pre-v4)', async () => {
+    const base = {
+      network: 'Ethereum', chainId: '1', account: '0x1111111111111111111111111111111111111111',
+      registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430', scoreCutoffBlock: '100',
+      grossEarnedScore: '1', maturedGrossEarnedScore: '1', scoreSpent: '0', availableScore: '1',
+      snapshotTimestamp: '1786320000', grossScorePerSecond: '0', maturingScorePerSecond: '0',
+      tokenScores: [{ token: '0x3333333333333333333333333333333333333333', balance: '1', grossEarnedScore: '1', grossScorePerSecond: '0' }],
+    };
+    const schedule = [{ fromBlock: '100', scorePerSecond: '5' }];
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => base })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ...base, maturingSchedule: schedule }) });
+    const score = await fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1].cache).toBeUndefined();
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ cache: 'no-store' });
+    expect(score.maturingSchedule).toEqual([{ fromBlock: '100', scorePerSecond: '0.000000000000000005' }]);
+    expect(score.maturingAnchorMilliseconds).toBe(1786320000 * 1000);
+    vi.restoreAllMocks();
+
+    // A current snapshot is used straight from the cache: one request.
+    const once = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ ...base, maturingSchedule: schedule }) });
+    await fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 });
+    expect(once).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+
+  it('loads the local proxy score route and normalizes its string fields', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({
         network: 'sepolia',
         chainId: '11155111',
         account: '0x1111111111111111111111111111111111111111',
-        registry: '0x2222222222222222222222222222222222222222',
+        registry: '0x9bff24a44bb20f8d1f1de86eca56295c5bb46430',
         grossEarnedScore: '1200000000000000000',
         maturedGrossEarnedScore: '700000000000000000',
         scoreSpent: '200000000000000000',
@@ -42,7 +109,7 @@ describe('fetchInsuranceScore', () => {
     const result = await fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com/score/0x1111111111111111111111111111111111111111',
+      '/api/score/0x1111111111111111111111111111111111111111',
       expect.objectContaining({ headers: { accept: 'application/json' } }),
     );
     expect(result.availableScore).toBe('1');
@@ -96,7 +163,7 @@ describe('fetchInsuranceScore', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com/score/0x1111111111111111111111111111111111111111?refresh=1',
+      '/api/score/0x1111111111111111111111111111111111111111?refresh=1',
       expect.objectContaining({ cache: 'no-store' }),
     );
   });
@@ -109,5 +176,26 @@ describe('fetchInsuranceScore', () => {
 
     await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 1 }))
       .rejects.toThrow('Unexpected score API network');
+  });
+
+  it('rejects a backend 503 instead of returning a zero score', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 503 });
+
+    await expect(fetchInsuranceScore('0x1111111111111111111111111111111111111111', { chainId: 11155111 }))
+      .rejects.toThrow('Insurance Score is temporarily unavailable');
+  });
+});
+
+
+describe('score API routing', () => {
+  it.each(['localhost', '127.0.0.1', '[::1]', '::1'])('uses the same-origin proxy on %s regardless of port', hostname => {
+    expect(scoreApiBaseUrl(hostname, '')).toBe('/api');
+  });
+  it('keeps the deployed website on the public API', () => {
+    expect(scoreApiBaseUrl('usd8.fi', '')).toBe(DEFAULT_SCORE_API_URL);
+    expect(scoreApiBaseUrl('localhost.example.com', '')).toBe(DEFAULT_SCORE_API_URL);
+  });
+  it('honors an explicitly configured endpoint', () => {
+    expect(scoreApiBaseUrl('localhost', 'https://score.example.com/')).toBe('https://score.example.com');
   });
 });

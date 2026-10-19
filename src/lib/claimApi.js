@@ -1,0 +1,682 @@
+import {
+  concatHex, encodeAbiParameters, getAddress, isAddress, isHex, keccak256, size,
+} from 'viem';
+
+import { claimApiBaseUrlForChain, claimApiConfigured } from './claimContext.js';
+export { CLAIM_API_BASE_URL, claimApiBaseUrlForChain, claimApiConfigured, matchesSettlementContext } from './claimContext.js';
+import { cachedData, checkAbort, queryClient } from './dataCache.js';
+
+const JOB_ID_PATTERN = /^[0-9a-f]{64}$/;
+const DEFAULT_POLL_INTERVAL_MS = 3_000;
+const DEFAULT_OPEN_MAX_WAIT_MS = 10 * 60 * 1_000;
+const DEFAULT_SETTLEMENT_MAX_WAIT_MS = 21 * 60 * 1_000;
+const MAX_SETTLEMENT_ATTEMPTS = 8;
+const JOB_RETENTION_MS = 3_600_000;
+
+// Accepted handles have no observers; retain them for the explicit resume window,
+// without extending the GC lifetime of unrelated metrics or cached artifacts.
+queryClient.setQueryDefaults(['claim-job'], { gcTime: JOB_RETENTION_MS });
+
+function terminalFailure(terminal) {
+  throw new Error(`Claim settlement ${terminal}.`);
+}
+// Match the candidate worker's bounded result capacity; streamed actual bytes,
+// digest and terminal bindings remain authoritative, not Content-Length.
+const MAX_DOWNLOADED_RESULT_BYTES = 64 * 1024 * 1024;
+const MAX_UINT256 = (1n << 256n) - 1n;
+const MAX_UINT256_DECIMAL = MAX_UINT256.toString();
+const ZERO_ROOT = `0x${'00'.repeat(32)}`;
+
+function apiError(status, operation = 'incident-open') {
+  // The eligibility window is stated up front in the dialog, so it is not repeated here.
+  if (status === 422) return new Error(operation === 'settlement'
+    ? 'Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.'
+    : 'No qualifying >20% price drop was detected.');
+  if (status === 409) return new Error('An incident is already active. Close and reopen this claim.');
+  if (status === 429) return new Error('Claim verification service is busy. Please wait a moment and try again.');
+  return new Error(status === 503
+    ? 'Claim verification service is temporarily unavailable.'
+    : `Claim verification request failed (${status}).`);
+}
+
+function validAdvisory(advisory, expected) {
+  try {
+    const snapshot = advisory?.snapshot;
+    const result = snapshot?.result;
+    if (advisory?.schemaVersion !== 1 || advisory.displayOnly !== true || typeof advisory.stale !== 'boolean'
+        || advisory.chainId !== expected.chainId || !sameAddress(advisory.registry, expected.registry)
+        || !sameAddress(advisory.defiInsurance, expected.defiInsurance) || !sameAddress(advisory.insuredToken, expected.insuredToken)
+        || !Number.isSafeInteger(snapshot?.checkedAt) || snapshot.checkedAt <= 0
+        || snapshot.checkedAt * 1000 > Date.now() || snapshot.expiresAt !== snapshot.checkedAt + 3600
+        || snapshot.expiresAt * 1000 <= Date.now() || !/^[0-9a-f]{64}$/.test(snapshot.configuration)) return null;
+    if (result?.outcome !== 'noDrop' && (result?.outcome !== 'qualifying'
+        || !Number.isSafeInteger(result.referenceBlock) || result.referenceBlock <= 0
+        || !Number.isSafeInteger(result.observationBlock) || result.observationBlock <= result.referenceBlock)) return null;
+    return advisory;
+  } catch { return null; }
+}
+
+function advisoryBusyMessage(advisory) {
+  if (!advisory) return 'Claim verification service is busy. Waiting for a fresh check; no previous result is available.';
+  const result = advisory.snapshot.result.outcome === 'noDrop' ? 'no qualifying price drop detected' : 'qualifying price drop detected';
+  return `Claim verification service is busy. Stale check at ${new Date(advisory.snapshot.checkedAt * 1000).toISOString()}: ${result}. Display only; fresh verification is required.`;
+}
+
+function canonicalAddress(value, label) {
+  if (!isAddress(value)) throw new Error(`Claim service returned an invalid ${label}.`);
+  return getAddress(value);
+}
+
+function sameAddress(left, right) {
+  return canonicalAddress(left, 'address').toLowerCase() === canonicalAddress(right, 'address').toLowerCase();
+}
+
+function canonicalPoolSnapshot(poolAddrs, poolOrder, message) {
+  if (!Array.isArray(poolAddrs) || poolAddrs.length === 0
+      || !Array.isArray(poolOrder) || poolOrder.length !== poolAddrs.length) {
+    throw new Error(message);
+  }
+  let canonicalPoolAddrs;
+  let canonicalPoolOrder;
+  try {
+    canonicalPoolAddrs = poolAddrs.map((pool) => canonicalAddress(pool, 'settlement pool address'));
+    canonicalPoolOrder = poolOrder.map((asset) => canonicalAddress(asset, 'settlement pool order'));
+  } catch {
+    throw new Error(message);
+  }
+  if (new Set(canonicalPoolAddrs.map((pool) => pool.toLowerCase())).size !== canonicalPoolAddrs.length
+      || new Set(canonicalPoolOrder.map((asset) => asset.toLowerCase())).size !== canonicalPoolOrder.length) {
+    throw new Error(message);
+  }
+  return { poolAddrs: canonicalPoolAddrs, poolOrder: canonicalPoolOrder };
+}
+
+function validJobId(value) {
+  return typeof value === 'string' && JOB_ID_PATTERN.test(value);
+}
+
+function resumableJobKey(operation, chainId, registry, module, identity, attempt = '') {
+  return ['claim-job', operation, chainId, canonicalAddress(registry, 'Registry').toLowerCase(),
+    canonicalAddress(module, 'insurance contract').toLowerCase(), identity, attempt];
+}
+
+function rememberedJob(key) {
+  const entry = queryClient.getQueryData(key);
+  return entry && entry.expiresAt > Date.now() && validJobId(entry.jobId) ? entry : null;
+}
+
+function rememberJob(key, accepted) {
+  queryClient.setQueryData(key, { ...accepted, expiresAt: Date.now() + JOB_RETENTION_MS });
+}
+
+function wait(milliseconds, signal) {
+  checkAbort(signal);
+  return new Promise((resolve, reject) => {
+    const done = () => { signal?.removeEventListener('abort', abort); resolve(); };
+    const timer = setTimeout(done, milliseconds);
+    const abort = () => { clearTimeout(timer); signal?.removeEventListener('abort', abort); reject(new DOMException('The operation was aborted.', 'AbortError')); };
+    signal?.addEventListener('abort', abort, { once: true });
+  });
+}
+
+function rateLimitRetryDelay(response, fallbackMilliseconds) {
+  const retryAfter = response.headers.get('retry-after');
+  const retryAfterSeconds = retryAfter === null ? Number.NaN : Number(retryAfter);
+  return Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0
+    ? retryAfterSeconds * 1_000
+    : fallbackMilliseconds;
+}
+
+async function fetchWithRateLimitRetry(url, options, {
+  deadline,
+  retryIntervalMs,
+  signal,
+  onResponse,
+  busyMessage = () => apiError(429).message,
+}) {
+  let throttled = false;
+  while (true) {
+    checkAbort(signal);
+    if (Date.now() >= deadline) {
+      const error = new Error(throttled ? busyMessage() : 'Claim verification timed out. Please try again.');
+      if (throttled) error.name = 'ClaimServiceBusyError';
+      throw error;
+    }
+    const timeout = AbortSignal.timeout(Math.max(1, Math.min(15_000, deadline - Date.now())));
+    let response;
+    try {
+      response = await fetch(url, { ...options, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+    } catch (error) {
+      checkAbort(signal);
+      if (timeout.aborted || error?.name === 'TimeoutError') {
+        throw new Error('The claim verification service took too long to respond. Please try again.', { cause: error });
+      }
+      throw new Error('Could not reach the claim verification service. Check your connection and try again.', { cause: error });
+    }
+    await onResponse?.(response);
+    if (response.status !== 429) return response;
+    throttled = true;
+    const remainingMilliseconds = deadline - Date.now();
+    if (remainingMilliseconds <= 0) continue;
+    await wait(Math.min(
+      rateLimitRetryDelay(response, retryIntervalMs),
+      remainingMilliseconds,
+    ), signal);
+  }
+}
+
+function validateAuthorization(payload, expected) {
+  const artifact = payload?.artifact;
+  if (artifact?.schemaVersion !== 1 || artifact?.artifactType !== 'incidentOpen') {
+    throw new Error('Claim service returned an invalid incident authorization.');
+  }
+  if (Number(artifact.chainId) !== expected.chainId) {
+    throw new Error('Claim service returned an authorization for another network.');
+  }
+  if (!sameAddress(artifact.registry, expected.registry)) {
+    throw new Error('Claim service returned an authorization for another Registry.');
+  }
+  if (!sameAddress(artifact.defiInsurance, expected.defiInsurance)) {
+    throw new Error('Claim service returned an authorization for another insurance contract.');
+  }
+  if (!sameAddress(artifact.insuredToken, expected.insuredToken)) {
+    throw new Error('Claim service returned an authorization for another insured token.');
+  }
+  if (!Number.isSafeInteger(artifact.referenceBlock) || artifact.referenceBlock <= 0) {
+    throw new Error('Claim service returned an invalid reference block.');
+  }
+  if (!isHex(payload.signature, { strict: true }) || size(payload.signature) !== 65) {
+    throw new Error('Claim service returned an invalid TEE signature.');
+  }
+  return {
+    referenceBlock: BigInt(artifact.referenceBlock),
+    signature: payload.signature,
+  };
+}
+
+function uint256Decimal(value, label) {
+  if (typeof value !== 'string' || !/^(0|[1-9]\d*)$/.test(value)) {
+    throw new Error(`Claim service returned invalid ${label}.`);
+  }
+  if (
+    value.length > MAX_UINT256_DECIMAL.length
+    || (value.length === MAX_UINT256_DECIMAL.length && value > MAX_UINT256_DECIMAL)
+  ) throw new Error(`Claim service returned invalid ${label}.`);
+  const parsed = BigInt(value);
+  if (parsed > MAX_UINT256) throw new Error(`Claim service returned invalid ${label}.`);
+  return parsed;
+}
+
+function decimalArray(values, label) {
+  if (!Array.isArray(values)) throw new Error(`Claim service returned invalid ${label}.`);
+  return values.map((value) => uint256Decimal(value, label));
+}
+
+function settlementProofs(incidentId, rows, expectedRoot) {
+  if (rows.length === 0) throw new Error('Claim service returned an invalid settlement proof.');
+  const claims = new Set();
+  const leaves = rows.map((row) => {
+    if (claims.has(row.claimId)) {
+      throw new Error('Claim service returned an invalid settlement proof.');
+    }
+    claims.add(row.claimId);
+    const encoded = encodeAbiParameters([
+      { type: 'uint256' }, { type: 'uint256' }, { type: 'address' }, { type: 'uint256[]' },
+      { type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' },
+      { type: 'uint256' },
+    ], [
+      BigInt(incidentId), BigInt(row.claimId), canonicalAddress(row.user, 'claim user'), row.amounts,
+      row.scoreSpent, row.boostedScore, row.eligibleAmount, row.eligibleBoosterAmount,
+    ]);
+    return { claimId: row.claimId, hash: keccak256(keccak256(encoded)) };
+  }).sort((left, right) => (left.hash < right.hash ? -1 : left.hash > right.hash ? 1 : 0));
+
+  const tree = Array(2 * leaves.length - 1);
+  const indexes = new Map();
+  leaves.forEach(({ claimId, hash }, leafIndex) => {
+    const index = tree.length - 1 - leafIndex;
+    tree[index] = hash;
+    indexes.set(claimId, index);
+  });
+  for (let index = tree.length - leaves.length - 1; index >= 0; index -= 1) {
+    const pair = [tree[2 * index + 1], tree[2 * index + 2]].sort();
+    tree[index] = keccak256(concatHex(pair));
+  }
+  if (tree[0].toLowerCase() !== expectedRoot.toLowerCase()) {
+    throw new Error('Claim service returned an invalid settlement proof.');
+  }
+
+  return new Map([...indexes].map(([claimId, initialIndex]) => {
+    const proof = [];
+    let index = initialIndex;
+    while (index > 0) {
+      proof.push(tree[index % 2 === 0 ? index - 1 : index + 1]);
+      index = Math.floor((index - 1) / 2);
+    }
+    return [claimId, proof];
+  }));
+}
+
+async function downloadedTerminal(download, expectedJobId, signal) {
+  if (!download || typeof download !== 'object'
+      || !/^[0-9a-f]{64}$/.test(download.sha256)
+      || !Number.isSafeInteger(download.bytes) || download.bytes <= 0
+      || download.bytes > MAX_DOWNLOADED_RESULT_BYTES
+      || !Number.isSafeInteger(download.expiresInSeconds)
+      || download.expiresInSeconds <= 0 || download.expiresInSeconds > 3_600) {
+    throw new Error('Claim service returned an invalid settlement download.');
+  }
+  let url;
+  try {
+    url = new URL(download.url);
+  } catch {
+    throw new Error('Claim service returned an invalid settlement download.');
+  }
+  const host = url.hostname.toLowerCase();
+  if (url.protocol !== 'https:' || url.username || url.password || url.port
+      || (host !== 'amazonaws.com' && !host.endsWith('.amazonaws.com'))) {
+    throw new Error('Claim service returned an invalid settlement download.');
+  }
+
+  const response = await fetch(url.href, {
+    method: 'GET',
+    headers: { accept: 'application/json' },
+    credentials: 'omit',
+    redirect: 'error',
+    referrerPolicy: 'no-referrer',
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
+  });
+  if (!response.ok || !response.body) throw new Error('Claim settlement download failed.');
+  const contentLength = response.headers.get('content-length');
+  if (contentLength !== null
+      && (!/^(0|[1-9]\d*)$/.test(contentLength) || Number(contentLength) !== download.bytes)) {
+    throw new Error('Claim service returned a corrupt settlement download.');
+  }
+
+  const chunks = [];
+  const reader = response.body.getReader();
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > download.bytes || total > MAX_DOWNLOADED_RESULT_BYTES) {
+      await reader.cancel();
+      throw new Error('Claim service returned a corrupt settlement download.');
+    }
+    chunks.push(value);
+  }
+  if (total !== download.bytes) throw new Error('Claim service returned a corrupt settlement download.');
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const digest = [...new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', bytes))]
+    .map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  if (digest !== download.sha256) throw new Error('Claim service returned a corrupt settlement download.');
+
+  let terminal;
+  try {
+    terminal = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch {
+    throw new Error('Claim service returned a corrupt settlement download.');
+  }
+  if (terminal?.schemaVersion !== 1 || terminal.jobId !== expectedJobId
+      || terminal.status !== 'completed' || !terminal.payload || typeof terminal.payload !== 'object') {
+    throw new Error('Claim service returned an invalid settlement download.');
+  }
+  return terminal.payload;
+}
+
+async function completedSettlementPayload(job, expectedJobId, signal) {
+  if (!validJobId(job?.jobId)) {
+    throw new Error('Claim service returned an invalid completed job.');
+  }
+  if (expectedJobId !== undefined && job.jobId !== expectedJobId) {
+    throw new Error('Claim service returned another job.');
+  }
+  if (job.status !== 'completed'
+      || (job.payload === undefined) === (job.download === undefined)) {
+    throw new Error('Claim service returned an invalid completed job.');
+  }
+  return job.payload === undefined
+    ? downloadedTerminal(job.download, job.jobId, signal)
+    : job.payload;
+}
+
+function validateSettlement(payload, expected) {
+  const artifact = payload?.artifact;
+  const artifactIncidentId = uint256Decimal(artifact?.incidentId, 'incident id');
+  if (artifact?.schemaVersion !== 2) throw new Error('Claim service returned an invalid settlement.');
+  if (!Number.isSafeInteger(artifact.chainId) || artifact.chainId !== expected.chainId
+      || !sameAddress(artifact.registry, expected.registry)
+      || !sameAddress(artifact.defiInsurance, expected.defiInsurance)
+      || artifactIncidentId !== expected.incidentId) {
+    throw new Error('Claim service returned a settlement for another incident.');
+  }
+  if (!isHex(artifact.root, { strict: true }) || size(artifact.root) !== 32) {
+    throw new Error('Claim service returned an invalid settlement root.');
+  }
+  if (!isHex(payload.signature, { strict: true }) || size(payload.signature) !== 65) {
+    throw new Error('Claim service returned an invalid settlement signature.');
+  }
+  const poolPayouts = decimalArray(artifact.poolPayouts, 'pool payouts');
+  const { poolAddrs, poolOrder } = canonicalPoolSnapshot(
+    artifact.poolAddrs,
+    artifact.poolOrder,
+    'Claim service returned an invalid settlement pool order.',
+  );
+  if (poolOrder.length !== poolPayouts.length) {
+    throw new Error('Claim service returned an invalid settlement pool order.');
+  }
+  if (poolAddrs.length !== expected.poolAddrs.length
+      || poolAddrs.some((pool, index) => pool.toLowerCase() !== expected.poolAddrs[index].toLowerCase())) {
+    throw new Error('Claim service returned a settlement for another pool snapshot.');
+  }
+  if (poolOrder.length !== expected.poolOrder.length
+      || poolOrder.some((asset, index) => asset.toLowerCase() !== expected.poolOrder[index].toLowerCase())) {
+    throw new Error('Claim service returned a settlement for another asset order.');
+  }
+  if (expected.expectedRoot !== undefined) {
+    if (!isHex(expected.expectedRoot, { strict: true }) || size(expected.expectedRoot) !== 32) {
+      throw new Error('Invalid expected settlement root.');
+    }
+    // Before the first settlement write the authoritative on-chain root is zero.
+    // In that state the completed, signed artifact defines the proposed nonzero
+    // root. Once a root is standing, retrieval must remain bound to it exactly.
+    if (expected.expectedRoot.toLowerCase() !== ZERO_ROOT
+        && expected.expectedRoot.toLowerCase() !== artifact.root.toLowerCase()) {
+      throw new Error('Claim service returned a settlement for another root.');
+    }
+  }
+  const rows = Array.isArray(artifact.rows) ? artifact.rows.map((row) => ({
+    claimId: uint256Decimal(row.claimId, 'claim id').toString(),
+    user: canonicalAddress(row.user, 'claim user'),
+    amounts: decimalArray(row.amounts, 'claim payout amounts'),
+    scoreSpent: uint256Decimal(row.scoreSpent, 'score spent'),
+    boostedScore: uint256Decimal(row.boostedScore, 'boosted score'),
+    eligibleAmount: uint256Decimal(row.eligibleAmount, 'eligible amount'),
+    eligibleBoosterAmount: uint256Decimal(row.eligibleBoosterAmount, 'eligible booster amount'),
+    // Valuation the enclave reported. Not committed in the Merkle leaf, so this is
+    // informational only — the contract verifies amounts, scores, and both eligible quantities.
+    payoutUsd: row.payoutUsd === undefined ? undefined : uint256Decimal(row.payoutUsd, 'payout USD'),
+    lossUsd: row.lossUsd === undefined ? undefined : uint256Decimal(row.lossUsd, 'loss USD'),
+    proof: row.proof,
+  })) : [];
+  if (rows.some((row) => row.amounts.length !== poolOrder.length)) {
+    throw new Error('Claim service returned an invalid settlement pool order.');
+  }
+  const derivedProofs = settlementProofs(artifactIncidentId, rows, artifact.root);
+  rows.forEach((row) => {
+    const derived = derivedProofs.get(row.claimId);
+    if (row.proof !== undefined && (!Array.isArray(row.proof)
+      || row.proof.some((item) => !isHex(item, { strict: true }) || size(item) !== 32)
+      || row.proof.length !== derived.length
+      || row.proof.some((item, index) => item.toLowerCase() !== derived[index].toLowerCase()))) {
+      throw new Error('Claim service returned an invalid settlement proof.');
+    }
+    row.proof = derived;
+  });
+  return {
+    root: artifact.root,
+    poolAddrs,
+    poolOrder,
+    poolPayouts,
+    rows,
+    signature: payload.signature,
+  };
+}
+
+async function prepareSettlementUncached(incidentId, {
+  chainId,
+  registry,
+  defiInsurance,
+  expectedRoot,
+  expectedPoolAddrs,
+  expectedPoolOrder,
+  idempotencyKey,
+  signal,
+  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+  maxWaitMs = DEFAULT_SETTLEMENT_MAX_WAIT_MS,
+} = {}) {
+  if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
+  const incidentIdText = typeof incidentId === 'bigint' ? String(incidentId) : incidentId;
+  if (typeof incidentIdText !== 'string' || !/^[1-9]\d*$/.test(incidentIdText)
+      || BigInt(incidentIdText) > MAX_UINT256) throw new Error('Invalid incident id.');
+  const canonicalIncidentId = BigInt(incidentIdText);
+  const expectedPoolSnapshot = canonicalPoolSnapshot(
+    expectedPoolAddrs,
+    expectedPoolOrder,
+    'Invalid expected settlement pool snapshot.',
+  );
+  const deadline = Date.now() + maxWaitMs;
+  if (expectedRoot !== undefined) {
+    if (!isHex(expectedRoot, { strict: true }) || size(expectedRoot) !== 32) {
+      throw new Error('Invalid expected settlement root.');
+    }
+    if (expectedRoot.toLowerCase() !== ZERO_ROOT) {
+      const settlementUrl = [
+        claimApiBaseUrlForChain(chainId),
+        'settlements',
+        chainId,
+        canonicalAddress(registry, 'Registry').toLowerCase(),
+        canonicalAddress(defiInsurance, 'insurance contract').toLowerCase(),
+        incidentIdText,
+        expectedRoot.toLowerCase(),
+      ].join('/');
+      const lookupResponse = await fetchWithRateLimitRetry(settlementUrl, {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+        cache: 'no-store',
+        signal,
+      }, { deadline, retryIntervalMs: pollIntervalMs, signal });
+      if (lookupResponse.ok) {
+        const job = await lookupResponse.json();
+        const payload = await completedSettlementPayload(job, undefined, signal);
+        return {
+          ...validateSettlement(payload, {
+            chainId,
+            registry,
+            defiInsurance,
+            incidentId: canonicalIncidentId,
+            expectedRoot,
+            ...expectedPoolSnapshot,
+          }),
+          source: { route: settlementUrl, jobId: job.jobId },
+        };
+      }
+      if (lookupResponse.status === 404) {
+        throw new Error('Claim service returned no immutable settlement artifact for the expected root.');
+      }
+      throw apiError(lookupResponse.status, 'settlement');
+    }
+  }
+  // Terminals are immutable, so one key is one attempt. Walk a deterministic
+  // ladder: every claimant derives the same keys, so retries still converge on a
+  // single job. Re-POSTing a key that already failed does not relaunch it, so
+  // stepping past spent attempts costs nothing.
+  const canonicalKey = `usd8-settlement-${chainId}-${incidentIdText}`;
+  const attemptKeys = idempotencyKey === undefined
+    ? Array.from(
+      { length: MAX_SETTLEMENT_ATTEMPTS },
+      (_, attempt) => (attempt === 0 ? canonicalKey : `${canonicalKey}-${attempt + 1}`),
+    )
+    : [idempotencyKey];
+  let spentTerminal = '';
+
+  for (const attemptKey of attemptKeys) {
+    if (Date.now() >= deadline) break;
+    const resumeKey = resumableJobKey('settlement', chainId, registry, defiInsurance,
+      [incidentIdText, ...expectedPoolSnapshot.poolAddrs, '|', ...expectedPoolSnapshot.poolOrder].join(':'), attemptKey);
+    let accepted = rememberedJob(resumeKey);
+    if (!accepted) {
+    const response = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/settlement`, {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json', 'Idempotency-Key': attemptKey },
+      body: JSON.stringify({ incidentId: incidentIdText }),
+      signal,
+    }, { deadline, retryIntervalMs: pollIntervalMs, signal });
+    if (!response.ok) throw apiError(response.status, 'settlement');
+    accepted = await response.json();
+    if (accepted?.accepted !== true || !validJobId(accepted.jobId)) throw new Error('Claim verification service returned an invalid job.');
+    rememberJob(resumeKey, accepted);
+    }
+    const jobUrl = `${claimApiBaseUrlForChain(chainId)}/jobs/${accepted.jobId}`;
+    spentTerminal = '';
+    // A key already spent before this call reports its terminal on the first poll.
+    // Anything that runs is a job this call launched, and its failure is final —
+    // stepping further would launch another instance per attempt.
+    let launchedHere = false;
+    while (Date.now() <= deadline) {
+      const pollResponse = await fetchWithRateLimitRetry(jobUrl, {
+        headers: { accept: 'application/json' }, cache: 'no-store', signal,
+      }, { deadline, retryIntervalMs: pollIntervalMs, signal });
+      if (!pollResponse.ok) throw apiError(pollResponse.status, 'settlement');
+      const job = await pollResponse.json();
+      if (job?.jobId !== accepted.jobId) throw new Error('Claim service returned another job.');
+      if (job.status === 'completed') {
+        const payload = await completedSettlementPayload(job, accepted.jobId, signal);
+        return {
+          ...validateSettlement(payload, {
+            chainId,
+            registry,
+            defiInsurance,
+            incidentId: canonicalIncidentId,
+            expectedRoot,
+            ...expectedPoolSnapshot,
+          }),
+          source: { route: jobUrl, jobId: accepted.jobId, idempotencyKey: attemptKey },
+        };
+      }
+      if (job.status === 'failed' || job.status === 'expired') {
+        const code = typeof job.payload?.code === 'string' ? ` (${job.payload.code})` : '';
+        spentTerminal = `${job.status}${code}`;
+        queryClient.removeQueries({ queryKey: resumeKey, exact: true });
+        if (launchedHere) return terminalFailure(spentTerminal);
+        break;
+      }
+      if (job.status !== 'pending' && job.status !== 'running') throw new Error('Claim service returned an invalid job status.');
+      launchedHere = true;
+      await wait(pollIntervalMs, signal);
+    }
+    if (!spentTerminal) break;
+  }
+  if (spentTerminal) return terminalFailure(spentTerminal);
+  throw new Error('Claim settlement timed out. Please try again.');
+}
+
+export async function prepareIncidentOpen(insuredToken, {
+  chainId,
+  registry,
+  defiInsurance,
+  idempotencyKey = crypto.randomUUID(),
+  signal,
+  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+  maxWaitMs = DEFAULT_OPEN_MAX_WAIT_MS,
+  previousAdvisory,
+  onAdvisory,
+  onStatus,
+} = {}) {
+  if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
+  const canonicalToken = canonicalAddress(insuredToken, 'insured token');
+  const expected = { chainId, registry, defiInsurance, insuredToken: canonicalToken };
+  let advisory = validAdvisory(previousAdvisory, expected);
+  const busyMessage = () => advisoryBusyMessage(validAdvisory(advisory, expected));
+  const onResponse = async (response) => {
+    let payload;
+    try { payload = await response.clone().json(); } catch { /* Gateway errors need not be JSON. */ }
+    const incoming = validAdvisory(payload?.advisory, expected);
+    if (incoming) { advisory = incoming; onAdvisory?.(incoming); }
+    if (response.status === 429 || response.status === 503) onStatus?.(busyMessage());
+  };
+  const deadline = Date.now() + maxWaitMs;
+  const resumeKey = resumableJobKey('open', chainId, registry, defiInsurance, canonicalToken.toLowerCase());
+  let accepted = rememberedJob(resumeKey);
+  if (!accepted) {
+  const response = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/open`, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'Idempotency-Key': idempotencyKey,
+    },
+    body: JSON.stringify({ insuredToken: canonicalToken }),
+    signal,
+  }, {
+    deadline,
+    retryIntervalMs: pollIntervalMs,
+    signal,
+    onResponse,
+    busyMessage,
+  });
+  if (!response.ok) {
+    if (response.status === 503) {
+      const error = new Error(busyMessage());
+      error.name = 'ClaimServiceBusyError';
+      throw error;
+    }
+    throw apiError(response.status);
+  }
+  accepted = await response.json();
+  if (accepted?.accepted !== true || !validJobId(accepted.jobId)) {
+    throw new Error('Claim verification service returned an invalid job.');
+  }
+  rememberJob(resumeKey, accepted);
+  }
+
+  while (Date.now() <= deadline) {
+    const pollResponse = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/${accepted.jobId}`, {
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+      signal,
+    }, {
+      deadline,
+      retryIntervalMs: pollIntervalMs,
+      signal,
+      onResponse,
+      busyMessage,
+    });
+    if (!pollResponse.ok) throw apiError(pollResponse.status);
+    const job = await pollResponse.json();
+    if (job?.jobId !== accepted.jobId) throw new Error('Claim service returned another job.');
+    if (job.status === 'completed') {
+      queryClient.removeQueries({ queryKey: resumeKey, exact: true });
+      return validateAuthorization(job.payload, {
+        chainId,
+        registry,
+        defiInsurance,
+        insuredToken: canonicalToken,
+      });
+    }
+    if (job.status === 'failed' || job.status === 'expired') {
+      queryClient.removeQueries({ queryKey: resumeKey, exact: true });
+      const code = typeof job.payload?.code === 'string' ? ` (${job.payload.code})` : '';
+      throw new Error(`Claim verification ${job.status}${code}.`);
+    }
+    if (job.status !== 'pending' && job.status !== 'running') {
+      throw new Error('Claim service returned an invalid job status.');
+    }
+    await wait(pollIntervalMs, signal);
+  }
+  throw new Error('Claim verification timed out. Please try again.');
+}
+
+// Only verified artifacts with an immutable onchain root are reusable. Job
+// creation and mutable pre-settlement results always follow the original path.
+export async function prepareSettlement(incidentId, options = {}) {
+  const { expectedRoot, signal } = options;
+  if (!expectedRoot || expectedRoot.toLowerCase() === ZERO_ROOT) return prepareSettlementUncached(incidentId, options);
+  const key = ['settlement', options.chainId, String(options.registry).toLowerCase(),
+    String(options.defiInsurance).toLowerCase(), String(incidentId), expectedRoot.toLowerCase(),
+    ...(options.expectedPoolAddrs || []).map(value => String(value).toLowerCase()), '|',
+    ...(options.expectedPoolOrder || []).map(value => String(value).toLowerCase())];
+  const result = await cachedData(key, ({ signal: querySignal }) => prepareSettlementUncached(incidentId, { ...options, signal: querySignal }), { signal, staleTime: Infinity });
+  const artifacts = queryClient.getQueryCache().findAll({ queryKey: ['settlement'] }).sort((a, b) => a.state.dataUpdatedAt - b.state.dataUpdatedAt);
+  for (const old of artifacts.slice(0, Math.max(0, artifacts.length - 12))) {
+    if (old.state.fetchStatus !== 'fetching') queryClient.removeQueries({ queryKey: old.queryKey, exact: true });
+  }
+  return result;
+}

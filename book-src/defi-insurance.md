@@ -22,11 +22,11 @@ Claim is a 3-step process combine both onchain and offchain(TEE) process, it tak
 ### 1 File a Claim
 
 Anyone can file a claim if
-1. an insured token's adjacent 24hr TWAP prices dropped >=20% in the past 1-6 days.
-2. claimer has insurance score available to spend (min 7 days old)
+1. an insured token's adjacent 24hr TWAP prices dropped >20% in the past 1-6 days.
+2. claimer has unspent insurance score that was earned at least 7 days before the price drop
 3. claimer held the insured token for min 7 days before the price drop
 
-There is also a 10 USD8 bond, fully refunded if condition 2 and 3 are satisfied. First claimer needs to provide a rough time when the price drop happened, our TEE will ping down the exact block.
+There is also a 10 USD8 bond, fully refunded if condition 2 and 3 are satisfied. You don't need to say when the price drop happened: our TEE finds the drop and pins down the exact block itself.
 
 
 Important - claim window closes 3 days after the first valid claim, after that no claims can be filed for this insured token.
@@ -74,7 +74,7 @@ We plan to shift to a zk-coprocessor network like [Brevis](https://brevis.networ
 
 
 ## Boosters
-<img src="/assets/booster.png" width="300px" /><br/><br/>     
+<img src="../assets/booster-600.webp" srcset="../assets/booster-600.webp 600w, ../assets/booster-1200.webp 1200w" sizes="(max-width: 700px) 100vw, 300px" width="300" height="289" loading="lazy" decoding="async" alt="USD8 Booster NFT artwork" /><br/><br/>
 [Boosters](https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f12d) are NFTs that can be burnt when filing a claim to add a 1% boost to your total insurance score. You can stack multiple Boosters. Boosters are not for sale, they are only minted to early stage users who help USD8 grow. Follow our [X](https://x.com/usd8_fi) and [Telegram](https://t.me/+e84i2oYk1ao1MTk1).
 
 Enter an Ethereum address to check Boosters
