@@ -17,6 +17,7 @@ import InfoTooltip from './InfoTooltip.jsx';
 import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 import PercentRing from './PercentRing.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
+import SiteNotice from './SiteNotice.jsx';
 
 
 function displayValue(value, fallback = '0') {
@@ -569,6 +570,7 @@ export default function USD8Landing({
 }) {
   return (
     <WalletNoticeProvider wallet={wallet}>
+    <SiteNotice />
     <div className="landing-shell">
       <header className="landing-header">
         <div className="landing-brand-group">

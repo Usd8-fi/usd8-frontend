@@ -116,6 +116,69 @@ a:focus-visible {
   line-height: 1.55;
 }
 
+.site-notice {
+  background: var(--panel);
+  border-bottom: 1px solid #333;
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: 1.6;
+}
+
+.site-notice-inner {
+  width: min(100%, 1103px);
+  margin: 0 auto;
+  padding: 12px 97px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.site-notice-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--accent);
+}
+
+/* "Speaking": the two sound waves pulse outward in turn. */
+.site-notice-wave {
+  animation: site-notice-speak 1.6s ease-in-out infinite;
+}
+
+.site-notice-wave--far {
+  animation-delay: 0.2s;
+}
+
+@keyframes site-notice-speak {
+  0%, 100% { opacity: 0.15; }
+  35%, 60% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-notice-wave {
+    animation: none;
+  }
+}
+
+.site-notice p {
+  margin: 0;
+}
+
+.site-notice strong {
+  font-weight: inherit;
+}
+
+/* Links are the only yellow text, and each stays on one line. */
+.site-notice a {
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .site-notice-inner {
+    padding: 12px 20px;
+  }
+}
+
 .landing-header {
   position: relative;
   z-index: 1;
