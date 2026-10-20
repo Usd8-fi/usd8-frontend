@@ -1,6 +1,7 @@
 import { UNKNOWN_VALUE } from '../lib/units.js';
 import { Fragment } from 'react';
 import aaveLogo from '../assets/aavelogo.svg';
+import etherscanLogo from '../assets/etherscan-logo-light-circle.svg';
 // Raster icons stay separate cached files; base64-inlining them would add
 // ~6.5 KB gzip of incompressible data to the public page's first-load JS.
 import curveLogo from '../assets/curve-scrvusd.webp?no-inline';
@@ -9,12 +10,13 @@ import skyLogo from '../assets/sky-susds.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
-import { LOCAL_E2E_TEST_TOKEN } from '../lib/networkConfig.js';
+import { getProtocolNetwork, LOCAL_E2E_TEST_TOKEN, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import PercentRing from './PercentRing.jsx';
 import TableTokenCell from './TableTokenCell.jsx';
 
+// Names are one line; the cell wraps them only when the column is too narrow.
 export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'usd8',
@@ -27,21 +29,21 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'susd8',
     symbol: 'sUSD8',
     iconSrc: sUsd8Logo,
-    token: <>USD8 Protected<br />Savings sUSD8</>,
+    token: 'USD8 Protected Savings sUSD8',
     address: 'TBD',
   },
   {
     id: 'aave-sgho',
     symbol: 'sGHO',
     iconSrc: aaveLogo,
-    token: <>Aave Savings Gho<br />sGHO</>,
-    address: <>0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d<br />impl 0x50f9d4e28309303f0cdcac8af0b569e8b75ab857</>,
+    token: 'Aave Savings GHO sGHO',
+    address: '0xE1753F2e00940cC31213dd92013cF019DFE4ca1d',
   },
   {
     id: 'curve-scrvusd',
     symbol: 'scrvUSD',
     iconSrc: curveLogo,
-    token: <>Curve Savings<br />scrvUSD</>,
+    token: 'Curve Savings scrvUSD',
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
   },
   {
@@ -49,13 +51,13 @@ export const COVERED_PROTOCOL_ROWS = [
     symbol: 'sUSDS',
     iconSrc: skyLogo,
     token: 'Sky Savings sUSDS',
-    address: <>0xa3931d71877c0e7a3148cb7eb4463524fec27fbd<br />impl 0x4e7991e5c547ce825bdeb665ee14a3274f9f61e0</>,
+    address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
   },
   {
     id: 'test-msloss',
     symbol: 'msLOSS',
     iconSrc: msLossLogo,
-    token: <>Sepolia Test Loss<br />msLOSS</>,
+    token: 'Sepolia Test Loss msLOSS',
     address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
   },
   // Mainnet E2E test token: local dev server only (never in a production build).
@@ -64,10 +66,18 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'test-test',
     symbol: 'TEST',
     iconSrc: msLossLogo,
-    token: <>Test Token<br />TEST</>,
+    token: 'Test Token TEST',
     address: '0x116e4336047C97703F84619dE03b6Bf893667DE1',
   }] : []),
 ];
+
+/// Explorer page for an insured token on the protocol network, from the
+/// network's own token address list (never the display rows above).
+export function insuredTokenExplorerUrl(tokenId, network = getProtocolNetwork(PROTOCOL_CHAIN_ID)) {
+  const address = network.contracts?.insuredTokens?.[tokenId];
+  const explorer = network.chain?.blockExplorers?.default?.url;
+  return address && explorer ? `${explorer}/token/${address}` : null;
+}
 
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;
 
@@ -155,6 +165,7 @@ export default function CoveredProtocolsTable({
       <tbody>
         {displayedRows.map((row) => {
           const insuranceState = insuredTokenStates?.[row.id];
+          const explorerUrl = insuredTokenExplorerUrl(row.id);
           const reimbursement = insuranceState?.enabled
             ? formatCoverageBps(insuranceState.maxCoverageBps)
             : UNKNOWN_VALUE;
@@ -166,7 +177,23 @@ export default function CoveredProtocolsTable({
             : `${actionLabel} for ${row.id}`;
           return (
           <tr key={row.id}>
-            <td><TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell></td>
+            <td>
+              <span className="table-token-with-links">
+                <TableTokenCell iconSrc={row.iconSrc}>{row.token}</TableTokenCell>
+                {explorerUrl ? (
+                  <a
+                    className="table-explorer-link"
+                    href={explorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`View ${row.symbol} on Etherscan`}
+                    title="View on Etherscan"
+                  >
+                    <img src={etherscanLogo} alt="" />
+                  </a>
+                ) : null}
+              </span>
+            </td>
             <td>
               <span className="percent-with-ring">
                 {reimbursement}

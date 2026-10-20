@@ -69,6 +69,13 @@ const MAINNET_CONTRACTS = Object.freeze({
   // Launch scope: USD8 is the only insured token.
   insuredTokens: Object.freeze({
     usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+    // Listed by plan 20 (usd8-core deployments/mainnet/20-list-sgho-susds-plan.json,
+    // nonces 47-48): 80% coverage each, Chainlink underlying/USD oracle,
+    // conversion = the token's own convertToAssets(1e18).
+    // Aave Savings GHO (current sGHO; NOT the legacy stkGHO 0x1a88…).
+    'aave-sgho': '0xe1753f2e00940cc31213dd92013cf019dfe4ca1d',
+    // Sky Savings USDS.
+    'sky-susds': '0xa3931d71877c0e7a3148cb7eb4463524fec27fbd',
     // Mainnet E2E test token, local dev server only (see LOCAL_E2E_TEST_TOKEN).
     ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? { 'test-test': '0x116e4336047c97703f84619de03b6bf893667de1' } : {}),
   }),

@@ -5,6 +5,7 @@ import { ContractFunctionRevertedError, TimeoutError, createPublicClient, custom
 import App from './App.jsx';
 import { matchesSettlementTopology, settlementPayoutDetails } from './lib/settlement.js';
 import { claimWriteAbi } from './lib/writeAbis.js';
+import { fetchExitRequestedAt } from './lib/exitRequest.js';
 import { RPC_READ_ERROR } from './lib/readErrorMessage.js';
 
 const mocks = vi.hoisted(() => ({
@@ -64,6 +65,10 @@ vi.mock('./lib/transactionClient.js', () => ({
 }));
 
 vi.mock('./lib/scoreApi.js', () => ({ fetchInsuranceScore: mocks.fetchInsuranceScore }));
+vi.mock('./lib/exitRequest.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  fetchExitRequestedAt: vi.fn(async () => null),
+}));
 vi.mock('./lib/claimApi.js', () => ({
   claimApiConfigured: true,
   matchesSettlementContext: (settlement, incidentId, root) => settlement?.incidentId === String(incidentId)
@@ -2341,6 +2346,11 @@ describe('App', () => {
     expect(within(dialog).getByLabelText('USD8-cp-wstETH amount')).toHaveValue('19');
     expect(within(dialog).getByText(/19.00 shares available/).closest('small')).toHaveTextContent('19.00 shares available');
     expect(within(dialog).getByText('0.00 wstETH estimated for withdrawal, 1.00 wstETH in cooldown — ready in 6 days.')).toBeInTheDocument();
+    // The cooldown bar asks for this pool's exit for the connected wallet.
+    expect(fetchExitRequestedAt).toHaveBeenCalledWith(expect.objectContaining({
+      poolAddress: coverPoolFixture().address, cooldownEndsAtMilliseconds,
+    }));
+    expect(fetchExitRequestedAt.mock.calls.at(-1)[0].account).toMatch(/^0x[0-9a-fA-F]{40}$/);
     const submit = within(dialog).getByRole('button', { name: 'Start Cooldown' });
     fireEvent.click(submit);
 

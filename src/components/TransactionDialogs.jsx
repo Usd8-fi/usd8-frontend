@@ -7,6 +7,7 @@ import { defaultTokenAmount, poolActionState, tokenAmountValidationReason } from
 import { decimalInputValue, displayAvailableBalance } from '../lib/displayAvailableBalance.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { durationAdjective } from '../lib/durations.js';
+import { cooldownProgressPercent, fetchExitRequestedAt } from '../lib/exitRequest.js';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
 import { poolRedemptionQuote } from '../lib/poolWithdrawal.js';
 import { redemptionQuote } from '../lib/quote.js';
@@ -98,8 +99,55 @@ function LiveEarningsOutput({ pool }) {
   );
 }
 
+/// Progress of the account's live exit: elapsed share of the cooldown (start
+/// from the account's RedeemRequested log, end = the exit's batch epoch), or a
+/// full bar once it is ready or waiting for claims. Renders nothing without a live exit, and
+/// nothing while the cooldown start is unknown (no guessed progress).
+export function ExitProgress({
+  poolAddress, account, cooldownEndsAtMilliseconds, ready, waitingForClaims, nowMilliseconds,
+}) {
+  const inCooldown = !ready && !waitingForClaims && Number(cooldownEndsAtMilliseconds) > 0;
+  const [requestedAt, setRequestedAt] = useState(null);
+  useEffect(() => {
+    if (!inCooldown) return undefined;
+    const controller = new AbortController();
+    setRequestedAt(null);
+    fetchExitRequestedAt({ poolAddress, account, cooldownEndsAtMilliseconds, signal: controller.signal })
+      .then((value) => { if (!controller.signal.aborted) setRequestedAt(value); })
+      .catch(() => { if (!controller.signal.aborted) setRequestedAt(null); });
+    return () => controller.abort();
+  }, [inCooldown, poolAddress, account, cooldownEndsAtMilliseconds]);
+
+  if (!ready && !waitingForClaims && !inCooldown) return null;
+  const percent = inCooldown ? cooldownProgressPercent(requestedAt, cooldownEndsAtMilliseconds, nowMilliseconds) : 100;
+  if (percent === null) return null;
+  const rounded = Math.floor(percent);
+  // Amounts and the ready time are in the sentence just above; the bar adds the state and share elapsed.
+  const label = ready ? 'Ready to withdraw' : waitingForClaims ? 'Cooldown complete, waiting for claims to finalize' : 'Cooldown progress';
+  const detail = `${rounded}%`;
+  return (
+    <div className="usd8-dialog-exit-progress">
+      <div className="usd8-dialog-exit-progress-labels">
+        <span>{label}</span>
+        <span>{detail}</span>
+      </div>
+      <span
+        className={`usd8-dialog-exit-progress-bar${ready ? ' usd8-dialog-exit-progress-bar--ready' : ''}`}
+        role="progressbar"
+        aria-label="Withdrawal cooldown progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={rounded}
+        style={{ '--exit-progress': `${percent}%` }}
+      />
+    </div>
+  );
+}
+
 export function PoolActionDialog({
   mode,
+  poolAddress = '',
+  account = '',
   poolName = 'cover pool',
   assetSymbol = '',
   shareSymbol = '',
@@ -145,6 +193,7 @@ export function PoolActionDialog({
   const {
     cooldownCompleteWaitingForClaims,
     cooldownTiming,
+    hasWithdrawAvailable,
     amountUnavailableReason,
     withdrawUnavailableReason,
   } = poolActionState({
@@ -262,6 +311,14 @@ export function PoolActionDialog({
                   {displayAvailableBalance(displayedWithdrawAvailable)} {assetSymbol} {exitSettled ? 'ready to withdraw' : 'estimated for withdrawal'}{cooldownCompleteWaitingForClaims ? ' after claims are finalized' : ''}, {' '}
                   {displayAvailableBalance(displayedCooldownBalance)} {assetSymbol} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
                 </small>
+                <ExitProgress
+                  poolAddress={poolAddress}
+                  account={account}
+                  cooldownEndsAtMilliseconds={cooldownEndsAtMilliseconds}
+                  ready={hasWithdrawAvailable && !cooldownCompleteWaitingForClaims}
+                  waitingForClaims={cooldownCompleteWaitingForClaims}
+                  nowMilliseconds={currentTimeMilliseconds}
+                />
                 <AvailabilityAction
                   className="usd8-dialog-submit"
                   type="button"

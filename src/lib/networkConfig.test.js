@@ -53,7 +53,7 @@ describe('network configuration', () => {
       usdOracle: '0x164b276057258d81941e97b0a900d4c7b358bce0',
       deployBlock: 26211040,
     });
-    expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8']);
+    expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8', 'aave-sgho', 'sky-susds']);
     // The test environment serves Sepolia, so mainnet is not the protocol network here.
     expect(getProtocolNetwork(1)).toBeNull();
   });

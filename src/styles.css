@@ -696,6 +696,33 @@ small a,
   gap: 13px;
 }
 
+.table-token-with-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-explorer-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  line-height: 0;
+  /* Muted grey at rest; the full-colour logo on hover/focus. */
+  opacity: 0.45;
+  filter: grayscale(1);
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.table-explorer-link img {
+  width: 16px;
+  height: 16px;
+}
+
+.table-explorer-link:hover,
+.table-explorer-link:focus-visible {
+  opacity: 1;
+  filter: none;
+}
+
 .table-token-icon {
   width: 40px;
   height: 40px;
@@ -1100,6 +1127,48 @@ small a,
   grid-column: 1 / -1;
   margin-top: 70px;
   color: #666;
+}
+
+.usd8-dialog-exit-progress {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  /* Sits with the balances sentence above it rather than a full row-gap away. */
+  margin-top: -14px;
+  /* Half the dialog width, widening only as far as its label needs. */
+  justify-self: start;
+  width: max-content;
+  min-width: 50%;
+  max-width: 100%;
+}
+
+.usd8-dialog-exit-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: var(--font-small);
+  color: #666;
+}
+
+.usd8-dialog-exit-progress-bar {
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    var(--gold) var(--exit-progress, 0%),
+    #686868 var(--exit-progress, 0%)
+  );
+}
+
+.usd8-dialog-exit-progress-bar--ready {
+  background: #08b18f;
+}
+
+/* Phones: half of a narrow dialog is too short to read, so use the full width. */
+@media (max-width: 760px) {
+  .usd8-dialog-exit-progress {
+    width: 100%;
+  }
 }
 
 .usd8-dialog-submit:hover,

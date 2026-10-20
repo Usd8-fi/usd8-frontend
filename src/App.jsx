@@ -1397,6 +1397,8 @@ export default function App({ autoConnect = false }) {
         <PoolActionDialog
           mode={poolAction}
           poolName={activePool?.name || 'cover pool'}
+          poolAddress={activePool?.address || ''}
+          account={address}
           assetSymbol={activePool?.assetSymbol || ''}
           shareSymbol={activePool?.shareSymbol || ''}
           shareDecimals={activePool?.shareDecimals ?? 21}
