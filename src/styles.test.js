@@ -23,4 +23,19 @@ describe('styles.css', () => {
     expect(counts.get('.usd8-spinner')).toBe(1);
     expect(counts.get('.action-button-shell')).toBe(1);
   });
+
+  it('pauses the activity ticker on hover only for devices that can hover (touch taps stick :hover on iOS)', () => {
+    const root = postcss.parse(appStyles, { from: 'src/styles.css' });
+    const pauses = [];
+    root.walkDecls('animation-play-state', (decl) => {
+      if (!decl.parent.selector.includes('.activity-ticker')) return;
+      const media = decl.parent.parent.type === 'atrule' ? decl.parent.parent.params : null;
+      pauses.push({ selector: decl.parent.selector, media });
+    });
+    const hoverPause = pauses.filter((p) => p.selector.includes(':hover'));
+    expect(hoverPause.length).toBeGreaterThan(0);
+    for (const p of hoverPause) expect(p.media).toBe('(hover: hover)');
+    // Focus pauses must be focus-visible (keyboard), never :focus-within, which a tap can leave behind.
+    for (const p of pauses) expect(p.selector).not.toContain('focus-within');
+  });
 });

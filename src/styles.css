@@ -2338,8 +2338,14 @@ body:has(.activity-ticker) { padding-bottom: 29px; }
   animation: activity-ticker-scroll var(--ticker-seconds, 60s) linear infinite;
 }
 
-.activity-ticker:hover .activity-ticker-track,
-.activity-ticker:focus-within .activity-ticker-track { animation-play-state: paused; }
+/* Pause while the pointer rests on it, only for devices with a real hover:
+   iOS Safari applies :hover to whatever was last tapped and keeps it until the
+   next tap elsewhere, which froze the bar after a thumb touched it. Keyboard
+   users still get a pause while a link in the bar has visible focus. */
+@media (hover: hover) {
+  .activity-ticker:hover .activity-ticker-track { animation-play-state: paused; }
+}
+.activity-ticker:has(a:focus-visible) .activity-ticker-track { animation-play-state: paused; }
 
 .activity-ticker-list {
   display: flex;
