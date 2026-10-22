@@ -4,7 +4,6 @@ const mocks = vi.hoisted(() => ({ prepare: vi.fn() }));
 vi.mock('./PublicApp.jsx', () => ({ default: ({ onConnect, connectError }) => <><button onClick={onConnect}>Connect</button><p>{connectError}</p></> }));
 vi.mock('./WalletApp.jsx', () => ({ prepareWallet: mocks.prepare, default: () => <p>Wallet ready</p> }));
 vi.mock('./components/ActivityTicker.jsx', () => ({ default: () => null }));
-vi.mock('./components/SystemDashboard.jsx', () => ({ default: () => <p>System dashboard</p> }));
 import Root from './Root.jsx';
 beforeEach(() => { localStorage.clear(); mocks.prepare.mockReset(); });
 describe('wallet startup', () => {

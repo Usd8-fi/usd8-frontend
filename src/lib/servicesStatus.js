@@ -5,9 +5,11 @@
 
 export const SERVICES_URL = '/services/summary';
 export const SERVICE_SECTIONS = Object.freeze(['costs', 'aws', 'drpc', 'providers', 'web']);
+// Sections a forced refresh may name; `analytics` is optional in the response.
+const REFRESHABLE = Object.freeze([...SERVICE_SECTIONS, 'analytics']);
 
 export async function fetchServices({ signal, refresh = [] } = {}) {
-  const sections = refresh.filter((name) => SERVICE_SECTIONS.includes(name));
+  const sections = refresh.filter((name) => REFRESHABLE.includes(name));
   const url = sections.length ? `${SERVICES_URL}?refresh=${sections.join(',')}` : SERVICES_URL;
   const response = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-store', signal });
   if (response.status === 404) throw new Error('LOCAL_ONLY');

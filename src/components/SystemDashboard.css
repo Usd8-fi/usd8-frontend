@@ -149,7 +149,7 @@
 @keyframes sd-card-sweep { to { left: 130%; } }
 .sd-pool header { display: flex; justify-content: space-between; color: var(--inactive); }
 .sd-pool header b { color: var(--pool); font-weight: 400; letter-spacing: 0.06em; }
-.sd-apys { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
+.sd-apys { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 6px 0; }
 .sd-apys div { display: flex; flex-direction: column; color: var(--inactive); }
 .sd-apys strong { font-weight: 400; font-size: 18px; color: #bdbdbd; }
 .sd-apys .sd-best strong { color: var(--sd-yellow); text-shadow: 0 0 10px #ffcc0055; }
@@ -201,10 +201,11 @@
 .sd-allocation-bar { display: flex; height: 10px; background: #262626; overflow: hidden; margin-bottom: 10px; }
 .sd-allocation-bar i { display: block; height: 100%; transition: width 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .sd-allocation-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.sd-allocation-list li { display: grid; grid-template-columns: 10px 1fr 70px 130px; gap: 10px; align-items: center; border-bottom: 1px dotted var(--sd-line); padding-bottom: 6px; }
+.sd-allocation-list li { display: grid; grid-template-columns: 10px 1fr 70px 130px 110px; gap: 10px; align-items: center; border-bottom: 1px dotted var(--sd-line); padding-bottom: 6px; }
 .sd-allocation-list li i { width: 10px; height: 10px; background: var(--slice); }
 .sd-allocation-list b { font-weight: 400; text-align: right; }
 .sd-allocation-list em { font-style: normal; color: var(--inactive); text-align: right; }
+.sd-allocation-apy { font-weight: 400; text-align: right; }
 
 /* Insurance scores */
 .sd-scores { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -221,6 +222,14 @@
 /* External services (local dashboard server only) */
 .sd-section-title { margin: 18px 0 0; font-size: var(--font-small); font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--inactive); border-top: 1px solid var(--sd-line); padding-top: 18px; }
 .sd-metrics-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 14px; }
+.sd-metrics-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sd-ga-chart { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding-top: 18px; border-bottom: 1px solid var(--sd-line); }
+.sd-ga-bar { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; }
+.sd-ga-fill { position: relative; display: block; width: 100%; min-height: 1px; background: #35e6ff99; }
+.sd-ga-bar:hover .sd-ga-fill { background: #35e6ff; }
+.sd-ga-value { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 2px; font-size: 10px; line-height: 1; color: var(--inactive); white-space: nowrap; }
+.sd-ga-bar:hover .sd-ga-value { color: var(--text); }
+.sd-ga-axis { display: flex; justify-content: space-between; margin: 6px 0 4px; color: var(--inactive); font-size: 12px; }
 .sd-svc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin-top: 14px; }
 .sd-svc-grid > table { margin-top: 0; }
 .sd-svc-line { margin: 8px 0 0; color: var(--inactive); }
@@ -243,6 +252,19 @@
 .sd-action { margin-left: 12px; padding: 4px 10px; border: 1px solid var(--sd-line); background: transparent; color: var(--text); font: inherit; cursor: pointer; min-width: 120px; }
 .sd-action:hover:not(:disabled) { border-color: var(--sd-cyan); }
 .sd-action:disabled { cursor: progress; color: var(--inactive); }
+.sd-deposit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 18px; margin: 4px 0 16px; padding: 14px; border: 1px solid var(--sd-line); }
+.sd-deposit label { display: grid; gap: 6px; }
+.sd-deposit select, .sd-deposit input { width: 100%; padding: 6px 8px; border: 1px solid var(--sd-line); background: transparent; color: var(--text); font: inherit; }
+.sd-deposit select option { background: #1a1a1a; }
+.sd-deposit small { color: var(--inactive); }
+.sd-deposit-amount { display: flex; gap: 8px; }
+.sd-deposit-amount .sd-action { margin-left: 0; min-width: 60px; }
+.sd-deposit-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+.sd-deposit-actions .sd-action { margin-left: 0; }
+.sd-deposit-account { color: var(--inactive); }
+.sd-deposit-status, .sd-deposit-error { grid-column: 1 / -1; margin: 0; }
+.sd-deposit-status { color: var(--inactive); }
+.sd-deposit-error { color: #ff7a59; }
 @media (max-width: 900px) {
   .sd-metrics-4 { grid-template-columns: 1fr 1fr; }
   .sd-svc-grid { grid-template-columns: 1fr; }

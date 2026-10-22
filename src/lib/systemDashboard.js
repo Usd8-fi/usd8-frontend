@@ -27,7 +27,148 @@ const strategyAbi = [
   { type: 'function', name: 'vault', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
 ];
 const nameAbi = [{ type: 'function', name: 'name', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'string' }] }];
+
+// ── Strategy APY: current supply rate of the protocol each strategy lends into ──
+const SECONDS_PER_YEAR = 31_536_000;
+const aaveStrategyAbi = [
+  { type: 'function', name: 'POOL', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
+  { type: 'function', name: 'A_USDC', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
+];
+const aavePoolAbi = [{
+  type: 'function', name: 'getReserveData', stateMutability: 'view', inputs: [{ name: 'asset', type: 'address' }],
+  outputs: [{ name: '', type: 'tuple', components: [
+    { name: 'configuration', type: 'tuple', components: [{ name: 'data', type: 'uint256' }] },
+    { name: 'liquidityIndex', type: 'uint128' }, { name: 'currentLiquidityRate', type: 'uint128' },
+    { name: 'variableBorrowIndex', type: 'uint128' }, { name: 'currentVariableBorrowRate', type: 'uint128' },
+    { name: 'currentStableBorrowRate', type: 'uint128' }, { name: 'lastUpdateTimestamp', type: 'uint40' },
+    { name: 'id', type: 'uint16' }, { name: 'aTokenAddress', type: 'address' },
+    { name: 'stableDebtTokenAddress', type: 'address' }, { name: 'variableDebtTokenAddress', type: 'address' },
+    { name: 'interestRateStrategyAddress', type: 'address' }, { name: 'accruedToTreasury', type: 'uint128' },
+    { name: 'unbacked', type: 'uint128' }, { name: 'isolationModeTotalDebt', type: 'uint128' },
+  ] }],
+}];
+const morphoStrategyAbi = [
+  { type: 'function', name: 'MORPHO_BLUE', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
+  { type: 'function', name: 'EXPECTED_MARKET_ID', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'bytes32' }] },
+];
+const MARKET_PARAMS = { type: 'tuple', components: [
+  { name: 'loanToken', type: 'address' }, { name: 'collateralToken', type: 'address' },
+  { name: 'oracle', type: 'address' }, { name: 'irm', type: 'address' }, { name: 'lltv', type: 'uint256' },
+] };
+const MARKET_STATE = { type: 'tuple', components: [
+  { name: 'totalSupplyAssets', type: 'uint128' }, { name: 'totalSupplyShares', type: 'uint128' },
+  { name: 'totalBorrowAssets', type: 'uint128' }, { name: 'totalBorrowShares', type: 'uint128' },
+  { name: 'lastUpdate', type: 'uint128' }, { name: 'fee', type: 'uint128' },
+] };
+const morphoBlueAbi = [
+  { type: 'function', name: 'idToMarketParams', stateMutability: 'view', inputs: [{ name: 'id', type: 'bytes32' }],
+    outputs: MARKET_PARAMS.components },
+  { type: 'function', name: 'market', stateMutability: 'view', inputs: [{ name: 'id', type: 'bytes32' }],
+    outputs: MARKET_STATE.components },
+];
+const irmAbi = [{
+  type: 'function', name: 'borrowRateView', stateMutability: 'view',
+  inputs: [{ name: 'marketParams', ...MARKET_PARAMS }, { name: 'market', ...MARKET_STATE }],
+  outputs: [{ name: '', type: 'uint256' }],
+}];
+const MORPHO_API_URL = 'https://api.morpho.org/graphql';
+
+/// Aave V3 supply APY from the reserve's `currentLiquidityRate` (an APR in
+/// ray), compounded per second as Aave's own interface does.
+export function aaveSupplyApy(liquidityRateRay) {
+  const apr = Number(liquidityRateRay) / 1e27;
+  if (!Number.isFinite(apr) || apr < 0) return null;
+  return (1 + apr / SECONDS_PER_YEAR) ** SECONDS_PER_YEAR - 1;
+}
+
+/// Morpho Blue supply APY: borrow rate per second × utilization × (1 − fee),
+/// compounded continuously. Matches the Morpho API's `supplyApy`.
+export function morphoSupplyApy({ borrowRate, totalSupplyAssets, totalBorrowAssets, fee }) {
+  if (!totalSupplyAssets) return 0;
+  const utilization = Number(totalBorrowAssets) / Number(totalSupplyAssets);
+  const ratePerSecond = (Number(borrowRate) / 1e18) * utilization * (1 - Number(fee) / 1e18);
+  const apy = Math.expm1(ratePerSecond * SECONDS_PER_YEAR);
+  return Number.isFinite(apy) && apy >= 0 ? apy : null;
+}
+
+/// Reserve-weighted APY across every row, idle USDC counted at 0%. Null when
+/// any funded row's APY is unknown: a partial average would overstate or
+/// understate the reserve's yield.
+export function reserveApy(rows) {
+  if (!rows?.length) return null;
+  let total = 0;
+  let earning = 0;
+  for (const row of rows) {
+    if (!(row.amount > 0)) continue;
+    if (row.apy === null || row.apy === undefined) return null;
+    total += row.amount;
+    earning += row.amount * row.apy;
+  }
+  return total > 0 ? earning / total : null;
+}
+
+async function morphoVaultApy(vault) {
+  const query = `query ($address: String!) {
+    v2: vaultV2ByAddress(address: $address, chainId: 1) { address netApy }
+  }`;
+  const legacy = `query ($address: String!) {
+    v1: vaultByAddress(address: $address, chainId: 1) { address state { netApy } }
+  }`;
+  for (const [body, pick] of [[query, data => data?.v2?.netApy], [legacy, data => data?.v1?.state?.netApy]]) {
+    const response = await fetch(MORPHO_API_URL, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: body, variables: { address: vault } }),
+    }).catch(() => null);
+    if (!response?.ok) continue;
+    const payload = await response.json().catch(() => null);
+    const apy = Number(pick(payload?.data));
+    if (pick(payload?.data) !== null && pick(payload?.data) !== undefined && Number.isFinite(apy)) return apy;
+  }
+  return null;
+}
+
+/// Current APY of one strategy, read from the protocol it lends into: Aave V3
+/// reserve rate, Morpho Blue market rate, or (ERC-4626 strategies) the Morpho
+/// API's net APY for the target vault. Null when it cannot be determined.
+async function readStrategyApy(client, network, address, vault, blockNumber) {
+  const read = (args) => client.readContract({ ...args, blockNumber });
+  const aave = await Promise.all([
+    read({ address, abi: aaveStrategyAbi, functionName: 'POOL' }),
+    read({ address, abi: aaveStrategyAbi, functionName: 'A_USDC' }),
+  ]).catch(() => null);
+  if (aave) {
+    const [pool, aToken] = aave;
+    const reserve = await read({ address: pool, abi: aavePoolAbi, functionName: 'getReserveData', args: [network.contracts.usdc] });
+    if (reserve.aTokenAddress.toLowerCase() !== aToken.toLowerCase()) return null;
+    return aaveSupplyApy(reserve.currentLiquidityRate);
+  }
+  const morpho = await Promise.all([
+    read({ address, abi: morphoStrategyAbi, functionName: 'MORPHO_BLUE' }),
+    read({ address, abi: morphoStrategyAbi, functionName: 'EXPECTED_MARKET_ID' }),
+  ]).catch(() => null);
+  if (morpho) {
+    const [blue, id] = morpho;
+    const [params, state] = await Promise.all([
+      read({ address: blue, abi: morphoBlueAbi, functionName: 'idToMarketParams', args: [id] }),
+      read({ address: blue, abi: morphoBlueAbi, functionName: 'market', args: [id] }),
+    ]);
+    const [loanToken, collateralToken, oracle, irm, lltv] = params;
+    const [totalSupplyAssets, totalSupplyShares, totalBorrowAssets, totalBorrowShares, lastUpdate, fee] = state;
+    const borrowRate = await read({
+      address: irm, abi: irmAbi, functionName: 'borrowRateView',
+      args: [{ loanToken, collateralToken, oracle, irm, lltv },
+        { totalSupplyAssets, totalSupplyShares, totalBorrowAssets, totalBorrowShares, lastUpdate, fee }],
+    });
+    return morphoSupplyApy({ borrowRate, totalSupplyAssets, totalBorrowAssets, fee });
+  }
+  return vault ? morphoVaultApy(vault) : null;
+}
 const shortAddress = (address) => `${address.slice(0, 6)}…${address.slice(-4)}`;
+// Strategies without a vault() to name them (mainnet, usd8-core plan 15).
+const KNOWN_STRATEGIES = {
+  '0x4fc76e9c2df9fb26cc7e61bfd5649ad062fb8c9f': 'Morpho PT-reUSD Dec 2026 Market',
+  '0x42d979247539fd699a125200247be2c8c7f617f0': 'Aave V3 USDC',
+};
 
 /// Where the reserve sits: idle USDC in the Treasury plus each approved
 /// strategy's reported assets, in withdrawal order. Mirrors the sum inside
@@ -46,14 +187,16 @@ async function readReserveAllocation(client, network, blockNumber) {
     // Label by the strategy's target vault name when it exposes one (ERC4626Strategy).
     const vault = await client.readContract({ address, abi: strategyAbi, functionName: 'vault', blockNumber }).catch(() => null);
     const name = vault ? await client.readContract({ address: vault, abi: nameAbi, functionName: 'name', blockNumber }).catch(() => null) : null;
-    return { key: address.toLowerCase(), label: name || `Strategy ${shortAddress(address)}`, address, assets };
+    const apy = await readStrategyApy(client, network, address, vault, blockNumber).catch(() => null);
+    return { key: address.toLowerCase(), label: name || KNOWN_STRATEGIES[address.toLowerCase()] || `Strategy ${shortAddress(address)}`, address, assets, apy };
   }));
-  const rows = [{ key: 'idle', label: 'Idle USDC (Treasury)', address: treasury, assets: idle }, ...strategies];
+  const rows = [{ key: 'idle', label: 'Idle USDC (Treasury)', address: treasury, assets: idle, apy: 0 }, ...strategies];
   const total = rows.reduce((sum, row) => sum + row.assets, 0n);
   return rows.map((row) => ({
     key: row.key, label: row.label, address: row.address,
     amount: toNumber(row.assets, USDC_DECIMALS),
     percent: total > 0n ? Number((row.assets * 1_000_000n) / total) / 10_000 : null,
+    apy: row.apy,
   }));
 }
 // Treasury Minted(user, usdcAmount, usd8Amount) / Redeemed(user, usd8Amount, usdcAmount).
@@ -119,18 +262,19 @@ async function readReserve(client, network, signal) {
     readReserveAllocation(client, network, head.number).catch(() => { checkAbort(signal); return null; }),
   ]);
   const reserve = toNumber(current, USDC_DECIMALS);
+  const apy = allocation ? reserveApy(allocation) : null;
   const deployBlock = network.contracts.treasuryDeployBlock;
-  if (deployBlock === undefined || !network.explorerApiUrl) return { reserve, allocation, series: [] };
+  if (deployBlock === undefined || !network.explorerApiUrl) return { reserve, allocation, apy, series: [] };
   const nowSeconds = Number(head.timestamp);
   // Deploy time estimated from the slot time: avoids an archive block read.
   const deploySeconds = nowSeconds - Number(head.number - BigInt(deployBlock)) * BLOCK_SECONDS;
   const sinceSeconds = Math.max(deploySeconds, nowSeconds - RESERVE_HISTORY_SECONDS);
   const history = await fetchReserveFlows(network.explorerApiUrl, treasury, sinceSeconds, { signal })
     .catch(() => { checkAbort(signal); return null; });
-  if (!history) return { reserve, allocation, series: [] };
+  if (!history) return { reserve, allocation, apy, series: [] };
   const startSeconds = history.complete || !history.flows.length
     ? sinceSeconds : Math.min(...history.flows.map((flow) => flow.timestamp));
-  return { reserve, allocation, series: reserveSeries({ flows: history.flows, current, nowSeconds, startSeconds }) };
+  return { reserve, allocation, apy, series: reserveSeries({ flows: history.flows, current, nowSeconds, startSeconds }) };
 }
 
 const registryTimingAbi = [{

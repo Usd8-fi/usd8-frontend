@@ -11,3 +11,30 @@ worker/.dev.vars
 # Lambda deployment bundle (build artifact)
 terms-api/fn.zip
 .env.*.local
+
+# Local-only System Dashboard and ops tooling (admin views, Telegram event
+# alerts): never published. Built from this checkout into ~/defi-dashboard.
+src/dashboardMain.jsx
+vite.dashboard.config.mjs
+vite.alerts.config.mjs
+scripts/eventAlerts.mjs
+scripts/eventAlerts.test.mjs
+src/components/SystemDashboard.jsx
+src/components/SystemDashboard.css
+src/components/SystemDashboard.test.jsx
+src/components/SystemDashboardParts.jsx
+src/components/ExternalServices.jsx
+src/components/ExternalServices.test.jsx
+src/components/AppErrors.jsx
+src/components/AppErrors.test.jsx
+src/components/StrategyDeposit.jsx
+src/components/StrategyDeposit.test.jsx
+src/lib/systemDashboard.js
+src/lib/systemDashboard.test.js
+src/lib/servicesStatus.js
+src/lib/appErrors.js
+src/lib/teeStatus.js
+src/lib/strategyDeposit.js
+src/lib/adminActivity.js
+src/lib/adminActivity.test.js
+src/lib/adminEventsAbi.json

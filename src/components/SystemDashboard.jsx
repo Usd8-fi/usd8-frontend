@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import usd8Logo from '../assets/usd8Logo.svg';
 import usd8Wordmark from '../assets/usd8-wordmark.svg';
 import { fetchActivity } from '../lib/activityFeed.js';
+import { fetchAdminActivity } from '../lib/adminActivity.js';
 import { cachedData, protocolKey } from '../lib/dataCache.js';
 import { onForegroundRefresh } from '../lib/foregroundRefresh.js';
 import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
@@ -12,7 +13,8 @@ import { fetchTeeFleet, fetchTeeOnchain } from '../lib/teeStatus.js';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import PercentRing from './PercentRing.jsx';
 import AppErrors from './AppErrors.jsx';
-import ExternalServices from './ExternalServices.jsx';
+import ExternalServices, { useServices, WebsiteTraffic } from './ExternalServices.jsx';
+import StrategyDeposit from './StrategyDeposit.jsx';
 import { Metric, Panel } from './SystemDashboardParts.jsx';
 import './SystemDashboard.css';
 
@@ -29,12 +31,12 @@ const poolColor = (pool, index) => ASSET_COLORS[String(pool?.assetSymbol || '').
 const KIND_COLORS = {
   mint: '#35e6ff', redeem: '#35e6ff', deposit: '#ffcc00', save: '#ffcc00', unsave: '#ffcc00',
   exitQueued: '#ffb53d', exitCompleted: '#ffb53d', rewardClaimed: '#a78bff', rewardsAdded: '#a78bff',
-  claimFiled: '#ff7a59', claimPaid: '#ff4d5e', incidentSettled: '#ff4d5e',
+  claimFiled: '#ff7a59', claimPaid: '#ff4d5e', incidentSettled: '#ff4d5e', admin: '#ff5fd2',
 };
 const KIND_LABELS = {
   mint: 'Mint', redeem: 'Redeem', deposit: 'Deposit', save: 'Save', unsave: 'Withdraw', exitQueued: 'Exit Queued',
   exitCompleted: 'Exit Done', rewardClaimed: 'Reward', rewardsAdded: 'Rewards', claimFiled: 'Claim Filed',
-  claimPaid: 'Claim Paid', incidentSettled: 'Incident',
+  claimPaid: 'Claim Paid', incidentSettled: 'Incident', admin: 'Admin',
 };
 
 const reducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
@@ -160,13 +162,16 @@ function Sparkline({ points, color }) {
   return <canvas ref={ref} className="sd-spark" aria-hidden="true" />;
 }
 
-/// Trailing APY per pool: solid 30D, dashed 7D. Hover to scrub; it scans by itself when idle.
+const THIRTY_DAYS = 30 * 86_400;
+
+/// 30-day trailing APY per pool over the past 30 days. Static; hover to read a point.
 function YieldChart({ pools }) {
   const hover = useRef(null);
-  const lines = pools.flatMap((pool, index) => [
-    { key: `${pool.id}-30`, label: `${pool.assetSymbol} 30D`, color: poolColor(pool, index), dash: false, points: pool.series.apy30 },
-    { key: `${pool.id}-7`, label: `${pool.assetSymbol} 7D`, color: poolColor(pool, index), dash: true, points: pool.series.apy7 },
-  ]);
+  const newest = Math.max(0, ...pools.flatMap(pool => pool.series.apy30.map(point => point.t)));
+  const lines = pools.map((pool, index) => ({
+    key: `${pool.id}-30`, label: `${pool.assetSymbol} 30D`, color: poolColor(pool, index), dash: false,
+    points: pool.series.apy30.filter(point => point.t >= newest - THIRTY_DAYS),
+  }));
   const ref = useCanvas((context, width, height, time, still) => {
     const all = lines.flatMap(line => line.points);
     context.font = '11px "BlexMono Nerd Font Mono", monospace';
@@ -190,24 +195,22 @@ function YieldChart({ pools }) {
     context.fillText(stamp(t0), left, height - 3);
     const endLabel = stamp(t1);
     context.fillText(endLabel, width - context.measureText(endLabel).width - 4, height - 3);
-    const progress = Math.min(1, time / 1100);
     lines.forEach(line => {
       if (!line.points.length) return;
-      const shown = line.points.filter(point => point.t <= t0 + (t1 - t0) * progress);
+      const shown = line.points;
       context.beginPath();
       shown.forEach((point, i) => { if (i) context.lineTo(x(point.t), y(point.v)); else context.moveTo(x(point.t), y(point.v)); });
       context.setLineDash(line.dash ? [5, 4] : []);
       context.strokeStyle = line.color; context.lineWidth = 1.6; context.shadowColor = line.color; context.shadowBlur = 5; context.stroke();
       context.shadowBlur = 0; context.setLineDash([]);
     });
-    if (progress < 1) return;
-    const cursor = hover.current ?? (still ? 1 : ((time / 9000) % 1.3));
-    if (cursor > 1) return;
+    const cursor = hover.current;
+    if (cursor === null) return;
     // Snap to the nearest real sample so the dots sit exactly on the cursor.
     const wanted = t0 + (t1 - t0) * cursor;
     const ct = all.reduce((best, point) => (Math.abs(point.t - wanted) < Math.abs(best - wanted) ? point.t : best), all[0].t);
     const cx = x(ct);
-    context.strokeStyle = hover.current === null ? '#35e6ff66' : '#ffffff99'; context.setLineDash([3, 3]);
+    context.strokeStyle = '#ffffff99'; context.setLineDash([3, 3]);
     context.beginPath(); context.moveTo(cx, top); context.lineTo(cx, bottom); context.stroke(); context.setLineDash([]);
     let row = 0;
     lines.forEach(line => {
@@ -258,6 +261,9 @@ function InsuredSupply({ data, stale }) {
   );
 }
 
+// APY as a fraction (0.0384) → "3.84% APY"; unknown → a static dash.
+const apyText = apy => (apy === null || apy === undefined || !Number.isFinite(apy) ? '—' : `${(apy * 100).toFixed(2)}% APY`);
+
 const ALLOCATION_COLORS = ['#ffcc00', '#6f8cff', '#35e6ff', '#a78bff', '#ffb53d', '#ff7a59'];
 
 function ReserveAllocation({ rows }) {
@@ -272,6 +278,7 @@ function ReserveAllocation({ rows }) {
         {rows.map((row, index) => (
           <li key={row.key} style={{ '--slice': ALLOCATION_COLORS[index % ALLOCATION_COLORS.length] }}>
             <i /><span>{row.label}</span><b>{percent(row.percent) ?? '—'}</b><em>{row.amount.toFixed(2)} USDC</em>
+            <strong className="sd-allocation-apy">{apyText(row.apy)}</strong>
           </li>
         ))}
       </ul>
@@ -279,12 +286,24 @@ function ReserveAllocation({ rows }) {
   );
 }
 
-function Reserve({ data, stale }) {
+function Reserve({ data, stale, onChanged }) {
   const reserve = data?.reserve;
   const supply = data?.insured?.supply ?? null;
   const backing = reserve?.reserve !== null && reserve?.reserve !== undefined && supply ? (reserve.reserve / supply) * 100 : null;
+  const [depositOpen, setDepositOpen] = useState(false);
+  const strategies = (reserve?.allocation ?? []).filter(row => row.key !== 'idle');
   return (
-    <Panel title="USD8 Reserve" note="USDC held by the Treasury" stale={stale}>
+    <Panel
+      title="USD8 Reserve"
+      note="USDC held by the Treasury"
+      stale={stale}
+      action={strategies.length ? (
+        <button type="button" className="sd-action" aria-expanded={depositOpen} onClick={() => setDepositOpen(open => !open)}>
+          Deploy To Strategy
+        </button>
+      ) : null}
+    >
+      {depositOpen ? <StrategyDeposit strategies={strategies} onClose={() => setDepositOpen(false)} onDeposited={onChanged} /> : null}
       <div className="sd-insured-grid">
         <div>
           <span className="sd-label">Reserve</span>
@@ -292,9 +311,10 @@ function Reserve({ data, stale }) {
             {data ? <><AnimatedNumber value={reserve?.reserve ?? null} format={value => value.toFixed(2)} fallback="—" /><small> USDC</small></> : <LoadingSpinner label="Loading USD8 reserve" />}
           </div>
         </div>
-        <div className="sd-metrics">
+        <div className="sd-metrics sd-metrics-3">
           <Metric label="USD8 Supply">{data ? <AnimatedNumber value={supply} format={value => value.toFixed(2)} fallback="—" /> : <LoadingSpinner />}</Metric>
           <Metric label="Reserve ÷ Supply">{data ? (percent(backing) ?? '—') : <LoadingSpinner />}</Metric>
+          <Metric label="Overall APY">{data ? (reserve?.apy === null || reserve?.apy === undefined ? '—' : `${(reserve.apy * 100).toFixed(2)}%`) : <LoadingSpinner />}</Metric>
         </div>
       </div>
       <span className="sd-label">Where The Reserve Sits</span>
@@ -307,11 +327,11 @@ function Reserve({ data, stale }) {
 
 function EventTape({ items, loading, stale }) {
   return (
-    <Panel title="Event Tape" note="Real transactions · explorer index" stale={stale}>
+    <Panel title="Event Tape" note="User and admin events · explorer index" stale={stale}>
       {loading ? <LoadingSpinner label="Loading recent activity" /> : null}
       {!loading && !items.length ? <p className="sd-empty">No Recent Activity</p> : null}
       <ol className="sd-tape">
-        {items.slice(0, 12).map((item, index) => {
+        {items.slice(0, 20).map((item, index) => {
           const kind = item.id.split(':')[1];
           const color = KIND_COLORS[kind] || '#fff';
           return (
@@ -331,17 +351,12 @@ function EventTape({ items, loading, stale }) {
 }
 
 function PoolCard({ pool, color }) {
-  const week = pool.apy7 === null ? null : Number.parseFloat(pool.apy7);
-  const month = pool.apy30 === null ? null : Number.parseFloat(pool.apy30);
-  const better = week !== null && month !== null && week > month ? '7D' : month === null && week !== null ? '7D' : '30D';
   return (
     <article className="sd-pool" style={{ '--pool': color }} aria-label={pool.name}>
       <header><b>{pool.shareSymbol}</b><span>{pool.assetSymbol}</span></header>
       <div className="sd-big"><AnimatedNumber value={pool.tvlUsd} format={value => usd(value)} fallback="—" /></div>
       <div className="sd-apys">
-        {[['7D', pool.apy7], ['30D', pool.apy30]].map(([label, value]) => (
-          <div key={label} className={better === label ? 'sd-best' : undefined}><span>{label} APY</span><strong>{value ?? '—'}</strong></div>
-        ))}
+        <div className="sd-best"><span>30D APY</span><strong>{pool.apy30 ?? '—'}</strong></div>
       </div>
       <Sparkline points={pool.series.tvl} color={color} />
       <div className="sd-bar" role="img" aria-label={pool.capacityUncapped ? 'Uncapped pool' : `${pool.capacityPercent}% capacity filled`}>
@@ -370,7 +385,7 @@ function CoverPools({ data, stale }) {
 
 function PoolYield({ data, stale }) {
   return (
-    <Panel title="Cover Pool Yield" note="Trailing APY · solid 30D · dashed 7D" stale={stale}>
+    <Panel title="Cover Pool Yield" note="30-day trailing APY · past 30 days" stale={stale}>
       {data ? (
         <>
           <div className="sd-legend">{data.pools.map((pool, index) => <span key={pool.id} style={{ '--pool': poolColor(pool, index) }}><i />{pool.assetSymbol}</span>)}</div>
@@ -569,8 +584,14 @@ export default function SystemDashboard() {
   const network = getProtocolNetwork(PROTOCOL_CHAIN_ID);
   const system = useRefreshing(signal => loadSystemDashboard(PROTOCOL_CHAIN_ID, { signal, staleTime: REFRESH_MS }), 'system');
   const activity = useRefreshing(signal => cachedData(protocolKey(network, 'activity'),
-    ({ signal: querySignal }) => fetchActivity(network, { signal: querySignal }), { signal, staleTime: REFRESH_MS }), 'activity');
+    ({ signal: querySignal }) => fetchActivity(network, { signal: querySignal }), { signal, staleTime: REFRESH_MS })
+    // Admin-only dashboard: admin and control events join the user activity.
+    .then(async users => {
+      const admin = await fetchAdminActivity(network, { signal }).catch(() => []);
+      return [...users, ...admin].sort((a, b) => b.at - a.at);
+    }), 'activity');
   const now = useSecondClock(true);
+  const services = useServices();
   const data = system.value;
   const age = data ? Math.max(0, Math.floor((now - system.updatedAt) / 1000)) : 0;
   const stale = Boolean(data) && (Boolean(system.error) || now - system.updatedAt > STALE_AFTER_MS);
@@ -592,15 +613,16 @@ export default function SystemDashboard() {
       ) : null}
 
       <InsuredSupply data={data} stale={stale} />
-      <Reserve data={data} stale={stale} />
+      <Reserve data={data} stale={stale} onChanged={system.retry} />
       <EventTape items={activity.value ?? []} loading={activity.value === null && !activity.error} stale={Boolean(activity.error) && activity.value !== null} />
       <CoverPools data={data} stale={stale} />
       <PoolYield data={data} stale={stale} />
+      <InsuranceScores now={now || Date.now()} />
+      <WebsiteTraffic services={services} />
       <ExitQueue data={data} stale={stale} now={now || Date.now()} />
       <TeeStatus now={now || Date.now()} />
-      <InsuranceScores now={now || Date.now()} />
       <AppErrors now={now || Date.now()} />
-      <ExternalServices now={now || Date.now()} />
+      <ExternalServices now={now || Date.now()} services={services} />
       <a className="sd-back" href="#">Back To App</a>
     </main>
   );

@@ -29,9 +29,11 @@ describe('content security policy', () => {
     }
   });
 
-  it('allows every USD8 API the app calls (score, claims, terms, TEE status)', () => {
-    const origins = serviceOrigins();
-    expect(origins.length).toBeGreaterThanOrEqual(5);
+  it('allows every USD8 API the app calls (score, claims, terms)', () => {
+    // The local-only dashboard modules (gitignored) may sit in src/lib on a
+    // developer machine; their TEE status API is not part of the public site.
+    const origins = serviceOrigins().filter((origin) => !origin.includes('dx3jgwcfhb7dxafa2qqtfcbzgu0dodyf'));
+    expect(origins.length).toBeGreaterThanOrEqual(4);
     for (const origin of origins) expect(allowed(origin), origin).toBe(true);
   });
 

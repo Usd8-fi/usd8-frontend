@@ -17,147 +17,123 @@ function ageText(seconds) {
   if (seconds < 86_400) return `${Math.floor(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
   return `${Math.floor(seconds / 86_400)}d ${Math.round((seconds % 86_400) / 3600)}h`;
 }
-const monthLabel = (month, partial) => {
-  const name = new Date(`${month}-01T00:00:00Z`).toLocaleString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-  return partial ? `${name} (To Date)` : name;
-};
 
 function SectionError({ section, label }) {
   if (!section?.error) return null;
   return <p className="sd-empty">{`${label} unavailable: ${section.error}`}{section.data ? ' (showing last good data)' : ''}</p>;
 }
 
-function AwsCosts({ section, onRefresh, refreshing }) {
-  const data = section?.data;
-  const current = data?.months.at(-1);
-  const budget = data?.budget;
+/// One AWS panel: this month's bill on top, then live usage as a few totals.
+/// Detail rows appear only when something needs attention.
+function Aws({ costs, usage, onRefresh, refreshing, now }) {
+  const bill = costs?.data;
+  const live = usage?.data;
+  const current = bill?.months.at(-1);
+  const budget = bill?.budget;
+  const nowSeconds = Math.floor(now / 1000);
+  const sum = (rows, read) => (rows ?? []).reduce((total, row) => total + (Number(read(row)) || 0), 0);
+  const failingLambdas = (live?.lambdas ?? []).filter((fn) => fn['7d'].Errors || fn['7d'].Throttles);
+  const failingGateways = (live?.gateways ?? []).filter((api) => api['7d']['5xx']);
+  const freeTierWarnings = (bill?.freeTier ?? []).filter((row) => row.forecastPercent >= 80);
+  const notes = [
+    costs ? `costs as of ${hhmm(costs.updatedAt)}` : '',
+    usage ? `usage as of ${hhmm(usage.updatedAt)}` : '',
+  ].filter(Boolean).join(' · ');
   return (
     <Panel
-      title="AWS Costs"
-      note={section ? `Cost Explorer · cached daily · as of ${hhmm(section.updatedAt)}` : ''}
+      title="AWS"
+      note={notes}
       action={<button type="button" className="sd-action" onClick={onRefresh} disabled={refreshing}>{refreshing ? <LoadingSpinner /> : 'Refresh Costs'}</button>}
     >
-      <SectionError section={section} label="AWS costs" />
-      {!data ? (!section?.error ? <LoadingSpinner label="Loading AWS costs" /> : null) : (
-        <>
-          <div className="sd-metrics sd-metrics-4">
-            <Metric label="Usage This Month">{dollars(current?.usage) ?? '—'}</Metric>
-            <Metric label="Forecast This Month">{dollars(data.forecastMonth) ?? '—'}</Metric>
-            <Metric label="Credits Applied">{dollars(current ? -current.credits : null) ?? '—'}</Metric>
-            <Metric label="You Pay This Month">{dollars(current?.net === 0 ? 0 : current?.net) ?? '—'}</Metric>
-          </div>
-          {budget ? (
-            <p className="sd-svc-line">
-              {`Budget ${budget.name}: ${dollars(budget.actual ?? 0)} of ${dollars(budget.limit)} (usage before credits) · email alerts at `}
-              {budget.alerts.map((alert) => `${alert.type === 'Forecasted' ? 'forecast ' : ''}${dollars(alert.threshold)}`).join(', ')}
-            </p>
-          ) : <p className="sd-svc-line sd-svc-warn">No AWS budget alert configured</p>}
-          <div className="sd-svc-grid">
-            <table className="sd-scores">
-              <thead><tr><th>Month</th><th className="sd-right">Usage</th><th className="sd-right">Credits</th><th className="sd-right">You Pay</th></tr></thead>
-              <tbody>
-                {data.months.map((month) => (
-                  <tr key={month.month}>
-                    <td>{monthLabel(month.month, month.partial)}</td>
-                    <td className="sd-right">{dollars(month.usage)}</td>
-                    <td className="sd-right">{dollars(month.credits === 0 ? 0 : month.credits)}</td>
-                    <td className="sd-right">{dollars(Math.abs(month.net) < 0.005 ? 0 : month.net)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <table className="sd-scores">
-              <thead><tr><th>Service (This Month)</th><th className="sd-right">Usage</th></tr></thead>
-              <tbody>
-                {data.services.filter((row) => row.usage >= 0.01).slice(0, 6).map((row) => (
-                  <tr key={row.service}><td>{row.service}</td><td className="sd-right">{dollars(row.usage)}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {data.freeTier?.length ? (
-            <table className="sd-scores">
-              <thead><tr><th>Free Tier</th><th className="sd-right">Used</th><th className="sd-right">Limit</th><th className="sd-right">Month Forecast</th></tr></thead>
-              <tbody>
-                {data.freeTier.slice(0, 4).map((row) => (
-                  <tr key={`${row.service}-${row.usageType}`} className={row.forecastPercent >= 80 ? 'sd-warn' : ''}>
-                    <td>{`${row.service} · ${row.usageType}`}</td>
-                    <td className="sd-right">{count(row.used)}</td>
-                    <td className="sd-right">{count(row.limit)}</td>
-                    <td className="sd-right">{`${row.forecastPercent}%`}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-          <p className="sd-svc-foot">Remaining promotional credit balance is not available from the AWS API · each cost refresh calls Cost Explorer ({data.costExplorerCallsPerRefresh} × $0.01)</p>
-        </>
+      <SectionError section={costs} label="AWS costs" />
+      <SectionError section={usage} label="AWS usage" />
+      {!bill ? (!costs?.error ? <LoadingSpinner label="Loading AWS costs" /> : null) : (
+        <div className="sd-metrics sd-metrics-4">
+          <Metric label="Cost This Month">{dollars(current?.usage) ?? '—'}</Metric>
+          <Metric label="Forecast This Month">{dollars(bill.forecastMonth) ?? '—'}</Metric>
+          <Metric label="Credits Applied">{dollars(current ? -current.credits : null) ?? '—'}</Metric>
+          <Metric label="You Pay This Month">{dollars(current?.net === 0 ? 0 : current?.net) ?? '—'}</Metric>
+        </div>
       )}
+      {!live ? (!usage?.error ? <LoadingSpinner label="Loading AWS usage" /> : null) : (
+        <div className="sd-metrics sd-metrics-4">
+          <Metric label="TEE Workers Running">{count(live.ec2.running.length)}</Metric>
+          <Metric label="Lambda Calls 24h">{count(sum(live.lambdas, (fn) => fn['24h'].Invocations))}</Metric>
+          <Metric label="Errors 7d">{count(sum(live.lambdas, (fn) => fn['7d'].Errors + fn['7d'].Throttles) + sum(live.gateways, (api) => api['7d']['5xx']))}</Metric>
+          <Metric label="Storage">{formatBytes(sum(live.s3, (bucket) => bucket.bytes) + sum(live.dynamodb, (table) => table.bytes)) ?? '—'}</Metric>
+        </div>
+      )}
+      {bill ? (
+        <table className="sd-scores">
+          <thead><tr><th>Cost By Service (This Month)</th><th className="sd-right">Cost</th></tr></thead>
+          <tbody>
+            {bill.services.filter((row) => row.usage >= 0.01).slice(0, 6).map((row) => (
+              <tr key={row.service}><td>{row.service}</td><td className="sd-right">{dollars(row.usage)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+      {failingLambdas.length || failingGateways.length ? (
+        <p className="sd-svc-line sd-svc-warn">
+          {[...failingLambdas.map((fn) => `${fn.name}: ${fn['7d'].Errors} errors, ${fn['7d'].Throttles} throttles (7d)`),
+            ...failingGateways.map((api) => `${api.name}: ${api['7d']['5xx']} 5xx (7d)`)].join(' · ')}
+        </p>
+      ) : null}
+      {freeTierWarnings.length ? (
+        <p className="sd-svc-line sd-svc-warn">{freeTierWarnings.map((row) => `Free tier ${row.service} · ${row.usageType}: ${row.forecastPercent}% forecast this month`).join(' · ')}</p>
+      ) : null}
+      {live?.ec2.running.length ? (
+        <p className="sd-svc-line">{live.ec2.running.map((instance) => `${instance.id} ${instance.type} running for ${ageText(nowSeconds - Math.floor(Date.parse(instance.launchedAt) / 1000))}`).join(' · ')}</p>
+      ) : null}
+      {bill ? (
+        budget ? (
+          <p className="sd-svc-foot">{`Budget ${budget.name}: ${dollars(budget.actual ?? 0)} of ${dollars(budget.limit)} before credits · each cost refresh calls Cost Explorer (${bill.costExplorerCallsPerRefresh} × $0.01)`}</p>
+        ) : <p className="sd-svc-line sd-svc-warn">No AWS budget alert configured</p>
+      ) : null}
     </Panel>
   );
 }
 
-function AwsUsage({ section, now }) {
+const dayLabel = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+/// Google Analytics (GA4, read-only): live visitors, today, yesterday, and a
+/// static 30-day daily-visitors chart. Bars carry their values as tooltips.
+function Analytics({ section, onRefresh, refreshing }) {
   const data = section?.data;
-  const nowSeconds = Math.floor(now / 1000);
-  const pendingKeys = data?.kms.filter((key) => key.state === 'PendingDeletion').length ?? 0;
+  const days = data?.days ?? [];
+  const peak = Math.max(1, ...days.map((day) => day.visitors));
   return (
-    <Panel title="AWS Usage" note={section ? `CloudWatch and service APIs · as of ${hhmm(section.updatedAt)}` : ''}>
-      <SectionError section={section} label="AWS usage" />
-      {!data ? (!section?.error ? <LoadingSpinner label="Loading AWS usage" /> : null) : (
+    <Panel
+      title="Website Visitors"
+      note={section ? `Google Analytics · as of ${hhmm(section.updatedAt)}` : 'Google Analytics'}
+      action={<button type="button" className="sd-action" onClick={onRefresh} disabled={refreshing}>{refreshing ? <LoadingSpinner /> : 'Refresh'}</button>}
+    >
+      <SectionError section={section} label="Google Analytics" />
+      {!data ? (!section?.error ? <LoadingSpinner label="Loading Google Analytics" /> : null) : (
         <>
           <div className="sd-metrics sd-metrics-4">
-            <Metric label="TEE Workers Running">{count(data.ec2.running.length)}</Metric>
-            <Metric label="Lambda Concurrency Limit">{count(data.lambdaConcurrency.limit)}</Metric>
-            <Metric label="Enclave Images">{`${data.ec2.images.length} · ${data.ec2.snapshotGb} GB snapshots`}</Metric>
-            <Metric label="KMS Keys">{`${data.kms.length - pendingKeys} active${pendingKeys ? ` · ${pendingKeys} pending deletion` : ''}`}</Metric>
+            <Metric label="Live Now">{count(data.liveVisitors)}</Metric>
+            <Metric label="Today">{count(data.today?.visitors ?? 0)}</Metric>
+            <Metric label="Yesterday">{count(data.yesterday?.visitors ?? 0)}</Metric>
+            <Metric label="Visitors 30D">{count(data.visitors30d)}</Metric>
           </div>
-          <table className="sd-scores">
-            <thead><tr><th>Lambda Function</th><th className="sd-right">Calls 24h</th><th className="sd-right">Calls 7d</th><th className="sd-right">Errors 7d</th><th className="sd-right">Throttles 7d</th><th className="sd-right">Avg 24h</th></tr></thead>
-            <tbody>
-              {data.lambdas.map((fn) => (
-                <tr key={fn.name} className={fn['7d'].Errors || fn['7d'].Throttles ? 'sd-warn' : ''}>
-                  <td className="sd-mono">{fn.name}</td>
-                  <td className="sd-right">{count(fn['24h'].Invocations)}</td>
-                  <td className="sd-right">{count(fn['7d'].Invocations)}</td>
-                  <td className="sd-right">{count(fn['7d'].Errors)}</td>
-                  <td className="sd-right">{count(fn['7d'].Throttles)}</td>
-                  <td className="sd-right">{fn['24h'].avgMs === null ? '—' : `${fn['24h'].avgMs} ms`}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="sd-svc-grid">
-            <table className="sd-scores">
-              <thead><tr><th>API Gateway</th><th className="sd-right">Requests 24h</th><th className="sd-right">7d</th><th className="sd-right">5xx 7d</th></tr></thead>
-              <tbody>
-                {data.gateways.map((api) => (
-                  <tr key={api.id} className={api['7d']['5xx'] ? 'sd-warn' : ''}>
-                    <td className="sd-mono" title={api.id}>{api.name}</td>
-                    <td className="sd-right">{count(api['24h'].Count)}</td>
-                    <td className="sd-right">{count(api['7d'].Count)}</td>
-                    <td className="sd-right">{count(api['7d']['5xx'])}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <table className="sd-scores">
-              <thead><tr><th>Storage</th><th className="sd-right">Objects / Items</th><th className="sd-right">Size</th></tr></thead>
-              <tbody>
-                {data.s3.map((bucket) => (
-                  <tr key={bucket.name}><td className="sd-mono" title={bucket.name}>{`S3 ${bucket.name.replace(/-\d{12}-eu-central-1$/, '')}`}</td>
-                    <td className="sd-right">{count(bucket.objects) ?? '—'}</td><td className="sd-right">{formatBytes(bucket.bytes) ?? '—'}</td></tr>
-                ))}
-                {data.dynamodb.map((table) => (
-                  <tr key={table.name}><td className="sd-mono">{`DynamoDB ${table.name}`}</td>
-                    <td className="sd-right">{count(table.items)}</td><td className="sd-right">{formatBytes(table.bytes)}</td></tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="sd-ga-chart" role="img" aria-label={`Daily visitors, past ${days.length} days`}>
+            {days.map((day) => (
+              <span key={day.date} className="sd-ga-bar" title={`${dayLabel(day.date)}: ${day.visitors} visitors, ${day.views} views`}>
+                <span className="sd-ga-fill" style={{ height: `${(day.visitors / peak) * 100}%` }}>
+                  <span className="sd-ga-value">{day.visitors}</span>
+                </span>
+              </span>
+            ))}
           </div>
-          {data.ec2.running.length ? (
-            <p className="sd-svc-line">{data.ec2.running.map((instance) => `${instance.id} ${instance.type} ${instance.state} for ${ageText(nowSeconds - Math.floor(Date.parse(instance.launchedAt) / 1000))}`).join(' · ')}</p>
+          {days.length ? (
+            <div className="sd-ga-axis"><span>{dayLabel(days[0].date)}</span><span>{`Peak ${peak}/day`}</span><span>{dayLabel(days.at(-1).date)}</span></div>
           ) : null}
+          <p className="sd-svc-foot">
+            {`${count(data.views30d)} page views in 30 days`}
+            {data.liveCountries?.length ? ` · live: ${data.liveCountries.map((row) => `${row.country} ${row.visitors}`).join(', ')}` : ''}
+            {' · today fills in as Google processes it (a few hours behind); Live Now is the last 30 minutes'}
+          </p>
         </>
       )}
     </Panel>
@@ -273,11 +249,11 @@ function Website({ section }) {
   );
 }
 
-/// External services the protocol depends on. Data comes only from the local
-/// dashboard server; anywhere else this section says so and shows nothing.
-export default function ExternalServices({ now }) {
+/// Loads the local dashboard server's services summary once for the whole page,
+/// so Website Traffic and External Services can sit in different places.
+export function useServices() {
   const [state, setState] = useState({ value: null, error: '' });
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState('');
   useEffect(() => {
     const controller = new AbortController();
     const load = () => fetchServices({ signal: controller.signal })
@@ -287,14 +263,32 @@ export default function ExternalServices({ now }) {
     const stop = onForegroundRefresh(load, { intervalMs: SERVICES_REFRESH_MS, eventGapMs: SERVICES_REFRESH_MS });
     return () => { controller.abort(); stop(); };
   }, []);
-  const refreshCosts = () => {
-    setRefreshing(true);
-    fetchServices({ refresh: ['costs'] })
+  const refresh = (section) => {
+    setRefreshing(section);
+    fetchServices({ refresh: [section] })
       .then((value) => setState({ value, error: '' }))
       .catch((error) => setState((old) => ({ ...old, error: error?.message || 'Unavailable' })))
-      .finally(() => setRefreshing(false));
+      .finally(() => setRefreshing(''));
   };
-  const { value, error } = state;
+  return { ...state, refreshing, refresh };
+}
+
+/// Website visitors from Google Analytics (local dashboard server only).
+export function WebsiteTraffic({ services }) {
+  const analytics = services.value?.analytics;
+  if (!analytics) return null;
+  return (
+    <>
+      <h2 className="sd-section-title">Website Traffic</h2>
+      <Analytics section={analytics} onRefresh={() => services.refresh('analytics')} refreshing={services.refreshing === 'analytics'} />
+    </>
+  );
+}
+
+/// External services the protocol depends on. Data comes only from the local
+/// dashboard server; anywhere else this section says so and shows nothing.
+export default function ExternalServices({ now, services }) {
+  const { value, error } = services;
   if (error === 'LOCAL_ONLY' && !value) {
     return <Panel title="External Services"><p className="sd-empty">External services are shown only by the local dashboard server</p></Panel>;
   }
@@ -304,8 +298,7 @@ export default function ExternalServices({ now }) {
   return (
     <>
       <h2 className="sd-section-title">External Services</h2>
-      <AwsCosts section={value?.costs} onRefresh={refreshCosts} refreshing={refreshing} />
-      <AwsUsage section={value?.aws} now={now} />
+      <Aws costs={value?.costs} usage={value?.aws} onRefresh={() => services.refresh('costs')} refreshing={services.refreshing === 'costs'} now={now} />
       <Providers drpc={value?.drpc} providers={value?.providers} now={now} />
       <Website section={value?.web} />
     </>

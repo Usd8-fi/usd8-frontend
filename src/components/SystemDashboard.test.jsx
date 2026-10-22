@@ -21,9 +21,9 @@ const snapshot = {
   updatedAt: Date.now(), blockNumber: '11926094', timing: { cooldown: 604800, interval: 259200 },
   insured: { symbol: 'USD8', supply: 54, maxCoverageBps: 8000, exposure: 43.2 }, totalCover: 25160.28, pools: [pool],
   reserve: { reserve: 54, series: [{ t: 1, v: 40 }, { t: 2, v: 54 }], allocation: [
-    { key: 'idle', label: 'Idle USDC (Treasury)', address: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05', amount: 13.5, percent: 25 },
-    { key: '0xaaaa', label: 'Aave USDC Vault', address: '0x00000000000000000000000000000000000000aa', amount: 40.5, percent: 75 },
-  ] },
+    { key: 'idle', label: 'Idle USDC (Treasury)', address: '0x0eae2d44dfeb2154f60cd702dc2c9c5abb090f05', amount: 13.5, percent: 25, apy: 0 },
+    { key: '0xaaaa', label: 'Aave USDC Vault', address: '0x00000000000000000000000000000000000000aa', amount: 40.5, percent: 75, apy: 0.0384 },
+  ], apy: 0.0288 },
 };
 const TEE_FLEET = {
   generatedAt: '2026-10-16T13:16:40Z', region: 'eu-central-1',
@@ -45,14 +45,15 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); mocks.load.mockReset(); mocks.fetchActivity.mockReset(); mocks.fetchScoreList.mockReset(); mocks.fetchTeeFleet.mockReset(); mocks.fetchTeeOnchain.mockReset(); });
 
 describe('SystemDashboard', () => {
-  it('shows the eight protocol sections in order, then app errors and external services, with the reserve after insured supply and no exposure ladder', async () => {
+  it('shows the protocol sections in order with insurance scores before the exit queue, then app errors and external services, with the reserve after insured supply and no exposure ladder', async () => {
     mocks.load.mockResolvedValue(snapshot);
     mocks.fetchActivity.mockResolvedValue(activity);
     render(<SystemDashboard />);
     await screen.findByText('Block 11926094', { exact: false });
     const names = screen.getAllByRole('region').map(region => region.getAttribute('aria-label')).filter(name => (
       ['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover To Exposure', 'Pool Yield', 'Cover Pool Yield', 'Withdrawal Exit Queue', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE', 'Insurance Scores'].includes(name)));
-    expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE', 'Insurance Scores']);
+    // Insurance Scores (and Website Traffic, local only) sit above the exit queue.
+    expect(names).toEqual(['USD8 Insured Supply', 'USD8 Reserve', 'Event Tape', 'Cover Pools', 'Cover Pool Yield', 'Insurance Scores', 'Cover Pool Withdrawal Exit Queue', 'Claim Verification TEE']);
     // Plus the App Errors and External Services sections, which say they are local-only here.
     expect(screen.getAllByRole('region')).toHaveLength(10);
     expect(screen.getAllByRole('region').at(-2)).toHaveAccessibleName('Frontend Errors');
@@ -114,7 +115,30 @@ describe('SystemDashboard', () => {
     expect(within(panel).getByText('40.50 USDC')).toBeInTheDocument();
   });
 
-  it('presents live values: events, pool APYs with the higher one highlighted, and an empty exit queue', async () => {
+  it('shows each strategy current APY and the overall reserve APY', async () => {
+    mocks.load.mockResolvedValue(snapshot);
+    mocks.fetchActivity.mockResolvedValue(activity);
+    render(<SystemDashboard />);
+    const panel = await screen.findByRole('region', { name: 'USD8 Reserve' });
+    expect(await within(panel).findByText('3.84% APY')).toBeInTheDocument();
+    expect(within(panel).getByText('0.00% APY')).toBeInTheDocument();
+    expect(within(panel).getByText('Overall APY')).toBeInTheDocument();
+    expect(within(panel).getByText('2.88%')).toBeInTheDocument();
+  });
+
+  it('shows a dash when a strategy APY or the overall APY is unknown', async () => {
+    const unknown = { ...snapshot, reserve: { ...snapshot.reserve, apy: null,
+      allocation: snapshot.reserve.allocation.map(row => (row.key === 'idle' ? row : { ...row, apy: null })) } };
+    mocks.load.mockResolvedValue(unknown);
+    mocks.fetchActivity.mockResolvedValue(activity);
+    render(<SystemDashboard />);
+    const panel = await screen.findByRole('region', { name: 'USD8 Reserve' });
+    await within(panel).findByText('Aave USDC Vault');
+    expect(within(panel).queryByText('3.84% APY')).not.toBeInTheDocument();
+    expect(within(panel).getAllByText('—').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('presents live values: events, each pool 30-day APY, and an empty exit queue', async () => {
     mocks.load.mockResolvedValue(snapshot);
     mocks.fetchActivity.mockResolvedValue(activity);
     render(<SystemDashboard />);
@@ -122,8 +146,11 @@ describe('SystemDashboard', () => {
     await waitFor(() => expect(within(tape).getByText(/minted/)).toBeInTheDocument());
     expect(within(tape).getByText('Block 11922388')).toBeInTheDocument();
     const card = screen.getByRole('article', { name: 'wstEth Cover Pool' });
-    expect(within(card).getByText('3.4%').closest('div')).toHaveClass('sd-best');
-    expect(within(card).getByText('2.1%').closest('div')).not.toHaveClass('sd-best');
+    // Only the 30-day APY is shown.
+    expect(within(card).getByText('2.1%')).toBeInTheDocument();
+    expect(within(card).getByText('30D APY')).toBeInTheDocument();
+    expect(within(card).queryByText('3.4%')).toBeNull();
+    expect(within(card).queryByText('7D APY')).toBeNull();
     expect(within(screen.getByRole('region', { name: 'Cover Pool Withdrawal Exit Queue' })).getByText('No Pending Exits')).toBeInTheDocument();
     expect(screen.getByText('Live')).toBeInTheDocument();
   });

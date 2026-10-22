@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ fetchServices: vi.fn() }));
 vi.mock('../lib/servicesStatus.js', async importOriginal => ({ ...(await importOriginal()), fetchServices: mocks.fetchServices }));
-import ExternalServices from './ExternalServices.jsx';
+import ExternalServices, { useServices, WebsiteTraffic } from './ExternalServices.jsx';
+
+function Page({ now }) {
+  const services = useServices();
+  return <><WebsiteTraffic services={services} /><ExternalServices now={now} services={services} /></>;
+}
 import { count, dollars, formatBytes } from '../lib/servicesStatus.js';
 
 const at = 1792310000;
@@ -37,6 +42,11 @@ const SERVICES = {
       { name: 'Blockscout', role: 'Activity (free)', ok: false, ms: null, detail: 'timeout' }],
     feeds: [{ name: 'USDC / USD', address: '0x8f', updatedAt: at - 7200, ageSeconds: 7200, limitSeconds: 129600, ok: true }],
   } },
+  analytics: { updatedAt: at, data: {
+    days: Array.from({ length: 30 }, (_, i) => ({ date: `2026-09-${String(i + 1).padStart(2, '0')}`, visitors: i === 28 ? 41 : 2, views: 5 })),
+    today: { date: '2026-09-30', visitors: 7, views: 9 }, yesterday: { date: '2026-09-29', visitors: 41, views: 80 },
+    visitors30d: 135, views30d: 503, liveVisitors: 4, liveCountries: [{ country: 'Germany', visitors: 3 }, { country: 'Netherlands', visitors: 1 }],
+  } },
   web: { updatedAt: at, data: {
     pages: { domain: 'usd8.fi', status: 'built', builtAt: '2026-10-18T07:22:50Z', httpsEnforced: true, certState: 'approved', certDomains: ['usd8.fi'], certExpires: '2026-11-24' },
     domains: [
@@ -52,18 +62,23 @@ beforeEach(() => { mocks.fetchServices.mockReset(); });
 describe('ExternalServices', () => {
   it('shows the AWS bill, budget, usage, providers and website status', async () => {
     mocks.fetchServices.mockResolvedValue(SERVICES);
-    render(<ExternalServices now={at * 1000} />);
-    const costs = await screen.findByRole('region', { name: 'AWS Costs' });
-    expect(within(costs).getByText('Aug 2026')).toBeInTheDocument();
-    expect(within(costs).getByText('Oct 2026 (To Date)')).toBeInTheDocument();
-    expect(within(costs).getByText('$10.12')).toBeInTheDocument();
-    expect(within(costs).getByText('$3.93')).toBeInTheDocument();
-    expect(within(costs).getByText(/Budget usd8-monthly-usage: \$2\.29 of \$300\.00 .*\$100\.00, \$300\.00, forecast \$100\.00/)).toBeInTheDocument();
-    expect(within(costs).getByText('AWS Key Management Service')).toBeInTheDocument();
-    expect(within(costs).queryByText('AWS Lambda')).toBeNull();
-    const usage = screen.getByRole('region', { name: 'AWS Usage' });
-    expect(within(usage).getByText('1 active · 1 pending deletion')).toBeInTheDocument();
-    expect(within(usage).getAllByText('usd8-score-api', { selector: 'td' })[0].closest('tr')).toHaveClass('sd-warn');
+    render(<Page now={at * 1000} />);
+    const aws = await screen.findByRole('region', { name: 'AWS' });
+    // Bill: this month only, no month-by-month table.
+    expect(within(aws).getAllByText('$2.29').length).toBeGreaterThan(0);
+    expect(within(aws).getByText('$3.93')).toBeInTheDocument();
+    expect(within(aws).queryByText('Aug 2026')).toBeNull();
+    expect(within(aws).getByText(/Budget usd8-monthly-usage: \$2\.29 of \$300\.00 before credits/)).toBeInTheDocument();
+    expect(within(aws).getByText('AWS Key Management Service')).toBeInTheDocument();
+    expect(within(aws).queryByText('AWS Lambda')).toBeNull();
+    // Usage folded into totals; detail only for what needs attention.
+    expect(within(aws).getByText('167')).toBeInTheDocument();
+    expect(within(aws).getByText('10')).toBeInTheDocument();
+    expect(within(aws).getByText(formatBytes(41500))).toBeInTheDocument();
+    expect(within(aws).getByText('usd8-score-api: 0 errors, 10 throttles (7d)')).toHaveClass('sd-svc-warn');
+    expect(screen.queryByRole('region', { name: 'AWS Usage' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'AWS Costs' })).toBeNull();
+
     const providers = screen.getByRole('region', { name: 'RPC And Data Providers' });
     expect(within(providers).getByText(/security add-generic-password -a "\$USER" -s usd8-drpc-stats-token -w/)).toBeInTheDocument();
     expect(within(providers).getByText('Blockscout').closest('tr')).toHaveClass('sd-warn');
@@ -80,13 +95,13 @@ describe('ExternalServices', () => {
     const ok = { ...SERVICES, web: { ...SERVICES.web, data: { ...SERVICES.web.data, domains: [{ ...SERVICES.web.data.domains[1], redirectOk: true,
       redirects: [1, 2, 3, 4].map((n) => ({ from: `u${n}`, final: 'https://usd8.fi/', ok: true })) }] } } };
     mocks.fetchServices.mockResolvedValue(ok);
-    render(<ExternalServices now={at * 1000} />);
+    render(<Page now={at * 1000} />);
     expect(await screen.findByText('Redirects To usd8.fi (4 of 4 entry URLs)')).toHaveClass('sd-svc-ok');
   });
 
   it('refreshes Cost Explorer only on request', async () => {
     mocks.fetchServices.mockResolvedValue(SERVICES);
-    render(<ExternalServices now={at * 1000} />);
+    render(<Page now={at * 1000} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Refresh Costs' }));
     await waitFor(() => expect(mocks.fetchServices).toHaveBeenLastCalledWith({ refresh: ['costs'] }));
   });
@@ -95,7 +110,7 @@ describe('ExternalServices', () => {
     mocks.fetchServices.mockResolvedValue({ ...SERVICES, drpc: { updatedAt: at, data: {
       balance: 42.5, day: { requests: 120, cu: 2400, methods: [] },
       month: { requests: 3000, cu: 60000, methods: [{ name: 'eth_call', requests: 2000, cu: 40000 }] } } } });
-    render(<ExternalServices now={at * 1000} />);
+    render(<Page now={at * 1000} />);
     const providers = await screen.findByRole('region', { name: 'RPC And Data Providers' });
     expect(await within(providers).findByText('$42.50')).toBeInTheDocument();
     expect(within(providers).getByText('120 / 3000')).toBeInTheDocument();
@@ -104,9 +119,9 @@ describe('ExternalServices', () => {
 
   it('fails closed outside the local dashboard server', async () => {
     mocks.fetchServices.mockRejectedValue(new Error('LOCAL_ONLY'));
-    render(<ExternalServices now={at * 1000} />);
+    render(<Page now={at * 1000} />);
     expect(await screen.findByText('External services are shown only by the local dashboard server')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'AWS Costs' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'AWS' })).toBeNull();
   });
 
   it('formats without thousands separators', () => {
@@ -115,5 +130,22 @@ describe('ExternalServices', () => {
     expect(dollars(-7.25)).toBe('-$7.25');
     expect(dollars(-0.001)).toBe('$0.00');
     expect(formatBytes(1536)).toBe('1.5 KB');
+  });
+  it('shows website visitors: live, today, yesterday, 30-day total and a 30-day daily chart', async () => {
+    mocks.fetchServices.mockResolvedValue(SERVICES);
+    render(<Page now={at * 1000} />);
+    const ga = await screen.findByRole('region', { name: 'Website Visitors' });
+    expect(within(ga).getByText('Live Now').nextSibling).toHaveTextContent('4');
+    expect(within(ga).getByText('Today').nextSibling).toHaveTextContent('7');
+    expect(within(ga).getByText('Yesterday').nextSibling).toHaveTextContent('41');
+    expect(within(ga).getByText('Visitors 30D').nextSibling).toHaveTextContent('135');
+    expect(within(ga).getByRole('img', { name: 'Daily visitors, past 30 days' }).children).toHaveLength(30);
+    expect(within(ga).getByText('Peak 41/day')).toBeInTheDocument();
+    // Every bar is labelled with its own visitor count.
+    const values = [...within(ga).getByRole('img', { name: 'Daily visitors, past 30 days' }).querySelectorAll('.sd-ga-value')].map((node) => node.textContent);
+    expect(values).toHaveLength(30);
+    expect(values[28]).toBe('41');
+    expect(values[0]).toBe('2');
+    expect(within(ga).getByText(/live: Germany 3, Netherlands 1/)).toBeInTheDocument();
   });
 });

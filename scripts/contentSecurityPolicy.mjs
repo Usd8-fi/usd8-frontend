@@ -21,12 +21,12 @@ export const CSP_DIRECTIVES = Object.freeze({
     'https://ethereum-rpc.publicnode.com',
     'https://mainnet.gateway.tenderly.co',
     'https://rpc.sepolia.ethpandaops.io',
-    // USD8 services: score API, mainnet and Sepolia claim APIs, terms, TEE status.
+    // USD8 services: score API, mainnet and Sepolia claim APIs, terms.
+    // (The TEE status API is read only by the local-only System Dashboard.)
     'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com',
     'https://c8cnx9estd.execute-api.eu-central-1.amazonaws.com',
     'https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com',
     'https://oz43wdk335yzi5k2kdt3qm7uzq0nbpsd.lambda-url.eu-central-1.on.aws',
-    'https://dx3jgwcfhb7dxafa2qqtfcbzgu0dodyf.lambda-url.eu-central-1.on.aws',
     // Activity feed and history, and the Morpho vault APY.
     'https://eth.blockscout.com',
     'https://eth-sepolia.blockscout.com',

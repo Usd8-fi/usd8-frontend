@@ -8,8 +8,7 @@
     "docs:serve": "mdbook serve --open",
     "build:app": "vite build --configLoader native && node scripts/postbuild.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
-    "check:wallet": "node scripts/check-wallet-dependencies.mjs",
-    "build:dashboard": "vite build --config vite.dashboard.config.mjs"
+    "check:wallet": "node scripts/check-wallet-dependencies.mjs"
   },
   "dependencies": {
     "@reown/appkit": "^1.8.20",

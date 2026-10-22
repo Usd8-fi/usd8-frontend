@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { exitEpochRows, sumSeries, trailingSeries } from './systemDashboard.js';
+import { aaveSupplyApy, exitEpochRows, morphoSupplyApy, reserveApy, sumSeries, trailingSeries } from './systemDashboard.js';
 
 const DAY = 86_400;
 const E18 = 10n ** 18n;
@@ -100,5 +100,32 @@ describe('reserve history (90-day window from Blockscout)', () => {
   it('limits the chart to 90 days', async () => {
     const { RESERVE_HISTORY_SECONDS } = await import('./systemDashboard.js');
     expect(RESERVE_HISTORY_SECONDS).toBe(90 * 86_400);
+  });
+});
+
+describe('strategy APY', () => {
+  it('compounds the Aave liquidity rate per second', () => {
+    // 3.7751% APR in ray, read from the mainnet USDC reserve.
+    expect(aaveSupplyApy(37751073057303415000000000n)).toBeCloseTo(0.038473, 5);
+    expect(aaveSupplyApy(0n)).toBe(0);
+  });
+
+  it('matches the Morpho API supply APY for a Blue market', () => {
+    // PT-reUSD Dec 2026 market state; Morpho API supplyApy 0.0792638.
+    const apy = morphoSupplyApy({
+      borrowRate: 2683511021n, totalSupplyAssets: 133889032568757n, totalBorrowAssets: 120681589320867n, fee: 0n,
+    });
+    expect(apy).toBeCloseTo(0.0792638, 6);
+    expect(morphoSupplyApy({ borrowRate: 2683511021n, totalSupplyAssets: 0n, totalBorrowAssets: 0n, fee: 0n })).toBe(0);
+    const withFee = morphoSupplyApy({ borrowRate: 2683511021n, totalSupplyAssets: 100n, totalBorrowAssets: 100n, fee: 10n ** 17n });
+    expect(withFee).toBeCloseTo(Math.expm1(2683511021e-18 * 0.9 * 31_536_000), 9);
+  });
+
+  it('weights APY by amount with idle at 0% and fails closed on an unknown funded row', () => {
+    expect(reserveApy([{ amount: 25, apy: 0 }, { amount: 75, apy: 0.04 }])).toBeCloseTo(0.03, 12);
+    expect(reserveApy([{ amount: 25, apy: 0 }, { amount: 75, apy: null }])).toBeNull();
+    expect(reserveApy([{ amount: 100, apy: 0.05 }, { amount: 0, apy: null }])).toBeCloseTo(0.05, 12);
+    expect(reserveApy([])).toBeNull();
+    expect(reserveApy(null)).toBeNull();
   });
 });
