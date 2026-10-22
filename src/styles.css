@@ -1933,6 +1933,18 @@ small a,
   background: var(--button-hover);
 }
 
+/* Where to ask for a code, under the Access beta button. */
+.private-beta-help {
+  margin: 0;
+  color: var(--inactive);
+  font-size: var(--font-small);
+}
+
+.private-beta-help a {
+  color: var(--text);
+  font-size: inherit;
+}
+
 /* Claim simulator */
 .covered-protocols-footer {
   display: flex;

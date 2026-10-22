@@ -33,6 +33,23 @@ describe('PrivateBetaGate', () => {
     expect(screen.queryByText('Protected USD8 app')).not.toBeInTheDocument();
   });
 
+  it('tells visitors where to get an invitation code, with links to Telegram and X', () => {
+    render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
+
+    const help = screen.getByText(/Get a code from our/).closest('p');
+    expect(help).toHaveTextContent('Get a code from our Telegram or X DM');
+    const button = screen.getByRole('button', { name: 'Access beta' });
+    expect(button.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const telegram = screen.getByRole('link', { name: 'Telegram' });
+    expect(telegram).toHaveAttribute('href', 'https://t.me/+e84i2oYk1ao1MTk1');
+    expect(telegram).toHaveAttribute('target', '_blank');
+    expect(telegram).toHaveAttribute('rel', 'noreferrer');
+    const x = screen.getByRole('link', { name: 'X DM' });
+    expect(x).toHaveAttribute('href', 'https://x.com/usd8_fi');
+    expect(x).toHaveAttribute('target', '_blank');
+    expect(x).toHaveAttribute('rel', 'noreferrer');
+  });
+
   it('rejects a wrong invitation code', async () => {
     render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
     submitCode('1111');

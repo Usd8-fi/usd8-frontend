@@ -10,7 +10,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          # Pinned exactly: Node.js 21 Oct 2026 security release (CVE-2026-111497 et al.).
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npm run check:wallet

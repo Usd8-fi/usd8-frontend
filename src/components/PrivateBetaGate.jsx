@@ -8,6 +8,9 @@ import usd8Wordmark from '../assets/usd8-wordmark.svg';
 // .env.local). With no hash configured, no code is accepted.
 export const PRIVATE_BETA_STORAGE_KEY = 'usd8.privateBetaAccess';
 const MAX_CODE_LENGTH = 32;
+// Where visitors can ask for an invitation code (same community links as the site footer).
+const TELEGRAM_GROUP = 'https://t.me/+e84i2oYk1ao1MTk1';
+const X_PROFILE = 'https://x.com/usd8_fi';
 
 async function sha256Hex(text) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -81,6 +84,12 @@ export default function PrivateBetaGate({ children }) {
           />
           {error ? <p className="private-beta-error" role="alert">{error}</p> : null}
           <button className="private-beta-button" type="submit">Access beta</button>
+          <p className="private-beta-help">
+            Get a code from our{' '}
+            <a href={TELEGRAM_GROUP} target="_blank" rel="noreferrer">Telegram</a>
+            {' '}or{' '}
+            <a href={X_PROFILE} target="_blank" rel="noreferrer">X DM</a>
+          </p>
         </form>
       </section>
     </main>
