@@ -835,6 +835,11 @@ small a,
   --pool-background: #08b18f;
 }
 
+/* USD8 cover pool: a darker shade of the site yellow, white text like the other cards. */
+.cover-pool-card.cover-pool-card--usd8 {
+  --pool-background: color-mix(in srgb, var(--accent) 70%, black);
+}
+
 .cover-pool-card + .cover-pool-card {
   margin-top: 112px;
 }
@@ -2039,6 +2044,17 @@ small a,
   color-scheme: dark;
 }
 
+/* Same chevron as the File Claim token select, inset from the border. */
+.claim-simulator-field select {
+  appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23dc9900' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 8px;
+  cursor: pointer;
+}
+
 .claim-simulator-number:focus-within,
 .claim-simulator-field--compact input:focus,
 .claim-simulator-field select:focus {
@@ -2121,6 +2137,7 @@ small a,
 }
 
 .claim-simulator-tokens li span:first-child { color: var(--gold); }
+.claim-simulator-tokens li.claim-simulator-token-excluded span { color: var(--inactive); }
 
 @media (max-width: 760px) {
   .claim-simulator-layout { grid-template-columns: 1fr; }

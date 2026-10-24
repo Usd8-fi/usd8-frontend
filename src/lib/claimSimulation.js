@@ -2,7 +2,9 @@
 // (offchain-rust/src/lib.rs) for a single claimant against the rest of the
 // claim set, using integer math with the same rounding (always down):
 //
-//   poolUsd        = Σ pool balance × asset USD price
+//   poolUsd        = Σ pool balance × asset USD price, over non-circular pools
+//                    (a pool whose asset IS the insured token cannot pay for
+//                    that token's incident: it counts as zero, as in the engine)
 //   claimantBudget = poolUsd × maxCoverPoolPayoutBps × (1 − protocolFeeShareBps)
 //   boostedScore   = scoreSpent × (1 + boosters × boostBps)
 //   entitlement    = claimantBudget × yourBoosted / (yourBoosted + othersBoosted)
@@ -22,6 +24,7 @@ function minBigInt(a, b) {
 /// All amounts are bigint: USD and score in 18-decimal WAD units, pool
 /// balances in the asset's own decimals, prices in the feed's decimals.
 export function simulateClaimPayout({
+  insuredToken = '',
   claimedValueUsd,
   coverageBps,
   scoreToSpend,
@@ -32,10 +35,13 @@ export function simulateClaimPayout({
   maxCoverPoolPayoutBps,
   protocolFeeShareBps,
 }) {
+  const insured = String(insuredToken).toLowerCase();
   const poolRows = pools.map((pool) => {
-    const usd = (pool.balance * pool.price * WAD)
+    const excluded = Boolean(insured) && String(pool.asset ?? '').toLowerCase() === insured;
+    const balance = excluded ? ZERO : pool.balance;
+    const usd = (balance * pool.price * WAD)
       / (10n ** BigInt(pool.priceDecimals) * 10n ** BigInt(pool.assetDecimals));
-    return { ...pool, usd };
+    return { ...pool, balance, usd, excluded };
   });
   const poolUsd = poolRows.reduce((sum, pool) => sum + pool.usd, ZERO);
   const grossBudgetUsd = (poolUsd * BigInt(maxCoverPoolPayoutBps)) / BPS_DENOMINATOR;
@@ -58,7 +64,7 @@ export function simulateClaimPayout({
   const payouts = poolRows.map((pool) => {
     const amount = poolUsd === ZERO ? ZERO : (payoutUsd * pool.balance) / poolUsd;
     const usd = poolUsd === ZERO ? ZERO : (payoutUsd * pool.usd) / poolUsd;
-    return { id: pool.id, symbol: pool.symbol, assetDecimals: pool.assetDecimals, amount, usd };
+    return { id: pool.id, symbol: pool.symbol, assetDecimals: pool.assetDecimals, amount, usd, excluded: pool.excluded };
   });
 
   return {
@@ -74,5 +80,6 @@ export function simulateClaimPayout({
     payoutUsd,
     limitedBy,
     payouts,
+    excludedPools: poolRows.filter((pool) => pool.excluded).map((pool) => pool.id),
   };
 }

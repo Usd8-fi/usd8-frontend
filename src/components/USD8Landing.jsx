@@ -8,6 +8,7 @@ import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
 import { useSecondClock } from '../lib/secondClock.js';
 import { liveAvailableScore } from '../lib/scoreRules.js';
 import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
+import { visibleDecimals } from '../lib/displayAvailableBalance.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { durationPhrase } from '../lib/durations.js';
 import AvailabilityAction, { CONNECT_WALLET_REASON } from './AvailabilityAction.jsx';
@@ -29,9 +30,12 @@ const formatWholeBalance = (value) => groupDecimalString(displayValue(value), { 
 // Other assets keep two decimals, because a whole wstETH hides most of a
 // typical position.
 const WHOLE_NUMBER_ASSETS = new Set(['USD8', 'sUSD8', 'USDC']);
-const formatAssetBalance = (value, assetSymbol) => groupDecimalString(displayValue(value), {
-  decimals: WHOLE_NUMBER_ASSETS.has(assetSymbol) ? 0 : 2,
-});
+// A balance too small for the usual precision shows its first significant
+// digits instead of reading as zero.
+const formatAssetBalance = (value, assetSymbol) => {
+  const shown = displayValue(value);
+  return groupDecimalString(shown, { decimals: visibleDecimals(shown, WHOLE_NUMBER_ASSETS.has(assetSymbol) ? 0 : 2) });
+};
 const POOL_ACTION_LABELS = { deposit: 'Deposit', withdraw: 'Withdraw', claimReward: 'Withdraw Earnings' };
 const formatScore = (value, decimals = 1) => groupDecimalString(value, { decimals });
 
@@ -251,9 +255,15 @@ function AssetCard({
 }
 
 function simulatorInsuredTokens(insuredTokenStates = {}) {
+  const addresses = getProtocolNetwork(PROTOCOL_CHAIN_ID)?.contracts.insuredTokens ?? {};
   return COVERED_PROTOCOL_ROWS
     .filter((row) => insuredTokenStates[row.id]?.enabled)
-    .map((row) => ({ id: row.id, symbol: row.symbol, maxCoverageBps: Number(insuredTokenStates[row.id].maxCoverageBps) }));
+    .map((row) => ({
+      id: row.id,
+      symbol: row.symbol,
+      address: addresses[row.id] ?? '',
+      maxCoverageBps: Number(insuredTokenStates[row.id].maxCoverageBps),
+    }));
 }
 
 function simulatorPools(pools = []) {
@@ -262,7 +272,7 @@ function simulatorPools(pools = []) {
       const balance = BigInt(pool.withdrawalQuote?.totalAssets ?? '0');
       const price = BigInt(pool.usdPrice ?? '0');
       if (!Number.isInteger(pool.priceDecimals)) return [];
-      return [{ id: pool.id, symbol: pool.assetSymbol, balance, price, priceDecimals: pool.priceDecimals, assetDecimals: 18 }];
+      return [{ id: pool.id, symbol: pool.assetSymbol, asset: pool.asset ?? '', balance, price, priceDecimals: pool.priceDecimals, assetDecimals: 18 }];
     } catch {
       return [];
     }
@@ -465,11 +475,15 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
   // Starts on whichever average is higher; a click keeps the user's choice.
   const apyWindow = windowOffered ? (chosenWindow ?? preferredWindow) : '30D';
   const apyDays = apyWindow === '7D' ? 7 : 30;
-  const cardClassName = pool.tint === 'green' ? 'cover-pool-card cover-pool-card--green' : 'cover-pool-card';
+  const cardClassName = {
+    green: 'cover-pool-card cover-pool-card--green',
+    usd8: 'cover-pool-card cover-pool-card--usd8',
+  }[pool.tint] ?? 'cover-pool-card';
+  const usd8Styled = pool.id === 'usd8' || pool.tint === 'usd8';
   return (
     <section className={cardClassName} aria-label={pool.name}>
       <header>
-        <img src={pool.id === 'usd8' ? usd8Logo : coverWsteth} alt="" />
+        <img src={usd8Styled ? usd8Logo : coverWsteth} alt="" />
         <h2>{pool.name}</h2>
       </header>
 

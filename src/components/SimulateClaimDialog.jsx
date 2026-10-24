@@ -101,6 +101,7 @@ export default function SimulateClaimDialog({
   const dialogRef = useDialogFocus(onClose);
   const [claimedValue, setClaimedValue] = useState('2000');
   const [weight, setWeight] = useState('85');
+  const [tokenId, setTokenId] = useState(insuredTokens[0]?.id ?? '');
   const [params, setParams] = useState({ payoutBps: DEFAULT_PAYOUT_BPS, feeShareBps: DEFAULT_FEE_SHARE_BPS, live: false });
 
   useEffect(() => {
@@ -119,8 +120,10 @@ export default function SimulateClaimDialog({
     return () => { cancelled = true; };
   }, []);
 
-  // Coverage is a per-token setting; every listed token currently uses the same value.
-  const coverageBps = insuredTokens[0]?.maxCoverageBps ?? 8000;
+  // Coverage is a per-token setting, read from the chosen insured token.
+  const token = insuredTokens.find((entry) => entry.id === tokenId) ?? insuredTokens[0];
+  const coverageBps = token?.maxCoverageBps ?? 8000;
+  const insuredAddress = token?.address ?? '';
   const poolInputs = useMemo(() => pools.filter((pool) => pool.balance > 0n && pool.price > 0n), [pools]);
   const weightPercent = Math.min(100, plainNumber(weight));
 
@@ -129,6 +132,7 @@ export default function SimulateClaimDialog({
     // weight% for you and the remainder for all other claimants.
     const yours = toWad(String(weightPercent));
     return simulateClaimPayout({
+      insuredToken: insuredAddress,
       claimedValueUsd: toWad(claimedValue),
       coverageBps,
       scoreToSpend: yours,
@@ -137,7 +141,7 @@ export default function SimulateClaimDialog({
       maxCoverPoolPayoutBps: params.payoutBps,
       protocolFeeShareBps: params.feeShareBps,
     });
-  }, [claimedValue, coverageBps, weightPercent, poolInputs, params]);
+  }, [insuredAddress, claimedValue, coverageBps, weightPercent, poolInputs, params]);
 
   // Slider tops out ~20% above the live claimant budget; typing a larger value still works.
   const claimantBudgetNumber = Number(formatUnits(result.claimantBudgetUsd, 18));
@@ -164,6 +168,25 @@ export default function SimulateClaimDialog({
 
         <div className="claim-simulator-layout">
           <div className="claim-simulator-inputs">
+            {insuredTokens.length ? (
+              <div className="claim-simulator-field">
+                <span className="metric-label-with-help">
+                  <label htmlFor="claim-simulator-token">Insured Token</label>
+                  <InfoTooltip ariaLabel="About insured token" floating>
+                    The token you claim for. Its max coverage sets the loss cap, and a cover pool holding this same token is excluded from its incident.
+                  </InfoTooltip>
+                </span>
+                <select
+                  id="claim-simulator-token"
+                  value={token?.id ?? ''}
+                  onChange={(event) => setTokenId(event.target.value)}
+                >
+                  {insuredTokens.map((entry) => (
+                    <option key={entry.id} value={entry.id}>{entry.symbol}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <SliderField
               id="claim-simulator-value"
               label="Loss Value (USD)"
@@ -204,10 +227,17 @@ export default function SimulateClaimDialog({
               {result.payouts.length ? (
                 <ul>
                   {result.payouts.map((payout) => (
-                    <li key={payout.id}>
-                      <span>{formatAmount(payout.amount, payout.assetDecimals)} {payout.symbol}</span>
-                      <span>{formatUsd(payout.usd)}</span>
-                    </li>
+                    payout.excluded ? (
+                      <li key={payout.id} className="claim-simulator-token-excluded">
+                        <span>{payout.symbol}</span>
+                        <span>Excluded</span>
+                      </li>
+                    ) : (
+                      <li key={payout.id}>
+                        <span>{formatAmount(payout.amount, payout.assetDecimals)} {payout.symbol}</span>
+                        <span>{formatUsd(payout.usd)}</span>
+                      </li>
+                    )
                   ))}
                 </ul>
               ) : <small>No cover pool data yet.</small>}

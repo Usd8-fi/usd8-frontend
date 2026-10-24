@@ -24,12 +24,28 @@ const SEPOLIA_CONTRACTS = Object.freeze({
       // First block of the pool's history; bounds the APY log scan.
       deployBlock: 11915276,
     }),
+    // Sepolia-only circular-cover fixture: pool asset == insured msLOSS, so an
+    // msLOSS incident must exclude this pool from its budget.
+    Object.freeze({
+      id: 'msloss',
+      name: 'msLOSS Cover Pool',
+      address: '0x7a526c94b0f73987a1892a3658ba8fc20e27713b',
+      asset: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+      assetSymbol: 'msLOSS',
+      shareSymbol: 'USD8-cp-msLOSS',
+      usdOracle: '0xf69381ce13c37e7c3d9ec956a0e29fb313a3a316',
+      deployBlock: 11970544,
+      // Stands in for the planned mainnet USD8 cover pool: USD8 logo and yellow card.
+      tint: 'usd8',
+    }),
   ]),
   defiInsurance: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
   insuredTokens: Object.freeze({
     usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
     // Sepolia loss-test token (slashable ERC-4626), listed for claim E2E.
     'test-msloss': '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc',
+    // Second Sepolia loss vault; not a cover-pool asset, so every pool funds its incident.
+    'test-msloss2': '0x18664d1a4e2dcc2f760ec648719c1b709d107d1c',
   }),
 });
 
@@ -93,6 +109,7 @@ const SEPOLIA_PAYOUT_ASSETS = Object.freeze({
   '0xdfaf9c1ce55f18ab7850edd84f2175ce734985fa': Object.freeze({ symbol: 'wstETH', decimals: 18 }),
   '0xbbd327336d5135e146312dd16f2491c1e6ce8822': Object.freeze({ symbol: 'mGHO-CP', decimals: 18 }),
   '0xa5b32853235619b5e9af364a40c0c6386dbd6055': Object.freeze({ symbol: 'USD8', decimals: 18 }),
+  '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc': Object.freeze({ symbol: 'msLOSS', decimals: 18 }),
 });
 
 const NETWORKS = Object.freeze({

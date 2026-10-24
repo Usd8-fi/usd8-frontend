@@ -60,6 +60,14 @@ export const COVERED_PROTOCOL_ROWS = [
     token: 'Sepolia Test Loss msLOSS',
     address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
   },
+  // Sepolia-only second loss vault (local dev server only, like the mainnet test token).
+  ...(import.meta.env.DEV ? [{
+    id: 'test-msloss2',
+    symbol: 'msLOSS2',
+    iconSrc: msLossLogo,
+    token: 'Sepolia Test Loss msLOSS2',
+    address: '0x18664D1a4E2DcC2F760EC648719C1B709D107d1C',
+  }] : []),
   // Mainnet E2E test token: local dev server only (never in a production build).
   // `import.meta.env.DEV` is inlined so production builds drop this row entirely.
   ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? [{

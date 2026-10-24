@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { defineConfig, loadEnv } from 'vite';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import react from '@vitejs/plugin-react';
-import { createReadStream } from 'node:fs';
+import { appendFileSync, createReadStream, mkdirSync } from 'node:fs';
 import { extname } from 'node:path';
 import { documentationAssets } from './scripts/documentationAssets.mjs';
 import { contentSecurityPolicy, sentryIngestOrigin } from './scripts/contentSecurityPolicy.mjs';
@@ -15,7 +15,7 @@ const scoreProxy = {
 };
 
 const claimProxy = {
-  target: 'https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com',
+  target: 'https://u3eb72vdu4.execute-api.eu-central-1.amazonaws.com',
   changeOrigin: true,
   rewrite: path => path.replace(/^\/api\/claims/, ''),
 };
@@ -43,6 +43,29 @@ const documentationAssetsInDev = {
   },
 };
 
+// Dev only: the app POSTs failed protocol reads here so a transient "could not be
+// updated" banner can be traced afterwards. Appends JSON lines; never in builds.
+const devReadErrorLog = {
+  name: 'usd8-dev-read-error-log',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use('/__dev/read-errors', (request, response) => {
+      if (request.method !== 'POST') { response.statusCode = 405; response.end(); return; }
+      let body = '';
+      request.on('data', chunk => { if (body.length < 64 * 1024) body += chunk; });
+      request.on('end', () => {
+        try {
+          const dir = new URL('./node_modules/.cache/', import.meta.url);
+          mkdirSync(dir, { recursive: true });
+          appendFileSync(new URL('usd8-read-errors.jsonl', dir), `${JSON.stringify({ receivedAt: new Date().toISOString(), ...JSON.parse(body) })}\n`);
+          response.statusCode = 204;
+        } catch { response.statusCode = 400; }
+        response.end();
+      });
+    });
+  },
+};
+
 function gitRelease() {
   try {
     return execSync('git rev-parse --short=12 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
@@ -65,6 +88,7 @@ export default defineConfig(({ mode }) => {
   plugins: [
     react(),
     documentationAssetsInDev,
+    devReadErrorLog,
     contentSecurityPolicy({ connectOrigins: [sentryIngestOrigin(env.VITE_SENTRY_DSN)] }),
     ...(uploadSourceMaps ? [sentryVitePlugin({
       org: env.SENTRY_ORG || 'usd8fi',

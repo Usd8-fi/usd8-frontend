@@ -549,6 +549,14 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
   throwIfRequestAborted(signal);
   const blockNumber = readResult.blockNumber;
   if (typeof blockNumber !== 'bigint') throw new Error('Block number unavailable.');
+  // Sepolia-only second loss vault: read outside the fixed multicall layout so the
+  // fixed indices stay stable. Absent from mainnet config, so no read there.
+  const msloss2Address = contracts.insuredTokens['test-msloss2'];
+  const msloss2 = msloss2Address && hasAccount
+    ? await Promise.resolve()
+      .then(() => client.readContract({ address: msloss2Address, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber }))
+      .catch(() => null)
+    : 0n;
   const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
     usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
     onchainScoreSpent] = landingValues.slice(0, FIXED_READS);
@@ -680,7 +688,8 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       assets: formatted(read.totalAssets),
       // Pending exits remain claim-exposed until completion, so keep them in
       // the user's displayed deposit alongside active pool assets.
-      deposit: formatted(depositedAssets + exitAssets, 18, 2),
+      // Full precision: the card picks how many decimals a small deposit needs.
+      deposit: formatted(depositedAssets + exitAssets),
       availableForCooldownAssets: conversionUnavailable ? null : formatUnits(depositedAssets, 18),
       availableForWithdrawAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? exitAssets : zero, 18),
       inCooldownAssets: conversionUnavailable ? null : formatUnits(exitAvailable ? zero : exitAssets, 18),
@@ -752,6 +761,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
         'aave-sgho': formatted(sGho),
         'sky-susds': formatted(sUsds),
         [testTokenId]: formatted(msloss),
+        ...(msloss2Address ? { 'test-msloss2': msloss2 === null ? UNKNOWN_VALUE : formatted(msloss2) } : {}),
       },
     },
     pools: pools.map((pool, index) => ({ ...pool,

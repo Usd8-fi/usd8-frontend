@@ -130,9 +130,13 @@ export default function FileClaimDialog({
   const showEffectiveClaimScore = /^\d+$/.test(activeBoosterCount)
     && BigInt(activeBoosterCount) > 0n
     && isPositiveDecimal(liveClaimStatus?.scoreToSpend);
-  const activeEffectiveScoreUnits = showEffectiveClaimScore
-    ? boostedScore(wadUnits(liveClaimStatus.scoreToSpend), BigInt(activeBoosterCount), boosterBoostBps)
-    : 0n;
+  // Once settled, the enclave's boosted score is authoritative: it boosts only the
+  // eligible Boosters, which can be fewer than the escrowed ones.
+  const activeEffectiveScoreUnits = !showEffectiveClaimScore
+    ? 0n
+    : liveClaimStatus.settledBoostedScore
+      ? wadUnits(liveClaimStatus.settledBoostedScore)
+      : boostedScore(wadUnits(liveClaimStatus.scoreToSpend), BigInt(activeBoosterCount), boosterBoostBps);
   // Settlement is permissionless, so once filing closes the incident replaces the
   // claim form for everyone, including accounts that never filed.
   const showStatus = activeClaim

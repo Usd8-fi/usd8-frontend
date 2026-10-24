@@ -126,6 +126,7 @@ describe('fetchActivity', () => {
   it('makes only explorer HTTP requests, one per source', async () => {
     const fetchMock = mockIndex(routes());
     await fetchActivity(network);
-    expect(fetchMock).toHaveBeenCalledTimes(5);
+    // treasury + insurance + USD8 transfers + 2 per cover pool
+    expect(fetchMock).toHaveBeenCalledTimes(3 + 2 * network.contracts.coverPools.length);
   });
 });

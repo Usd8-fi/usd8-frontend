@@ -188,6 +188,16 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText('wstEth Cover Pool')).toBeInTheDocument();
   });
 
+  it('renders a usd8-tinted cover pool as a yellow card with the USD8 logo', () => {
+    const preview = { ...POOLS[0], id: 'msloss', name: 'msLOSS Cover Pool', tint: 'usd8' };
+    render(<USD8Landing wallet={wallet} pools={[...POOLS, preview]} />);
+
+    const card = screen.getByRole('region', { name: 'msLOSS Cover Pool' });
+    expect(card).toHaveClass('cover-pool-card--usd8');
+    expect(card.querySelector('header img')).toHaveAttribute('src', usd8Logo);
+    expect(screen.getByRole('region', { name: 'wstEth Cover Pool' })).not.toHaveClass('cover-pool-card--usd8');
+  });
+
   it('renders the USD8 cover pool with its logo and green tint', () => {
     render(<USD8Landing wallet={wallet} pools={[...POOLS, USD8_POOL]} />);
 
@@ -322,6 +332,19 @@ describe('USD8 landing navigation', () => {
     expect(deposit('USD8 Cover Pool')).toHaveTextContent(/^1235 USD8$/);
     // wstETH keeps a fixed two-decimal width so small positions stay visible.
     expect(deposit('wstEth Cover Pool')).toHaveTextContent(/^0\.40 wstETH$/);
+  });
+
+  it('shows a deposit too small for two decimals with its first significant digits', () => {
+    render(
+      <USD8Landing
+        wallet={{ ...wallet, connected: true }}
+        pools={[{ ...POOLS[0], deposit: '0.000123456789' }, { ...USD8_POOL, deposit: '0.0042' }]}
+      />,
+    );
+
+    const deposit = (name) => within(screen.getByRole('region', { name })).getByText('Your Deposit').nextElementSibling;
+    expect(deposit('wstEth Cover Pool')).toHaveTextContent(/^0\.00012 wstETH$/);
+    expect(deposit('USD8 Cover Pool')).toHaveTextContent(/^0\.0042 USD8$/);
   });
 
   it('shows a spinner instead of a dash when the pool deposit is unavailable', () => {

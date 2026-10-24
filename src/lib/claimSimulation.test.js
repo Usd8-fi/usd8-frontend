@@ -35,4 +35,26 @@ describe('claim payout simulation (mirrors settlement allocate)', () => {
     expect(result.yourBoostedScore).toBe(usd(110));
     expect(result.payoutUsd).toBe(usd(20_000));
   });
+
+  it('excludes a cover pool whose asset is the insured token from the budget and payouts', () => {
+    const insured = '0x00000000000000000000000000000000000000aa';
+    const withCircular = [
+      { ...pools[0], asset: '0x00000000000000000000000000000000000000bb' },
+      // 1,000,000 of the insured token itself: must not count toward the budget.
+      { id: 'circular', symbol: 'msLOSS', asset: insured.toUpperCase().replace('0X', '0x'), balance: 1_000_000n * WAD, price: 100_000_000n, priceDecimals: 8, assetDecimals: 18 },
+    ];
+    const result = simulateClaimPayout({ ...base, pools: withCircular, insuredToken: insured, claimedValueUsd: usd(100_000), scoreToSpend: usd(1), othersBoostedScore: usd(3) });
+    // Only the $40k wstETH pool counts: budget $20k -> claimant $16k -> 25% = $4k.
+    expect(result.poolUsd).toBe(usd(40_000));
+    expect(result.payoutUsd).toBe(usd(4_000));
+    expect(result.excludedPools).toEqual(['circular']);
+    expect(result.payouts.map((p) => [p.id, p.amount, p.excluded])).toEqual([
+      ['wsteth', WAD, false],
+      ['circular', 0n, true],
+    ]);
+    // Claiming a different token keeps the same pool in the budget.
+    const other = simulateClaimPayout({ ...base, pools: withCircular, insuredToken: '0x00000000000000000000000000000000000000cc', claimedValueUsd: usd(100_000), scoreToSpend: usd(1), othersBoostedScore: usd(3) });
+    expect(other.excludedPools).toEqual([]);
+    expect(other.poolUsd).toBe(usd(1_040_000));
+  });
 });

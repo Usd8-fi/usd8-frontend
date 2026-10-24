@@ -29,7 +29,9 @@ const ZERO_ROOT = `0x${'00'.repeat(32)}`;
 
 function apiError(status, operation = 'incident-open') {
   // The eligibility window is stated up front in the dialog, so it is not repeated here.
-  if (status === 422) return new Error(operation === 'settlement'
+  // Settlement preflight reads finalized state: an incident newer than the
+  // finalized head is "not found" there until finality catches up.
+  if (status === 422 || (status === 404 && operation === 'settlement')) return new Error(operation === 'settlement'
     ? 'Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.'
     : 'No qualifying >20% price drop was detected.');
   if (status === 409) return new Error('An incident is already active. Close and reopen this claim.');
@@ -566,6 +568,55 @@ async function prepareSettlementUncached(incidentId, {
   }
   if (spentTerminal) return terminalFailure(spentTerminal);
   throw new Error('Claim settlement timed out. Please try again.');
+}
+
+/// Display-only price-drop check run before any wallet approval, so users are not
+/// asked to pay for approvals when no incident can open. It never launches the
+/// TEE; /jobs/open repeats the same check and the enclave stays authoritative.
+/// Resolves when a drop qualifies or an incident is already active.
+export async function checkIncidentOpen(insuredToken, {
+  chainId,
+  registry,
+  defiInsurance,
+  signal,
+  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+  maxWaitMs = 60_000,
+  previousAdvisory,
+  onAdvisory,
+  onStatus,
+} = {}) {
+  if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
+  const canonicalToken = canonicalAddress(insuredToken, 'insured token');
+  const expected = { chainId, registry, defiInsurance, insuredToken: canonicalToken };
+  let advisory = validAdvisory(previousAdvisory, expected);
+  const busyMessage = () => advisoryBusyMessage(validAdvisory(advisory, expected));
+  const response = await fetchWithRateLimitRetry(`${claimApiBaseUrlForChain(chainId)}/jobs/open/check`, {
+    method: 'POST',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ insuredToken: canonicalToken }),
+    cache: 'no-store',
+    signal,
+  }, {
+    deadline: Date.now() + maxWaitMs,
+    retryIntervalMs: pollIntervalMs,
+    signal,
+    onResponse: async (incoming) => {
+      let payload;
+      try { payload = await incoming.clone().json(); } catch { /* Gateway errors need not be JSON. */ }
+      const valid = validAdvisory(payload?.advisory, expected);
+      if (valid) { advisory = valid; onAdvisory?.(valid); }
+      if (incoming.status === 429 || incoming.status === 503) onStatus?.(busyMessage());
+    },
+    busyMessage,
+  });
+  // An incident opened meanwhile: the claim joins it and needs no open check.
+  if (response.ok || response.status === 409) return;
+  if (response.status === 503) {
+    const error = new Error(busyMessage());
+    error.name = 'ClaimServiceBusyError';
+    throw error;
+  }
+  throw apiError(response.status);
 }
 
 export async function prepareIncidentOpen(insuredToken, {

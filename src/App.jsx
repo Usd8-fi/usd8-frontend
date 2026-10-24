@@ -14,13 +14,14 @@ import { readErrorMessage, resourceErrorMessage } from './lib/readErrorMessage.j
 import { cachedData } from './lib/dataCache.js';
 import { poolWriteAbi, treasuryWriteAbi, claimWriteAbi } from './lib/writeAbis.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './lib/abis.js';
-import { formatUsdWad, groupDecimalString, percentOfWad, UNKNOWN_VALUE } from './lib/units.js';
+import { formatUsdWad, formatWad, groupDecimalString, percentOfWad, UNKNOWN_VALUE } from './lib/units.js';
 import { poolHasEarnings } from './lib/livePoolEarnings.js';
 import { fetchMorphoVault } from './lib/morphoApi.js';
 import { getNetwork, getProtocolNetwork, PROTOCOL_CHAIN_ID } from './lib/networkConfig.js';
 import { onForegroundRefresh } from './lib/foregroundRefresh.js';
 import { claimApiConfigured, matchesSettlementContext } from './lib/claimContext.js';
 const prepareIncidentOpen = (...args) => import('./lib/claimApi.js').then(api => api.prepareIncidentOpen(...args));
+const checkIncidentOpen = (...args) => import('./lib/claimApi.js').then(api => api.checkIncidentOpen(...args));
 const prepareSettlement = (...args) => import('./lib/claimApi.js').then(api => api.prepareSettlement(...args));
 import { claimLifecycle } from './lib/claimLifecycle.js';
 import { fetchInsuranceScore } from './lib/scoreApi.js';
@@ -381,6 +382,14 @@ export default function App({ autoConnect = false }) {
         ? { ...next, incident: previous.incident, claim: previous.claim } : next));
       setChainDataStatus(partial ? 'partial' : 'ready');
       setDataError(resourceErrorMessage(next.resourceErrors, 'Some balances or protocol data could not be updated. Retry to update it.'));
+      if (import.meta.env.DEV && Object.keys(next.resourceErrors || {}).length) {
+        // Dev-only trace of which reads failed; see devReadErrorLog in vite.config.mjs.
+        fetch('/__dev/read-errors', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ partial, chainId: protocolNetwork.id, errors: next.resourceErrors }),
+        }).catch(() => {});
+      }
     };
     try {
       const next = await fetchLandingChainData(connected ? address : zeroAddress, protocolNetwork.id, {
@@ -734,6 +743,23 @@ export default function App({ autoConnect = false }) {
       // Do not launch approval side effects from a stale landing snapshot.
       await ensureCurrentlyInsured();
       assertCurrentClaimOperation();
+      // The first claim opens the incident: confirm a qualifying drop before any
+      // approval costs gas. The binding check still runs after the approvals.
+      if (activeIncidentId === 0n) {
+        claimStep = 'verification';
+        setCurrentClaimStatus('Checking for a qualifying price drop.');
+        await checkIncidentOpen(insuredToken, {
+          chainId: network.id,
+          registry: contracts.registry,
+          defiInsurance: contracts.defiInsurance,
+          signal: controller.signal,
+          previousAdvisory: claimAdvisory.current,
+          onAdvisory: (advisory) => { assertCurrentClaimOperation(); claimAdvisory.current = advisory; },
+          onStatus: setCurrentClaimStatus,
+        });
+        assertCurrentClaimOperation();
+        claimStep = 'requirements';
+      }
       for (const [approvalToken, requiredAmount] of approvals) {
         const allowance = await client.readContract({
           address: approvalToken,
@@ -1232,7 +1258,14 @@ export default function App({ autoConnect = false }) {
       bondAmount: groupDecimalString(chainData.claim.bondAmount),
       boosterAmount: groupDecimalString(chainData.claim.boosterAmount),
       boostersToBurn: boostersToBurn === null ? null : groupDecimalString(boostersToBurn.toString()),
-      scoreToSpend: groupDecimalString(chainData.claim.scoreToSpend),
+      // Once settled, show what accepting actually spends: the enclave caps the filed
+      // amount at the score available at the incident cutoff and zeroes ineligible rows.
+      scoreToSpend: selectedSettlementRow?.scoreSpent === undefined
+        ? groupDecimalString(chainData.claim.scoreToSpend)
+        : groupDecimalString(formatWad(selectedSettlementRow.scoreSpent, 18, { trim: true })),
+      settledBoostedScore: selectedSettlementRow?.boostedScore === undefined
+        ? null
+        : formatWad(selectedSettlementRow.boostedScore, 18, { trim: true }),
       // Mirrors finalizeClaim's `eligible`: without it every payout branch is a no-op,
       // the bond goes to the treasury, and accepting does nothing a decline would not.
       payoutEligible: selectedSettlementRow

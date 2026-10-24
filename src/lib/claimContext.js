@@ -1,4 +1,4 @@
-export const DEFAULT_CLAIM_API_URL = 'https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com';
+export const DEFAULT_CLAIM_API_URL = 'https://u3eb72vdu4.execute-api.eu-central-1.amazonaws.com';
 
 export function claimApiBaseUrl(hostname = globalThis.location?.hostname, configuredUrl = import.meta.env.VITE_CLAIM_API_URL) {
   const localPreview = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(hostname);

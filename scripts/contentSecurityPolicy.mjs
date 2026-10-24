@@ -25,7 +25,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     // (The TEE status API is read only by the local-only System Dashboard.)
     'https://j9j79vdvkj.execute-api.eu-central-1.amazonaws.com',
     'https://c8cnx9estd.execute-api.eu-central-1.amazonaws.com',
-    'https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com',
+    'https://u3eb72vdu4.execute-api.eu-central-1.amazonaws.com',
     'https://oz43wdk335yzi5k2kdt3qm7uzq0nbpsd.lambda-url.eu-central-1.on.aws',
     // Activity feed and history, and the Morpho vault APY.
     'https://eth.blockscout.com',

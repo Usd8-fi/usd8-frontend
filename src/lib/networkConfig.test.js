@@ -7,7 +7,7 @@ describe('network configuration', () => {
 
     expect(network).toMatchObject({ id: 11155111, name: 'Sepolia', protocolAvailable: true });
     expect(network.rpcUrl).toBe('https://rpc.sepolia.ethpandaops.io');
-    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth']);
+    expect(network.contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth', 'msloss']);
     expect(network.contracts.coverPools[0]).toEqual({
       id: 'wsteth',
       name: 'wstEth Cover Pool',

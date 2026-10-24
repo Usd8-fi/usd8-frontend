@@ -515,7 +515,7 @@ describe('fetchLandingChainData', () => {
     expect(data.pools[0].capacityUncapped).toBe(false);
     expect(data.pools[0].assets).toBe('10');
     expect(data.pools[0].remainingDepositCapacity).toBe('90');
-    expect(data.pools).toHaveLength(1);
+    expect(data.pools).toHaveLength(getProtocolNetwork(11155111).contracts.coverPools.length);
     // No savings vault in this deployment: its score inputs stay at zero.
     expect(data.scoreBalances).toEqual({
       usd8: '25000000000000000000',
@@ -536,13 +536,16 @@ describe('fetchLandingChainData', () => {
     expect(data.balances.savingsAssets).toBe('0');
     // Pending exits remain claim-exposed until completion, so the deposit line
     // includes both active assets and the current pending-exit estimate.
-    expect(data.pools[0].deposit).toBe('8.12');
+    // Kept at full precision; the card decides how many decimals to show.
+    expect(data.pools[0].deposit).toBe('8.123456789012345678');
     expect(data.balances.boosters).toBe('100');
     // Unlisted insured tokens are not read and stay at zero.
     expect(data.balances.insuredTokens).toEqual({
       'aave-sgho': '0',
       'sky-susds': '0',
       'test-msloss': '5000',
+      // The fixture mock has no msLOSS2 balance read, so it is shown as unknown.
+      'test-msloss2': '—',
     });
     expect(data.insurance.tokens).toEqual({
       usd8: {
@@ -555,6 +558,11 @@ describe('fetchLandingChainData', () => {
         enabled: true,
         maxCoverageBps: '7500',
       },
+      'test-msloss2': {
+        address: '0x18664d1a4e2dcc2f760ec648719c1b709d107d1c',
+        enabled: true,
+        maxCoverageBps: '6000',
+      },
     });
     const firstBatch = mocks.multicall.mock.calls[0][0].contracts;
     expect(firstBatch.filter((call) => call.functionName === 'MAX_CLAIMANT_COVERAGE_BPS')).toHaveLength(1);
@@ -564,6 +572,7 @@ describe('fetchLandingChainData', () => {
     }))).toEqual([
       { functionName: 'getInsuredToken', token: '0x2fe01f5e235eeab9045066f873f531de20f31947' },
       { functionName: 'getInsuredToken', token: '0xd5b2a08f474f77ef29211ccc59cd65e5fa6734dc' },
+      { functionName: 'getInsuredToken', token: '0x18664d1a4e2dcc2f760ec648719c1b709d107d1c' },
     ]);
     expect(data.pools[0].hasEarnings).toBe(false);
     expect(data.pools[0].shareDecimals).toBe(21);

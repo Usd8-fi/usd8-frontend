@@ -232,6 +232,41 @@ describe('accepted handle expiry and advisory boundaries', () => {
   });
 });
 
+describe('checkIncidentOpen', () => {
+  const options = { chainId: 11155111, registry: REGISTRY, defiInsurance: DEFI_INSURANCE, pollIntervalMs: 0 };
+  it('posts the token to the check route only and resolves on a qualifying drop', async () => {
+    const { checkIncidentOpen } = await loadClaimApi();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ qualifying: true }), { status: 200 })));
+    await expect(checkIncidentOpen(INSURED_TOKEN, options)).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = fetch.mock.calls[0];
+    expect(url).toMatch(/\/jobs\/open\/check$/);
+    expect(init.method).toBe('POST');
+    expect(init.headers['Idempotency-Key']).toBeUndefined();
+    expect(JSON.parse(init.body)).toEqual({ insuredToken: INSURED_TOKEN });
+  });
+  it('refuses when no qualifying drop is detected', async () => {
+    const { checkIncidentOpen } = await loadClaimApi();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'PRICE_DROP_NOT_DETECTED' }), { status: 422 })));
+    await expect(checkIncidentOpen(INSURED_TOKEN, options)).rejects.toThrow('No qualifying >20% price drop was detected.');
+  });
+  it('lets the claim join an incident that is already active', async () => {
+    const { checkIncidentOpen } = await loadClaimApi();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'INCIDENT_ALREADY_ACTIVE' }), { status: 409 })));
+    await expect(checkIncidentOpen(INSURED_TOKEN, options)).resolves.toBeUndefined();
+  });
+  it('fails closed as busy when the price check is unavailable', async () => {
+    const { checkIncidentOpen } = await loadClaimApi();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'PRICE_PRECHECK_UNAVAILABLE' }), { status: 503 })));
+    await expect(checkIncidentOpen(INSURED_TOKEN, options)).rejects.toMatchObject({ name: 'ClaimServiceBusyError' });
+  });
+  it('fails closed when the route is missing', async () => {
+    const { checkIncidentOpen } = await loadClaimApi();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    await expect(checkIncidentOpen(INSURED_TOKEN, options)).rejects.toThrow('Claim verification request failed (404).');
+  });
+});
+
 describe('prepareIncidentOpen', () => {
   it('reports first-time throttle at the deadline as busy, without fabricated authorization', async () => {
     const { prepareIncidentOpen } = await loadClaimApi();
@@ -302,7 +337,7 @@ describe('prepareIncidentOpen', () => {
 
     const { claimApiBaseUrl } = await import('./claimContext.js');
 
-    expect(claimApiBaseUrl('usd8.fi')).toBe('https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com');
+    expect(claimApiBaseUrl('usd8.fi')).toBe('https://u3eb72vdu4.execute-api.eu-central-1.amazonaws.com');
     expect(claimApiBaseUrl('127.0.0.1')).toBe('/api/claims');
   });
 
@@ -311,7 +346,7 @@ describe('prepareIncidentOpen', () => {
     for (const hostname of ['localhost', '127.0.0.1', '[::1]', '::1']) {
       expect(claimApiBaseUrl(hostname, '')).toBe('/api/claims');
     }
-    expect(claimApiBaseUrl('usd8.fi', '')).toBe('https://wmzdww7bxb.execute-api.eu-central-1.amazonaws.com');
+    expect(claimApiBaseUrl('usd8.fi', '')).toBe('https://u3eb72vdu4.execute-api.eu-central-1.amazonaws.com');
     expect(claimApiBaseUrl('localhost', 'https://claims.example')).toBe('https://claims.example');
   });
 
@@ -496,6 +531,22 @@ describe('prepareSettlement', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
       error: 'SETTLEMENT_NOT_ELIGIBLE',
     }), { status: 422 })));
+    const { prepareSettlement } = await loadClaimApi();
+
+    await expect(prepareSettlement(5n, {
+      ...SETTLEMENT_SNAPSHOT,
+      chainId: 11155111,
+      registry: REGISTRY,
+      defiInsurance: DEFI_INSURANCE,
+      expectedRoot: `0x${'00'.repeat(32)}`,
+    })).rejects.toThrow(
+      'Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.',
+    );
+  });
+  it('explains a not-yet-finalized incident (404 at the finalized head) as waiting for finality', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+      error: 'NOT_FOUND',
+    }), { status: 404 })));
     const { prepareSettlement } = await loadClaimApi();
 
     await expect(prepareSettlement(5n, {

@@ -7,6 +7,9 @@ import { matchesSettlementTopology, settlementPayoutDetails } from './lib/settle
 import { claimWriteAbi } from './lib/writeAbis.js';
 import { fetchExitRequestedAt } from './lib/exitRequest.js';
 import { RPC_READ_ERROR } from './lib/readErrorMessage.js';
+import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from './lib/networkConfig.js';
+
+const WAD = 10n ** 18n;
 
 const mocks = vi.hoisted(() => ({
   account: { address: '', isConnected: false },
@@ -15,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   fetchLandingChainData: vi.fn(),
   fetchMorphoVault: vi.fn(),
   prepareIncidentOpen: vi.fn(),
+  checkIncidentOpen: vi.fn(),
   prepareSettlement: vi.fn(),
   getBlockNumber: vi.fn(),
   estimateContractGas: vi.fn(),
@@ -74,6 +78,7 @@ vi.mock('./lib/claimApi.js', () => ({
   matchesSettlementContext: (settlement, incidentId, root) => settlement?.incidentId === String(incidentId)
     && settlement?.root?.toLowerCase() === root?.toLowerCase(),
   prepareIncidentOpen: mocks.prepareIncidentOpen,
+  checkIncidentOpen: mocks.checkIncidentOpen,
   prepareSettlement: mocks.prepareSettlement,
 }));
 vi.mock('./lib/walletConnector.js', () => ({ walletConnectorConfigured: false }));
@@ -232,6 +237,8 @@ describe('App', () => {
       balance: '$76.94M',
       apy: '3.24%',
     });
+    mocks.checkIncidentOpen.mockReset();
+    mocks.checkIncidentOpen.mockResolvedValue(undefined);
     mocks.prepareIncidentOpen.mockReset();
     mocks.prepareIncidentOpen.mockResolvedValue({
       referenceBlock: 12_345_678n,
@@ -479,9 +486,9 @@ describe('App', () => {
     render(<App />);
 
     // Nothing is known yet, so APY/TVL/capacity must not display a number.
-    // One card per configured pool: this deployment has only the wstETH pool.
+    // One card per configured pool.
     expect(screen.getAllByRole('region').filter((card) => card.className.includes('cover-pool-card')))
-      .toHaveLength(1);
+      .toHaveLength(getProtocolNetwork(PROTOCOL_CHAIN_ID).contracts.coverPools.length);
     expect(poolCard().getAllByRole('status', { name: 'Loading pool data' })).toHaveLength(2);
     expect(poolCard().getByRole('status', { name: 'Loading pool capacity' })).toBeInTheDocument();
     expect(screen.queryByText('34%')).toBeNull();
@@ -1152,19 +1159,22 @@ describe('App', () => {
     mocks.prepareSettlement.mockResolvedValue({
       root, poolAddrs: [payoutPool], poolOrder: [payoutAsset],
       rows: [
-        { claimId: '9', amounts: [10n], scoreSpent: 2_000n, boostedScore: 2_200n, eligibleAmount: 10n, eligibleBoosterAmount: 10n, proof: [] },
-        { claimId: '10', amounts: [20n], scoreSpent: 4_000n, boostedScore: 4_880n, eligibleAmount: 20n, eligibleBoosterAmount: 22n, proof: [] },
+        // Settled score is lower than the 2,000 filed: the enclave capped it at the cutoff score.
+        { claimId: '9', amounts: [10n], scoreSpent: 1_500n * WAD, boostedScore: 1_650n * WAD, eligibleAmount: 10n, eligibleBoosterAmount: 10n, proof: [] },
+        { claimId: '10', amounts: [20n], scoreSpent: 3_000n * WAD, boostedScore: 3_660n * WAD, eligibleAmount: 20n, eligibleBoosterAmount: 22n, proof: [] },
         // Zero-eligible: the enclave zeroes its boosted score, so it leaves the denominator.
         { claimId: '11', amounts: [0n], scoreSpent: 0n, boostedScore: 0n, eligibleAmount: 0n, eligibleBoosterAmount: 0n, proof: [] },
       ],
     });
     render(<App />);
-    fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss/ }));
-    const dialog = screen.getByRole('dialog', { name: 'Claim Status for msLOSS' });
+    fireEvent.click(await screen.findByRole('button', { name: /Finalise Payout.* for test-msloss$/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Claim Status for msLOSS' });
     await within(dialog).findByText(`10 base units of ${payoutAsset}`);
     expect(within(dialog).getByText(
-      'Effective insurance score after boosters 2200, 31% of all score committed',
+      'Effective insurance score after boosters 1650, 31% of all score committed',
     )).toBeInTheDocument();
+    // Once settled, the score shown is what accepting spends (the enclave row), not the filed 2,000.
+    expect(within(dialog).getByText(/^1,?500$/)).toBeInTheDocument();
     expect(within(dialog).queryByText(/27% of all score committed/)).not.toBeInTheDocument();
   });
 
@@ -2071,8 +2081,8 @@ describe('App', () => {
 
 
     expect(poolCard().getByText('30D APY')).toBeInTheDocument();
-    // Tooltips portal to document.body, one per card (one configured pool).
-    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.')).toHaveLength(1);
+    // Tooltips portal to document.body, one per card.
+    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.')).toHaveLength(getProtocolNetwork(PROTOCOL_CHAIN_ID).contracts.coverPools.length);
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {
@@ -2774,6 +2784,35 @@ describe('App', () => {
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 
+  it('refuses a first claim without a qualifying drop before any wallet approval', async () => {
+    mocks.account.address = '0x0000000000000000000000000000000000000001';
+    mocks.account.isConnected = true;
+    mocks.fetchInsuranceScore.mockResolvedValue({ availableScore: '128600' });
+    mocks.readContract.mockImplementation(({ functionName }) => {
+      if (functionName === 'isInsuredToken') return Promise.resolve(true);
+      if (functionName === 'activeIncidentId') return Promise.resolve(0n);
+      if (functionName === 'claimBondAmount') return Promise.resolve(10_000_000_000_000_000_000n);
+      if (functionName === 'incidentTimingConfig') {
+        return Promise.resolve({ phaseWindow: 3600n, maxReferenceBlockAge: 450n });
+      }
+      if (functionName === 'allowance') return Promise.resolve(0n);
+      throw new Error(`Unexpected read: ${functionName}`);
+    });
+    mocks.checkIncidentOpen.mockRejectedValueOnce(new Error('No qualifying >20% price drop was detected.'));
+    render(<App />);
+
+    await waitFor(() => expect(mocks.fetchLandingChainData).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'File claim for usd8' }));
+    const dialog = screen.getByRole('dialog', { name: 'File claim for USD8' });
+    await waitFor(() => expect(within(dialog).getByLabelText('Insurance Score to Spend')).toHaveValue('128600'));
+    fireEvent.change(within(dialog).getByLabelText('Insured USD8 amount'), { target: { value: '1' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'File Claim' }));
+
+    expect(await screen.findByText(/No qualifying >20% price drop was detected/)).toBeInTheDocument();
+    expect(mocks.writeContractAsync).not.toHaveBeenCalled();
+    expect(mocks.prepareIncidentOpen).not.toHaveBeenCalled();
+  });
+
   it('prepares a first claim through the TEE service and submits its authorization onchain', async () => {
     const approval = deferred();
     mocks.getBlockNumber.mockResolvedValue(12_345_680n);
@@ -2811,6 +2850,12 @@ describe('App', () => {
     fireEvent.click(submit);
 
     expect(await within(dialog).findByText('Approve token in your wallet.')).toBeInTheDocument();
+    // The display-only drop check ran before the approval; the TEE open waits for it.
+    expect(mocks.checkIncidentOpen).toHaveBeenCalledTimes(1);
+    expect(mocks.checkIncidentOpen).toHaveBeenCalledWith(
+      '0x2fe01f5e235eeab9045066f873f531de20f31947',
+      expect.objectContaining({ chainId: 11155111, defiInsurance: expect.any(String) }),
+    );
     expect(mocks.prepareIncidentOpen).not.toHaveBeenCalled();
     approval.resolve('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     await waitFor(() => expect(mocks.prepareIncidentOpen).toHaveBeenCalledWith(
