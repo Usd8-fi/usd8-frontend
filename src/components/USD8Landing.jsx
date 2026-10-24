@@ -488,7 +488,7 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
               </span>
             ) : `${apyWindow} APY`}
             <InfoTooltip ariaLabel={`About ${apyDays}-day APY for ${pool.name}`}>
-              USD8 earnings accrued over the past {apyDays} days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.{apyHistoryNote(apyWindow === '7D' ? pool.apy7dWindowSeconds : pool.apyWindowSeconds, apyDays)}
+              USD8 earnings accrued over the past {apyDays} days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.{apyHistoryNote(apyWindow === '7D' ? pool.apy7dWindowSeconds : pool.apyWindowSeconds, apyDays)}
             </InfoTooltip>
           </span>
           <strong>

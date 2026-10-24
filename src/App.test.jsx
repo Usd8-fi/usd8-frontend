@@ -2072,7 +2072,7 @@ describe('App', () => {
 
     expect(poolCard().getByText('30D APY')).toBeInTheDocument();
     // Tooltips portal to document.body, one per card (one configured pool).
-    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against average pool value. Earnings represented by this APY are delivered in USD8.')).toHaveLength(1);
+    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.')).toHaveLength(1);
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {

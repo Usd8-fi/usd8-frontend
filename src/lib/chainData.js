@@ -276,6 +276,12 @@ export function calculateTrailingRewardApr({
   const windowStart = Math.max(deploymentTimestamp, nowSeconds - windowSeconds);
   let cursor = deploymentTimestamp;
   let assets = 0n;
+  // Shares queued for exit sit in pool escrow and stop earning at once, though
+  // their assets stay in totalAssets until the epoch settles. Only the earning
+  // share of the pool belongs in the APY base. Events without share data
+  // (supply stays zero) count every asset as earning.
+  let supply = 0n;
+  let escrowed = 0n;
   let rewardRate = 0n;
   let periodFinish = 0;
   let assetSeconds = 0n;
@@ -285,7 +291,9 @@ export function calculateTrailingRewardApr({
     const end = Math.min(timestamp, nowSeconds);
     const start = Math.max(cursor, windowStart);
     if (end > start) {
-      assetSeconds += assets * BigInt(end - start);
+      const earningAssets = supply > 0n && supply > escrowed ? (assets * (supply - escrowed)) / supply
+        : (supply > 0n ? 0n : assets);
+      assetSeconds += earningAssets * BigInt(end - start);
       const rewardEnd = Math.min(end, periodFinish);
       if (rewardEnd > start) accruedRewards += rewardRate * BigInt(rewardEnd - start);
     }
@@ -296,9 +304,17 @@ export function calculateTrailingRewardApr({
     .sort((a, b) => a.timestamp - b.timestamp || a.logIndex - b.logIndex)
     .forEach((event) => {
       integrateUntil(event.timestamp);
-      if (event.type === 'deposit') assets += event.assets;
+      if (event.type === 'deposit') {
+        assets += event.assets;
+        supply += event.shares ?? 0n;
+      }
+      if (event.type === 'escrow') escrowed += event.shares;
       if (event.type === 'exit' || event.type === 'claim') {
         assets = event.assets >= assets ? 0n : assets - event.assets;
+      }
+      if (event.type === 'exit' && event.shares !== undefined) {
+        supply = event.shares >= supply ? 0n : supply - event.shares;
+        escrowed = event.shares >= escrowed ? 0n : escrowed - event.shares;
       }
       if (event.type === 'reward') {
         rewardRate = event.rate;
@@ -325,6 +341,8 @@ const poolHistoryEvents = [
   { type: 'event', name: 'Deposit', inputs: [
     { name: 'sender', type: 'address', indexed: true }, { name: 'owner', type: 'address', indexed: true },
     { name: 'assets', type: 'uint256', indexed: false }, { name: 'shares', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'RedeemRequested', inputs: [
+    { name: 'user', type: 'address', indexed: true }, { name: 'shares', type: 'uint256', indexed: false }] },
   { type: 'event', name: 'ExitEpochSettled', inputs: [
     { name: 'exitEpoch', type: 'uint64', indexed: true }, { name: 'shares', type: 'uint256', indexed: false },
     { name: 'assets', type: 'uint256', indexed: false }] },
@@ -336,6 +354,8 @@ const poolHistoryEvents = [
 ];
 const rewardStateAbi = [
   { type: 'function', name: 'totalAssets', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'totalSupply', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint256' }] },
   { type: 'function', name: 'rewardRate', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { type: 'function', name: 'periodFinish', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
 ];
@@ -357,8 +377,10 @@ export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, 
     const deployBlock = config?.deployBlock === undefined ? earliest : BigInt(config.deployBlock);
     const startBlock = deployBlock > earliest ? deployBlock : earliest;
     const read = (functionName) => client.readContract({ address, abi: rewardStateAbi, functionName, blockNumber: startBlock });
-    const [start, assets, rate, finish] = await Promise.all([
+    const [start, assets, rate, finish, supplyAtStart, escrowAtStart] = await Promise.all([
       client.getBlock({ blockNumber: startBlock }), read('totalAssets'), read('rewardRate'), read('periodFinish'),
+      read('totalSupply'),
+      client.readContract({ address, abi: rewardStateAbi, functionName: 'balanceOf', args: [address], blockNumber: startBlock }),
     ]);
     const logs = await fetchLogsInChunks(client, { address, events: poolHistoryEvents }, startBlock + 1n, head.number, { signal: querySignal });
     const blockNumbers = [...new Set(logs.map((log) => log.blockNumber))];
@@ -366,13 +388,15 @@ export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, 
     const timeOf = new Map(blocks.map((block) => [block.number, Number(block.timestamp)]));
     const startSeconds = Number(start.timestamp);
     const events = [
-      { timestamp: startSeconds, logIndex: -2, type: 'deposit', assets },
+      { timestamp: startSeconds, logIndex: -2, type: 'deposit', assets, shares: supplyAtStart },
+      { timestamp: startSeconds, logIndex: -2, type: 'escrow', shares: escrowAtStart },
       { timestamp: startSeconds, logIndex: -1, type: 'reward', rate, periodFinish: Number(finish) },
       ...logs.flatMap((log) => {
         const timestamp = timeOf.get(log.blockNumber);
         const logIndex = Number(log.logIndex);
-        if (log.eventName === 'Deposit') return [{ timestamp, logIndex, type: 'deposit', assets: log.args.assets }];
-        if (log.eventName === 'ExitEpochSettled') return [{ timestamp, logIndex, type: 'exit', assets: log.args.assets }];
+        if (log.eventName === 'Deposit') return [{ timestamp, logIndex, type: 'deposit', assets: log.args.assets, shares: log.args.shares }];
+        if (log.eventName === 'RedeemRequested') return [{ timestamp, logIndex, type: 'escrow', shares: log.args.shares }];
+        if (log.eventName === 'ExitEpochSettled') return [{ timestamp, logIndex, type: 'exit', assets: log.args.assets, shares: log.args.shares }];
         if (log.eventName === 'ClaimPaid') return [{ timestamp, logIndex, type: 'claim', assets: log.args.amount }];
         if (log.eventName === 'RewardNotified') {
           return [{ timestamp, logIndex, type: 'reward', rate: log.args.newRate, periodFinish: Number(log.args.newPeriodFinish) }];

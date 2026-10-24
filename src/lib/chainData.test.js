@@ -145,6 +145,33 @@ describe('calculateTrailingRewardApr', () => {
     expect(apr(7 * day)).toBe('182.5%');
   });
 
+  it('excludes shares queued for exit from the APY base until their epoch settles', () => {
+    const day = 24 * 60 * 60;
+    const unit = 10n ** 18n;
+    const common = { nowSeconds: 30 * day, windowSeconds: 30 * day, deploymentTimestamp: 0, currentAssetUsdPrice: 2_000_00000000n, priceDecimals: 8 };
+    const base = [
+      { timestamp: 0, logIndex: 0, type: 'deposit', assets: 10n * unit, shares: 10n * unit },
+      { timestamp: 0, logIndex: 1, type: 'reward', rate: 1_000n * unit / BigInt(30 * day), periodFinish: 30 * day },
+    ];
+    const noExit = calculateTrailingRewardApr({ ...common, events: base });
+    // Half the pool queues on day 0 and never settles inside the window: it earns nothing,
+    // so the same rewards are spread over half the assets and the APY doubles.
+    const queued = calculateTrailingRewardApr({
+      ...common, events: [...base, { timestamp: 0, logIndex: 2, type: 'escrow', shares: 5n * unit }],
+    });
+    expect(noExit).toBe('60.8%');
+    expect(queued).toBe('121.7%');
+    // Settling removes the shares and assets together, so the earning base stays the same.
+    const settled = calculateTrailingRewardApr({
+      ...common, events: [
+        ...base,
+        { timestamp: 0, logIndex: 2, type: 'escrow', shares: 5n * unit },
+        { timestamp: 10 * day, logIndex: 0, type: 'exit', assets: 5n * unit, shares: 5n * unit },
+      ],
+    });
+    expect(settled).toBe('121.7%');
+  });
+
   it('returns unavailable when the pool had no assets in the trailing window', () => {
     expect(calculateTrailingRewardApr({
       nowSeconds: 100,
