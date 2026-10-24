@@ -58,7 +58,8 @@ function ScoreValue({ loading, value, decimals = 1 }) {
   if (loading) {
     return <LoadingSpinner label="Loading insurance score" />;
   }
-  return value === null || value === undefined || value === '' ? displayValue(value) : formatScore(value, decimals);
+  // translate="no": see MetricValue (browser translation vs. a ticking text node).
+  return <span translate="no">{value === null || value === undefined || value === '' ? displayValue(value) : formatScore(value, decimals)}</span>;
 }
 
 /// One score figure, advanced every second from its snapshot. Only this leaf
@@ -106,7 +107,7 @@ function LiveCooldownScore({ score, maturitySeconds }) {
 }
 
 function LivePoolEarnings({ pool }) {
-  return <>{displayValue(useLivePoolEarnings(pool).earnings)}<small className="cover-pool-unit"> USD8</small></>;
+  return <><span translate="no">{displayValue(useLivePoolEarnings(pool).earnings)}</span><small className="cover-pool-unit"> USD8</small></>;
 }
 
 function WalletButton({ wallet }) {

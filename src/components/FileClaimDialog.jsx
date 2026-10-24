@@ -259,12 +259,9 @@ export default function FileClaimDialog({
                 <strong>{liveClaimStatus.boosterAmount}</strong>
                 {showPayout && (payoutLoading || liveClaimStatus.boostersToBurn !== null) ? (
                   <small>
-                    <MetricValue
-                      loading={payoutLoading}
-                      value={liveClaimStatus.boostersToBurn}
-                      label="Loading boosters taken into account"
-                    />
-                    {payoutLoading ? null : ' taken into account'}
+                    {payoutLoading
+                      ? <LoadingSpinner label="Loading boosters taken into account" />
+                      : <span>{`${liveClaimStatus.boostersToBurn} taken into account`}</span>}
                   </small>
                 ) : null}
               </div>

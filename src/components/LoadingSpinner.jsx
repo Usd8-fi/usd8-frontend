@@ -15,5 +15,8 @@ export function MetricValue({ loading, value, label, fallback = UNKNOWN_VALUE })
   if (temporaryDash || (loading && missing)) {
     return <LoadingSpinner label={label} />;
   }
-  return missing ? fallback : value;
+  // A span marked translate="no" keeps browser translation (Chrome/Google Translate)
+  // from swapping this text node, which made React's next update throw
+  // NotFoundError on removeChild and crash the page for translating visitors.
+  return <span translate="no">{missing ? fallback : value}</span>;
 }
