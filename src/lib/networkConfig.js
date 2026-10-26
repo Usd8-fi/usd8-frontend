@@ -80,6 +80,20 @@ const MAINNET_CONTRACTS = Object.freeze({
       usdOracle: '0x164b276057258d81941e97b0a900d4c7b358bce0',
       deployBlock: 26211040,
     }),
+    // USD8 Cover Pool: plan 25 (usd8-core deployments/mainnet/25-usd8-cover-pool-plan.json,
+    // nonces 64-70): seeded 1 USD8 to 0xdead, registered with the Registry's USD8
+    // price oracle, deposit cap 10000 USD8. Pays out USD8; excluded from USD8 incidents.
+    Object.freeze({
+      id: 'usd8',
+      name: 'USD8 Cover Pool',
+      address: '0x38f52d6ca2410d2f6c64f6df4ea7221950b5e902',
+      asset: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+      assetSymbol: 'USD8',
+      shareSymbol: 'USD8-cp-USD8',
+      usdOracle: '0xde84a1804e61f06a5bba3ac4fad9b66cc35e2b4a',
+      deployBlock: 26276002,
+      tint: 'usd8',
+    }),
   ]),
   defiInsurance: '0xac1a522d0fdc1c39d455d1688ad54615de5b48b9',
   // Launch scope: USD8 is the only insured token.

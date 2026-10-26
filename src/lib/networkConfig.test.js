@@ -53,6 +53,14 @@ describe('network configuration', () => {
       usdOracle: '0x164b276057258d81941e97b0a900d4c7b358bce0',
       deployBlock: 26211040,
     });
+    // Plan 25 USD8 Cover Pool (verified on-chain: Registry.coverPool(USD8), cap 10000 USD8).
+    expect(contracts.coverPools.map((pool) => pool.id)).toEqual(['wsteth', 'usd8']);
+    expect(contracts.coverPools[1]).toMatchObject({
+      address: '0x38f52d6ca2410d2f6c64f6df4ea7221950b5e902',
+      asset: '0x2fe01f5e235eeab9045066f873f531de20f31947',
+      usdOracle: '0xde84a1804e61f06a5bba3ac4fad9b66cc35e2b4a',
+      deployBlock: 26276002,
+    });
     expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8', 'aave-sgho', 'sky-susds']);
     // The test environment serves Sepolia, so mainnet is not the protocol network here.
     expect(getProtocolNetwork(1)).toBeNull();
