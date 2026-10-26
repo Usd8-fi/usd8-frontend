@@ -590,9 +590,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
     expect(screen.getByRole('button', { name: 'About 30-day APY for wstEth Cover Pool' })).toHaveTextContent('?');
-    expect(screen.getByRole('tooltip', {
-      name: 'USD8 earnings accrued over the past 30 days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.',
-    })).toBeInTheDocument();
+    expect(screen.getByRole('tooltip', { name: /treasury yield[\s\S]*kept small compared with USD8's supply/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About your earnings in wstEth Cover Pool' })).toHaveTextContent('?');
     expect(screen.getByRole('tooltip', {
       name: 'Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.',
@@ -820,10 +818,9 @@ describe('cover pool APY window', () => {
     expect(screen.getByRole('button', { name: '30D' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('offers the switch for a young pool and says how much history 7D uses', () => {
+  it('offers the switch for a young pool', () => {
     renderPool({ apy7dWindowSeconds: 2 * 86_400, apyWindowSeconds: 2 * 86_400 });
     expect(screen.getByRole('button', { name: '7D' })).toBeInTheDocument();
-    expect(screen.getByRole('tooltip', { name: /Based on 2 days of rewards so far; becomes a 7-day average after 7 days\./ })).toBeInTheDocument();
   });
 
   it('draws a capacity ring after the percentage', () => {

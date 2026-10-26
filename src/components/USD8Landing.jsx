@@ -1,5 +1,5 @@
 import WalletNoticeProvider, { NoticeMessage } from './WalletNotice.jsx';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useId, useState } from 'react';
 import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
@@ -190,6 +190,7 @@ function AssetCard({
   scoreRateLoading = false,
   scoreRateUnit,
   apy,
+  apyHelp,
   flag,
   children,
 }) {
@@ -239,7 +240,10 @@ function AssetCard({
         </div>
         {apy !== undefined ? (
           <div>
-            <span>APY</span>
+            <span className="metric-label-with-help">
+              APY
+              {apyHelp ? <InfoTooltip ariaLabel={`About APY for ${title}`}>{apyHelp}</InfoTooltip> : null}
+            </span>
             <strong><MetricValue value={apy} label="Loading APY" /></strong>
           </div>
         ) : null}
@@ -356,6 +360,14 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           scoreRateLoading={false}
           scoreRateUnit="sUSD8"
           apy={savingsVault.apy}
+          apyHelp={(
+            <>
+              <span className="apy-help-section">
+                Paid in USD8 from USD8&apos;s treasury yield: the USDC backing USD8 earns DeFi yield, and part of it goes to the sUSD8 vault.
+              </span>
+              <YieldIllustration target="sUSD8 vault" />
+            </>
+          )}
         >
           {/* Unlinked until the USD8 Morpho vault is deployed; then link MORPHO_VAULT_URL again. */}
           <button type="button" className="landing-gold-button">
@@ -446,6 +458,50 @@ function CapacityBar({ value = 0, uncapped = false, assets = '0', assetSymbol = 
   );
 }
 
+/// Where the APY comes from, as a small illustration: yield from the USDC behind
+/// all USD8 flows into a much smaller pool. For cover pools the size gap is
+/// what pushes the APY up, so that variant labels it.
+function YieldIllustration({ target, smallPool = false }) {
+  const id = useId().replace(/:/g, '');
+  return (
+    <svg className="apy-illustration" viewBox="0 0 300 156" role="img" aria-label={`Treasury yield from the USDC backing USD8 flows to the ${target}`}>
+      <defs>
+        <linearGradient id={`${id}-reserve`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#4d8dff" />
+          <stop offset="1" stopColor="#2775ca" />
+        </linearGradient>
+        <linearGradient id={`${id}-flow`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#4d8dff" stopOpacity="0.75" />
+          <stop offset="0.55" stopColor="#34d3a0" stopOpacity="0.7" />
+          <stop offset="1" stopColor="#e3b54a" stopOpacity="0.9" />
+        </linearGradient>
+        <linearGradient id={`${id}-pool`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f3cf6b" />
+          <stop offset="1" stopColor="#d49b22" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="16" width="96" height="116" rx="10" fill={`url(#${id}-reserve)`} />
+      <text x="50" y="66" textAnchor="middle" fill="#fff" fontSize="15" fontWeight="600">USDC</text>
+      <text x="50" y="84" textAnchor="middle" fill="#e6efff" fontSize="10.5">backing all USD8</text>
+      <path d="M98 34 C158 34 168 64 214 64 L214 92 C168 92 158 114 98 114 Z" fill={`url(#${id}-flow)`} />
+      <text x="150" y="78" textAnchor="middle" fill="#fff" fontSize="10.5" fontWeight="600">DeFi yield</text>
+      <text x="150" y="91" textAnchor="middle" fill="#f2fff9" fontSize="9">via USD8 Treasury</text>
+      <circle cx="126" cy="46" r="5" fill="#f3cf6b" />
+      <circle cx="176" cy="60" r="4" fill="#f3cf6b" />
+      <circle cx="188" cy="98" r="4.5" fill="#f3cf6b" />
+      <rect x="214" y="58" width="84" height="40" rx="8" fill={`url(#${id}-pool)`} />
+      <text x="256" y="82" textAnchor="middle" fill="#1b1405" fontSize="11" fontWeight="700">{target}</text>
+      {smallPool ? (
+        <>
+          <text x="256" y="44" textAnchor="middle" fill="#34f5a0" fontSize="11" fontWeight="700">High APY ↑</text>
+          <text x="50" y="150" textAnchor="middle" fill="#9a9a9a" fontSize="9.5">large supply</text>
+          <text x="256" y="114" textAnchor="middle" fill="#9a9a9a" fontSize="9.5">small, capped pool</text>
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
 function apyNumber(value) {
   const number = Number.parseFloat(String(value ?? ''));
   return Number.isFinite(number) ? number : null;
@@ -458,16 +514,6 @@ function apyWindowChoice(pool) {
   const month = apyNumber(pool.apy);
   const offered = week !== null && month !== null;
   return { offered, preferred: offered && week > month ? '7D' : '30D' };
-}
-
-/// While rewards are younger than the APY window, say how much history it uses.
-function apyHistoryNote(windowSeconds, windowDays = 30) {
-  if (!Number.isFinite(windowSeconds) || windowSeconds <= 0 || windowSeconds >= windowDays * 86_400) return '';
-  const days = windowSeconds / 86_400;
-  const span = days >= 1
-    ? `${Math.floor(days)} day${Math.floor(days) === 1 ? '' : 's'}`
-    : `${Math.max(1, Math.floor(windowSeconds / 3_600))} hour${Math.floor(windowSeconds / 3_600) === 1 ? '' : 's'}`;
-  return ` Based on ${span} of rewards so far; becomes a ${windowDays}-day average after ${windowDays} days.`;
 }
 
 function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolAction }) {
@@ -503,7 +549,13 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
               </span>
             ) : `${apyWindow} APY`}
             <InfoTooltip ariaLabel={`About ${apyDays}-day APY for ${pool.name}`}>
-              USD8 earnings accrued over the past {apyDays} days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.{apyHistoryNote(apyWindow === '7D' ? pool.apy7dWindowSeconds : pool.apyWindowSeconds, apyDays)}
+              <span className="apy-help-section">
+                Paid in USD8 from USD8&apos;s treasury yield: the USDC backing all USD8 earns DeFi yield, and part of it goes to cover pools.
+              </span>
+              <YieldIllustration target="Cover pool" smallPool />
+              <span className="apy-help-section">
+                It can be high because pools are kept small compared with USD8&apos;s supply, so that yield is shared by far fewer deposits.
+              </span>
             </InfoTooltip>
           </span>
           <strong>
@@ -534,7 +586,7 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
             <InfoTooltip ariaLabel={`About capacity for ${pool.name}`} className="dashboard-help--align-right">
               {pool.capacityUncapped
                 ? 'Current pool deposits. This pool has no deposit cap.'
-                : 'Percentage of the pool\'s deposit capacity currently in use.'}
+                : 'Each cover pool has a size cap. This shows how full it is: current deposits as a share of the cap. At 100% the pool stops accepting deposits until someone withdraws.'}
             </InfoTooltip>
           </span>
           {poolLoading && pool.capacityPercent === null

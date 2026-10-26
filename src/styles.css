@@ -942,6 +942,14 @@ small a,
   white-space: nowrap;
 }
 
+/* Values wrapped in a span (APY, TVL, earnings) must not pick up the label size above. */
+.cover-pool-card strong span:not(.usd8-spinner) {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 .cover-pool-actions {
   display: grid;
   grid-template-columns: repeat(3, max-content);
@@ -2446,4 +2454,20 @@ body:has(.activity-ticker) { padding-bottom: 29px; }
   color: var(--text);
   font: inherit;
   cursor: pointer;
+}
+
+/* APY tooltips: where the yield comes from. */
+.apy-help-section {
+  display: block;
+}
+
+.apy-help-section + .apy-help-section {
+  margin-top: 12px;
+}
+
+.apy-illustration {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 14px 0;
 }

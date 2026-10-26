@@ -2076,13 +2076,22 @@ describe('App', () => {
     expect(mocks.writeContractAsync).not.toHaveBeenCalled();
   });
 
-  it('labels the cover-pool return as 30D APY and explains its calculation', () => {
+  it('labels the cover-pool return as 30D APY and explains where it comes from', () => {
     render(<App />);
 
 
     expect(poolCard().getByText('30D APY')).toBeInTheDocument();
     // Tooltips portal to document.body, one per card.
-    expect(screen.getAllByText('USD8 earnings accrued over the past 30 days, annualized against the average value of deposits earning rewards. Earnings represented by this APY are delivered in USD8.')).toHaveLength(getProtocolNetwork(PROTOCOL_CHAIN_ID).contracts.coverPools.length);
+    const poolCount = getProtocolNetwork(PROTOCOL_CHAIN_ID).contracts.coverPools.length;
+    expect(screen.getAllByText(/part of it goes to cover pools/)).toHaveLength(poolCount);
+    expect(screen.getAllByText(/kept small compared with USD8's supply/)).toHaveLength(poolCount);
+  });
+
+  it('explains where the sUSD8 APY comes from', () => {
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: /About APY for sUSD8/ })).toBeInTheDocument();
+    expect(screen.getByText(/part of it goes to the sUSD8 vault/)).toBeInTheDocument();
   });
 
   it('prevents starting cooldown for more shares than are available', async () => {
