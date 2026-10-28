@@ -337,15 +337,19 @@ a:focus-visible {
   margin-top: 0;
 }
 
+/* Title, then its sentence, then the score on its own row below, kept on the right. */
 .insurance-summary,
 .insurance-claim-summary {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: flex-start;
+  gap: 24px;
+  margin-top: 40px;
 }
 
-.insurance-summary {
-  margin-top: 40px;
+/* The section's own spacing sits above the title, so the title adds none. */
+.insurance-token-section > .landing-section-title:first-child {
+  margin-top: 0;
 }
 
 .insurance-summary p,
@@ -359,6 +363,7 @@ a:focus-visible {
 .insurance-claim-summary > div {
   display: flex;
   flex-direction: column;
+  align-self: flex-end;
   align-items: flex-end;
   gap: 7px;
 }
@@ -1569,21 +1574,15 @@ small a,
     margin-top: 120px;
   }
 
-  /* Score first, then its sentence, each on its own line so they can't collide. */
   .insurance-summary,
   .insurance-claim-summary {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 24px;
+    margin-top: 24px;
   }
 
-  .insurance-summary {
-    margin-top: 40px;
-  }
-
+  /* No room beside the sentence on a phone: the score lines up on the left. */
   .insurance-summary > div,
   .insurance-claim-summary > div {
-    order: -1;
+    align-self: flex-start;
     align-items: flex-start;
   }
 

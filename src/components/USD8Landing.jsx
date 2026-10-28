@@ -306,9 +306,9 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
 
   return (
     <main className="landing-page free-insurance-page">
-      <h1 className="landing-section-title">DeFi Insurance</h1>
+      <h1 className="landing-section-title">Free Insurance Score</h1>
       <section className="insurance-summary">
-        <p>Earn free insurance score with USD8 or sUSD8.</p>
+        <p>Earn free insurance score every block by holding USD8 or sUSD8.</p>
         <div>
           <span className="metric-label-with-help">
             Your Insurance Score
@@ -377,8 +377,9 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
       </section>
 
       <section className="insurance-token-section">
+        <h1 className="landing-section-title">File Insurance Claims</h1>
         <div className="insurance-claim-summary">
-          <p>File claim with your insurance score.</p>
+          <p>Use your insurance score to file a claim if an insured token drops more than 20% against its underlying asset.</p>
           <div>
             <span className="metric-label-with-help">
               Your Available Score
@@ -419,8 +420,8 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
           </InfoTooltip>
         </div>
         <p className="cover-pool-warning">
-          Be aware: Cover Pools might be deployed to cover insured token loss, make sure you understand the{' '}
-          <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">risk involved</a>.
+          Deposit into a Cover Pool to back insured tokens and earn yield. APYs can be high, but be aware: if an insured token suffers a loss, pool deposits may be used to pay claims. Make sure you understand the{' '}
+          <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">risks involved</a>.
         </p>
 
         {pools.map((pool) => (

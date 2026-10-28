@@ -134,9 +134,10 @@ describe('USD8 landing navigation', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     expect(screen.queryByRole('navigation', { name: 'USD8 products' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'DeFi Insurance', level: 1 })).toBeInTheDocument();
-    expect(screen.getByText('Earn free insurance score with USD8 or sUSD8.')).toBeInTheDocument();
-    expect(screen.getByText('File claim with your insurance score.', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Free Insurance Score', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Earn free insurance score every block by holding USD8 or sUSD8.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'File Insurance Claims', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Use your insurance score to file a claim if an insured token drops more than 20% against its underlying asset.', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cover Pools', level: 2 })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About Cover Pools' })).toBeInTheDocument();
     expect(screen.getByText(/the pool backs insured tokens: if one drops 20% or more/)).toBeInTheDocument();
@@ -183,8 +184,8 @@ describe('USD8 landing navigation', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
-    expect(screen.getByText(/Be aware: Cover Pools might be deployed to cover insured token loss/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'risk involved' })).toHaveAttribute('href', './docs/cover-pools.html');
+    expect(screen.getByText(/if an insured token suffers a loss, pool deposits may be used to pay claims/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'risks involved' })).toHaveAttribute('href', './docs/cover-pools.html');
     expect(screen.getByText('wstEth Cover Pool')).toBeInTheDocument();
   });
 
@@ -225,7 +226,7 @@ describe('USD8 landing navigation', () => {
     unmount();
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
-    expect(screen.getByRole('heading', { name: 'DeFi Insurance' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Free Insurance Score' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cover Pools' })).toBeInTheDocument();
   });
 
