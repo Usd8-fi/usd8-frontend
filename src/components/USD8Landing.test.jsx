@@ -244,7 +244,7 @@ describe('USD8 landing navigation', () => {
     const stats = poolCard.querySelector('.cover-pool-stats');
     expect(stats).not.toBeNull();
     expect([...stats.children].map((item) => item.querySelector('span').childNodes[0].textContent.trim()))
-      .toEqual(['30D APY', 'TVL', 'Capacity', 'Your Deposit', 'Your Earnings']);
+      .toEqual(['30D APY', 'TVL', 'Pool Filled', 'Your Deposit', 'Your Earnings']);
     expect(stats.children[2]).toHaveClass('cover-pool-capacity-metric');
     expect(poolCard.querySelector('.cover-pool-actions').children).toHaveLength(3);
   });
@@ -596,7 +596,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('tooltip', {
       name: 'Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.',
     })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'About capacity for wstEth Cover Pool' })).toHaveTextContent('?');
+    expect(screen.getByRole('button', { name: 'About how full wstEth Cover Pool is' })).toHaveTextContent('?');
   });
 });
 
