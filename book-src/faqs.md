@@ -7,6 +7,13 @@ Yes, that's the benefit of USD8 comparing to other stable coins. You get Insuran
 The rate of accumulating score differs, currently 1 USD8 gets you 1 score per day, while 1 sUSD8 gets you 0.1 score per day.
 
 
+## Where does the insurance payout come from?
+
+Payouts come from the [Cover Pools](./cover-pools.md), open token vaults that anyone can deposit into. Today there are two: [one holding wstETH and one holding USD8](https://usd8.fi/#cover-pools).
+
+Depositors are rewarded with a high APY, funded by USD8's treasury yield. However, their deposits may be used to pay claims if an insured token drops more than 20% against its underlying, and each incident can use up to 50% of each Cover Pool's balance. High risk, high return.
+
+
 ## When can I use my insurance score for a claim?
 
 Insurance score becomes available 7 days after you earn it, and only available score can be used for a claim.

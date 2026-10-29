@@ -1,5 +1,5 @@
 import WalletNoticeProvider, { NoticeMessage } from './WalletNotice.jsx';
-import { Fragment, useEffect, useId, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import coverWsteth from '../assets/cover-wsteth.png';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
@@ -290,6 +290,12 @@ function simulatorPools(pools = []) {
 const SUSD8_PLANNED_SCORE_RATE_PER_DAY = '0.1';
 
 function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, balances, balancesLoading, savingsVault, pools, poolLoading, incident, insuredTokenStates, scoreMaturitySeconds, scoreRatesPerTokenPerDay, scoreRatesLoading, onFileClaim, onPoolAction, onUsd8Action, fileClaimUnavailableReason }) {
+  // Docs link to /#cover-pools. The page renders after load, so the browser's own
+  // jump to the anchor misses it: scroll once the section exists.
+  const coverPoolsRef = useRef(null);
+  useEffect(() => {
+    if (window.location.hash === '#cover-pools') coverPoolsRef.current?.scrollIntoView?.();
+  }, []);
   const scoreMaturityPhrase = durationPhrase(scoreMaturitySeconds) || 'the holding period';
   const scoreLoading = scoreStatus === 'loading';
   const walletUnavailableReason = wallet.connected ? wallet.networkUnavailableReason || '' : CONNECT_WALLET_REASON;
@@ -412,7 +418,7 @@ function FreeInsurancePage({ wallet, score, scoreStatus, availableScoreLoading, 
         />
       ) : null}
 
-      <section className="cover-pools-section" aria-labelledby="cover-pools-title">
+      <section id="cover-pools" ref={coverPoolsRef} className="cover-pools-section" aria-labelledby="cover-pools-title">
         <div className="landing-section-title-row">
           <h2 className="landing-section-title" id="cover-pools-title">Cover Pools</h2>
           <InfoTooltip ariaLabel="About Cover Pools">

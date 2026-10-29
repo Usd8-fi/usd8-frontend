@@ -683,6 +683,21 @@ describe('Free insurance table', () => {
     expect(within(savingsCard).queryByRole('button', { name: 'Withdraw' })).not.toBeInTheDocument();
   });
 
+  it('scrolls to the cover pools when opened from a /#cover-pools link', () => {
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    window.history.replaceState({}, '', '/#cover-pools');
+    try {
+      render(<USD8Landing wallet={wallet} pools={POOLS} />);
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView.mock.contexts[0]).toHaveAttribute('id', 'cover-pools');
+    } finally {
+      window.history.replaceState({}, '', '/');
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it('spins on the cover pool APY while its read is pending and shows a static dash only after it fails', () => {
     const pending = POOLS.map(pool => ({ ...pool, tvl: '$1000', apy: null, apy7d: null, apyPending: true }));
     const { rerender } = render(<USD8Landing wallet={wallet} pools={pending} poolLoading={false} />);
