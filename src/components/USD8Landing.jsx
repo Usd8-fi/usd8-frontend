@@ -564,6 +564,19 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
           </strong>
         </div>
         <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={pool.tvl} label="Loading pool data" /></strong></div>
+        <div className="cover-pool-capacity-metric">
+          <span className="metric-label-with-help">
+            Capacity
+            <InfoTooltip ariaLabel={`About capacity for ${pool.name}`} className="dashboard-help--align-right">
+              {pool.capacityUncapped
+                ? 'Current pool deposits. This pool has no deposit cap.'
+                : 'Each cover pool has a size cap. This shows how full it is: current deposits as a share of the cap. At 100% the pool stops accepting deposits until someone withdraws.'}
+            </InfoTooltip>
+          </span>
+          {poolLoading && pool.capacityPercent === null
+            ? <LoadingSpinner label="Loading pool capacity" />
+            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} assetSymbol={pool.assetSymbol} />}
+        </div>
         <div>
           <span>Your Deposit</span>
           <strong>
@@ -580,19 +593,6 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
             </InfoTooltip>
           </span>
           <strong><LivePoolEarnings pool={pool} /></strong>
-        </div>
-        <div className="cover-pool-capacity-metric">
-          <span className="metric-label-with-help">
-            Capacity
-            <InfoTooltip ariaLabel={`About capacity for ${pool.name}`} className="dashboard-help--align-right">
-              {pool.capacityUncapped
-                ? 'Current pool deposits. This pool has no deposit cap.'
-                : 'Each cover pool has a size cap. This shows how full it is: current deposits as a share of the cap. At 100% the pool stops accepting deposits until someone withdraws.'}
-            </InfoTooltip>
-          </span>
-          {poolLoading && pool.capacityPercent === null
-            ? <LoadingSpinner label="Loading pool capacity" />
-            : <CapacityBar value={pool.capacityPercent} uncapped={pool.capacityUncapped} assets={pool.assets} assetSymbol={pool.assetSymbol} />}
         </div>
       </div>
 

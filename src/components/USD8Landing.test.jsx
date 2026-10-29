@@ -237,15 +237,15 @@ describe('USD8 landing navigation', () => {
     expect(poolCard.querySelector('img')).toHaveAttribute('src', coverWsteth);
   });
 
-  it('lays the pool stats out in one row: APY, TVL, deposit, earnings, capacity', () => {
+  it('lays the pool stats out in one row: APY, TVL, capacity, deposit, earnings', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
 
     const poolCard = screen.getByRole('heading', { name: 'wstEth Cover Pool' }).closest('section');
     const stats = poolCard.querySelector('.cover-pool-stats');
     expect(stats).not.toBeNull();
     expect([...stats.children].map((item) => item.querySelector('span').childNodes[0].textContent.trim()))
-      .toEqual(['30D APY', 'TVL', 'Your Deposit', 'Your Earnings', 'Capacity']);
-    expect(stats.children[4]).toHaveClass('cover-pool-capacity-metric');
+      .toEqual(['30D APY', 'TVL', 'Capacity', 'Your Deposit', 'Your Earnings']);
+    expect(stats.children[2]).toHaveClass('cover-pool-capacity-metric');
     expect(poolCard.querySelector('.cover-pool-actions').children).toHaveLength(3);
   });
 
