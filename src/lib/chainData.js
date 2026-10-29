@@ -679,6 +679,9 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       tint: read.config.tint,
       assetBalance: formatted(read.assetBalance),
       apy: null,
+      // The APY arrives in a second, slower read (fetchLandingAnalytics): spin
+      // until it answers instead of flashing a dash.
+      apyPending: true,
       tvl: formattedUsd(read.totalAssets, read.assetUsdPrice, read.assetUsdDecimals),
       capacityPercent: Math.min(100, capacityPercent),
       capacityUncapped: read.depositCap === zero,
@@ -972,10 +975,10 @@ async function readIncident({ client, network, account, hasAccount, activeIncide
 
 export async function fetchLandingAnalytics(snapshot, account, chainId, { signal } = {}) {
   const pools = await Promise.all((snapshot.pools || []).map(async pool => {
-    if (pool.usdPrice === undefined) return { id: pool.id, apy: pool.apy, apy7d: pool.apy7d };
+    if (pool.usdPrice === undefined) return { id: pool.id, apy: pool.apy, apy7d: pool.apy7d, apyPending: false };
     // A pool that has never received a reward stream (periodFinish is still 0
     // onchain) has earned nothing: its trailing APY is exactly 0%.
-    if (pool.earningsPeriodFinishMilliseconds === 0) return { id: pool.id, apy: '0.0%', apy7d: '0.0%' };
+    if (pool.earningsPeriodFinishMilliseconds === 0) return { id: pool.id, apy: '0.0%', apy7d: '0.0%', apyPending: false };
     const result = await fetchTrailingRewardApr(pool.address, BigInt(pool.usdPrice), pool.priceDecimals, chainId, { signal })
       .catch(() => { checkAbort(signal); return { apy: null, windowSeconds: null }; });
     // null (not the em-dash) means "could not be computed": shown as a static
@@ -986,6 +989,7 @@ export async function fetchLandingAnalytics(snapshot, account, chainId, { signal
       apyWindowSeconds: result.windowSeconds,
       apy7d: result.apy7d === UNKNOWN_VALUE ? null : (result.apy7d ?? null),
       apy7dWindowSeconds: result.apy7dWindowSeconds ?? null,
+      apyPending: false,
     };
   }));
   return { pools };

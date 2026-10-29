@@ -5,7 +5,9 @@ export function mergeSnapshot(current, next) {
     pools: next.pools.map((pool) => {
       const old = current.pools?.find((entry) => entry.id === pool.id);
       return { ...pool, apy: pool.apy ?? old?.apy ?? null, apyWindowSeconds: pool.apyWindowSeconds ?? old?.apyWindowSeconds ?? null,
-        apy7d: pool.apy7d ?? old?.apy7d ?? null, apy7dWindowSeconds: pool.apy7dWindowSeconds ?? old?.apy7dWindowSeconds ?? null };
+        apy7d: pool.apy7d ?? old?.apy7d ?? null, apy7dWindowSeconds: pool.apy7dWindowSeconds ?? old?.apy7dWindowSeconds ?? null,
+        // Once the APY read has answered, a later snapshot must not bring the spinner back.
+        ...(old?.apyPending === false ? { apyPending: false } : {}) };
     }),
     ...(sameBalances && current.scoreBalanceChangeTimestampMilliseconds ? {
       scoreBalanceChangeTimestampMilliseconds: current.scoreBalanceChangeTimestampMilliseconds,

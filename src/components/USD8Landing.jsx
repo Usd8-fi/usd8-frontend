@@ -560,7 +560,7 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
             </InfoTooltip>
           </span>
           <strong>
-            <MetricValue loading={poolLoading} value={apyWindow === '7D' ? pool.apy7d : pool.apy} label="Loading pool data" />
+            <MetricValue loading={poolLoading || pool.apyPending === true} value={apyWindow === '7D' ? pool.apy7d : pool.apy} label="Loading pool data" />
           </strong>
         </div>
         <div><span>TVL</span><strong><MetricValue loading={poolLoading} value={pool.tvl} label="Loading pool data" /></strong></div>

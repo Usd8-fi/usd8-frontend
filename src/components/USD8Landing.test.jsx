@@ -683,6 +683,17 @@ describe('Free insurance table', () => {
     expect(within(savingsCard).queryByRole('button', { name: 'Withdraw' })).not.toBeInTheDocument();
   });
 
+  it('spins on the cover pool APY while its read is pending and shows a static dash only after it fails', () => {
+    const pending = POOLS.map(pool => ({ ...pool, tvl: '$1000', apy: null, apy7d: null, apyPending: true }));
+    const { rerender } = render(<USD8Landing wallet={wallet} pools={pending} poolLoading={false} />);
+    const poolCard = screen.getByRole('region', { name: 'wstEth Cover Pool' });
+    expect(within(poolCard).getByRole('status', { name: 'Loading pool data' })).toBeInTheDocument();
+    expect(within(poolCard).queryByText('—')).not.toBeInTheDocument();
+    rerender(<USD8Landing wallet={wallet} pools={pending.map(pool => ({ ...pool, apyPending: false }))} poolLoading={false} />);
+    expect(within(poolCard).queryByRole('status', { name: 'Loading pool data' })).not.toBeInTheDocument();
+    expect(within(poolCard).getByText('—')).toBeInTheDocument();
+  });
+
   it('uses spinning icons instead of temporary dashes for APY and pool metrics', () => {
     render(
       <USD8Landing

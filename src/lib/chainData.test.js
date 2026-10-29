@@ -936,7 +936,7 @@ describe('fetchLandingChainData', () => {
       id: 'wsteth', address: '0x00000000000000000000000000000000000000c1',
       usdPrice: '400000000000', priceDecimals: 8, earningsPeriodFinishMilliseconds: 0,
     }] }, '', 11155111);
-    expect(analytics.pools).toEqual([{ id: 'wsteth', apy: '0.0%', apy7d: '0.0%' }]);
+    expect(analytics.pools).toEqual([{ id: 'wsteth', apy: '0.0%', apy7d: '0.0%', apyPending: false }]);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
