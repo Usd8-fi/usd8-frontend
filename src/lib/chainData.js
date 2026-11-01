@@ -557,6 +557,13 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       .then(() => client.readContract({ address: msloss2Address, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber }))
       .catch(() => null)
     : 0n;
+  // Steakhouse USDC (mainnet only): same out-of-multicall read so FIXED_READS stays stable.
+  const steakAddress = contracts.insuredTokens['morpho-steakusdc'];
+  const steak = steakAddress && hasAccount
+    ? await Promise.resolve()
+      .then(() => client.readContract({ address: steakAddress, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber }))
+      .catch(() => null)
+    : 0n;
   const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
     usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
     onchainScoreSpent] = landingValues.slice(0, FIXED_READS);
@@ -764,6 +771,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
         'aave-sgho': formatted(sGho),
         'sky-susds': formatted(sUsds),
         [testTokenId]: formatted(msloss),
+        ...(steakAddress ? { 'morpho-steakusdc': steak === null ? UNKNOWN_VALUE : formatted(steak) } : {}),
         ...(msloss2Address ? { 'test-msloss2': msloss2 === null ? UNKNOWN_VALUE : formatted(msloss2) } : {}),
       },
     },

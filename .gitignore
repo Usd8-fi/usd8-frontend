@@ -35,6 +35,10 @@ src/lib/servicesStatus.js
 src/lib/appErrors.js
 src/lib/teeStatus.js
 src/lib/strategyDeposit.js
+src/lib/profitDistribution.js
+src/lib/profitDistribution.test.js
+src/components/ProfitDistribution.jsx
+src/components/ProfitDistribution.test.jsx
 src/lib/adminActivity.js
 src/lib/adminActivity.test.js
 src/lib/adminEventsAbi.json
