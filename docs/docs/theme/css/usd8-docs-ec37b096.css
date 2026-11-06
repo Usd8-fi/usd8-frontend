@@ -770,3 +770,11 @@ body {
 .timelock-queue-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: timelock-queue-spin 0.8s linear infinite; vertical-align: middle; }
 @keyframes timelock-queue-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .timelock-queue-spinner, .timelock-status-dot { animation: none !important; } }
+
+/* Content images carry width/height attributes (to reserve space and avoid layout
+   shift). mdBook caps them at max-width: 100%, which shrinks the width on narrow
+   screens while the height attribute stays fixed, squashing the picture. Let the
+   height follow the width. Zero specificity so any class rule above still wins. */
+:where(.content) img {
+    height: auto;
+}
