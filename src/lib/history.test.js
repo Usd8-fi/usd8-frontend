@@ -12,6 +12,20 @@ describe('bounded history', () => {
     await expect(fetchLogsInChunks(client, {}, 0n, 99_999_999_999n)).rejects.toThrow('too large');
     expect(client.getLogs).toHaveBeenCalledTimes(10);
   });
+  it('reads a wide span in one request when allowed, and falls back to chunks if that fails', async () => {
+    const client = { getLogs: vi.fn().mockResolvedValue([{ blockNumber: 5n }]) };
+    expect(await fetchLogsInChunks(client, { address: '0xabc' }, 0n, 99_999n, { wide: true })).toEqual([{ blockNumber: 5n }]);
+    expect(client.getLogs).toHaveBeenCalledTimes(1);
+    expect(client.getLogs).toHaveBeenCalledWith({ address: '0xabc', fromBlock: 0n, toBlock: 99_999n });
+    client.getLogs.mockReset();
+    client.getLogs.mockRejectedValueOnce(new Error('range too wide')).mockResolvedValue([]);
+    await fetchLogsInChunks(client, {}, 0n, 99_999n, { wide: true });
+    expect(client.getLogs).toHaveBeenCalledTimes(11);
+    // Without the flag (e.g. Sepolia, which caps ranges) it goes straight to chunks.
+    client.getLogs.mockReset(); client.getLogs.mockResolvedValue([]);
+    await fetchLogsInChunks(client, {}, 0n, 99_999n);
+    expect(client.getLogs).toHaveBeenCalledTimes(10);
+  });
   it('retains stable logs, re-reads the tail, and discards a reorged checkpoint', async () => {
     const client = { getLogs: vi.fn().mockResolvedValueOnce([{ blockNumber: 10n }, { blockNumber: 300n }]).mockResolvedValueOnce([{ blockNumber: 310n }]).mockResolvedValueOnce([{ blockNumber: 20n }]), getBlock: vi.fn().mockResolvedValue({ hash: '0xaaa' }) };
     await incrementalLogs(client, 'test', {}, 0n, 300n);

@@ -14,7 +14,20 @@ function retain(key, value) {
 }
 export function clearHistoryCache() { histories.clear(); }
 
-export async function fetchLogsInChunks(client, request, fromBlock, toBlock, { signal } = {}) {
+export async function fetchLogsInChunks(client, request, fromBlock, toBlock, { signal, wide = false } = {}) {
+  // One request for the whole span where the endpoint allows it: far fewer
+  // requests against rate-limited public RPCs. Any failure (range limit, rate
+  // limit, outage) falls back to the bounded 10k-block chunks below.
+  if (wide && toBlock - fromBlock + 1n > RANGE) {
+    try {
+      const logs = await measuredRequest('rpc:getLogs', () => client.getLogs({ ...request, fromBlock, toBlock }));
+      if (logs.length > MAX_LOGS) throw new Error('History response exceeded the supported size.');
+      return logs;
+    } catch (error) {
+      checkAbort(signal);
+      if (error?.message === 'History response exceeded the supported size.') throw error;
+    }
+  }
   if (toBlock >= fromBlock && (toBlock - fromBlock) / RANGE + 1n > BigInt(MAX_PAGES)) throw new Error('History is too large for this RPC. An indexed history service is required.');
   const ranges = [];
   for (let start = fromBlock; start <= toBlock; start += RANGE) {

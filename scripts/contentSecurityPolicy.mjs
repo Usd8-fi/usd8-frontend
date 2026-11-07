@@ -19,7 +19,9 @@ export const CSP_DIRECTIVES = Object.freeze({
     "'self'",
     // Chain reads: primary and fallback mainnet RPC, Sepolia RPC for Sepolia builds.
     'https://ethereum-rpc.publicnode.com',
+    'https://rpc.mevblocker.io',
     'https://mainnet.gateway.tenderly.co',
+    'https://eth.drpc.org',
     'https://rpc.sepolia.ethpandaops.io',
     // USD8 services: score API, mainnet and Sepolia claim APIs, terms.
     // (The TEE status API is read only by the local-only System Dashboard.)

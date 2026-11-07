@@ -57,6 +57,7 @@ function routedRead(call, blockNumber) {
 
 import {
   calculateTrailingRewardApr,
+  fetchTrailingRewardApr,
   claimPercentage,
   fetchLandingChainData,
   fetchLandingAnalytics,
@@ -101,6 +102,16 @@ describe('rpcTransportFor', () => {
     expect(rpcTransportFor('https://sepolia.example')).toBe(transport);
     expect(mocks.http).toHaveBeenCalledWith('https://sepolia.example', { timeout: 15_000 });
     expect(mocks.fallback).not.toHaveBeenCalled();
+  });
+});
+
+describe('fetchTrailingRewardApr', () => {
+  it('retries a failed history read once before giving up', async () => {
+    mocks.getBlock.mockReset();
+    mocks.getBlock.mockRejectedValue(new Error('HTTP 429'));
+    await expect(fetchTrailingRewardApr('0x00000000000000000000000000000000000000f1', 1n, 8, 11155111, { retryDelayMs: 0 })).rejects.toThrow('429');
+    // Each attempt starts with the head block read: two attempts in total.
+    expect(mocks.getBlock).toHaveBeenCalledTimes(2);
   });
 });
 

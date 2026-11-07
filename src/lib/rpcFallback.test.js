@@ -22,7 +22,8 @@ describe('mainnet RPC fallback', () => {
   it('configures a second public mainnet RPC behind the primary', () => {
     const network = getNetwork(1);
     expect(network.rpcUrl).toBe('https://ethereum-rpc.publicnode.com');
-    expect(network.rpcFallbackUrls).toEqual(['https://mainnet.gateway.tenderly.co']);
+    expect(network.rpcFallbackUrls).toEqual(['https://rpc.mevblocker.io', 'https://mainnet.gateway.tenderly.co', 'https://eth.drpc.org']);
+    expect(network.wideLogQueries).toBe(true);
   });
 
   it('uses only the primary while it answers', async () => {

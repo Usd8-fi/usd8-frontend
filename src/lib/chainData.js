@@ -364,7 +364,23 @@ const rewardStateAbi = [
 /// stream at the window start, then replays its own events up to the head.
 /// The window is the last 30 days, or the pool's whole life if it is younger:
 /// the rate earned so far is annualized as if it continued.
-export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal } = {}) {
+export const TRAILING_APR_RETRY_MS = 2_000;
+
+/// A pool's APY needs ~30 history requests on rate-limited public RPCs; one
+/// throttled burst used to leave a dash. Retry once after a short pause before
+/// giving up (failures are never cached, so the retry re-reads).
+export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal, retryDelayMs = TRAILING_APR_RETRY_MS } = {}) {
+  try {
+    return await readTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal });
+  } catch (error) {
+    checkAbort(signal);
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    checkAbort(signal);
+    return readTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal });
+  }
+}
+
+async function readTrailingRewardApr(poolAddress, price, priceDecimals, chainId, { signal } = {}) {
   const network = getProtocolNetwork(chainId);
   const address = poolAddress.toLowerCase();
   const config = network.contracts.coverPools.find((pool) => pool.address.toLowerCase() === address);
@@ -382,7 +398,7 @@ export async function fetchTrailingRewardApr(poolAddress, price, priceDecimals, 
       read('totalSupply'),
       client.readContract({ address, abi: rewardStateAbi, functionName: 'balanceOf', args: [address], blockNumber: startBlock }),
     ]);
-    const logs = await fetchLogsInChunks(client, { address, events: poolHistoryEvents }, startBlock + 1n, head.number, { signal: querySignal });
+    const logs = await fetchLogsInChunks(client, { address, events: poolHistoryEvents }, startBlock + 1n, head.number, { signal: querySignal, wide: Boolean(network.wideLogQueries) });
     const blockNumbers = [...new Set(logs.map((log) => log.blockNumber))];
     const blocks = await Promise.all(blockNumbers.map((blockNumber) => client.getBlock({ blockNumber })));
     const timeOf = new Map(blocks.map((block) => [block.number, Number(block.timestamp)]));

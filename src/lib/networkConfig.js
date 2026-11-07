@@ -155,9 +155,17 @@ const NETWORKS = Object.freeze({
     // PublicNode: keyless and CORS-open, and unlike the keyless dRPC endpoint it
     // serves eth_getLogs (10k-block chunks), which the reserve and TEE panels need.
     rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com',
-    // Used only when the primary fails (network error, timeout, HTTP 429/5xx).
-    // Verified: CORS for usd8.fi, JSON-RPC batches, and 10k-block eth_getLogs.
-    rpcFallbackUrls: ['https://mainnet.gateway.tenderly.co'],
+    // Used in order, only when the one before fails (403, 429, 5xx, timeout).
+    // PublicNode refuses state older than a few minutes and logs older than
+    // about a day, so every history read (cover pool APY and charts) lands here.
+    // MEV Blocker: archive state, full-range eth_getLogs and batches, and held
+    // up under burst load. Tenderly: same features but rate limits after ~15
+    // quick requests. Keyless dRPC: archive state only (logs capped on free).
+    // All verified CORS-open for usd8.fi.
+    rpcFallbackUrls: ['https://rpc.mevblocker.io', 'https://mainnet.gateway.tenderly.co', 'https://eth.drpc.org'],
+    // The fallbacks above answer eth_getLogs over the whole cover pool history
+    // in one request, so history reads try that before 10k-block chunks.
+    wideLogQueries: true,
     explorerApiUrl: 'https://eth.blockscout.com/api/v2',
     contracts: MAINNET_CONTRACTS,
     payoutAssets: MAINNET_PAYOUT_ASSETS,
