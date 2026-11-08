@@ -1,0 +1,31 @@
+{
+  "title": "Simular reclamación",
+  "close": "Cerrar simulador de reclamaciones",
+  "intro": "Estima tu reembolso con el tamaño actual de los pools de cobertura y precios en tiempo real. La liquidación lo recalcula todo en el TEE, así que la indemnización final puede ser distinta.",
+  "sliderLabel": "Control deslizante de {label}",
+  "insuredToken": {
+    "label": "Token asegurado",
+    "helpLabel": "Acerca del token asegurado",
+    "help": "El token por el que reclamas. Su cobertura máxima fija el tope de pérdida, y un pool de cobertura que contenga ese mismo token queda excluido de su incidente."
+  },
+  "lossValue": {
+    "label": "Valor de la pérdida (USD)",
+    "helpLabel": "Acerca del valor de la pérdida (USD)",
+    "help": "Valor de los tokens asegurados por los que reclamas, al precio medio de los 7 días previos a la caída. El tope de pérdida es un porcentaje de este valor."
+  },
+  "scoreWeight": {
+    "label": "Peso de tu puntuación",
+    "helpLabel": "Acerca del peso de tu puntuación",
+    "help": "Tu puntuación de seguro, Boosters incluidos, como porcentaje de la puntuación total de todos los reclamantes del mismo incidente."
+  },
+  "results": {
+    "estimatedReimbursement": "Reembolso estimado",
+    "coverPoolBudget": "Presupuesto de los pools de cobertura",
+    "scoreShare": "A. Parte según puntuación ({percent} %)",
+    "lossCap": "B. Tope de pérdida ({percent} %)",
+    "payoutFormula": "Indemnización = min(A, B)",
+    "paidFromCoverPools": "Pagado por los pools de cobertura",
+    "excluded": "Excluido",
+    "noPoolData": "Aún no hay datos de los pools de cobertura."
+  }
+}

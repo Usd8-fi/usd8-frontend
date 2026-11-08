@@ -1,0 +1,1 @@
+var e={connectWallet:`يُرجى ربط محفظتك أولًا.`};export{e as default};

@@ -1,0 +1,1 @@
+var e={codeLabel:`کد دعوت بتای خصوصی`,invalidCode:`کد دعوت نامعتبر است.`,submit:`ورود به بتا`,help:`کد دعوت را از <telegram>Telegram</telegram> یا <x>دایرکت X</x> ما بگیرید`};export{e as default};

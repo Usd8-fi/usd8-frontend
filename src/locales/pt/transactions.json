@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "Emitir USD8",
+    "redeemTitle": "Resgatar USD8",
+    "closeMint": "Fechar a janela de emissão de USD8",
+    "closeRedeem": "Fechar a janela de resgate de USD8",
+    "waitingForQuote": "Aguardando uma cotação de resgate válida.",
+    "amountInput": "Quantidade de {token}",
+    "output": "{token} a receber",
+    "mint": "Emitir",
+    "redeem": "Resgatar"
+  },
+  "available": "Disponível: {amount}",
+  "earnings": {
+    "label": "Rendimentos em USD8",
+    "availableToWithdraw": "Disponível para saque: {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "Saque liberado",
+    "waitingForClaims": "Período de espera concluído; aguardando a finalização dos pedidos de indenização",
+    "cooldown": "Progresso do período de espera",
+    "barLabel": "Progresso do período de espera do saque"
+  },
+  "pool": {
+    "defaultName": "pool de cobertura",
+    "depositTitle": "Depositar",
+    "withdrawTitle": "Sacar",
+    "withdrawEarningsTitle": "Sacar rendimentos",
+    "closeDeposit": "Fechar a janela de depósito no {pool}",
+    "closeWithdraw": "Fechar a janela de saque do {pool}",
+    "closeWithdrawEarnings": "Fechar a janela de saque de rendimentos do {pool}",
+    "sharesToRedeem": "Cotas do pool a resgatar",
+    "withdrawAvailability": "Cotas disponíveis: {amount}. {cooldown}, se não houver pedidos de indenização pendentes; caso contrário, só depois que todos forem finalizados. <link>Saiba mais</link>.",
+    "cooldownWithLength": "Período de espera de {length}",
+    "cooldown": "Período de espera",
+    "depositAvailabilityWithCapacity": "Disponível: {amount}. <capacity>Capacidade restante no pool: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "{symbol} estimado a receber",
+    "mayDecrease": "Pode diminuir se o pool pagar indenizações antes de o seu saque ser concluído.",
+    "startCooldown": "Solicitar saque",
+    "withdraw": "Sacar",
+    "withdrawEarnings": "Sacar rendimentos",
+    "deposit": "Depositar",
+    "balances": {
+      "summary": "{withdrawable}; {cooldown}.",
+      "readyToWithdraw": "Disponível para saque: {amount} {symbol}",
+      "readyToWithdrawAfterClaims": "Disponível para saque após a finalização dos pedidos: {amount} {symbol}",
+      "estimatedForWithdrawal": "Estimativa de saque: {amount} {symbol}",
+      "estimatedForWithdrawalAfterClaims": "Estimativa de saque após a finalização dos pedidos: {amount} {symbol}",
+      "inCooldown": "em período de espera: {amount} {symbol}",
+      "inCooldownWithTiming": "em período de espera: {amount} {symbol} — {timing}"
+    }
+  }
+}

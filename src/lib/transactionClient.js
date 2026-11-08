@@ -1,5 +1,6 @@
 import { createPublicClient } from 'viem';
 import { rpcTransportFor } from './chainData.js';
+import { t } from './i18n.js';
 import { getProtocolNetwork } from './networkConfig.js';
 
 // Full public client for the wallet runtime only: gas estimation and receipt
@@ -9,7 +10,7 @@ const clients = new Map();
 
 export function transactionClientFor(chainId) {
   const network = getProtocolNetwork(chainId);
-  if (!network) throw new Error('USD8 is not deployed on the selected network');
+  if (!network) throw new Error(t('lib.network.notDeployed'));
   let client = clients.get(network.id);
   if (!client) {
     client = createPublicClient({ chain: network.chain, transport: rpcTransportFor(network.rpcUrl, network.rpcFallbackUrls) });

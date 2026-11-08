@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "USD8 앱",
+    "language": "언어"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "올바른 Ethereum 주소를 입력하세요.",
+    "checking": "확인 중...",
+    "noBoosters": "이 주소에는 부스터가 없습니다.",
+    "found_one": "축하합니다! 부스터 {count}개를 보유하고 있습니다.",
+    "found_other": "축하합니다! 부스터 {count}개를 보유하고 있습니다.",
+    "error": "오류: {message}",
+    "fetchFailed": "잔액을 불러오지 못했습니다",
+    "executed": "실행 완료",
+    "cancelled": "취소됨",
+    "queued": "대기 중 · {time}",
+    "ready": "실행 가능",
+    "executableFrom": "{date}부터 실행 가능",
+    "transaction": "트랜잭션",
+    "description": "설명",
+    "status": "상태",
+    "empty": "아직 타임락 트랜잭션이 없습니다",
+    "loading": "불러오는 중",
+    "loadFailed": "타임락 트랜잭션을 불러오지 못했습니다",
+    "retry": "다시 시도",
+    "hoursLeft": "{n}시간 남음",
+    "minutesLeft": "{n}분 남음"
+  },
+  "CONSENT_TEXT": {
+    "label": "쿠키 및 분석 설정",
+    "title": "쿠키 및 분석 설정",
+    "message": "USD8은 사이트 이용 현황을 집계해 파악하기 위해 선택 사항인 Google Analytics 쿠키를 사용합니다. 분석 도구는 동의하신 경우에만 불러오며, 거부해도 앱 이용에는 영향이 없습니다.",
+    "privacy": "개인정보 처리 안내",
+    "reject": "분석 쿠키 거부",
+    "accept": "분석 쿠키 허용"
+  }
+}

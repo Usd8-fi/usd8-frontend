@@ -1,0 +1,25 @@
+{
+  "tableLabel": "Insured tokens",
+  "columns": {
+    "insuredToken": "Insured Token",
+    "insuredTokenHelpLabel": "About insured token",
+    "insuredTokenHelp": "An asset eligible for a claim after a covered loss incident, subject to insurance score and claim rules.",
+    "maxCoverage": "Max Coverage",
+    "maxCoverageHelpLabel": "About max coverage",
+    "maxCoverageHelp": "Current onchain maximum reimbursement for each listed token. Actual payout depends on the user's insurance score and cover pool limits.",
+    "claim": "Claim"
+  },
+  "openTokenSite": "Open {token} on its own site",
+  "actions": {
+    "fileClaim": "File Claim",
+    "fileClaimFor": "File claim for {token}",
+    "actionFor": "{action} for {token}",
+    "claimOpen": "Claim Open",
+    "settleClaims": "Settle Claims",
+    "settleAndDispute": "Settle & Dispute",
+    "finalisePayout": "Finalise Payout",
+    "minutesLeft": "{label} ({minutes}m left)",
+    "daysHoursLeft": "{label} ({days}d {hours}h left)"
+  },
+  "simulateClaim": "Simulate Claim"
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from '../lib/i18n.js';
 import { readClientFor } from '../lib/chainData.js';
 import { PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 
@@ -12,6 +13,7 @@ function blockLabel(block) {
 /// once the finalized block's timestamp is past the claim deadline. Show both
 /// heads so users can see when that happens instead of retrying too early.
 export default function SettlementFinalityNote({ claimDeadlineMilliseconds }) {
+  const { t } = useTranslation();
   const [heads, setHeads] = useState({ latest: null, finalized: null });
 
   useEffect(() => {
@@ -38,10 +40,11 @@ export default function SettlementFinalityNote({ claimDeadlineMilliseconds }) {
 
   return (
     <p className="settlement-finality-note" aria-live="polite">
-      Settlement can start once the finalized block passes the claim deadline.
+      {t('settlement.finality.explanation')}
       <br />
-      Current block {blockLabel(heads.latest)} · Finalized block {blockLabel(heads.finalized)}
-      {ready ? ' · Ready to settle' : minutesToGo !== null ? ` · about ${minutesToGo} min to go` : ''}
+      {t('settlement.finality.heads', { latest: blockLabel(heads.latest), finalized: blockLabel(heads.finalized) })}
+      {ready ? ` · ${t('settlement.finality.readyToSettle')}`
+        : minutesToGo !== null ? ` · ${t('settlement.finality.minutesToGo', { minutes: minutesToGo })}` : ''}
     </p>
   );
 }

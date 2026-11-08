@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import usd8Logo from '../assets/usd8Logo.svg';
 import usd8Wordmark from '../assets/usd8-wordmark.svg';
+import { useTranslation } from '../lib/i18n.js';
 
 // Client-side gate only: it hides the app from casual visitors, it is not real
 // security. The code itself is never in the repository: the build reads only
@@ -36,8 +37,10 @@ function hasStoredAccess() {
 }
 
 export default function PrivateBetaGate({ children }) {
+  const { t, tRich } = useTranslation();
   const [granted, setGranted] = useState(hasStoredAccess);
   const [code, setCode] = useState('');
+  // Stores a message key, translated at render so a language switch updates it.
   const [error, setError] = useState('');
 
   if (granted) return children;
@@ -45,7 +48,7 @@ export default function PrivateBetaGate({ children }) {
   async function submit(event) {
     event.preventDefault();
     if (!(await matchesInvitationCode(code))) {
-      setError('Invalid invitation code.');
+      setError('betaGate.invalidCode');
       return;
     }
     try {
@@ -65,7 +68,7 @@ export default function PrivateBetaGate({ children }) {
           <img className="private-beta-wordmark" src={usd8Wordmark} alt="USD8" />
         </h1>
         <form className="private-beta-form" onSubmit={submit}>
-          <label htmlFor="private-beta-code">Private Beta Invitation Code</label>
+          <label htmlFor="private-beta-code">{t('betaGate.codeLabel')}</label>
           <input
             id="private-beta-code"
             autoComplete="off"
@@ -82,13 +85,13 @@ export default function PrivateBetaGate({ children }) {
               setError('');
             }}
           />
-          {error ? <p className="private-beta-error" role="alert">{error}</p> : null}
-          <button className="private-beta-button" type="submit">Access beta</button>
+          {error ? <p className="private-beta-error" role="alert">{t(error)}</p> : null}
+          <button className="private-beta-button" type="submit">{t('betaGate.submit')}</button>
           <p className="private-beta-help">
-            Get a code from our{' '}
-            <a href={TELEGRAM_GROUP} target="_blank" rel="noreferrer">Telegram</a>
-            {' '}or{' '}
-            <a href={X_PROFILE} target="_blank" rel="noreferrer">X DM</a>
+            {tRich('betaGate.help', {
+              telegram: (text) => <a href={TELEGRAM_GROUP} target="_blank" rel="noreferrer">{text}</a>,
+              x: (text) => <a href={X_PROFILE} target="_blank" rel="noreferrer">{text}</a>,
+            })}
           </p>
         </form>
       </section>

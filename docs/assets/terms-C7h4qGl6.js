@@ -1,0 +1,1 @@
+var e={title:`Kullanım Koşulları`,requirement:`USD8'i bu cüzdanla kullanmak için lütfen <terms>Koşulları</terms> ve <risk>Risk Bildirimini</risk> kabul edin.`,disagreeNote:`Kabul etmezseniz cüzdanınızın bağlantısı kesilir. Herhangi bir imza veya işlem gerekmez.`,agree:`Kabul Ediyorum`,disagree:`Kabul Etmiyorum`};export{e as default};

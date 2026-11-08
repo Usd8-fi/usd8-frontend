@@ -1003,7 +1003,7 @@ small a,
 
 .landing-footer-links {
   display: grid;
-  grid-template-columns: 130px 240px minmax(0, 1fr);
+  grid-template-columns: 130px 240px max-content minmax(0, 1fr);
   column-gap: 43px;
   margin-top: 36px;
 }
@@ -2443,3 +2443,98 @@ body:has(.activity-ticker) { padding-bottom: 29px; }
   height: auto;
   margin: 14px 0;
 }
+
+/* Footer language menu, in its own last footer column. */
+.language-picker {
+  display: inline-flex;
+}
+
+.landing-footer-links .language-select {
+  /* Same look as the docs top-bar language menu (.docs-language-select). */
+  padding: 2px 6px;
+  border: 1px solid #333333;
+  border-radius: 0;
+  background: transparent;
+  color: #737480;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.landing-footer-links .language-select option {
+  color: #111;
+}
+
+/* Translations: long compound words (German, Russian…) must wrap instead of
+   being clipped on narrow screens. English rendering is left untouched. */
+html:not([lang="en"]) :is(h1, h2, h3, p, .landing-section-title) {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Translated pool-card labels are longer than English: on narrow two-column
+   layouts let them wrap inside their own column instead of running into the
+   neighbouring label. */
+@media (max-width: 900px) {
+  html:not([lang="en"]) .cover-pool-stats .metric-label-with-help {
+    width: auto;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
+/* Right-to-left languages (Arabic, Persian): mirror the few physical offsets.
+   Token amounts, addresses and the English activity ticker stay left to right. */
+html[dir="rtl"] .app-dialog-close { right: auto; left: 13px; }
+html[dir="rtl"] .landing-wallet-button { transform: translateX(-18px); }
+html[dir="rtl"] .landing-wallet-network { margin-left: 0; margin-right: 1ch; }
+html[dir="rtl"] .insurance-asset-flag { margin-left: 0; margin-right: 2px; }
+html[dir="rtl"] .landing-shell .covered-protocols-table :is(th, td):not(:last-child),
+html[dir="rtl"] .action-validation-warning,
+html[dir="rtl"] .dashboard-help-tooltip,
+html[dir="rtl"] .wallet-notice { text-align: right; }
+html[dir="rtl"] .landing-footer { margin-left: 0; margin-right: -68px; }
+html[dir="rtl"] .file-claim-field select { padding-right: 14px; padding-left: 42px; }
+html[dir="rtl"] .claim-simulator-field select { padding-right: 10px; padding-left: 38px; }
+html[dir="rtl"] .claim-simulator-breakdown dd { text-align: left; }
+html[dir="rtl"] .activity-ticker { direction: ltr; }
+@media (max-width: 900px) {
+  html[dir="rtl"] .landing-footer { margin-left: 0; margin-right: -20px; }
+}
+html[dir="rtl"] .file-claim-field select { background-position: left 18px center; }
+html[dir="rtl"] .claim-simulator-field select { background-position: left 14px center; }
+
+/* Blex Mono for Latin letters, digits and symbols only, never the space or
+   sentence punctuation (. , : ;):
+   Arabic, Persian and Thai pages use it so those scripts and their word
+   spaces come from a proportional script font (Blex's monospace space
+   leaves wide gaps between Arabic/Thai words). */
+@font-face {
+  font-family: "Blex Latin";
+  src: url("/assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  unicode-range: U+0021-002B, U+002D, U+002F-0039, U+003C-007E, U+00A1-02FF, U+2010-2027, U+2030-205E, U+20A0-20CF, U+2100-23FF, U+25A0-25FF;
+}
+
+@font-face {
+  font-family: "Blex Latin";
+  src: url("/assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0021-002B, U+002D, U+002F-0039, U+003C-007E, U+00A1-02FF, U+2010-2027, U+2030-205E, U+20A0-20CF, U+2100-23FF, U+25A0-25FF;
+}
+
+/* Blex Mono has no Arabic, Persian or Thai glyphs; without a proportional
+   script font next in the stack the browser falls back to a monospace face
+   that stretches those scripts. Latin text and numbers still render in Blex.
+   Letter spacing also breaks Arabic joining and Thai vowel/tone marks. */
+html:is([lang="ar"], [lang="fa"]) {
+  --font-family: "Blex Latin", "SF Arabic", "Geeza Pro", "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+}
+html[lang="th"] {
+  --font-family: "Blex Latin", "Thonburi", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+}
+html:is([lang="ar"], [lang="fa"], [lang="th"]) :not(input) { letter-spacing: 0; }

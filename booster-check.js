@@ -1,4 +1,11 @@
 (function () {
+    // Localised by docs-theme.js (window.usd8DocsText); English when it is absent.
+    var EN = { invalidAddress: "Enter a valid Ethereum address.", checking: "Checking...", noBoosters: "No Boosters found for this address.", found_one: "Congratulations! You have {count} Booster.", found_other: "Congratulations! You have {count} Boosters.", error: "Error: {message}", fetchFailed: "could not fetch balance" };
+    var T = function (key, vars) {
+        if (window.usd8DocsText) return window.usd8DocsText(key, vars);
+        if (vars && typeof vars.count === "number" && EN[key + "_other"]) key += vars.count === 1 ? "_one" : "_other";
+        return (EN[key] || key).replace(/\{(\w+)\}/g, function (match, name) { return vars && vars[name] !== undefined ? String(vars[name]) : match; });
+    };
     var RPC_URL = "https://ethereum.publicnode.com";
     var CONTRACT = "0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f12d";
     var BALANCE_OF_SELECTOR = "0x00fdd58e";
@@ -35,12 +42,12 @@
         async function check() {
             var address = input.value.trim();
             if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
-                show("Enter a valid Ethereum address.", "error", 0);
+                show(T("invalidAddress"), "error", 0);
                 return;
             }
 
             button.disabled = true;
-            show("Checking...", "loading", 0);
+            show(T("checking"), "loading", 0);
 
             try {
                 var addressPadded = address.toLowerCase().replace(/^0x/, "").padStart(64, "0");
@@ -60,12 +67,12 @@
 
                 var count = parseInt(json.result, 16);
                 if (!count) {
-                    show("No Boosters found for this address.", "empty", 0);
+                    show(T("noBoosters"), "empty", 0);
                 } else {
-                    show("Congratulations! You have " + count + " Booster" + (count === 1 ? "" : "s") + ".", "success", count);
+                    show(T("found", { count: count }), "success", count);
                 }
             } catch (error) {
-                show("Error: " + (error.message || "could not fetch balance"), "error", 0);
+                show(T("error", { message: error.message || T("fetchFailed") }), "error", 0);
             } finally {
                 button.disabled = false;
             }

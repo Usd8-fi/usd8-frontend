@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "npm run build:app && mdbook build",
+    "build": "npm run build:app && bash scripts/build-docs.sh",
     "test": "NODE_ENV=test vitest run --configLoader native",
     "preview": "vite preview --configLoader native --host 0.0.0.0",
     "deploy": "./deploy.sh",

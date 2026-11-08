@@ -1,0 +1,126 @@
+{
+  "duration": {
+    "day_one": "{count} giorno",
+    "day_other": "{count} giorni",
+    "day_many": "{count} di giorni",
+    "hour_one": "{count} ora",
+    "hour_other": "{count} ore",
+    "hour_many": "{count} di ore",
+    "minute_one": "{count} minuto",
+    "minute_other": "{count} minuti",
+    "minute_many": "{count} di minuti",
+    "second_one": "{count} secondo",
+    "second_other": "{count} secondi",
+    "second_many": "{count} di secondi",
+    "adjective": {
+      "day_one": "{count} giorno",
+      "day_other": "{count} giorni",
+      "day_many": "{count} di giorni",
+      "hour_one": "{count} ora",
+      "hour_other": "{count} ore",
+      "hour_many": "{count} di ore",
+      "minute_one": "{count} minuto",
+      "minute_other": "{count} minuti",
+      "minute_many": "{count} di minuti",
+      "second_one": "{count} secondo",
+      "second_other": "{count} secondi",
+      "second_many": "{count} di secondi"
+    }
+  },
+  "cooldown": {
+    "readyNow": "prelievo già possibile",
+    "readyIn": {
+      "day_one": "prelievo tra {count} giorno",
+      "day_other": "prelievo tra {count} giorni",
+      "day_many": "prelievo tra {count} di giorni",
+      "hour_one": "prelievo tra {count} ora",
+      "hour_other": "prelievo tra {count} ore",
+      "hour_many": "prelievo tra {count} di ore",
+      "minute_one": "prelievo tra {count} minuto",
+      "minute_other": "prelievo tra {count} minuti",
+      "minute_many": "prelievo tra {count} di minuti"
+    }
+  },
+  "amount": {
+    "invalidNumber": "Inserisci un numero valido.",
+    "tooManyDecimals": "Usa al massimo {decimals} cifre decimali.",
+    "noBalance": {
+      "deposit": "Non hai {token} disponibili da depositare.",
+      "startCooldown": "Non hai {token} disponibili per avviare il periodo di attesa.",
+      "mint": "Non hai {token} disponibili per coniare USD8.",
+      "redeem": "Non hai {token} disponibili per riscattare USD8.",
+      "generic": "Non hai {token} disponibili per {action}."
+    },
+    "invalid": {
+      "deposit": "Inserisci un importo valido di {token} da depositare.",
+      "startCooldown": "Inserisci un importo valido di {token} per avviare il periodo di attesa.",
+      "mint": "Inserisci un importo valido di {token} per coniare USD8.",
+      "redeem": "Inserisci un importo valido di {token} per riscattare USD8.",
+      "generic": "Inserisci un importo valido di {token} per {action}."
+    },
+    "zero": {
+      "deposit": "Per depositare, inserisci un importo di {token} maggiore di zero.",
+      "startCooldown": "Per avviare il periodo di attesa, inserisci un importo di {token} maggiore di zero.",
+      "mint": "Per coniare USD8, inserisci un importo di {token} maggiore di zero.",
+      "redeem": "Per riscattare USD8, inserisci un importo di {token} maggiore di zero.",
+      "generic": "Per {action}, inserisci un importo di {token} maggiore di zero."
+    },
+    "exceedsBalance": "L’importo di {token} supera il tuo saldo disponibile."
+  },
+  "pool": {
+    "existingWithdrawalRequest": "Completa la richiesta di prelievo in corso prima di avviarne una nuova.",
+    "withdrawalAmountsUnavailable": "Gli importi di prelievo non sono disponibili. Premi “Ricarica dati” per continuare.",
+    "noEarnings": "Nessun guadagno da prelevare.",
+    "depositsPausedForIncident": "I depositi sono temporaneamente sospesi finché l’incidente assicurativo #{incident} è attivo. Riprova quando sarà stato finalizzato.",
+    "exceedsCapacity": "Questo deposito supera la capacità residua del Cover Pool. Puoi depositare fino a {amount} {symbol}.",
+    "full": "Il Cover Pool è pieno e non può accettare altri depositi di {symbol}.",
+    "waitingForEstimate": "In attesa di una stima valida del prelievo.",
+    "waitingForClaims": "In attesa che le richieste di risarcimento vengano completate",
+    "noWithdrawal": "Non c’è ancora nessun prelievo disponibile dal Cover Pool."
+  },
+  "claimStage": {
+    "claimOpen": "Richieste aperte",
+    "settleOpen": "Liquidazione aperta",
+    "notSettled": "Non liquidato",
+    "settled": "Liquidato",
+    "payoutOpen": "Indennizzi aperti",
+    "payoutClosed": "Indennizzi chiusi"
+  },
+  "errors": {
+    "rpcRead": "Errore RPC: impossibile leggere i dati della blockchain. La richiesta RPC non è riuscita o è scaduta. Riprova.",
+    "dataUnavailable": "Dati non disponibili"
+  },
+  "claimService": {
+    "settlementNotFinal": "La liquidazione non è ancora possibile sui blocchi finalizzati. Attendi la finalizzazione della rete e riprova.",
+    "noQualifyingDrop": "Non è stato rilevato alcun calo di prezzo idoneo (oltre il 20%).",
+    "incidentActive": "C’è già un incidente attivo. Chiudi e riapri questa richiesta.",
+    "busy": "Il servizio di verifica delle richieste è occupato. Attendi un momento e riprova.",
+    "unavailable": "Il servizio di verifica delle richieste è temporaneamente non disponibile.",
+    "requestFailed": "La richiesta di verifica non è riuscita ({status}).",
+    "busyNoPreviousCheck": "Il servizio di verifica delle richieste è occupato. In attesa di un nuovo controllo: non ci sono risultati precedenti.",
+    "busyStaleCheck": "Il servizio di verifica delle richieste è occupato. Ultimo controllo ({time}, non aggiornato): {result}. Solo a titolo informativo: serve una nuova verifica.",
+    "staleNoDrop": "nessun calo di prezzo idoneo rilevato",
+    "staleQualifyingDrop": "calo di prezzo idoneo rilevato",
+    "verificationTimedOut": "Tempo scaduto per la verifica della richiesta. Riprova.",
+    "tooSlow": "Il servizio di verifica delle richieste non ha risposto in tempo. Riprova.",
+    "unreachable": "Impossibile raggiungere il servizio di verifica delle richieste. Controlla la connessione e riprova.",
+    "notConfigured": "Il servizio di verifica delle richieste non è configurato.",
+    "verificationFailed": "Verifica della richiesta non riuscita{code}.",
+    "verificationExpired": "Verifica della richiesta scaduta{code}.",
+    "settlementFailed": "Liquidazione della richiesta non riuscita{code}.",
+    "settlementExpired": "Liquidazione della richiesta scaduta{code}.",
+    "settlementTimedOut": "Tempo scaduto per la liquidazione della richiesta. Riprova.",
+    "downloadFailed": "Download della liquidazione non riuscito."
+  },
+  "claimHistory": {
+    "outOfRange": "La cronologia delle richieste supera l’intervallo supportato. Contatta il supporto per caricare questa richiesta."
+  },
+  "settlement": {
+    "baseUnits": "unità base di {asset}",
+    "unknownAsset": "asset sconosciuto"
+  },
+  "network": {
+    "notDeployed": "USD8 non è disponibile sulla rete selezionata",
+    "notDeployedOn": "USD8 non è disponibile su {network}"
+  }
+}

@@ -1,0 +1,1 @@
+var e={codeLabel:`封測邀請碼`,invalidCode:`邀請碼無效。`,submit:`進入封測`,help:`可透過<telegram>Telegram</telegram>或<x>X私訊</x>向我們索取邀請碼`};export{e as default};

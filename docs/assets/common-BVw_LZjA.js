@@ -1,0 +1,1 @@
+var e={language:`Мова`,metrics:{apy:`Річна дохідність`,tvl:`Обсяг пулу`,window7D:`7Д`,window30D:`30Д`,apySuffix:` річна дохідність`,windowApy:`Річна дохідність ({window})`},pools:{wsteth:`Пул покриття wstETH`,usd8:`Пул покриття USD8`,msloss:`Пул покриття msLOSS`}};export{e as default};

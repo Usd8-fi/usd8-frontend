@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "USD8 Bas",
+    "redeemTitle": "USD8 İtfa Et",
+    "closeMint": "USD8 basma penceresini kapat",
+    "closeRedeem": "USD8 itfa penceresini kapat",
+    "waitingForQuote": "Geçerli bir itfa teklifi bekleniyor.",
+    "amountInput": "{token} tutarı",
+    "output": "Alınacak {token}",
+    "mint": "Bas",
+    "redeem": "İtfa Et"
+  },
+  "available": "Kullanılabilir: {amount}",
+  "earnings": {
+    "label": "USD8 Kazancı",
+    "availableToWithdraw": "Çekilebilir: {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "Çekime hazır",
+    "waitingForClaims": "Bekleme süresi tamamlandı, taleplerin sonuçlanması bekleniyor",
+    "cooldown": "Bekleme süresi ilerlemesi",
+    "barLabel": "Çekim bekleme süresi ilerlemesi"
+  },
+  "pool": {
+    "defaultName": "teminat havuzu",
+    "depositTitle": "Yatır",
+    "withdrawTitle": "Çek",
+    "withdrawEarningsTitle": "Kazancı Çek",
+    "closeDeposit": "Yatırma penceresini kapat ({pool})",
+    "closeWithdraw": "Çekim penceresini kapat ({pool})",
+    "closeWithdrawEarnings": "Kazanç çekme penceresini kapat ({pool})",
+    "sharesToRedeem": "Çekilecek Havuz Payı",
+    "withdrawAvailability": "{amount} pay kullanılabilir. Bekleyen talep yoksa çekim {cooldown} sonunda yapılabilir; varsa tüm talepler sonuçlandıktan sonra. <link>Daha Fazla Bilgi</link>.",
+    "cooldownWithLength": "{length} bekleme süresi",
+    "cooldown": "bekleme süresi",
+    "depositAvailabilityWithCapacity": "Kullanılabilir: {amount}. <capacity>Havuzda kalan kapasite: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "Tahmini Alınacak {symbol}",
+    "mayDecrease": "Çekiminiz tamamlanmadan havuz tazminat öderse azalabilir.",
+    "startCooldown": "Beklemeyi Başlat",
+    "withdraw": "Çek",
+    "withdrawEarnings": "Kazancı Çek",
+    "deposit": "Yatır",
+    "balances": {
+      "summary": "{withdrawable}, {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} çekilmeye hazır",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} talepler sonuçlanınca çekilebilir",
+      "estimatedForWithdrawal": "Tahminen {amount} {symbol} çekilebilir",
+      "estimatedForWithdrawalAfterClaims": "Tahminen {amount} {symbol} talepler sonuçlanınca çekilebilir",
+      "inCooldown": "{amount} {symbol} bekleme süresinde",
+      "inCooldownWithTiming": "{amount} {symbol} bekleme süresinde — {timing}"
+    }
+  }
+}

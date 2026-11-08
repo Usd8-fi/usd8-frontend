@@ -1,0 +1,1 @@
+var e={ariaLabel:`Aktuelle Protokollaktivität`,block:`Block {block}`};export{e as default};

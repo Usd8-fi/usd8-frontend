@@ -1,0 +1,1 @@
+var e={connectWallet:`لطفاً ابتدا کیف پول خود را متصل کنید.`};export{e as default};

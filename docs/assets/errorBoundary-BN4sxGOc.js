@@ -1,0 +1,1 @@
+var e={crash:{message:`Під час показу цієї сторінки сталася помилка.`,reload:`Перезавантажити`}};export{e as default};

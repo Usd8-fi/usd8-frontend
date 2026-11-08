@@ -1,0 +1,1 @@
+var e={site:{ariaLabel:`封測公告`,message:`<strong>歡迎參加USD8封閉測試！</strong>封測期間持有USD8，保險積分累積速率提升至平常的3倍，封測結束時還會獲得3張加成卡。有任何意見或問題，歡迎到我們的<link>Telegram群組</link>留言。`},wallet:{defaultLabel:`通知`,viewTransaction:`查看交易`,dismissWallet:`關閉錢包通知`,dismiss:`關閉通知`,connectRequired:{label:`需要連接錢包`,message:`請連接錢包以繼續。`,action:`連接錢包`}}};export{e as default};

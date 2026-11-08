@@ -1,0 +1,1 @@
+var e={finality:{explanation:`La liquidación puede empezar cuando el bloque finalizado supere el plazo de reclamación.`,heads:`Bloque actual {latest} · Bloque finalizado {finalized}`,readyToSettle:`Listo para liquidar`,minutesToGo:`Se podrá liquidar en aprox. {minutes}\xA0min`}};export{e as default};

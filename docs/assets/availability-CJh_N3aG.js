@@ -1,0 +1,1 @@
+var e={connectWallet:`Lütfen önce cüzdanınızı bağlayın.`};export{e as default};

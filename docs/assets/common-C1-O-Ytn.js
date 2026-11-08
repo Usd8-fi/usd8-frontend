@@ -1,0 +1,1 @@
+var e={language:`Sprache`,metrics:{apy:`Rendite p.\xA0a.`,tvl:`TVL`,window7D:`7T`,window30D:`30T`,apySuffix:` Rendite p.\xA0a.`,windowApy:`Rendite p.\xA0a. ({window})`},pools:{wsteth:`wstETH Cover Pool`,usd8:`USD8 Cover Pool`,msloss:`msLOSS Cover Pool`}};export{e as default};

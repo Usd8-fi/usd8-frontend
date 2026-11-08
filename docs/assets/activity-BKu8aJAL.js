@@ -1,0 +1,1 @@
+var e={ariaLabel:`Hoạt động gần đây của giao thức`,block:`block {block}`};export{e as default};

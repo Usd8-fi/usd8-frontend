@@ -1,6 +1,7 @@
 import { NoticeMessage } from './WalletNotice.jsx';
 import { useDialogFocus } from './useDialogFocus.js';
 import { useEffect, useState } from 'react';
+import { useTranslation } from '../lib/i18n.js';
 import { claimLifecycle } from '../lib/claimLifecycle.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { decimalInputValue, displayAvailableBalance } from '../lib/displayAvailableBalance.js';
@@ -50,22 +51,40 @@ function wholePercentage(value) {
   return `${Math.round(Number.parseFloat(normalized))}%`;
 }
 
-function timeLeftLabel(daysLeft, hoursLeft, minutesLeft) {
-  if (daysLeft === 0 && minutesLeft !== undefined) {
-    const hours = hoursLeft ? `${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'} ` : '';
-    return `${hours}${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`;
-  }
-  const days = `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
-  const hours = `${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'}`;
-  return `${days} ${hours} left`;
+function countPhrase(t, unit, count) {
+  return t(`fileClaim.time.${unit}_${count === 1 ? 'one' : 'other'}`, { count: String(count) });
 }
 
+function timeLeftLabel(t, daysLeft, hoursLeft, minutesLeft) {
+  if (daysLeft === 0 && minutesLeft !== undefined) {
+    const minutes = countPhrase(t, 'minutes', minutesLeft);
+    return hoursLeft
+      ? t('fileClaim.time.hoursMinutesLeft', { hours: countPhrase(t, 'hours', hoursLeft), minutes })
+      : t('fileClaim.time.minutesLeft', { minutes });
+  }
+  return t('fileClaim.time.daysHoursLeft', {
+    days: countPhrase(t, 'days', daysLeft),
+    hours: countPhrase(t, 'hours', hoursLeft),
+  });
+}
+
+// Stage labels per lifecycle state (translation keys under fileClaim.stage).
+const TIMELINE_STAGES = {
+  'claim-open': ['claimOpen', 'settle', 'payout'],
+  'settlement-open': ['claimClosed', 'settleOpen', 'payout'],
+  'settlement-expired': ['claimClosed', 'notSettled', 'payout'],
+  'settlement-pending': ['claimClosed', 'settled', 'payout'],
+  'payout-open': ['claimClosed', 'settled', 'payoutOpen'],
+  'payout-expired': ['claimClosed', 'settled', 'payoutClosed'],
+};
+
 function ClaimDialogCloseButton({ activeClaim, onClose }) {
+  const { t } = useTranslation();
   return (
     <button
       className="app-dialog-close file-claim-dialog-close"
       type="button"
-      aria-label={activeClaim ? 'Close claim status' : 'Close file claim'}
+      aria-label={activeClaim ? t('fileClaim.close.claimStatus') : t('fileClaim.close.fileClaim')}
       onClick={onClose}
     >
       ×
@@ -98,6 +117,7 @@ export default function FileClaimDialog({
   onCancelPayout,
   onSubmit,
 }) {
+  const { t, tRich } = useTranslation();
   const tokenOptions = insuredTokens.length > 0
     ? insuredTokens
     : [{ id: token, symbol: token, balance: '0' }];
@@ -108,12 +128,12 @@ export default function FileClaimDialog({
   const availableScoreValue = normalizedDecimal(availableScore);
   const hasAvailableScore = isPositiveDecimal(availableScoreValue);
   const claimUnavailableReason = submitUnavailableReason
-    || (!hasAvailableScore ? 'You do not have any available insurance score to spend.' : '')
+    || (!hasAvailableScore ? t('fileClaim.validation.noAvailableScore') : '')
     || (tokenAmountExceedsBalance(amount, selectedToken.balance)
-      ? `The ${selectedToken.symbol} amount exceeds your available balance.`
+      ? t('fileClaim.validation.amountExceedsBalance', { symbol: selectedToken.symbol })
       : '')
-    || (!isPositiveDecimal(amount) ? `Enter the ${selectedToken.symbol} amount you want to claim for.` : '')
-    || (!isPositiveDecimal(scoreToSpend) ? 'Enter the insurance score you want to spend.' : '');
+    || (!isPositiveDecimal(amount) ? t('fileClaim.validation.enterAmount', { symbol: selectedToken.symbol }) : '')
+    || (!isPositiveDecimal(scoreToSpend) ? t('fileClaim.validation.enterScore') : '');
   const activeClaim = Boolean(claimStatus?.id);
   const boosterCount = normalizedDecimal(boosterAmount);
   const effectiveScoreUnits = boostedScore(
@@ -142,45 +162,39 @@ export default function FileClaimDialog({
   const showStatus = activeClaim
     || Boolean(lifecycle && lifecycle.state !== 'claim-open' && lifecycle.state !== 'unavailable');
   const statusTitle = activeClaim
-    ? 'Your Claim Status'
-    : showStatus ? 'Incident Status' : 'File A Claim';
+    ? t('fileClaim.title.yourClaimStatus')
+    : showStatus ? t('fileClaim.title.incidentStatus') : t('fileClaim.title.fileClaim');
   const holdingRequirement = minHoldingRequiredBlocks
-    ? `${BigInt(minHoldingRequiredBlocks).toLocaleString('en-US')} blocks before the incident.`
-    : 'the configured pre-incident window. Holding window unavailable; refresh before filing.';
+    ? t('fileClaim.holdingRequirement.blocks', { blocks: BigInt(minHoldingRequiredBlocks).toLocaleString('en-US') })
+    : t('fileClaim.holdingRequirement.unavailable');
   const phaseMilliseconds = Number(claimIncident?.phaseWindowMilliseconds ?? 3 * 86_400_000);
   const phaseUnit = phaseMilliseconds >= 86_400_000 ? 'day' : phaseMilliseconds >= 3_600_000 ? 'hour' : 'minute';
   const phaseLength = phaseMilliseconds / ({ day: 86_400_000, hour: 3_600_000, minute: 60_000 }[phaseUnit]);
-  const timelineLabels = {
-    'claim-open': ['Claim Open', 'Settle', 'Payout'],
-    'settlement-open': ['Claim Closed', 'Settle Open', 'Payout'],
-    'settlement-expired': ['Claim Closed', 'Not Settled', 'Payout'],
-    'settlement-pending': ['Claim Closed', 'Settled', 'Payout'],
-    'payout-open': ['Claim Closed', 'Settled', 'Payout Open'],
-    'payout-expired': ['Claim Closed', 'Settled', 'Payout Closed'],
-  }[liveClaimStatus?.state] || ['Claim Open', 'Settle', 'Payout'];
-  const statusDescription = {
-    'claim-open': 'waiting for others to join in the claim.',
-    'settlement-open': activeClaim
-      ? 'waiting for settlement'
-      : 'waiting for settlement, anyone can settle.',
-    'settlement-expired': 'settlement window closed, please withdraw your escrow.',
-    'settlement-pending': 'settled, Window open for potential disputes',
-    'payout-open': 'Payout window open, please finalised asap.',
-    'payout-expired': 'Payout window closed, please withdraw your escrow.',
-  }[liveClaimStatus?.state] || '';
+  const timelineLabels = (TIMELINE_STAGES[liveClaimStatus?.state] || TIMELINE_STAGES['claim-open'])
+    .map((stage) => t(`fileClaim.stage.${stage}`));
+  const statusDescriptionKey = {
+    'claim-open': 'claimOpen',
+    'settlement-open': activeClaim ? 'settlementOpenClaimant' : 'settlementOpenAnyone',
+    'settlement-expired': 'settlementExpired',
+    'settlement-pending': 'settlementPending',
+    'payout-open': 'payoutOpen',
+    'payout-expired': 'payoutExpired',
+  }[liveClaimStatus?.state];
+  const statusDescription = statusDescriptionKey ? t(`fileClaim.statusDescription.${statusDescriptionKey}`) : '';
   const showPayout = activeClaim
     && (liveClaimStatus?.state === 'payout-open' || liveClaimStatus?.state === 'payout-expired');
   const payoutIneligible = liveClaimStatus?.payoutEligible === false;
-  const returnTokens = ['Cancel Payout and Return Tokens', onCancelPayout];
+  // Each action is [id, handler]; the id is the fileClaim.action translation key.
+  const returnTokens = ['cancelPayoutReturnTokens', onCancelPayout];
   const actionButtons = activeClaim ? {
-    'claim-open': [['Cancel Claim', onCancel]],
-    'settlement-open': [['Settle All Claims', onSettle]],
-    'settlement-expired': [['Return Tokens', onReturnTokens]],
+    'claim-open': [['cancelClaim', onCancel]],
+    'settlement-open': [['settleAllClaims', onSettle]],
+    'settlement-expired': [['returnTokens', onReturnTokens]],
     // Accepting an ineligible payout resolves exactly as a decline, so only offer the decline.
-    'payout-open': payoutIneligible ? [returnTokens] : [['Accept Payout', onAcceptPayout], returnTokens],
+    'payout-open': payoutIneligible ? [returnTokens] : [['acceptPayout', onAcceptPayout], returnTokens],
     'payout-expired': [returnTokens],
   }[liveClaimStatus?.state] || []
-    : liveClaimStatus?.state === 'settlement-open' ? [['Settle All Claims', onSettle]] : [];
+    : liveClaimStatus?.state === 'settlement-open' ? [['settleAllClaims', onSettle]] : [];
 
   useEffect(() => {
     setScoreToSpend(insuranceScoreInputValue(availableScoreValue));
@@ -204,7 +218,7 @@ export default function FileClaimDialog({
         className={`usd8-dialog file-claim-dialog${showStatus ? ' file-claim-dialog--status' : ''}`}
         ref={dialogRef} tabIndex={-1} role="dialog"
         aria-modal="true"
-        aria-label={`${showStatus ? 'Claim Status' : 'File claim'} for ${selectedToken.symbol}`}
+        aria-label={t(showStatus ? 'fileClaim.dialogLabel.status' : 'fileClaim.dialogLabel.file', { symbol: selectedToken.symbol })}
       >
         <ClaimDialogCloseButton activeClaim={showStatus} onClose={onClose} />
         <h2
@@ -216,9 +230,9 @@ export default function FileClaimDialog({
         </h2>
         {!showStatus ? (
           <p className="file-claim-requirement">
-            {selectedToken.symbol} must lose more than 20% of its value against its underlying,
-            measured between its TWAP price immediately before and after the drop.{' '}
-            <a href={docsUrl('defi-insurance.html')} target="_blank" rel="noreferrer">Learn More</a>.
+            {tRich('fileClaim.requirement', {
+              link: (text) => <a href={docsUrl('defi-insurance.html')} target="_blank" rel="noreferrer">{text}</a>,
+            }, { symbol: selectedToken.symbol })}
           </p>
         ) : null}
 
@@ -226,42 +240,41 @@ export default function FileClaimDialog({
           <section className="file-claim-status" aria-live="polite">
             {!activeClaim ? (
               <p className="file-claim-requirement">
-                You have no claim in this incident. Filing has closed, but settlement is
-                permissionless — anyone can settle it.
+                {t('fileClaim.noClaimInIncident')}
               </p>
             ) : (
             <div className="claim-status-metrics">
               <div>
-                <span>Insured Token Escrowed</span>
+                <span>{t('fileClaim.metric.insuredTokenEscrowed')}</span>
                 <strong>{liveClaimStatus.insuredTokenAmount} {selectedToken.symbol}</strong>
               </div>
               <div>
-                <span>Claim Bond Escrowed</span>
+                <span>{t('fileClaim.metric.claimBondEscrowed')}</span>
                 <strong>{liveClaimStatus.bondAmount} USD8</strong>
                 {showPayout && typeof liveClaimStatus.payoutEligible === 'boolean' ? (
                   <small>{liveClaimStatus.payoutEligible
-                    ? 'Will be fully refunded'
-                    : 'Will not be refunded: conditions not met'}</small>
+                    ? t('fileClaim.metric.bondFullyRefunded')
+                    : t('fileClaim.metric.bondNotRefunded')}</small>
                 ) : null}
               </div>
               <div>
-                <span>Insurance Score to Spend</span>
+                <span>{t('fileClaim.metric.insuranceScoreToSpend')}</span>
                 <strong>{liveClaimStatus.scoreToSpend}</strong>
                 <small className={showEffectiveClaimScore ? 'claim-status-score-summary' : undefined}>
                   {showEffectiveClaimScore
-                    ? `Effective insurance score after boosters ${formatWad(activeEffectiveScoreUnits, 2, { trim: true })}, `
+                    ? t('fileClaim.metric.effectiveScoreAfterBoosters', { score: formatWad(activeEffectiveScoreUnits, 2, { trim: true }) })
                     : ''}
-                  {wholePercentage(liveClaimStatus.scoreCommitmentPercentage)} of all score committed
+                  {t('fileClaim.metric.scoreCommitted', { percent: wholePercentage(liveClaimStatus.scoreCommitmentPercentage) })}
                 </small>
               </div>
               <div>
-                <span>Boosters Escrowed</span>
+                <span>{t('fileClaim.metric.boostersEscrowed')}</span>
                 <strong>{liveClaimStatus.boosterAmount}</strong>
                 {showPayout && (payoutLoading || liveClaimStatus.boostersToBurn !== null) ? (
                   <small>
                     {payoutLoading
-                      ? <LoadingSpinner label="Loading boosters taken into account" />
-                      : <span>{`${liveClaimStatus.boostersToBurn} taken into account`}</span>}
+                      ? <LoadingSpinner label={t('fileClaim.metric.loadingBoostersTaken')} />
+                      : <span>{t('fileClaim.metric.boostersTaken', { count: String(liveClaimStatus.boostersToBurn) })}</span>}
                   </small>
                 ) : null}
               </div>
@@ -269,38 +282,37 @@ export default function FileClaimDialog({
             )}
             {showPayout && payoutIneligible ? (
               <p className="file-claim-requirement">
-                You are not eligible for a payout, and your {liveClaimStatus.bondAmount} USD8
-                bond will not be refunded. Return your tokens to close the claim.
+                {t('fileClaim.payout.ineligible', { bond: liveClaimStatus.bondAmount ?? '' })}
               </p>
             ) : null}
             {showPayout && !payoutIneligible ? (
               <>
                 <div className="claim-status-payout-summary">
                   <div>
-                    <span>Total Payout USD Value</span>
+                    <span>{t('fileClaim.payout.totalUsdValue')}</span>
                     <strong>
                       <MetricValue
                         loading={payoutLoading}
                         value={liveClaimStatus.payoutUsd}
-                        label="Loading payout value"
+                        label={t('fileClaim.payout.loadingValue')}
                       />
                     </strong>
                   </div>
                   <div>
-                    <span>Payout vs Loss Value</span>
+                    <span>{t('fileClaim.payout.vsLossValue')}</span>
                     <strong>
                       <MetricValue
                         loading={payoutLoading}
                         value={liveClaimStatus.payoutVsLoss}
-                        label="Loading payout comparison"
+                        label={t('fileClaim.payout.loadingComparison')}
                       />
                     </strong>
                   </div>
                 </div>
                 <div className="claim-status-payout-details">
-                  <span>Payout Details</span>
+                  <span>{t('fileClaim.payout.details')}</span>
                   {payoutLoading && (liveClaimStatus.payoutDetails || []).length === 0
-                    ? <LoadingSpinner label="Loading payout details" />
+                    ? <LoadingSpinner label={t('fileClaim.payout.loadingDetails')} />
                     : null}
                   {(liveClaimStatus.payoutDetails || []).map((detail) => (
                     <strong key={`${detail.symbol}:${detail.amount}`}>{detail.amount} {detail.symbol}{detail.usd ? ` (${detail.usd})` : ''}</strong>
@@ -309,52 +321,54 @@ export default function FileClaimDialog({
               </>
             ) : null}
             <span className="claim-status-timeline-label">
-              Status{statusDescription ? ` - ${statusDescription}` : ''}
+              {statusDescription
+                ? t('fileClaim.statusLabel.withDescription', { description: statusDescription })
+                : t('fileClaim.statusLabel.plain')}
             </span>
-            <div className="claim-status-timeline" aria-label={`Current stage: ${liveClaimStatus.stage}`}>
+            <div className="claim-status-timeline" aria-label={t('fileClaim.currentStage', { stage: String(liveClaimStatus.stage) })}>
               {timelineLabels.map((label, index) => {
                 const active = index === liveClaimStatus.stageIndex;
                 // Stages behind the current one have run to completion: fill the
                 // bar and show no time remaining instead of their nominal length.
                 const complete = index < liveClaimStatus.stageIndex;
                 const duration = index === 1
-                  ? `${phaseLength}-${phaseLength * 2} ${phaseUnit}s`
-                  : `${phaseLength} ${phaseUnit}${phaseLength === 1 ? '' : 's'}`;
+                  ? t(`fileClaim.time.range${{ day: 'Days', hour: 'Hours', minute: 'Minutes' }[phaseUnit]}`, { from: phaseLength, to: phaseLength * 2 })
+                  : countPhrase(t, `${phaseUnit}s`, phaseLength);
                 const progressPercent = active ? liveClaimStatus.progressPercent : 100;
                 return (
                 <div className={`claim-status-step${active ? ' claim-status-step--active' : ''}${complete ? ' claim-status-step--complete' : ''}`} key={label}>
                   <span
                     className="claim-status-step-bar"
                     role={active || complete ? 'progressbar' : undefined}
-                    aria-label={active || complete ? `${label} progress` : undefined}
+                    aria-label={active || complete ? t('fileClaim.stage.progress', { stage: label }) : undefined}
                     aria-valuemin={active || complete ? 0 : undefined}
                     aria-valuemax={active || complete ? 100 : undefined}
                     aria-valuenow={active || complete ? progressPercent : undefined}
                     aria-valuetext={active
-                      ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft, liveClaimStatus.minutesLeft)
-                      : complete ? timeLeftLabel(0, 0) : undefined}
+                      ? timeLeftLabel(t, liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft, liveClaimStatus.minutesLeft)
+                      : complete ? timeLeftLabel(t, 0, 0) : undefined}
                     style={active || complete
                       ? { '--claim-progress': `${progressPercent}%` }
                       : undefined}
                   />
                   <strong>{label}</strong>
                   <small>{active
-                    ? timeLeftLabel(liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft, liveClaimStatus.minutesLeft)
-                    : complete ? timeLeftLabel(0, 0) : duration}</small>
+                    ? timeLeftLabel(t, liveClaimStatus.daysLeft, liveClaimStatus.hoursLeft, liveClaimStatus.minutesLeft)
+                    : complete ? timeLeftLabel(t, 0, 0) : duration}</small>
                 </div>
                 );
               })}
             </div>
             {actionButtons.length > 0 || statusMessage ? (
               <div className="claim-status-actions">
-                {actionButtons.map(([label, action]) => (
-                  <button className="usd8-dialog-submit" type="button" onClick={action} key={label}>{label}</button>
+                {actionButtons.map(([id, action]) => (
+                  <button className="usd8-dialog-submit" type="button" onClick={action} key={id}>{t(`fileClaim.action.${id}`)}</button>
                 ))}
-                {actionButtons.some(([label]) => label === 'Settle All Claims') ? (
+                {actionButtons.some(([id]) => id === 'settleAllClaims') ? (
                   <SettlementFinalityNote claimDeadlineMilliseconds={claimIncident?.phaseDeadlineMilliseconds} />
                 ) : null}
                 {statusMessage ? (
-                  <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label="Claim submission status" />
+                  <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label={t('fileClaim.submissionStatus')} />
                 ) : null}
               </div>
             ) : null}
@@ -374,16 +388,14 @@ export default function FileClaimDialog({
             <div className="file-claim-form-grid">
               <div className="file-claim-field file-claim-field--token file-claim-field--primary">
                 <span className="metric-label-with-help">
-                  <label htmlFor="file-claim-token-amount">{selectedToken.symbol} Amount</label>
-                  <InfoTooltip ariaLabel="About insured token amount" floating>
-                    You must have held {selectedToken.symbol} for at least {holdingRequirement}
-                    Eligibility uses your lowest balance over that window, so tokens acquired later do not
-                    count. If that balance is zero you are not eligible and your claim bond is forfeited.
+                  <label htmlFor="file-claim-token-amount">{t('fileClaim.form.tokenAmountLabel', { symbol: selectedToken.symbol })}</label>
+                  <InfoTooltip ariaLabel={t('fileClaim.form.tokenAmountHelpLabel')} floating>
+                    {t('fileClaim.form.tokenAmountHelp', { symbol: selectedToken.symbol, holding: holdingRequirement })}
                   </InfoTooltip>
                 </span>
                 <input
                   id="file-claim-token-amount"
-                  aria-label={`Insured ${selectedToken.symbol} amount`}
+                  aria-label={t('fileClaim.form.tokenAmountInput', { symbol: selectedToken.symbol })}
                   inputMode="decimal"
                   min="0"
                   step="any"
@@ -395,31 +407,31 @@ export default function FileClaimDialog({
                   }}
                 />
                 <small>
-                  {displayAvailableBalance(selectedToken.balance)} available.
+                  {t('fileClaim.form.availableWithPeriod', { amount: displayAvailableBalance(selectedToken.balance) })}
                 </small>
               </div>
 
               <div className="file-claim-field file-claim-field--bond file-claim-field--compact">
                 <span className="metric-label-with-help">
-                  Claim Bond
-                  <InfoTooltip ariaLabel="About claim bond" className="dashboard-help--align-right" floating>
-                    A 10 USD8 anti-spam bond is required to file. It will not be returned if you are not eligible for a claim.
+                  {t('fileClaim.form.claimBond')}
+                  <InfoTooltip ariaLabel={t('fileClaim.form.claimBondHelpLabel')} className="dashboard-help--align-right" floating>
+                    {t('fileClaim.form.claimBondHelp')}
                   </InfoTooltip>
                 </span>
                 <output>{claimBond}</output>
-                <small><span>{displayAvailableBalance(claimBondAvailable)} available</span></small>
+                <small><span>{t('fileClaim.form.available', { amount: displayAvailableBalance(claimBondAvailable) })}</span></small>
               </div>
 
               <div className="file-claim-field file-claim-field--score file-claim-field--primary">
                 <span className="metric-label-with-help">
-                  <label htmlFor="file-claim-score">Insurance Score to Spend</label>
-                  <InfoTooltip ariaLabel="About insurance score to spend" floating>
-                    Requested score spend. Settlement caps it to your available score, and score is spent only if an eligible payout is accepted.
+                  <label htmlFor="file-claim-score">{t('fileClaim.form.scoreLabel')}</label>
+                  <InfoTooltip ariaLabel={t('fileClaim.form.scoreHelpLabel')} floating>
+                    {t('fileClaim.form.scoreHelp')}
                   </InfoTooltip>
                 </span>
                 <input
                   id="file-claim-score"
-                  aria-label="Insurance Score to Spend"
+                  aria-label={t('fileClaim.form.scoreLabel')}
                   inputMode="decimal"
                   pattern="[0-9,]*[.]?[0-9]*"
                   type="text"
@@ -429,21 +441,19 @@ export default function FileClaimDialog({
                     setScoreToSpend(insuranceScoreInputValue(decimalInputValue(event.target.value)));
                   }}
                 />
-                <small>{displayAvailableBalance(availableScore)} available</small>
+                <small>{t('fileClaim.form.available', { amount: displayAvailableBalance(availableScore) })}</small>
               </div>
 
               <div className="file-claim-field file-claim-field--compact">
                 <span className="metric-label-with-help">
-                  <label htmlFor="file-claim-boosters">Boosters to Escrow</label>
-                  <InfoTooltip ariaLabel="About boosters to escrow" className="dashboard-help--align-right" floating>
-                    Optional. Boosters must meet the same pre-incident holding requirement as the insured token: {holdingRequirement}
-                    Only eligible boosters increase payout weight and are burned on acceptance.
-                    Excess boosters are returned. Declining returns all boosters.
+                  <label htmlFor="file-claim-boosters">{t('fileClaim.form.boostersLabel')}</label>
+                  <InfoTooltip ariaLabel={t('fileClaim.form.boostersHelpLabel')} className="dashboard-help--align-right" floating>
+                    {t('fileClaim.form.boostersHelp', { holding: holdingRequirement })}
                   </InfoTooltip>
                 </span>
                 <input
                   id="file-claim-boosters"
-                  aria-label="Boosters to Escrow"
+                  aria-label={t('fileClaim.form.boostersLabel')}
                   inputMode="numeric"
                   min="0"
                   step="1"
@@ -454,7 +464,7 @@ export default function FileClaimDialog({
                     setBoosterAmount(event.target.value);
                   }}
                 />
-                <small>{displayAvailableBalance(availableBoosters)} available</small>
+                <small>{t('fileClaim.form.available', { amount: displayAvailableBalance(availableBoosters) })}</small>
               </div>
 
             </div>
@@ -466,15 +476,19 @@ export default function FileClaimDialog({
                 unavailableReason={claimUnavailableReason}
                 warningResetKey={`${selectedToken.id}:${amount}:${scoreToSpend}:${boosterAmount}`}
               >
-                File Claim
+                {t('fileClaim.action.fileClaim')}
               </AvailabilityAction>
               <small className="file-claim-weight">
-                Maximum payout weight: {formatWad(effectiveScoreUnits, 2, { trim: true })}
-                {boosterCount !== '0' ? ` (incl. ${boosterCount} booster${boosterCount === '1' ? '' : 's'})` : ''}
-                {' '}— {effectiveScoreShare} of provisional escrow weight; final weight depends on holding eligibility.
+                {t('fileClaim.weight.summary', {
+                  weight: formatWad(effectiveScoreUnits, 2, { trim: true }),
+                  boosters: boosterCount !== '0'
+                    ? t(`fileClaim.weight.boosters_${boosterCount === '1' ? 'one' : 'other'}`, { count: boosterCount })
+                    : '',
+                  share: effectiveScoreShare,
+                })}
               </small>
               {statusMessage ? (
-                <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label="Claim submission status" />
+                <NoticeMessage message={statusMessage} busy={statusTone === 'loading'} tone={statusTone === 'warning' ? 'error' : 'status'} label={t('fileClaim.submissionStatus')} />
               ) : null}
             </div>
           </form>

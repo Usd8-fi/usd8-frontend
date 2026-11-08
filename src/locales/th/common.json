@@ -1,0 +1,16 @@
+{
+  "language": "ภาษา",
+  "metrics": {
+    "apy": "ผลตอบแทนต่อปี",
+    "tvl": "ยอดฝากรวม",
+    "window7D": "7 วัน",
+    "window30D": "30 วัน",
+    "apySuffix": " ผลตอบแทนต่อปี",
+    "windowApy": "ผลตอบแทนต่อปี ({window})"
+  },
+  "pools": {
+    "wsteth": "พูลคุ้มครอง wstETH",
+    "usd8": "พูลคุ้มครอง USD8",
+    "msloss": "พูลคุ้มครอง msLOSS"
+  }
+}

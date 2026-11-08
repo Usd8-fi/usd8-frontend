@@ -34,7 +34,7 @@ The more Insurance Score, the higher your claim weights. Max payout amount is 80
 
 - the insured token you are claim against
 - insurance score
-- 10 USD8 bond, refunded after claim
+- 10 USD8 bond, refunded after the claim if you were eligible
 - boosters (optional)
 
 

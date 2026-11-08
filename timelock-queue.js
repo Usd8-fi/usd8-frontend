@@ -1,4 +1,11 @@
 (function () {
+    // Localised by docs-theme.js (window.usd8DocsText); English when it is absent.
+    var EN = { executed: "Executed", cancelled: "Cancelled", queued: "Queued · {time}", ready: "Ready to Execute", executableFrom: "Executable from {date}", transaction: "Transaction", description: "Description", status: "Status", empty: "No timelock transactions yet", loading: "Loading", loadFailed: "Timelock transactions could not be loaded", retry: "Retry", hoursLeft: "{n}h left", minutesLeft: "{n}m left" };
+    var T = function (key, vars) {
+        if (window.usd8DocsText) return window.usd8DocsText(key, vars);
+        if (vars && typeof vars.count === "number" && EN[key + "_other"]) key += vars.count === 1 ? "_one" : "_other";
+        return (EN[key] || key).replace(/\{(\w+)\}/g, function (match, name) { return vars && vars[name] !== undefined ? String(vars[name]) : match; });
+    };
     // Lists every operation scheduled through the USD8 timelock, newest first,
     // from the Blockscout log index. Status comes from the timelock's own events:
     // executed and cancelled operations are final; anything else is queued until
@@ -166,8 +173,8 @@
     }
 
     function timeLeft(seconds) {
-        if (seconds >= 3600) return Math.ceil(seconds / 3600) + "h left";
-        return Math.max(1, Math.ceil(seconds / 60)) + "m left";
+        if (seconds >= 3600) return T("hoursLeft", { n: Math.ceil(seconds / 3600) });
+        return T("minutesLeft", { n: Math.max(1, Math.ceil(seconds / 60)) });
     }
 
     // ─────────────── Data ───────────────
@@ -267,25 +274,25 @@
             label.href = explorer + "/tx/" + op.executed.hash;
             label.target = "_blank";
             label.rel = "noreferrer";
-            label.textContent = "Executed";
+            label.textContent = T("executed");
         } else {
             indicator.className = "timelock-status-dot";
             label = document.createElement("span");
             if (op.cancelled) {
                 cell.dataset.status = "cancelled";
-                label.textContent = "Cancelled";
+                label.textContent = T("cancelled");
             } else if (now < readyAt) {
                 cell.dataset.status = "queued";
-                label.textContent = "Queued · " + timeLeft(readyAt - now);
+                label.textContent = T("queued", { time: timeLeft(readyAt - now) });
             } else {
                 cell.dataset.status = "ready";
-                label.textContent = "Ready to Execute";
+                label.textContent = T("ready");
             }
         }
         cell.className = "timelock-queue-status";
         cell.appendChild(indicator);
         cell.appendChild(label);
-        cell.title = "Executable from " + new Date(readyAt * 1000).toUTCString();
+        cell.title = T("executableFrom", { date: new Date(readyAt * 1000).toUTCString() });
         return cell;
     }
 
@@ -295,7 +302,7 @@
         root.replaceChildren();
         var table = document.createElement("table");
         var head = table.createTHead().insertRow();
-        ["Transaction", "Description", "Status"].forEach(function (label) {
+        [T("transaction"), T("description"), T("status")].forEach(function (label) {
             var th = document.createElement("th");
             th.textContent = label;
             head.appendChild(th);
@@ -315,7 +322,7 @@
         var body = tableBody(root);
         root.dataset.state = "loaded";
         if (!ops.length) {
-            messageRow(body).textContent = "No timelock transactions yet";
+            messageRow(body).textContent = T("empty");
             return;
         }
         var now = Date.now() / 1000;
@@ -362,7 +369,7 @@
             if (state === "loading") {
                 var spinner = document.createElement("span");
                 spinner.className = "timelock-queue-spinner";
-                spinner.setAttribute("aria-label", "Loading");
+                spinner.setAttribute("aria-label", T("loading"));
                 message.appendChild(spinner);
             } else {
                 message.textContent = text;
@@ -376,11 +383,11 @@
                 render(root, ops, names, selectors, explorer);
             } catch (error) {
                 ops = null;
-                showMessage("Timelock transactions could not be loaded", "error");
+                showMessage(T("loadFailed"), "error");
                 var retry = document.createElement("button");
                 retry.type = "button";
                 retry.className = "timelock-queue-retry";
-                retry.textContent = "Retry";
+                retry.textContent = T("retry");
                 retry.addEventListener("click", load);
                 root.querySelector(".timelock-queue-message").appendChild(retry);
             }

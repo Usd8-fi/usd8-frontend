@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "Выпуск USD8",
+    "redeemTitle": "Погашение USD8",
+    "closeMint": "Закрыть выпуск USD8",
+    "closeRedeem": "Закрыть погашение USD8",
+    "waitingForQuote": "Ждём корректной котировки погашения.",
+    "amountInput": "Сумма {token}",
+    "output": "К получению: {token}",
+    "mint": "Выпустить",
+    "redeem": "Погасить"
+  },
+  "available": "Доступно: {amount}",
+  "earnings": {
+    "label": "Доход в USD8",
+    "availableToWithdraw": "Доступно к выводу: {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "Готово к выводу",
+    "waitingForClaims": "Период ожидания завершён, ждём завершения заявок",
+    "cooldown": "Ход периода ожидания",
+    "barLabel": "Ход периода ожидания вывода"
+  },
+  "pool": {
+    "defaultName": "пул покрытия",
+    "depositTitle": "Депозит",
+    "withdrawTitle": "Вывод",
+    "withdrawEarningsTitle": "Вывод дохода",
+    "closeDeposit": "Закрыть окно депозита: {pool}",
+    "closeWithdraw": "Закрыть окно вывода: {pool}",
+    "closeWithdrawEarnings": "Закрыть окно вывода дохода: {pool}",
+    "sharesToRedeem": "Доли пула к погашению",
+    "withdrawAvailability": "Доступно долей: {amount}. Вывести их можно, когда пройдёт {cooldown}, если нет незавершённых заявок, а иначе — после завершения всех заявок. <link>Подробнее</link>.",
+    "cooldownWithLength": "период ожидания {length}",
+    "cooldown": "период ожидания",
+    "depositAvailabilityWithCapacity": "Доступно: {amount}. <capacity>Свободно в пуле: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "К получению (оценка), {symbol}",
+    "mayDecrease": "Может уменьшиться, если до завершения вывода пул произведёт выплаты по заявкам.",
+    "startCooldown": "Запросить вывод",
+    "withdraw": "Вывести",
+    "withdrawEarnings": "Вывести доход",
+    "deposit": "Внести",
+    "balances": {
+      "summary": "{withdrawable}, {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} готово к выводу",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} будет готово к выводу после завершения заявок",
+      "estimatedForWithdrawal": "Ориентировочно {amount} {symbol} к выводу",
+      "estimatedForWithdrawalAfterClaims": "Ориентировочно {amount} {symbol} к выводу после завершения заявок",
+      "inCooldown": "{amount} {symbol} в периоде ожидания",
+      "inCooldownWithTiming": "{amount} {symbol} в периоде ожидания — {timing}"
+    }
+  }
+}

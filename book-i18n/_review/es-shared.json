@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "App de USD8",
+    "language": "Idioma"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "Introduce una dirección de Ethereum válida.",
+    "checking": "Comprobando...",
+    "noBoosters": "Esta dirección no tiene Boosters.",
+    "found_one": "¡Felicidades! Tienes {count} Booster.",
+    "found_other": "¡Felicidades! Tienes {count} Boosters.",
+    "error": "Error: {message}",
+    "fetchFailed": "no se pudo obtener el saldo",
+    "executed": "Ejecutada",
+    "cancelled": "Cancelada",
+    "queued": "En cola · {time}",
+    "ready": "Lista para ejecutar",
+    "executableFrom": "Ejecutable desde {date}",
+    "transaction": "Transacción",
+    "description": "Descripción",
+    "status": "Estado",
+    "empty": "Aún no hay transacciones en el Timelock",
+    "loading": "Cargando",
+    "loadFailed": "No se pudieron cargar las transacciones del Timelock",
+    "retry": "Reintentar",
+    "hoursLeft": "ejecutable en {n} h",
+    "minutesLeft": "ejecutable en {n} min"
+  },
+  "CONSENT_TEXT": {
+    "label": "Preferencias de cookies y analítica",
+    "title": "Cookies y analítica",
+    "message": "USD8 usa cookies opcionales de Google Analytics para conocer, de forma agregada, cómo se usa el sitio. Solo cargamos la analítica si la aceptas, y rechazarla no afecta al funcionamiento de la app.",
+    "privacy": "Detalles de privacidad",
+    "reject": "Rechazar cookies analíticas",
+    "accept": "Aceptar cookies analíticas"
+  }
+}

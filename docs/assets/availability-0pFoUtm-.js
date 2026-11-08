@@ -1,0 +1,1 @@
+var e={connectWallet:`Conecta primero tu billetera.`};export{e as default};

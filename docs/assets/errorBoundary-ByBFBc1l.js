@@ -1,0 +1,1 @@
+var e={crash:{message:`Une erreur s’est produite lors de l’affichage de cette page.`,reload:`Recharger`}};export{e as default};

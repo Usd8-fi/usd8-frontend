@@ -1,0 +1,7 @@
+{
+  "title": "使用條款",
+  "requirement": "要用這個錢包使用USD8，請先同意<terms>使用條款</terms>與<risk>風險聲明</risk>。",
+  "disagreeNote": "若不同意，錢包將中斷連接。這個動作不需要簽署，也不會送出任何交易。",
+  "agree": "同意",
+  "disagree": "不同意"
+}

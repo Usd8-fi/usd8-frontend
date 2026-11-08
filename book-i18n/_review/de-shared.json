@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "USD8-App",
+    "language": "Sprache"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "Bitte geben Sie eine gültige Ethereum-Adresse ein.",
+    "checking": "Wird geprüft…",
+    "noBoosters": "Für diese Adresse wurden keine Booster gefunden.",
+    "found_one": "Glückwunsch! Sie besitzen {count} Booster.",
+    "found_other": "Glückwunsch! Sie besitzen {count} Booster.",
+    "error": "Fehler: {message}",
+    "fetchFailed": "Guthaben konnte nicht abgerufen werden",
+    "executed": "Ausgeführt",
+    "cancelled": "Abgebrochen",
+    "queued": "Geplant · {time}",
+    "ready": "Bereit zur Ausführung",
+    "executableFrom": "Ausführbar ab {date}",
+    "transaction": "Transaktion",
+    "description": "Beschreibung",
+    "status": "Status",
+    "empty": "Noch keine Timelock-Transaktionen",
+    "loading": "Wird geladen",
+    "loadFailed": "Timelock-Transaktionen konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "hoursLeft": "noch {n} Std.",
+    "minutesLeft": "noch {n} Min."
+  },
+  "CONSENT_TEXT": {
+    "label": "Cookie- und Analyse-Einstellungen",
+    "title": "Cookie- und Analyse-Einstellungen",
+    "message": "USD8 nutzt optionale Google-Analytics-Cookies, um die Nutzung der Website in aggregierter Form auszuwerten. Google Analytics laden wir erst, wenn Sie zustimmen. Eine Ablehnung schränkt die App nicht ein.",
+    "privacy": "Datenschutzhinweise",
+    "reject": "Analyse-Cookies ablehnen",
+    "accept": "Analyse-Cookies akzeptieren"
+  }
+}

@@ -1,0 +1,1 @@
+var e={connectWallet:`Сначала подключите кошелёк.`};export{e as default};

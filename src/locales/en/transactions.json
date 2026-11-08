@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "Mint USD8",
+    "redeemTitle": "Redeem USD8",
+    "closeMint": "Close mint USD8",
+    "closeRedeem": "Close redeem USD8",
+    "waitingForQuote": "Waiting for a valid redemption quote.",
+    "amountInput": "{token} amount",
+    "output": "{token} output",
+    "mint": "Mint",
+    "redeem": "Redeem"
+  },
+  "available": "{amount} available",
+  "earnings": {
+    "label": "USD8 Earnings",
+    "availableToWithdraw": "{amount} USD8 available to withdraw"
+  },
+  "exitProgress": {
+    "ready": "Ready to withdraw",
+    "waitingForClaims": "Cooldown complete, waiting for claims to finalize",
+    "cooldown": "Cooldown progress",
+    "barLabel": "Withdrawal cooldown progress"
+  },
+  "pool": {
+    "defaultName": "cover pool",
+    "depositTitle": "Deposit",
+    "withdrawTitle": "Withdraw",
+    "withdrawEarningsTitle": "Withdraw Earnings",
+    "closeDeposit": "Close deposit to {pool}",
+    "closeWithdraw": "Close withdraw from {pool}",
+    "closeWithdrawEarnings": "Close withdraw earnings from {pool}",
+    "sharesToRedeem": "Pool Shares to Redeem",
+    "withdrawAvailability": "{amount} shares available. {cooldown} if no pending claims. Otherwise after the claims are all finalized. <link>Learn More</link>.",
+    "cooldownWithLength": "{length} cooldown",
+    "cooldown": "Cooldown",
+    "depositAvailabilityWithCapacity": "{amount} available. <capacity>{capacity} {symbol} left in pool capacity</capacity>",
+    "estimatedReceived": "Estimated {symbol} Received",
+    "mayDecrease": "May decrease if the pool pays claims before your withdrawal settles.",
+    "startCooldown": "Start Cooldown",
+    "withdraw": "Withdraw",
+    "withdrawEarnings": "Withdraw Earnings",
+    "deposit": "Deposit",
+    "balances": {
+      "summary": "{withdrawable},  {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} ready to withdraw",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} ready to withdraw after claims are finalized",
+      "estimatedForWithdrawal": "{amount} {symbol} estimated for withdrawal",
+      "estimatedForWithdrawalAfterClaims": "{amount} {symbol} estimated for withdrawal after claims are finalized",
+      "inCooldown": "{amount} {symbol} in cooldown",
+      "inCooldownWithTiming": "{amount} {symbol} in cooldown — {timing}"
+    }
+  }
+}

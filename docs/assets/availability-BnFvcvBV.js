@@ -1,0 +1,1 @@
+var e={connectWallet:`Hubungkan dompet Anda terlebih dahulu.`};export{e as default};

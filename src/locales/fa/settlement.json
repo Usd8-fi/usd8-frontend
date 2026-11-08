@@ -1,0 +1,8 @@
+{
+  "finality": {
+    "explanation": "تسویه زمانی ممکن می‌شود که بلاک نهایی‌شده از مهلت ثبت درخواست بگذرد.",
+    "heads": "بلاک فعلی {latest} · بلاک نهایی‌شده {finalized}",
+    "readyToSettle": "آماده‌ی تسویه",
+    "minutesToGo": "حدود {minutes} دقیقه مانده"
+  }
+}

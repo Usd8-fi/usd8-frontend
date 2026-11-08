@@ -1,0 +1,1 @@
+var e={codeLabel:`プライベートベータ招待コード`,invalidCode:`招待コードが正しくありません。`,submit:`ベータ版にアクセス`,help:`コードは<telegram>Telegram</telegram>または<x>XのDM</x>で入手できます`};export{e as default};

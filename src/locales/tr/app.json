@@ -1,0 +1,154 @@
+{
+  "wallet": {
+    "connectUnavailable": "VITE_REOWN_PROJECT_ID yapılandırılana kadar cüzdan bağlantısı kullanılamaz.",
+    "connectFailed": "Cüzdan bağlanamadı.",
+    "loadFailed": "Cüzdan yüklenemedi. Lütfen tekrar deneyin.",
+    "detailsUnavailable": "Cüzdan ayrıntıları açılamadı.",
+    "chainName": "Zincir {chainId}",
+    "scopeChanged": "Cüzdan hesabı veya ağ değişti. Güncel durumu kontrol edip tekrar deneyin.",
+    "accountOrNetworkChanged": "Cüzdan hesabı veya ağ değişti."
+  },
+  "network": {
+    "notDeployedOn": "USD8, {network} ağında mevcut değil.",
+    "notDeployedHere": "USD8 bu ağda mevcut değil.",
+    "notDeployedSelected": "USD8 seçili ağda mevcut değil."
+  },
+  "score": {
+    "loadFailed": "Sigorta Puanı yüklenemedi. Kullanılabilir puanınızı görmek için tekrar deneyin.",
+    "refreshFailed": "Sigorta Puanı yenilenemedi. Kullanılabilir puanınızı güncellemek için tekrar deneyin.",
+    "unavailableForClaim": "Sigorta Puanı şu anda alınamıyor. Talepte bulunmadan önce tekrar yüklemeyi deneyin.",
+    "retry": "Puanı Yenile"
+  },
+  "data": {
+    "someUnavailable": "Bazı veriler alınamadı. Güncellemek için tekrar deneyin.",
+    "someBalancesUnavailable": "Bazı bakiyeler veya protokol verileri güncellenemedi. Güncellemek için tekrar deneyin.",
+    "refreshUnavailable": "Devam etmeden önce eksik verileri yenileyin."
+  },
+  "transaction": {
+    "cancelled": "İşlem cüzdanınızda iptal edildi.",
+    "submitted": "İşlem gönderildi: {hash}",
+    "confirmationUnknown": "İşlem gönderildi ancak onaylanıp onaylanmadığı kontrol edilemedi. Tekrar denemeden önce işlemin durumuna bakın.",
+    "reverted": "İşlem geri alındı (revert).",
+    "failed": "İşlem başarısız oldu.",
+    "confirmed": "İşlem onaylandı.",
+    "confirmedRefreshFailed": "{status} İşlem onaylandı ancak bakiyeler yenilenemedi.",
+    "retryRefresh": "Tekrar Yenile",
+    "statusLabel": "İşlem durumu",
+    "inProgress": "Devam eden bir işlem zaten var."
+  },
+  "pool": {
+    "noneConfigured": "Bu ağda yapılandırılmış bir teminat havuzu yok.",
+    "fallbackName": "teminat havuzu",
+    "depositPositive": "Yatırılacak tutar sıfırdan büyük olmalı.",
+    "approveAsset": "Cüzdanınızda {symbol} için harcama onayı verin.",
+    "confirmDeposit": "Teminat havuzuna yatırma işlemini cüzdanınızda onaylayın.",
+    "depositConfirmed": "{network} ağında yatırma işlemi onaylandı.",
+    "sharePositive": "Sıfırdan büyük bir pay miktarı girin.",
+    "shareBalanceChanged": "Havuz payı bakiyeniz değişti. Tutarı yenileyip tekrar deneyin.",
+    "confirmCooldown": "Bekleme süresini başlatma işlemini cüzdanınızda onaylayın.",
+    "cooldownStarted": "Bekleme süresi başladı. Bu tutar artık getiri kazanmaz ve çıkışınız tamamlanmadan havuz tazminat öderse azalabilir.",
+    "completeWithdrawal": "Bekleme süresi dolan çekimi cüzdanınızda tamamlayın.",
+    "withdrawalCompleted": "{network} ağında çekim tamamlandı.",
+    "confirmRewardClaim": "USD8 kazancınızı çekme işlemini cüzdanınızda onaylayın.",
+    "rewardsClaimed": "{network} ağında kazançlarınız çekildi."
+  },
+  "usd8": {
+    "redeemQuoteFailed": "İtfa teklifi yüklenemedi. Tekrar denemek için pencereyi kapatıp yeniden açın.",
+    "mintPositive": "Basılacak tutar sıfırdan büyük olmalı.",
+    "redemptionPositive": "İtfa tutarı sıfırdan büyük olmalı.",
+    "redeemQuoteChanged": "İtfa teklifi değişti. Güncellenen tutarı kontrol edip yeniden gönderin.",
+    "confirmRedemption": "USD8 itfasını cüzdanınızda onaylayın.",
+    "redemptionConfirmed": "{network} ağında itfa onaylandı.",
+    "approveUsdc": "Cüzdanınızda USDC için harcama onayı verin.",
+    "confirmMint": "USD8 basımını cüzdanınızda onaylayın.",
+    "mintConfirmed": "{network} ağında basım onaylandı."
+  },
+  "claim": {
+    "loadingDetails": "Talep ayrıntıları yükleniyor…",
+    "statusLabel": "Talep gönderim durumu",
+    "loadingPayout": "Kanıtla desteklenen ödeme ayrıntıları yükleniyor.",
+    "payoutUnavailable": "Ödeme ayrıntıları geçici olarak alınamıyor.",
+    "incidentLoading": "Olay ayrıntıları hâlâ yükleniyor. Talepte bulunmadan önce yenileyin.",
+    "holdingWindowUnavailable": "Elde tutma süresi alınamadı. Talepte bulunmadan önce yenileyin.",
+    "tokenNotEnabledOn": "{network} ağında {symbol} için talep oluşturma etkin değil.",
+    "tokenNotEnabledOnSelected": "Seçili ağda {symbol} için talep oluşturma etkin değil.",
+    "preparationInProgress": "Talep hazırlanıyor.",
+    "verificationNotConfigured": "Talep doğrulama hizmeti yapılandırılmamış.",
+    "checkingRequirements": "Güncel olay ve talep şartları kontrol ediliyor.",
+    "tokenNotEnabled": "Seçili ağda bu token için talep oluşturma etkin değil.",
+    "tokenNoLongerEnabled": "{network} ağında {symbol} için artık yeni talep oluşturulamıyor.",
+    "invalidBoosterAmount": "Lütfen geçerli bir Booster adedi girin.",
+    "insuredAmountPositive": "Sigortalı token tutarı sıfırdan büyük olmalı.",
+    "scorePositive": "Harcanacak sigorta puanı sıfırdan büyük olmalı.",
+    "incidentChanged": "Aktif olay değişti. Talepte bulunmadan önce olay ayrıntılarını yenileyin.",
+    "insufficientUsd8ForAmountAndBond": "USD8 bakiyeniz sigortalı tutar ve talep depozitosu için yetersiz.",
+    "insufficientUsd8ForBond": "USD8 bakiyeniz talep depozitosu için yetersiz.",
+    "verifyingIncident": "Olay TEE içinde doğrulanıyor. İlk talep birkaç dakika sürebilir, lütfen bekleyin.",
+    "checkingPriceDrop": "Şartları karşılayan bir fiyat düşüşü olup olmadığı kontrol ediliyor.",
+    "approveToken": "Cüzdanınızda token harcama onayını verin.",
+    "boostersDisabled": "Taleplerde Booster kullanımı etkin değil.",
+    "insufficientBoosters": "Booster bakiyeniz yetersiz.",
+    "approveBoosters": "Cüzdanınızda Booster onayını verin.",
+    "checkingBeforeFiling": "Talebiniz gönderilmeden önce olay kontrol ediliyor.",
+    "confirmClaim": "Talebi cüzdanınızda onaylayın.",
+    "claimConfirmed": "{network} ağında talep onaylandı.",
+    "stepFailed": {
+      "requirements": "Talep şartları kontrolü başarısız oldu",
+      "tokenApproval": "Token onayı başarısız oldu",
+      "boosterApproval": "Booster onayı başarısız oldu",
+      "verification": "Talep doğrulaması başarısız oldu",
+      "submission": "Talep işlemi başarısız oldu"
+    },
+    "stepConfirmationUnavailable": {
+      "requirements": "Talep şartları kontrolünün sonucu teyit edilemedi",
+      "tokenApproval": "Token onayı teyit edilemedi",
+      "boosterApproval": "Booster onayı teyit edilemedi",
+      "verification": "Talep doğrulaması teyit edilemedi",
+      "submission": "Talep işlemi teyit edilemedi"
+    },
+    "stepReason": "{step}: {reason}",
+    "tryAgain": "Lütfen tekrar deneyin.",
+    "verificationUnreachable": "Talep doğrulama hizmetine ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+    "blockchainUnreachable": "Blokzincire bağlanılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+    "approvalConfirmed": {
+      "token": "Token onayı tamamlandı.",
+      "booster": "Booster onayı tamamlandı."
+    },
+    "noClaimSubmitted": "Herhangi bir talep işlemi gönderilmedi.",
+    "alreadyResolved": "Bu talep zaten sonuçlandırıldı.",
+    "changedWhilePayoutLoading": "Ödeme ayrıntıları yüklenirken cüzdan hesabı veya talep değişti.",
+    "cancel": {
+      "noUnresolved": "Bu hesabın iptal edilebilecek açık bir talebi kalmadı.",
+      "changed": "Aktif talep değişti. İptal etmeden önce güncel talebi gözden geçirin.",
+      "notCancellable": "Bu talep artık iptal edilemez. Talebin güncel durumunu kontrol edin.",
+      "confirm": "Talep iptalini cüzdanınızda onaylayın.",
+      "failed": "Talep iptal edilemedi."
+    },
+    "settle": {
+      "stateChanged": "Uzlaştırma hazırlanırken olayın uzlaştırma durumu değişti.",
+      "preparing": "TEE uzlaştırması hazırlanıyor. Bu işlem birkaç dakika sürebilir.",
+      "confirm": "Talep uzlaştırmasını cüzdanınızda onaylayın.",
+      "confirmed": "{network} ağında uzlaştırma onaylandı.",
+      "failed": "Talep uzlaştırması başarısız oldu."
+    },
+    "finalize": {
+      "noUnresolved": "Bu hesabın sonuçlandırılacak açık bir talebi kalmadı.",
+      "changed": "Ödeme ayrıntıları yüklenirken aktif talep değişti. Güncel talebi kontrol edip tekrar deneyin.",
+      "payoutStateChanged": "Ayrıntılar yüklenirken ödeme durumu değişti. Güncel talebi kontrol edip tekrar deneyin.",
+      "notInSettlement": "Uzlaştırma bu talebi içermiyor.",
+      "boosterExceedsEscrow": "Uzlaştırmadaki Booster adedi, bu talepte emanete verilen miktarı aşıyor.",
+      "confirmAccept": "Ödemeyi kabul işlemini cüzdanınızda onaylayın.",
+      "confirmReturn": "Token'larınızı geri alma işlemini cüzdanınızda onaylayın.",
+      "failed": "Talep sonuçlandırılamadı.",
+      "errors": {
+        "FinalizeNotOpen": "Ödeme kabulü şu anda açık değil. Ödeme veya token iade süresini görmek için talep durumunu yenileyin.",
+        "InvalidProof": "Uzlaştırma kanıtı geçersiz. Tekrar denemeden önce ödeme ayrıntılarını yenileyin.",
+        "EligibleExceedsEscrow": "Uzlaştırmadaki uygun miktar, emanetteki token veya Booster miktarını aşıyor. Tekrar denemeden önce ödeme ayrıntılarını yenileyin.",
+        "InvalidBoostedScore": "Uzlaştırmadaki ödeme ağırlığı, uygun Booster'larla uyuşmuyor. Tekrar denemeden önce ödeme ayrıntılarını yenileyin.",
+        "UnauthorizedClaim": "Bu cüzdan bu talebi sonuçlandıramaz. Bağlı hesabı kontrol edip sayfayı yenileyin.",
+        "ClaimAlreadyResolved": "Bu talep zaten sonuçlandırıldı. Talep durumunu yenileyin.",
+        "PayoutCapExceeded": "Ödeme, havuzun kalan ödeme limitini aşıyor. Tekrar denemeden önce ödeme ayrıntılarını yenileyin."
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "language": "Язык",
+  "metrics": {
+    "apy": "Доходность",
+    "tvl": "Объём пула",
+    "window7D": "7Д",
+    "window30D": "30Д",
+    "apySuffix": " доходность",
+    "windowApy": "Доходность ({window})"
+  },
+  "pools": {
+    "wsteth": "Пул покрытия wstETH",
+    "usd8": "Пул покрытия USD8",
+    "msloss": "Пул покрытия msLOSS"
+  }
+}

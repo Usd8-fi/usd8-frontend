@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "Émettre des USD8",
+    "redeemTitle": "Racheter des USD8",
+    "closeMint": "Fermer l’émission d’USD8",
+    "closeRedeem": "Fermer le rachat d’USD8",
+    "waitingForQuote": "En attente d’un prix de rachat valide.",
+    "amountInput": "Montant de {token}",
+    "output": "{token} reçus",
+    "mint": "Émettre",
+    "redeem": "Racheter"
+  },
+  "available": "Disponible : {amount}",
+  "earnings": {
+    "label": "Gains en USD8",
+    "availableToWithdraw": "{amount} USD8 à retirer"
+  },
+  "exitProgress": {
+    "ready": "Retrait disponible",
+    "waitingForClaims": "Période d’attente terminée, en attente de la clôture des demandes",
+    "cooldown": "Progression de la période d’attente",
+    "barLabel": "Progression de la période d’attente avant retrait"
+  },
+  "pool": {
+    "defaultName": "pool de couverture",
+    "depositTitle": "Déposer",
+    "withdrawTitle": "Retirer",
+    "withdrawEarningsTitle": "Retirer les gains",
+    "closeDeposit": "Fermer le dépôt ({pool})",
+    "closeWithdraw": "Fermer le retrait ({pool})",
+    "closeWithdrawEarnings": "Fermer le retrait des gains ({pool})",
+    "sharesToRedeem": "Parts du pool à retirer",
+    "withdrawAvailability": "Parts disponibles : {amount}. {cooldown} s’il n’y a aucune demande en cours ; sinon, une fois toutes les demandes clôturées. <link>En savoir plus</link>.",
+    "cooldownWithLength": "Période d’attente de {length}",
+    "cooldown": "Période d’attente",
+    "depositAvailabilityWithCapacity": "Disponible : {amount}. <capacity>Capacité restante du pool : {capacity} {symbol}</capacity>",
+    "estimatedReceived": "{symbol} reçus (estimation)",
+    "mayDecrease": "Ce montant peut diminuer si le pool paie des demandes avant la finalisation de votre retrait.",
+    "startCooldown": "Lancer la période d’attente",
+    "withdraw": "Retirer",
+    "withdrawEarnings": "Retirer les gains",
+    "deposit": "Déposer",
+    "balances": {
+      "summary": "{withdrawable}, {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} à retirer",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} à retirer une fois les demandes clôturées",
+      "estimatedForWithdrawal": "{amount} {symbol} à retirer (estimation)",
+      "estimatedForWithdrawalAfterClaims": "{amount} {symbol} à retirer (estimation) une fois les demandes clôturées",
+      "inCooldown": "{amount} {symbol} en période d’attente",
+      "inCooldownWithTiming": "{amount} {symbol} en période d’attente — {timing}"
+    }
+  }
+}

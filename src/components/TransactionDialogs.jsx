@@ -1,6 +1,7 @@
 // Mint/redeem and cover-pool transaction dialogs. Blocker rules live in
 // lib/actionRules.js; these components only render them.
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../lib/i18n.js';
 import AvailabilityAction from './AvailabilityAction.jsx';
 import { useDialogFocus } from './useDialogFocus.js';
 import { defaultTokenAmount, poolActionState, tokenAmountValidationReason } from '../lib/actionRules.js';
@@ -21,16 +22,17 @@ function DialogCloseButton({ label, onClose }) {
 }
 
 export function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, onInputChange, onClose, onSubmit, submitUnavailableReason = '' }) {
+  const { t } = useTranslation();
   const minting = mode === 'mint';
-  const dialogTitle = minting ? 'Mint USD8' : 'Redeem USD8';
-  const closeLabel = minting ? 'Close mint USD8' : 'Close redeem USD8';
+  const dialogTitle = minting ? t('transactions.usd8.mintTitle') : t('transactions.usd8.redeemTitle');
+  const closeLabel = minting ? t('transactions.usd8.closeMint') : t('transactions.usd8.closeRedeem');
   const inputToken = minting ? 'USDC' : 'USD8';
   const outputToken = minting ? 'USD8' : 'USDC';
   const availableBalance = minting ? usdcBalance : usd8Balance;
   const [amount, setAmount] = useState(() => defaultTokenAmount(availableBalance));
   const amountUnavailableReason = submitUnavailableReason
     || tokenAmountValidationReason(amount, availableBalance, inputToken, minting ? 'mint USD8' : 'redeem USD8')
-    || (!minting && redemptionQuote(amount, quoteRate) === null ? 'Waiting for a valid redemption quote.' : '');
+    || (!minting && redemptionQuote(amount, quoteRate) === null ? t('transactions.usd8.waitingForQuote') : '');
 
   const dialogRef = useDialogFocus(onClose);
 
@@ -50,7 +52,7 @@ export function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, on
             <label className="usd8-dialog-amount">
               <span>{inputToken}</span>
               <input
-                aria-label={`${inputToken} amount`}
+                aria-label={t('transactions.usd8.amountInput', { token: inputToken })}
                 inputMode="decimal"
                 min="0"
                 step="any"
@@ -61,14 +63,14 @@ export function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, on
                   onInputChange?.();
                 }}
               />
-              <small>{displayAvailableBalance(availableBalance)} available</small>
+              <small>{t('transactions.available', { amount: displayAvailableBalance(availableBalance) })}</small>
             </label>
 
             <span className="usd8-dialog-arrow" aria-hidden="true">→</span>
 
             <div className="usd8-dialog-output">
               <span>{outputToken}</span>
-              <output aria-label={`${outputToken} output`}>{minting ? amount || '0' : redemptionQuote(amount, quoteRate) ?? UNKNOWN_VALUE}</output>
+              <output aria-label={t('transactions.usd8.output', { token: outputToken })}>{minting ? amount || '0' : redemptionQuote(amount, quoteRate) ?? UNKNOWN_VALUE}</output>
             </div>
           </div>
 
@@ -79,7 +81,7 @@ export function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, on
               unavailableReason={amountUnavailableReason}
               warningResetKey={`${mode}:${amount}`}
             >
-              {minting ? 'Mint' : 'Redeem'}
+              {minting ? t('transactions.usd8.mint') : t('transactions.usd8.redeem')}
             </AvailabilityAction>
           </div>
         </form>
@@ -90,11 +92,12 @@ export function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, on
 
 // Ticks once per second on its own, so the dialog's form doesn't re-render.
 function LiveEarningsOutput({ pool }) {
+  const { t } = useTranslation();
   const earnings = useLivePoolEarnings(pool || {})?.earnings;
   return (
     <>
-      <output aria-label="USD8 Earnings">{earnings}</output>
-      <small>{displayAvailableBalance(earnings)} USD8 available to withdraw</small>
+      <output aria-label={t('transactions.earnings.label')}>{earnings}</output>
+      <small>{t('transactions.earnings.availableToWithdraw', { amount: displayAvailableBalance(earnings) })}</small>
     </>
   );
 }
@@ -106,6 +109,7 @@ function LiveEarningsOutput({ pool }) {
 export function ExitProgress({
   poolAddress, account, cooldownEndsAtMilliseconds, ready, waitingForClaims, nowMilliseconds,
 }) {
+  const { t } = useTranslation();
   const inCooldown = !ready && !waitingForClaims && Number(cooldownEndsAtMilliseconds) > 0;
   const [requestedAt, setRequestedAt] = useState(null);
   useEffect(() => {
@@ -123,7 +127,8 @@ export function ExitProgress({
   if (percent === null) return null;
   const rounded = Math.floor(percent);
   // Amounts and the ready time are in the sentence just above; the bar adds the state and share elapsed.
-  const label = ready ? 'Ready to withdraw' : waitingForClaims ? 'Cooldown complete, waiting for claims to finalize' : 'Cooldown progress';
+  const label = t(ready ? 'transactions.exitProgress.ready'
+    : waitingForClaims ? 'transactions.exitProgress.waitingForClaims' : 'transactions.exitProgress.cooldown');
   const detail = `${rounded}%`;
   return (
     <div className="usd8-dialog-exit-progress">
@@ -134,7 +139,7 @@ export function ExitProgress({
       <span
         className={`usd8-dialog-exit-progress-bar${ready ? ' usd8-dialog-exit-progress-bar--ready' : ''}`}
         role="progressbar"
-        aria-label="Withdrawal cooldown progress"
+        aria-label={t('transactions.exitProgress.barLabel')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={rounded}
@@ -148,7 +153,7 @@ export function PoolActionDialog({
   mode,
   poolAddress = '',
   account = '',
-  poolName = 'cover pool',
+  poolName,
   assetSymbol = '',
   shareSymbol = '',
   shareDecimals = 21,
@@ -174,12 +179,16 @@ export function PoolActionDialog({
   onSubmit,
   submitUnavailableReason = '',
 }) {
+  const { t, tRich } = useTranslation();
   const withdrawingEarnings = mode === 'claimReward';
   const exitCooldownLabel = durationAdjective(exitCooldownSeconds);
   const depositing = mode === 'deposit';
   const withdrawing = mode === 'withdraw';
-  const dialogTitle = depositing ? 'Deposit' : withdrawing ? 'Withdraw' : 'Withdraw Earnings';
-  const closeLabel = `Close ${depositing ? 'deposit to' : withdrawing ? 'withdraw from' : 'withdraw earnings from'} ${poolName}`;
+  const dialogTitle = depositing ? t('transactions.pool.depositTitle')
+    : withdrawing ? t('transactions.pool.withdrawTitle') : t('transactions.pool.withdrawEarningsTitle');
+  const closeLabel = t(depositing ? 'transactions.pool.closeDeposit'
+    : withdrawing ? 'transactions.pool.closeWithdraw' : 'transactions.pool.closeWithdrawEarnings',
+  { pool: poolName ?? t('transactions.pool.defaultName') });
   const inputToken = depositing ? assetSymbol : shareSymbol;
   const available = depositing ? coverAssetBalance : availableForCooldown ?? poolShareBalance;
 
@@ -193,6 +202,7 @@ export function PoolActionDialog({
   const {
     cooldownCompleteWaitingForClaims,
     cooldownTiming,
+    cooldownReady,
     hasWithdrawAvailable,
     amountUnavailableReason,
     withdrawUnavailableReason,
@@ -222,10 +232,10 @@ export function PoolActionDialog({
   }, [available]);
 
   useEffect(() => {
-    if (!cooldownTiming || cooldownTiming === 'ready now') return undefined;
+    if (!cooldownTiming || cooldownReady) return undefined;
     const timer = window.setInterval(() => setCurrentTimeMilliseconds(Date.now()), 60_000);
     return () => window.clearInterval(timer);
-  }, [cooldownEndsAtMilliseconds, cooldownTiming]);
+  }, [cooldownEndsAtMilliseconds, cooldownTiming, cooldownReady]);
 
   const dialogRef = useDialogFocus(onClose);
 
@@ -244,16 +254,16 @@ export function PoolActionDialog({
           {withdrawingEarnings ? (
             <div className="usd8-dialog-flow usd8-dialog-flow--single">
               <div className="usd8-dialog-output">
-                <span>USD8 Earnings</span>
+                <span>{t('transactions.earnings.label')}</span>
                 <LiveEarningsOutput pool={earningsPool} />
               </div>
             </div>
           ) : (
             <div className={`usd8-dialog-flow${withdrawing ? ' usd8-dialog-flow--withdraw' : ' usd8-dialog-flow--single'}`}>
               <label className="usd8-dialog-amount">
-                <span>{withdrawing ? 'Pool Shares to Redeem' : inputToken}</span>
+                <span>{withdrawing ? t('transactions.pool.sharesToRedeem') : inputToken}</span>
                 <input
-                  aria-label={`${inputToken} amount`}
+                  aria-label={t('transactions.usd8.amountInput', { token: inputToken })}
                   inputMode="decimal"
                   min="0"
                   step="any"
@@ -267,29 +277,35 @@ export function PoolActionDialog({
                 />
                 {mode === 'withdraw' ? (
                   <small className="usd8-dialog-pool-availability usd8-dialog-withdrawal-availability">
-                    {displayAvailableBalance(available)} shares available. {exitCooldownLabel ? `${exitCooldownLabel} cooldown` : 'Cooldown'} if no pending claims. Otherwise after the claims are all finalized.{' '}
-                    <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">Learn More</a>.
+                    {tRich('transactions.pool.withdrawAvailability', {
+                      link: (text) => <a href={docsUrl('cover-pools.html')} target="_blank" rel="noreferrer">{text}</a>,
+                    }, {
+                      amount: displayAvailableBalance(available),
+                      cooldown: exitCooldownLabel
+                        ? t('transactions.pool.cooldownWithLength', { length: exitCooldownLabel })
+                        : t('transactions.pool.cooldown'),
+                    })}
                   </small>
                 ) : (
                   <small className="usd8-dialog-pool-availability">
-                    {displayAvailableBalance(available)} available
-                    {depositing && !capacityUncapped && remainingDepositCapacity !== '' ? (
-                      <>
-                        .{' '}
-                        <span className="usd8-dialog-pool-capacity">
-                          {displayAvailableBalance(remainingDepositCapacity)} {assetSymbol} left in pool capacity
-                        </span>
-                      </>
-                    ) : null}
+                    {depositing && !capacityUncapped && remainingDepositCapacity !== ''
+                      ? tRich('transactions.pool.depositAvailabilityWithCapacity', {
+                        capacity: (text) => <span className="usd8-dialog-pool-capacity">{text}</span>,
+                      }, {
+                        amount: displayAvailableBalance(available),
+                        capacity: displayAvailableBalance(remainingDepositCapacity),
+                        symbol: assetSymbol,
+                      })
+                      : t('transactions.available', { amount: displayAvailableBalance(available) })}
                   </small>
                 )}
               </label>
               {withdrawing ? <>
                 <span className="usd8-dialog-arrow" aria-hidden="true">→</span>
                 <div className="usd8-dialog-output">
-                  <span>Estimated {assetSymbol} Received</span>
-                  <output aria-label={`Estimated ${assetSymbol} Received`} title={estimatedAssets ?? undefined}>{estimatedOutput}</output>
-                  <small>May decrease if the pool pays claims before your withdrawal settles.</small>
+                  <span>{t('transactions.pool.estimatedReceived', { symbol: assetSymbol })}</span>
+                  <output aria-label={t('transactions.pool.estimatedReceived', { symbol: assetSymbol })} title={estimatedAssets ?? undefined}>{estimatedOutput}</output>
+                  <small>{t('transactions.pool.mayDecrease')}</small>
                 </div>
               </> : null}
             </div>
@@ -305,11 +321,20 @@ export function PoolActionDialog({
                   unavailableReason={amountUnavailableReason}
                   warningResetKey={`${mode}:${amount}`}
                 >
-                  Start Cooldown
+                  {t('transactions.pool.startCooldown')}
                 </AvailabilityAction>
                 <small className="usd8-dialog-withdraw-balances">
-                  {displayAvailableBalance(displayedWithdrawAvailable)} {assetSymbol} {exitSettled ? 'ready to withdraw' : 'estimated for withdrawal'}{cooldownCompleteWaitingForClaims ? ' after claims are finalized' : ''}, {' '}
-                  {displayAvailableBalance(displayedCooldownBalance)} {assetSymbol} in cooldown{cooldownTiming ? ` — ${cooldownTiming}` : ''}.
+                  {t('transactions.pool.balances.summary', {
+                    withdrawable: t(`transactions.pool.balances.${exitSettled ? 'readyToWithdraw' : 'estimatedForWithdrawal'}${cooldownCompleteWaitingForClaims ? 'AfterClaims' : ''}`, {
+                      amount: displayAvailableBalance(displayedWithdrawAvailable),
+                      symbol: assetSymbol,
+                    }),
+                    cooldown: t(cooldownTiming ? 'transactions.pool.balances.inCooldownWithTiming' : 'transactions.pool.balances.inCooldown', {
+                      amount: displayAvailableBalance(displayedCooldownBalance),
+                      symbol: assetSymbol,
+                      timing: cooldownTiming,
+                    }),
+                  })}
                 </small>
                 <ExitProgress
                   poolAddress={poolAddress}
@@ -325,7 +350,7 @@ export function PoolActionDialog({
                   onClick={() => onSubmit('withdraw', '')}
                   unavailableReason={withdrawUnavailableReason}
                 >
-                  Withdraw
+                  {t('transactions.pool.withdraw')}
                 </AvailabilityAction>
               </>
             ) : (
@@ -335,7 +360,7 @@ export function PoolActionDialog({
                 unavailableReason={amountUnavailableReason}
                 warningResetKey={`${mode}:${amount}`}
               >
-                {withdrawingEarnings ? 'Withdraw Earnings' : 'Deposit'}
+                {withdrawingEarnings ? t('transactions.pool.withdrawEarnings') : t('transactions.pool.deposit')}
               </AvailabilityAction>
             )}
           </div>

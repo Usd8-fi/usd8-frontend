@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "Tutup status klaim",
+    "fileClaim": "Tutup pengajuan klaim"
+  },
+  "dialogLabel": {
+    "status": "Status Klaim untuk {symbol}",
+    "file": "Ajukan klaim untuk {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "Status Klaim Anda",
+    "incidentStatus": "Status Insiden",
+    "fileClaim": "Ajukan Klaim"
+  },
+  "requirement": "Nilai {symbol} harus turun lebih dari 20% terhadap aset dasarnya, diukur dari harga TWAP sesaat sebelum dan sesudah penurunan. <link>Pelajari lebih lanjut</link>.",
+  "noClaimInIncident": "Anda tidak memiliki klaim dalam insiden ini. Pengajuan sudah ditutup, tetapi penyelesaian terbuka untuk umum — siapa pun dapat melakukannya.",
+  "validation": {
+    "noAvailableScore": "Anda tidak memiliki skor asuransi tersedia untuk digunakan.",
+    "amountExceedsBalance": "Jumlah {symbol} melebihi saldo Anda yang tersedia.",
+    "enterAmount": "Masukkan jumlah {symbol} yang ingin Anda klaim.",
+    "enterScore": "Masukkan skor asuransi yang ingin Anda gunakan."
+  },
+  "holdingRequirement": {
+    "blocks": "{blocks} blok sebelum insiden.",
+    "unavailable": "periode pra-insiden yang ditetapkan. Periode kepemilikan tidak tersedia; muat ulang sebelum mengajukan klaim."
+  },
+  "stage": {
+    "claimOpen": "Klaim Dibuka",
+    "claimClosed": "Klaim Ditutup",
+    "settle": "Penyelesaian",
+    "settleOpen": "Penyelesaian Dibuka",
+    "notSettled": "Belum Diselesaikan",
+    "settled": "Diselesaikan",
+    "payout": "Pembayaran",
+    "payoutOpen": "Pembayaran Dibuka",
+    "payoutClosed": "Pembayaran Ditutup",
+    "progress": "Progres {stage}"
+  },
+  "statusDescription": {
+    "claimOpen": "menunggu pengaju lain ikut mengajukan klaim.",
+    "settlementOpenClaimant": "menunggu penyelesaian",
+    "settlementOpenAnyone": "menunggu penyelesaian, siapa pun dapat menyelesaikannya.",
+    "settlementExpired": "periode penyelesaian sudah ditutup, silakan tarik aset escrow Anda.",
+    "settlementPending": "sudah diselesaikan, masa sanggah sedang berjalan",
+    "payoutOpen": "periode pembayaran dibuka, segera lakukan finalisasi.",
+    "payoutExpired": "periode pembayaran sudah ditutup, silakan tarik aset escrow Anda."
+  },
+  "statusLabel": {
+    "plain": "Status",
+    "withDescription": "Status - {description}"
+  },
+  "currentStage": "Tahap saat ini: {stage}",
+  "action": {
+    "cancelClaim": "Batalkan Klaim",
+    "settleAllClaims": "Selesaikan Semua Klaim",
+    "returnTokens": "Ambil Kembali Token",
+    "acceptPayout": "Terima Pembayaran",
+    "cancelPayoutReturnTokens": "Tolak Pembayaran & Ambil Kembali Token",
+    "fileClaim": "Ajukan Klaim"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "Token Diasuransikan di Escrow",
+    "claimBondEscrowed": "Jaminan Klaim di Escrow",
+    "bondFullyRefunded": "Akan dikembalikan penuh",
+    "bondNotRefunded": "Tidak akan dikembalikan: syarat tidak terpenuhi",
+    "insuranceScoreToSpend": "Skor Asuransi yang Digunakan",
+    "effectiveScoreAfterBoosters": "Skor asuransi efektif setelah Booster: {score}, ",
+    "scoreCommitted": "{percent} dari total skor yang diajukan",
+    "boostersEscrowed": "Booster di Escrow",
+    "loadingBoostersTaken": "Memuat Booster yang diperhitungkan",
+    "boostersTaken": "{count} diperhitungkan"
+  },
+  "payout": {
+    "ineligible": "Anda tidak memenuhi syarat untuk menerima pembayaran, dan jaminan {bond} USD8 Anda tidak akan dikembalikan. Ambil kembali token Anda untuk menutup klaim.",
+    "totalUsdValue": "Total Nilai Pembayaran (USD)",
+    "loadingValue": "Memuat nilai pembayaran",
+    "vsLossValue": "Pembayaran vs Nilai Kerugian",
+    "loadingComparison": "Memuat perbandingan pembayaran",
+    "details": "Detail Pembayaran",
+    "loadingDetails": "Memuat detail pembayaran"
+  },
+  "time": {
+    "days_one": "{count} hari",
+    "days_other": "{count} hari",
+    "hours_one": "{count} jam",
+    "hours_other": "{count} jam",
+    "minutes_one": "{count} menit",
+    "minutes_other": "{count} menit",
+    "minutesLeft": "sisa {minutes}",
+    "hoursMinutesLeft": "sisa {hours} {minutes}",
+    "daysHoursLeft": "sisa {days} {hours}",
+    "rangeDays": "{from}-{to} hari",
+    "rangeHours": "{from}-{to} jam",
+    "rangeMinutes": "{from}-{to} menit"
+  },
+  "submissionStatus": "Status pengajuan klaim",
+  "form": {
+    "tokenAmountLabel": "Jumlah {symbol}",
+    "tokenAmountHelpLabel": "Tentang jumlah token yang diasuransikan",
+    "tokenAmountHelp": "Anda harus sudah memegang {symbol} minimal selama {holding} Kelayakan dihitung dari saldo terendah Anda selama periode itu, jadi token yang baru diperoleh setelahnya tidak dihitung. Jika saldo terendah itu nol, Anda tidak memenuhi syarat dan jaminan klaim Anda hangus.",
+    "tokenAmountInput": "Jumlah {symbol} yang diasuransikan",
+    "availableWithPeriod": "{amount} tersedia.",
+    "available": "{amount} tersedia",
+    "claimBond": "Jaminan Klaim",
+    "claimBondHelpLabel": "Tentang jaminan klaim",
+    "claimBondHelp": "Untuk mengajukan klaim, Anda perlu menyetor jaminan anti-spam sebesar 10 USD8. Jaminan ini tidak dikembalikan jika Anda ternyata tidak memenuhi syarat klaim.",
+    "scoreLabel": "Skor Asuransi yang Digunakan",
+    "scoreHelpLabel": "Tentang skor asuransi yang digunakan",
+    "scoreHelp": "Jumlah skor yang ingin Anda gunakan. Saat penyelesaian, jumlah ini dibatasi sebesar skor tersedia Anda, dan skor baru benar-benar terpakai jika Anda menerima pembayaran yang memenuhi syarat.",
+    "boostersLabel": "Booster untuk Escrow",
+    "boostersHelpLabel": "Tentang Booster untuk escrow",
+    "boostersHelp": "Opsional. Booster harus memenuhi syarat kepemilikan pra-insiden yang sama dengan token yang diasuransikan, yaitu dimiliki minimal selama {holding} Hanya Booster yang memenuhi syarat yang menambah bobot pembayaran, dan Booster tersebut dibakar saat pembayaran diterima. Kelebihan Booster dikembalikan. Jika pembayaran ditolak, semua Booster dikembalikan."
+  },
+  "weight": {
+    "summary": "Bobot pembayaran maksimum: {weight}{boosters} — {share} dari bobot escrow sementara; bobot akhir bergantung pada kelayakan kepemilikan.",
+    "boosters_one": " (termasuk {count} Booster)",
+    "boosters_other": " (termasuk {count} Booster)"
+  }
+}

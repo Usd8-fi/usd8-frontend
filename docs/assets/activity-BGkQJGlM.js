@@ -1,0 +1,1 @@
+var e={ariaLabel:`ความเคลื่อนไหวล่าสุดของโปรโตคอล`,block:`บล็อก {block}`};export{e as default};

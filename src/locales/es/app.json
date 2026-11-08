@@ -1,0 +1,154 @@
+{
+  "wallet": {
+    "connectUnavailable": "La conexión de la billetera no estará disponible hasta que se configure VITE_REOWN_PROJECT_ID.",
+    "connectFailed": "No se pudo conectar la billetera.",
+    "loadFailed": "No se pudo cargar la billetera. Inténtalo de nuevo.",
+    "detailsUnavailable": "No se pudieron abrir los detalles de la billetera.",
+    "chainName": "Cadena {chainId}",
+    "scopeChanged": "La cuenta o la red de la billetera ha cambiado. Revisa el estado actual e inténtalo de nuevo.",
+    "accountOrNetworkChanged": "La cuenta o la red de la billetera ha cambiado."
+  },
+  "network": {
+    "notDeployedOn": "USD8 no está desplegado en {network}.",
+    "notDeployedHere": "USD8 no está desplegado en esta red.",
+    "notDeployedSelected": "USD8 no está desplegado en la red seleccionada."
+  },
+  "score": {
+    "loadFailed": "No se pudo cargar la puntuación de seguro. Vuelve a intentarlo para ver tu puntuación disponible.",
+    "refreshFailed": "No se pudo actualizar la puntuación de seguro. Vuelve a intentarlo para ver tu puntuación disponible al día.",
+    "unavailableForClaim": "La puntuación de seguro no está disponible. Vuelve a cargarla antes de presentar una reclamación.",
+    "retry": "Reintentar puntuación"
+  },
+  "data": {
+    "someUnavailable": "Algunos datos no están disponibles. Vuelve a intentarlo para actualizarlos.",
+    "someBalancesUnavailable": "No se pudieron actualizar algunos saldos o datos del protocolo. Vuelve a intentarlo.",
+    "refreshUnavailable": "Actualiza los datos no disponibles antes de continuar."
+  },
+  "transaction": {
+    "cancelled": "Transacción cancelada en tu billetera.",
+    "submitted": "Transacción enviada: {hash}",
+    "confirmationUnknown": "La transacción se envió, pero no se pudo comprobar su confirmación. Revisa el estado de la transacción antes de volver a intentarlo.",
+    "reverted": "La transacción se revirtió.",
+    "failed": "La transacción ha fallado.",
+    "confirmed": "Transacción confirmada.",
+    "confirmedRefreshFailed": "{status} Transacción confirmada. No se pudieron actualizar los saldos.",
+    "retryRefresh": "Volver a actualizar",
+    "statusLabel": "Estado de la transacción",
+    "inProgress": "Ya hay una transacción en curso."
+  },
+  "pool": {
+    "noneConfigured": "No hay ningún pool de cobertura configurado en esta red.",
+    "fallbackName": "pool de cobertura",
+    "depositPositive": "El importe del depósito debe ser mayor que cero.",
+    "approveAsset": "Aprueba {symbol} en tu billetera.",
+    "confirmDeposit": "Confirma en tu billetera el depósito en el pool de cobertura.",
+    "depositConfirmed": "Depósito confirmado en {network}.",
+    "sharePositive": "Introduce una cantidad de participaciones mayor que cero.",
+    "shareBalanceChanged": "Tu saldo de participaciones del pool ha cambiado. Actualiza la cantidad e inténtalo de nuevo.",
+    "confirmCooldown": "Confirma en tu billetera el inicio del período de espera.",
+    "cooldownStarted": "Período de espera iniciado. Este importe deja de generar rendimiento y puede reducirse si el pool paga reclamaciones antes de que se liquide tu salida.",
+    "completeWithdrawal": "Confirma en tu billetera el retiro, ya finalizado el período de espera.",
+    "withdrawalCompleted": "Retiro completado en {network}.",
+    "confirmRewardClaim": "Confirma en tu billetera el cobro de tus recompensas en USD8.",
+    "rewardsClaimed": "Recompensas cobradas en {network}."
+  },
+  "usd8": {
+    "redeemQuoteFailed": "No se pudo cargar la cotización del canje. Cierra y vuelve a abrir la ventana para reintentarlo.",
+    "mintPositive": "La cantidad a acuñar debe ser mayor que cero.",
+    "redemptionPositive": "La cantidad a canjear debe ser mayor que cero.",
+    "redeemQuoteChanged": "La cotización del canje ha cambiado. Revisa el nuevo importe a recibir y vuelve a enviarlo.",
+    "confirmRedemption": "Confirma el canje de USD8 en tu billetera.",
+    "redemptionConfirmed": "Canje confirmado en {network}.",
+    "approveUsdc": "Aprueba USDC en tu billetera.",
+    "confirmMint": "Confirma la acuñación de USD8 en tu billetera.",
+    "mintConfirmed": "Acuñación confirmada en {network}."
+  },
+  "claim": {
+    "loadingDetails": "Cargando los detalles de la reclamación…",
+    "statusLabel": "Estado del envío de la reclamación",
+    "loadingPayout": "Cargando los detalles de la indemnización, verificados con la prueba de liquidación.",
+    "payoutUnavailable": "Los detalles de la indemnización no están disponibles temporalmente.",
+    "incidentLoading": "Los detalles del incidente aún se están cargando. Actualiza antes de presentar una reclamación.",
+    "holdingWindowUnavailable": "El período de tenencia no está disponible. Actualiza antes de presentar una reclamación.",
+    "tokenNotEnabledOn": "{symbol} no está habilitado para reclamaciones en {network}.",
+    "tokenNotEnabledOnSelected": "{symbol} no está habilitado para reclamaciones en la red seleccionada.",
+    "preparationInProgress": "Ya se está preparando la reclamación.",
+    "verificationNotConfigured": "El servicio de verificación de reclamaciones no está configurado.",
+    "checkingRequirements": "Comprobando el incidente actual y los requisitos de la reclamación.",
+    "tokenNotEnabled": "Este token no está habilitado para reclamaciones en la red seleccionada.",
+    "tokenNoLongerEnabled": "{symbol} ya no está habilitado para nuevas reclamaciones en {network}.",
+    "invalidBoosterAmount": "Introduce una cantidad válida de Boosters.",
+    "insuredAmountPositive": "La cantidad de tokens asegurados debe ser mayor que cero.",
+    "scorePositive": "La puntuación de seguro a gastar debe ser mayor que cero.",
+    "incidentChanged": "El incidente activo ha cambiado. Actualiza sus detalles antes de presentar una reclamación.",
+    "insufficientUsd8ForAmountAndBond": "No tienes suficiente USD8 para cubrir la cantidad asegurada y la fianza de reclamación.",
+    "insufficientUsd8ForBond": "No tienes suficiente USD8 para la fianza de reclamación.",
+    "verifyingIncident": "Verificando el incidente en el TEE. Si es la primera reclamación, puede tardar varios minutos. Espera, por favor.",
+    "checkingPriceDrop": "Comprobando si hay una caída de precio que cumpla los requisitos.",
+    "approveToken": "Aprueba el token en tu billetera.",
+    "boostersDisabled": "Los Boosters no están habilitados para reclamaciones.",
+    "insufficientBoosters": "No tienes suficientes Boosters.",
+    "approveBoosters": "Aprueba los Boosters en tu billetera.",
+    "checkingBeforeFiling": "Comprobando el incidente antes de presentar tu reclamación.",
+    "confirmClaim": "Confirma la reclamación en tu billetera.",
+    "claimConfirmed": "Reclamación confirmada en {network}.",
+    "stepFailed": {
+      "requirements": "Error al comprobar los requisitos de la reclamación",
+      "tokenApproval": "Error en la aprobación del token",
+      "boosterApproval": "Error en la aprobación de los Boosters",
+      "verification": "Error en la verificación de la reclamación",
+      "submission": "Error en la transacción de la reclamación"
+    },
+    "stepConfirmationUnavailable": {
+      "requirements": "No se pudo confirmar la comprobación de requisitos",
+      "tokenApproval": "No se pudo confirmar la aprobación del token",
+      "boosterApproval": "No se pudo confirmar la aprobación de los Boosters",
+      "verification": "No se pudo confirmar la verificación de la reclamación",
+      "submission": "No se pudo confirmar la transacción de la reclamación"
+    },
+    "stepReason": "{step}: {reason}",
+    "tryAgain": "Inténtalo de nuevo.",
+    "verificationUnreachable": "No se pudo contactar con el servicio de verificación de reclamaciones. Comprueba tu conexión e inténtalo de nuevo.",
+    "blockchainUnreachable": "No se pudo conectar con la blockchain. Comprueba tu conexión e inténtalo de nuevo.",
+    "approvalConfirmed": {
+      "token": "Aprobación del token confirmada.",
+      "booster": "Aprobación de los Boosters confirmada."
+    },
+    "noClaimSubmitted": "No se envió ninguna transacción de reclamación.",
+    "alreadyResolved": "Esta reclamación ya se ha resuelto.",
+    "changedWhilePayoutLoading": "La cuenta de la billetera o la reclamación cambió mientras se cargaban los detalles de la indemnización.",
+    "cancel": {
+      "noUnresolved": "Esta cuenta ya no tiene ninguna reclamación sin resolver que cancelar.",
+      "changed": "La reclamación activa ha cambiado. Revisa la reclamación actual antes de cancelarla.",
+      "notCancellable": "Esta reclamación ya no se puede cancelar. Revisa en qué fase se encuentra.",
+      "confirm": "Confirma la cancelación de la reclamación en tu billetera.",
+      "failed": "No se pudo cancelar la reclamación."
+    },
+    "settle": {
+      "stateChanged": "El estado de liquidación del incidente cambió mientras se preparaba la liquidación.",
+      "preparing": "Preparando la liquidación en el TEE. Puede tardar varios minutos.",
+      "confirm": "Confirma la liquidación de la reclamación en tu billetera.",
+      "confirmed": "Liquidación confirmada en {network}.",
+      "failed": "No se pudo liquidar la reclamación."
+    },
+    "finalize": {
+      "noUnresolved": "Esta cuenta ya no tiene ninguna reclamación sin resolver que finalizar.",
+      "changed": "La reclamación activa cambió mientras se cargaban los detalles de la indemnización. Revisa la reclamación actual e inténtalo de nuevo.",
+      "payoutStateChanged": "El estado de la indemnización cambió mientras se cargaban los detalles. Revisa la reclamación actual e inténtalo de nuevo.",
+      "notInSettlement": "La liquidación no incluye esta reclamación.",
+      "boosterExceedsEscrow": "La cantidad de Boosters de la liquidación supera la que hay en garantía en esta reclamación.",
+      "confirmAccept": "Confirma la aceptación de la indemnización en tu billetera.",
+      "confirmReturn": "Confirma la devolución de los tokens en tu billetera.",
+      "failed": "No se pudo finalizar la reclamación.",
+      "errors": {
+        "FinalizeNotOpen": "La aceptación de la indemnización no está abierta. Actualiza el estado de la reclamación para comprobar el plazo de indemnización o de devolución de tokens.",
+        "InvalidProof": "La prueba de liquidación no es válida. Actualiza los detalles de la indemnización antes de volver a intentarlo.",
+        "EligibleExceedsEscrow": "La cantidad elegible de la liquidación supera los tokens o Boosters depositados en garantía. Actualiza los detalles de la indemnización antes de volver a intentarlo.",
+        "InvalidBoostedScore": "El peso de indemnización de la liquidación no coincide con sus Boosters elegibles. Actualiza los detalles de la indemnización antes de volver a intentarlo.",
+        "UnauthorizedClaim": "Esta billetera no puede finalizar esta reclamación. Comprueba la cuenta conectada y actualiza.",
+        "ClaimAlreadyResolved": "Esta reclamación ya se ha resuelto. Actualiza el estado de la reclamación.",
+        "PayoutCapExceeded": "La indemnización supera el límite de indemnización que le queda al pool. Actualiza los detalles de la indemnización antes de volver a intentarlo."
+      }
+    }
+  }
+}

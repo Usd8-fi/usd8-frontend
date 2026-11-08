@@ -1,0 +1,121 @@
+{
+  "header": {
+    "homeLabel": "Trang chủ USD8",
+    "beta": "beta",
+    "switchNetwork": "Chuyển sang {network}",
+    "retryData": "Tải lại dữ liệu"
+  },
+  "wallet": {
+    "connect": "Kết nối ví",
+    "connecting": "Đang kết nối...",
+    "manageLabel": "Quản lý ví {address}"
+  },
+  "footer": {
+    "homeLabel": "Trang chủ USD8 (chân trang)",
+    "navLabel": "Chân trang",
+    "docs": "Tài liệu",
+    "auditReport": "Báo cáo kiểm toán",
+    "addresses": "Địa chỉ",
+    "timelockQueues": "Hàng đợi Timelock",
+    "faqs": "Câu hỏi thường gặp",
+    "checkBoosters": "Kiểm tra Booster",
+    "transparency": "Minh bạch",
+    "contacts": "Liên hệ",
+    "legal": "Pháp lý",
+    "cookieSettings": "Cài đặt cookie",
+    "openSource": "Toàn bộ mã nguồn đều mở",
+    "openSourceWithDataTime": "Toàn bộ mã nguồn đều mở. Dữ liệu cập nhật lúc {time}"
+  },
+  "score": {
+    "title": "Điểm bảo hiểm miễn phí",
+    "intro": "Nắm giữ USD8 hoặc sUSD8 để nhận điểm bảo hiểm miễn phí qua từng block.",
+    "total": "Điểm bảo hiểm của bạn",
+    "totalHelpLabel": "Về tổng điểm bảo hiểm",
+    "totalHelp": "Tổng điểm bảo hiểm bạn tích lũy được từ mọi khoản nắm giữ. Điểm có thể cập nhật chậm khoảng 13–19 phút trong lúc chờ các block Ethereum được chốt.",
+    "loading": "Đang tải điểm bảo hiểm",
+    "cooldownIn": "+{amount} khả dụng sau {duration}",
+    "cooldownAfterHolding": "+{amount} khả dụng sau thời gian nắm giữ",
+    "holdingPeriod": "thời gian nắm giữ"
+  },
+  "asset": {
+    "insured": "Được bảo hiểm",
+    "insuredValue": "CÓ, trong giới hạn",
+    "coverageHelpLabel": "Về giới hạn bảo hiểm",
+    "coverageHelp": "Mức bảo hiểm phụ thuộc vào số tài sản hiện có trong các pool bảo hiểm.",
+    "scoreRate": "Tốc độ tích điểm",
+    "scoreRateValue": "{rate} điểm/{unit}/ngày",
+    "scoreRateLoading": "Đang tải tốc độ tích điểm",
+    "scoreRateHelpLabel": "Về tốc độ tích điểm",
+    "scoreRateHelp": "Mỗi {unit} bạn nắm giữ mang lại {rate} điểm mỗi ngày, được cộng dần qua từng block.",
+    "scoreRateHelpPending": "Số điểm nhận được mỗi ngày cho mỗi {unit} bạn nắm giữ, được cộng dần qua từng block.",
+    "balance": "Số dư của bạn",
+    "balanceLoading": "Đang tải số dư ví",
+    "apyHelpLabel": "Về APY của {title}",
+    "apyLoading": "Đang tải APY",
+    "scoreEarned": "Điểm đã nhận"
+  },
+  "usd8": {
+    "flag": "x3 trong beta kín",
+    "mint": "Đúc",
+    "redeem": "Quy đổi"
+  },
+  "susd8": {
+    "title": "sUSD8 – USD8 tiết kiệm (Morpho)",
+    "balance": "Khoản nạp của bạn (USD8)",
+    "apyHelp": "Trả bằng USD8 từ lợi suất ngân quỹ của USD8: số USDC bảo chứng cho USD8 được đưa vào DeFi để sinh lợi suất, và một phần lợi suất đó được chuyển vào vault sUSD8.",
+    "yieldTarget": "vault sUSD8",
+    "comingSoon": "Sắp ra mắt"
+  },
+  "claims": {
+    "title": "Yêu cầu bồi thường bảo hiểm",
+    "intro": "Nếu một token được bảo hiểm giảm hơn 20% so với tài sản cơ sở, bạn có thể dùng điểm bảo hiểm để yêu cầu bồi thường.",
+    "available": "Điểm khả dụng của bạn",
+    "availableHelpLabel": "Về điểm khả dụng",
+    "availableHelp": "Điểm sẽ khả dụng sau {duration}, trừ đi phần điểm đã dùng cho các yêu cầu bồi thường."
+  },
+  "coverPools": {
+    "title": "Pool bảo hiểm",
+    "helpLabel": "Về pool bảo hiểm",
+    "help": "Nạp token của pool (ví dụ wstETH) để nhận lợi suất bằng USD8, được trả từ lợi suất ngân quỹ của USD8. Đổi lại, pool đứng ra bảo chứng cho các token được bảo hiểm: nếu một token giảm hơn 20% và một sự cố được mở, tài sản trong pool sẽ dùng để chi trả các yêu cầu bồi thường hợp lệ, tối đa một tỷ lệ giới hạn của pool cho mỗi sự cố. Rút tiền phải qua thời gian chờ 7 ngày, và tài sản đang chờ rút vẫn tiếp tục bảo hiểm cho các yêu cầu bồi thường.",
+    "warning": "Nạp vào pool bảo hiểm để bảo chứng cho các token được bảo hiểm và nhận lợi suất. APY có thể rất cao, nhưng hãy lưu ý: nếu một token được bảo hiểm bị tổn thất, tiền nạp trong pool có thể được dùng để chi trả bồi thường. Hãy chắc chắn bạn hiểu rõ <link>các rủi ro liên quan</link>."
+  },
+  "whiteHat": {
+    "title": "Kinh tế Mũ trắng",
+    "message": "Kinh tế Mũ trắng sẽ ra mắt khi USD8 nắm giữ một lượng đáng kể token được bảo hiểm thu về từ quá trình bồi thường. <link>Tìm hiểu thêm</link>."
+  },
+  "pool": {
+    "apyWindowLabel": "Khung thời gian tính APY của {pool}",
+    "apyHelpLabel": "Về APY {days} ngày của {pool}",
+    "apyHelpSource": "Trả bằng USD8 từ lợi suất ngân quỹ của USD8: toàn bộ USDC bảo chứng cho USD8 được đưa vào DeFi để sinh lợi suất, và một phần lợi suất đó được chuyển cho các pool bảo hiểm.",
+    "apyHelpWhyHigh": "APY có thể cao vì các pool được giữ ở quy mô nhỏ so với nguồn cung USD8, nên lợi suất này được chia cho ít khoản nạp hơn rất nhiều.",
+    "yieldTarget": "pool bảo hiểm",
+    "loading": "Đang tải dữ liệu pool",
+    "filled": "Mức lấp đầy",
+    "filledHelpLabel": "Về mức lấp đầy của {pool}",
+    "filledHelpUncapped": "Pool này không có hạn mức nạp.",
+    "filledHelp": "Mức lấp đầy của pool so với hạn mức nạp. Khi đạt 100%, pool sẽ ngừng nhận nạp cho đến khi có người rút ra.",
+    "capacityLoading": "Đang tải sức chứa của pool",
+    "uncapped": "Không giới hạn",
+    "uncappedLabel": "Đã nạp {assets} {asset}, không giới hạn",
+    "capacityFilledLabel": "Đã lấp đầy {percent}% sức chứa",
+    "deposit": "Khoản nạp của bạn",
+    "depositLoading": "Đang tải khoản nạp của bạn",
+    "earnings": "Lợi nhuận của bạn",
+    "earningsHelpLabel": "Về lợi nhuận của bạn trong {pool}",
+    "earningsHelp": "Lợi nhuận được trả bằng USD8, không phải {asset}. Lợi nhuận không bị dùng để chi trả bồi thường và bạn có thể rút bất cứ lúc nào.",
+    "actions": {
+      "deposit": "Nạp",
+      "withdraw": "Rút",
+      "claimReward": "Rút lợi nhuận"
+    }
+  },
+  "yieldIllustration": {
+    "label": "Lợi suất ngân quỹ từ số USDC bảo chứng cho USD8 được chuyển đến {target}",
+    "backing": "bảo chứng cho USD8",
+    "defiYield": "Lợi suất DeFi",
+    "viaTreasury": "qua ngân quỹ USD8",
+    "highApy": "APY cao ↑",
+    "largeSupply": "nguồn cung lớn",
+    "smallPool": "pool nhỏ, có giới hạn"
+  }
+}

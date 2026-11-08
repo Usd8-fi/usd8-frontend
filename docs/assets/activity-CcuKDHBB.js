@@ -1,0 +1,1 @@
+var e={ariaLabel:`Недавняя активность протокола`,block:`блок {block}`};export{e as default};

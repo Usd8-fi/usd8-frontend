@@ -1,0 +1,1 @@
+var e={connectWallet:`Veuillez d’abord connecter votre portefeuille.`};export{e as default};

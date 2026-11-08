@@ -1,0 +1,1 @@
+var e={finality:{explanation:`等最終確認區塊的時間超過理賠申請截止時間，就可以開始結算。`,heads:`目前區塊{latest} · 最終確認區塊{finalized}`,readyToSettle:`可開始結算`,minutesToGo:`約{minutes}分鐘後可結算`}};export{e as default};

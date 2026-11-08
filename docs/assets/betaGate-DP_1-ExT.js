@@ -1,0 +1,1 @@
+var e={codeLabel:`Mã mời tham gia beta kín`,invalidCode:`Mã mời không hợp lệ.`,submit:`Vào beta`,help:`Nhận mã qua <telegram>Telegram</telegram> hoặc <x>tin nhắn X</x> của chúng tôi`};export{e as default};

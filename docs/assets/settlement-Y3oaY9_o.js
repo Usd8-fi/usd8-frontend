@@ -1,0 +1,1 @@
+var e={finality:{explanation:`ファイナライズ済みのブロックが請求期限を過ぎると、精算を開始できます。`,heads:`最新ブロック{latest}／ファイナライズ済みブロック{finalized}`,readyToSettle:`精算可能`,minutesToGo:`あと約{minutes}分`}};export{e as default};

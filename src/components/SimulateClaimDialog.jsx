@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '../lib/i18n.js';
 import { readClientFor } from '../lib/chainData.js';
 import { simulateClaimPayout } from '../lib/claimSimulation.js';
 import { PROTOCOL_CHAIN_ID, getProtocolNetwork } from '../lib/networkConfig.js';
@@ -58,13 +59,14 @@ function formatAmount(units, decimals) {
   return value.toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 
-function SliderField({ id, label, help, value, onChange, max, step, prefix = '', suffix = '' }) {
+function SliderField({ id, label, helpLabel, help, value, onChange, max, step, prefix = '', suffix = '' }) {
+  const { t } = useTranslation();
   const numeric = plainNumber(value);
   return (
     <div className="claim-simulator-field">
       <span className="metric-label-with-help">
         <label htmlFor={id}>{label}</label>
-        {help ? <InfoTooltip ariaLabel={`About ${label.toLowerCase()}`} floating>{help}</InfoTooltip> : null}
+        {help ? <InfoTooltip ariaLabel={helpLabel} floating>{help}</InfoTooltip> : null}
       </span>
       <div className="claim-simulator-input-row">
         <input
@@ -74,7 +76,7 @@ function SliderField({ id, label, help, value, onChange, max, step, prefix = '',
           max={Math.max(max, numeric)}
           step={step}
           value={Math.min(numeric, Math.max(max, numeric))}
-          aria-label={`${label} slider`}
+          aria-label={t('simulateClaim.sliderLabel', { label })}
           onChange={(event) => onChange(event.target.value)}
         />
         <span className="claim-simulator-number">
@@ -98,6 +100,7 @@ export default function SimulateClaimDialog({
   insuredTokens = [],
   pools = [],
 }) {
+  const { t } = useTranslation();
   const dialogRef = useDialogFocus(onClose);
   const [claimedValue, setClaimedValue] = useState('2000');
   const [weight, setWeight] = useState('85');
@@ -157,13 +160,12 @@ export default function SimulateClaimDialog({
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Simulate Claim"
+        aria-label={t('simulateClaim.title')}
       >
-        <button className="app-dialog-close" type="button" aria-label="Close claim simulator" onClick={onClose}>×</button>
-        <h2 className="file-claim-title"><span>Simulate Claim</span></h2>
+        <button className="app-dialog-close" type="button" aria-label={t('simulateClaim.close')} onClick={onClose}>×</button>
+        <h2 className="file-claim-title"><span>{t('simulateClaim.title')}</span></h2>
         <p className="file-claim-requirement">
-          Estimate your reimbursement using live cover pool sizes and prices. Settlement recalculates
-          everything in the TEE, so the final payout may differ.
+          {t('simulateClaim.intro')}
         </p>
 
         <div className="claim-simulator-layout">
@@ -171,9 +173,9 @@ export default function SimulateClaimDialog({
             {insuredTokens.length ? (
               <div className="claim-simulator-field">
                 <span className="metric-label-with-help">
-                  <label htmlFor="claim-simulator-token">Insured Token</label>
-                  <InfoTooltip ariaLabel="About insured token" floating>
-                    The token you claim for. Its max coverage sets the loss cap, and a cover pool holding this same token is excluded from its incident.
+                  <label htmlFor="claim-simulator-token">{t('simulateClaim.insuredToken.label')}</label>
+                  <InfoTooltip ariaLabel={t('simulateClaim.insuredToken.helpLabel')} floating>
+                    {t('simulateClaim.insuredToken.help')}
                   </InfoTooltip>
                 </span>
                 <select
@@ -189,8 +191,9 @@ export default function SimulateClaimDialog({
             ) : null}
             <SliderField
               id="claim-simulator-value"
-              label="Loss Value (USD)"
-              help="Value of the insured tokens you claim for, at the 7-day average price before the drop. The loss cap is a percentage of this value."
+              label={t('simulateClaim.lossValue.label')}
+              helpLabel={t('simulateClaim.lossValue.helpLabel')}
+              help={t('simulateClaim.lossValue.help')}
               value={claimedValue}
               onChange={setClaimedValue}
               max={claimedMax}
@@ -199,8 +202,9 @@ export default function SimulateClaimDialog({
             />
             <SliderField
               id="claim-simulator-weight"
-              label="Your Score Weight"
-              help="Your insurance score, including boosters, as a share of all claimants' scores in the same incident."
+              label={t('simulateClaim.scoreWeight.label')}
+              helpLabel={t('simulateClaim.scoreWeight.helpLabel')}
+              help={t('simulateClaim.scoreWeight.help')}
               value={weight}
               onChange={(value) => setWeight(plainNumber(value) > 100 ? '100' : value)}
               max={100}
@@ -211,26 +215,26 @@ export default function SimulateClaimDialog({
 
           <div className="claim-simulator-results" aria-live="polite">
             <div className="claim-simulator-headline">
-              <span>Estimated Reimbursement</span>
+              <span>{t('simulateClaim.results.estimatedReimbursement')}</span>
               <strong>{formatUsd(result.payoutUsd)}</strong>
             </div>
 
             <dl className="claim-simulator-breakdown">
-              <div><dt>Cover Pool Budget</dt><dd>{formatUsd(result.claimantBudgetUsd)}</dd></div>
-              <div><dt>A. Score Share ({weightPercent.toLocaleString('en-US', { maximumFractionDigits: 2 })}%)</dt><dd>{formatUsd(result.entitlementUsd)}</dd></div>
-              <div><dt>B. Loss Cap ({coverageBps / 100}%)</dt><dd>{formatUsd(result.capUsd)}</dd></div>
-              <div className="claim-simulator-breakdown-total"><dt>Payout = min(A, B)</dt><dd>{formatUsd(result.payoutUsd)}</dd></div>
+              <div><dt>{t('simulateClaim.results.coverPoolBudget')}</dt><dd>{formatUsd(result.claimantBudgetUsd)}</dd></div>
+              <div><dt>{t('simulateClaim.results.scoreShare', { percent: weightPercent.toLocaleString('en-US', { maximumFractionDigits: 2 }) })}</dt><dd>{formatUsd(result.entitlementUsd)}</dd></div>
+              <div><dt>{t('simulateClaim.results.lossCap', { percent: coverageBps / 100 })}</dt><dd>{formatUsd(result.capUsd)}</dd></div>
+              <div className="claim-simulator-breakdown-total"><dt>{t('simulateClaim.results.payoutFormula')}</dt><dd>{formatUsd(result.payoutUsd)}</dd></div>
             </dl>
 
             <div className="claim-simulator-tokens">
-              <span>Paid From Cover Pools</span>
+              <span>{t('simulateClaim.results.paidFromCoverPools')}</span>
               {result.payouts.length ? (
                 <ul>
                   {result.payouts.map((payout) => (
                     payout.excluded ? (
                       <li key={payout.id} className="claim-simulator-token-excluded">
                         <span>{payout.symbol}</span>
-                        <span>Excluded</span>
+                        <span>{t('simulateClaim.results.excluded')}</span>
                       </li>
                     ) : (
                       <li key={payout.id}>
@@ -240,7 +244,7 @@ export default function SimulateClaimDialog({
                     )
                   ))}
                 </ul>
-              ) : <small>No cover pool data yet.</small>}
+              ) : <small>{t('simulateClaim.results.noPoolData')}</small>}
             </div>
           </div>
         </div>

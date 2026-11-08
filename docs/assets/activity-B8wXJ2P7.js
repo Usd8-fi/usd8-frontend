@@ -1,0 +1,1 @@
+var e={ariaLabel:`Attività recente del protocollo`,block:`blocco {block}`};export{e as default};

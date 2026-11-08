@@ -1,0 +1,1 @@
+var e={codeLabel:`رمز الدعوة إلى النسخة التجريبية الخاصة`,invalidCode:`رمز الدعوة غير صالح.`,submit:`دخول النسخة التجريبية`,help:`احصل على رمز عبر <telegram>Telegram</telegram> أو <x>رسالة خاصة على X</x>`};export{e as default};

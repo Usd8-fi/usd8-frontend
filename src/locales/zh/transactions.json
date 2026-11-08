@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "铸造USD8",
+    "redeemTitle": "赎回USD8",
+    "closeMint": "关闭铸造USD8窗口",
+    "closeRedeem": "关闭赎回USD8窗口",
+    "waitingForQuote": "正在等待有效的赎回报价。",
+    "amountInput": "{token}数量",
+    "output": "可得{token}",
+    "mint": "铸造",
+    "redeem": "赎回"
+  },
+  "available": "可用{amount}",
+  "earnings": {
+    "label": "USD8收益",
+    "availableToWithdraw": "可提取{amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "可以提取",
+    "waitingForClaims": "冷却期已结束，等待理赔完结",
+    "cooldown": "冷却进度",
+    "barLabel": "提取冷却进度"
+  },
+  "pool": {
+    "defaultName": "承保池",
+    "depositTitle": "存入",
+    "withdrawTitle": "提取",
+    "withdrawEarningsTitle": "提取收益",
+    "closeDeposit": "关闭{pool}存入窗口",
+    "closeWithdraw": "关闭{pool}提取窗口",
+    "closeWithdrawEarnings": "关闭{pool}收益提取窗口",
+    "sharesToRedeem": "要赎回的承保池份额",
+    "withdrawAvailability": "可用份额：{amount}。如无待处理理赔，{cooldown}结束后即可提取；否则须等全部理赔完结后才能提取。<link>了解更多</link>。",
+    "cooldownWithLength": "{length}冷却期",
+    "cooldown": "冷却期",
+    "depositAvailabilityWithCapacity": "可用{amount}。<capacity>承保池剩余容量{capacity} {symbol}</capacity>",
+    "estimatedReceived": "预计可得{symbol}",
+    "mayDecrease": "若承保池在你提取结算前支付理赔，该金额可能减少。",
+    "startCooldown": "开始冷却",
+    "withdraw": "提取",
+    "withdrawEarnings": "提取收益",
+    "deposit": "存入",
+    "balances": {
+      "summary": "{withdrawable}，{cooldown}。",
+      "readyToWithdraw": "可提取{amount} {symbol}",
+      "readyToWithdrawAfterClaims": "理赔完结后可提取{amount} {symbol}",
+      "estimatedForWithdrawal": "预计可提取{amount} {symbol}",
+      "estimatedForWithdrawalAfterClaims": "理赔完结后预计可提取{amount} {symbol}",
+      "inCooldown": "冷却中{amount} {symbol}",
+      "inCooldownWithTiming": "冷却中{amount} {symbol}（{timing}）"
+    }
+  }
+}

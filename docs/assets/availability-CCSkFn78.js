@@ -1,0 +1,1 @@
+var e={connectWallet:`Vui lòng kết nối ví trước.`};export{e as default};

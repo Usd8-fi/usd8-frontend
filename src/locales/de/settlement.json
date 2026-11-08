@@ -1,0 +1,8 @@
+{
+  "finality": {
+    "explanation": "Die Abrechnung kann beginnen, sobald der finalisierte Block die Antragsfrist überschritten hat.",
+    "heads": "Aktueller Block {latest} · Finalisierter Block {finalized}",
+    "readyToSettle": "Bereit zur Abrechnung",
+    "minutesToGo": "noch etwa {minutes} Min."
+  }
+}

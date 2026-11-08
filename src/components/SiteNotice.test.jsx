@@ -7,8 +7,8 @@ describe('private beta notice', () => {
     render(<SiteNotice />);
     const notice = screen.getByRole('complementary', { name: 'Private beta notice' });
     expect(notice).toHaveTextContent('Welcome to the USD8 Private Beta.');
-    expect(notice).toHaveTextContent('300% boosted insurance score rate on USD8 holdings');
-    expect(notice).toHaveTextContent('and will receive 3 boosters at the end.');
+    expect(notice).toHaveTextContent('insurance score on USD8 holdings at 3x the normal rate');
+    expect(notice).toHaveTextContent('and will receive 3 boosters at the end of the beta.');
     expect(notice).toHaveTextContent('Feedback or problems? Please post in our Telegram group.');
     expect(screen.getByRole('link', { name: 'Telegram group' })).toHaveAttribute('href', 'https://t.me/+e84i2oYk1ao1MTk1');
     // Only the group: no personal contact in the public notice.

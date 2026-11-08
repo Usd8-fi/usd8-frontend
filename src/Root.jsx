@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import PublicApp from './PublicApp.jsx';
 import ActivityTicker from './components/ActivityTicker.jsx';
+import { t } from './lib/i18n.js';
 
 export default function Root() {
   const [runtime, setRuntime] = useState(null);
@@ -19,7 +20,7 @@ export default function Root() {
       const module = await request;
       module.prepareWallet();
       setRuntime({ Component: module.default, autoConnect: explicitConnect.current });
-    } catch (error) { setError(error.message || 'Could not load the wallet. Please try again.'); }
+    } catch (error) { setError(error.message || t('app.wallet.loadFailed')); }
     finally { pending.current = null; setConnecting(false); }
   }
   useEffect(() => {

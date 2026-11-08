@@ -41,6 +41,7 @@ import { PoolActionDialog, Usd8ActionDialog } from './components/TransactionDial
 import { walletConnectorConfigured } from './lib/walletConnector.js';
 import { reportError } from './lib/errorReporting.js';
 import TermsAcceptanceDialog from './components/TermsAcceptanceDialog.jsx';
+import { t, useTranslation } from './lib/i18n.js';
 import { hasAcceptedTerms, recordTermsAcceptance, rememberTermsAccepted } from './lib/termsAcceptance.js';
 
 function cachedInsuranceScore(account, { chainId, signal, fresh = false, refresh = false }) {
@@ -75,9 +76,18 @@ const EMPTY_SCORE = {
   sUsd8Score: '0',
   sUsd8ScorePerSecond: '0',
 };
-const WALLET_CONNECT_UNAVAILABLE_REASON = 'Wallet connection is unavailable until VITE_REOWN_PROJECT_ID is configured.';
+// Status lines the user waits on. English matches isWaitingStatus' phrases; other
+// languages are remembered here so their status lines spin too.
+const WAITING_MESSAGES = new Set();
+function waitingText(key, vars) {
+  const text = t(key, vars);
+  WAITING_MESSAGES.add(text);
+  return text;
+}
+const isWaitingMessage = (message) => isWaitingStatus(message) || WAITING_MESSAGES.has(message);
 
 export default function App({ autoConnect = false }) {
+  const { t } = useTranslation();
   const { address = '', isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const walletChainId = useChainId();
@@ -99,7 +109,9 @@ export default function App({ autoConnect = false }) {
     protocolNetwork?.contracts.defiInsurance?.toLowerCase() || '',
   ].join(':');
   const protocolUnavailableReason = connected && !protocolNetwork
-    ? `USD8 is not deployed on ${activeNetwork?.name || 'this network'}.`
+    ? (activeNetwork?.name
+      ? t('app.network.notDeployedOn', { network: activeNetwork.name })
+      : t('app.network.notDeployedHere'))
     : '';
   const [connecting, setConnecting] = useState(false);
   const [quoteRate, setQuoteRate] = useState(null);
@@ -220,7 +232,7 @@ export default function App({ autoConnect = false }) {
         if (controller.signal.aborted || walletScopeRef.current !== requestedWalletScope || error.name === 'AbortError') return;
         reportError(error, 'score-load');
         setScoreStatus('error');
-        setScoreError('Insurance Score could not be loaded. Retry to get your available score.');
+        setScoreError(t('app.score.loadFailed'));
       });
     return () => controller.abort();
   }, [walletScopeKey, scoreRetry]);
@@ -248,7 +260,7 @@ export default function App({ autoConnect = false }) {
           && matchesSettlementTopology(claimSettlement.value, chainData.incident))) return undefined;
     const requestedContextKey = claimContextKey;
     const controller = new AbortController();
-    claimStatusLine.show('Loading proof-backed payout details.');
+    claimStatusLine.show(waitingText('app.claim.loadingPayout'));
     prepareSettlement(chainData.incident.id, {
       chainId: protocolNetwork.id,
       registry: protocolNetwork.contracts.registry,
@@ -269,7 +281,7 @@ export default function App({ autoConnect = false }) {
       claimStatusLine.clear();
     }).catch((error) => {
       if (claimContextRef.current === requestedContextKey && error?.name !== 'AbortError') {
-        claimStatusLine.fail(error?.message || 'Payout details are temporarily unavailable.');
+        claimStatusLine.fail(error?.message || t('app.claim.payoutUnavailable'));
       }
     });
     return () => controller.abort();
@@ -315,7 +327,7 @@ export default function App({ autoConnect = false }) {
             && scoreRefreshAttempt.current === refreshKey
             && error.name !== 'AbortError') {
           reportError(error, 'score-refresh');
-          setScoreError('Insurance Score could not be refreshed. Retry to update your available score.');
+          setScoreError(t('app.score.refreshFailed'));
         }
       })
       .finally(() => {
@@ -334,7 +346,7 @@ export default function App({ autoConnect = false }) {
       await open({ view: 'Connect' });
     } catch (error) {
       reportError(error, 'wallet-connect');
-      setDataError(error?.shortMessage || error?.message || 'Wallet connection failed.');
+      setDataError(error?.shortMessage || error?.message || t('app.wallet.connectFailed'));
     } finally {
       setConnecting(false);
     }
@@ -342,7 +354,7 @@ export default function App({ autoConnect = false }) {
 
   function assertCurrentWalletScope(expectedWalletScope = walletScopeKey) {
     if (walletScopeRef.current === expectedWalletScope) return;
-    const error = new Error('Wallet account or network changed. Review the current state and try again.');
+    const error = new Error(t('app.wallet.scopeChanged'));
     error.name = 'WalletScopeChangedError';
     throw error;
   }
@@ -381,7 +393,7 @@ export default function App({ autoConnect = false }) {
       setChainData(previous => mergeSnapshot(previous, partial && !next.incidentReady
         ? { ...next, incident: previous.incident, claim: previous.claim } : next));
       setChainDataStatus(partial ? 'partial' : 'ready');
-      setDataError(resourceErrorMessage(next.resourceErrors, 'Some balances or protocol data could not be updated. Retry to update it.'));
+      setDataError(resourceErrorMessage(next.resourceErrors, t('app.data.someBalancesUnavailable')));
       if (import.meta.env.DEV && Object.keys(next.resourceErrors || {}).length) {
         // Dev-only trace of which reads failed; see devReadErrorLog in vite.config.mjs.
         fetch('/__dev/read-errors', {
@@ -466,12 +478,12 @@ export default function App({ autoConnect = false }) {
   function selectedPool(network) {
     const pool = network.contracts.coverPools.find((entry) => entry.id === poolActionId)
       || network.contracts.coverPools[0];
-    if (!pool) throw new Error('No cover pool is configured on this network.');
+    if (!pool) throw new Error(t('app.pool.noneConfigured'));
     return pool;
   }
 
   function requireProtocolNetwork() {
-    if (!protocolNetwork) throw new Error(protocolUnavailableReason || 'USD8 is not deployed on the selected network.');
+    if (!protocolNetwork) throw new Error(protocolUnavailableReason || t('app.network.notDeployedSelected'));
     return protocolNetwork;
   }
 
@@ -499,20 +511,20 @@ export default function App({ autoConnect = false }) {
     assertCurrentWalletScope(expectedWalletScope);
     const gas = estimatedGas + estimatedGas / 2n;
     const hash = await writeContractAsync({ account: address, chainId: network.id, ...request, gas });
-    if (!hash) throw new Error('Transaction cancelled in your wallet.');
+    if (!hash) throw new Error(t('app.transaction.cancelled'));
     if (walletScopeRef.current === expectedWalletScope) {
       setTransaction({ phase: 'pending', hash, chainId: network.id });
-      setStatus(`Transaction submitted: ${hash.slice(0, 10)}…${hash.slice(-4)}`);
+      setStatus(waitingText('app.transaction.submitted', { hash: `${hash.slice(0, 10)}…${hash.slice(-4)}` }));
     }
     let receipt;
     try {
       receipt = await client.waitForTransactionReceipt({ hash });
     } catch (cause) {
-      const error = new Error('The transaction was submitted, but its confirmation could not be checked. View the transaction status before retrying.', { cause });
+      const error = new Error(t('app.transaction.confirmationUnknown'), { cause });
       error.name = 'TransactionConfirmationError';
       throw error;
     }
-    if (receipt.status !== 'success') throw new Error('Transaction reverted.');
+    if (receipt.status !== 'success') throw new Error(t('app.transaction.reverted'));
     if (walletScopeRef.current === expectedWalletScope) {
       setTransaction({ phase: 'confirmed', hash, chainId: network.id });
       if (!['approve', 'setApprovalForAll'].includes(request.functionName)) {
@@ -536,7 +548,7 @@ export default function App({ autoConnect = false }) {
     const client = transactionClientFor(network.id);
     const pool = selectedPool(network);
     const amount = parseTokenAmount(raw, 18);
-    if (amount <= 0n) throw new Error('Deposit amount must be positive.');
+    if (amount <= 0n) throw new Error(t('app.pool.depositPositive'));
     const allowance = await client.readContract({
       address: pool.asset,
       abi: erc20Abi,
@@ -549,15 +561,15 @@ export default function App({ autoConnect = false }) {
         abi: erc20Abi,
         functionName: 'approve',
         args: [pool.address, amount],
-      }, `Approve ${pool.assetSymbol} in your wallet.`, poolStatusLine.show);
+      }, waitingText('app.pool.approveAsset', { symbol: pool.assetSymbol }), poolStatusLine.show);
     }
     await submitTransaction({
       address: pool.address,
       abi: poolWriteAbi,
       functionName: 'deposit',
       args: [amount, address],
-    }, 'Confirm the cover-pool deposit in your wallet.', poolStatusLine.show);
-    poolStatusLine.show(`Deposit confirmed on ${network.name}.`);
+    }, waitingText('app.pool.confirmDeposit'), poolStatusLine.show);
+    poolStatusLine.show(t('app.pool.depositConfirmed', { network: network.name }));
     return true;
   }
 
@@ -565,18 +577,18 @@ export default function App({ autoConnect = false }) {
     const network = requireProtocolNetwork();
     const pool = selectedPool(network);
     const shares = parseTokenAmount(raw, activePool?.shareDecimals ?? 21);
-    if (shares <= 0n) throw new Error('Enter a share amount greater than zero.');
+    if (shares <= 0n) throw new Error(t('app.pool.sharePositive'));
     const expectedWalletScope = walletScopeKey;
     const balance = await transactionClientFor(network.id).readContract({ address: pool.address, abi: erc20Abi, functionName: 'balanceOf', args: [address] });
     assertCurrentWalletScope(expectedWalletScope);
-    if (shares > balance) throw new Error('Your pool share balance has changed. Refresh the amount and try again.');
+    if (shares > balance) throw new Error(t('app.pool.shareBalanceChanged'));
     await submitTransaction({
       address: pool.address,
       abi: poolWriteAbi,
       functionName: 'requestRedeem',
       args: [shares],
-    }, 'Confirm the cooldown request in your wallet.', poolStatusLine.show);
-    poolStatusLine.show('Cooldown started. This amount stops earning and may decrease if the pool pays claims before your exit settles.');
+    }, waitingText('app.pool.confirmCooldown'), poolStatusLine.show);
+    poolStatusLine.show(t('app.pool.cooldownStarted'));
     return true;
   }
 
@@ -587,8 +599,8 @@ export default function App({ autoConnect = false }) {
       abi: poolWriteAbi,
       functionName: 'completeRedeem',
       args: [address],
-    }, 'Complete the matured withdrawal in your wallet.', poolStatusLine.show);
-    poolStatusLine.show(`Withdrawal completed on ${network.name}.`);
+    }, waitingText('app.pool.completeWithdrawal'), poolStatusLine.show);
+    poolStatusLine.show(t('app.pool.withdrawalCompleted', { network: network.name }));
     return true;
   }
 
@@ -599,8 +611,8 @@ export default function App({ autoConnect = false }) {
       abi: poolWriteAbi,
       functionName: 'claimReward',
       args: [],
-    }, 'Confirm the USD8 reward claim in your wallet.', poolStatusLine.show);
-    poolStatusLine.show(`Rewards claimed on ${network.name}.`);
+    }, waitingText('app.pool.confirmRewardClaim'), poolStatusLine.show);
+    poolStatusLine.show(t('app.pool.rewardsClaimed', { network: network.name }));
     return true;
   }
 
@@ -620,7 +632,7 @@ export default function App({ autoConnect = false }) {
       else if (action === 'claimReward') await claimPoolRewards();
     } catch (error) {
       reportError(error, 'pool-action', { action });
-      poolStatusLine.fail(error?.shortMessage || error?.message || 'Transaction failed.');
+      poolStatusLine.fail(error?.shortMessage || error?.message || t('app.transaction.failed'));
     }
   }
 
@@ -633,7 +645,7 @@ export default function App({ autoConnect = false }) {
   async function submitClaim({ token, amount: rawAmount, scoreToSpend: rawScore, boosterAmount: rawBoosters }) {
     if (claimSubmitting) return;
     if (activeIncidentDetailsLoading) {
-      throw new Error('Incident details are still loading. Refresh before filing a claim.');
+      throw new Error(t('app.claim.incidentLoading'));
     }
     const expectedWalletScope = walletScopeKey;
     assertCurrentWalletScope(expectedWalletScope);
@@ -642,7 +654,7 @@ export default function App({ autoConnect = false }) {
     const assertCurrentClaimOperation = () => {
       assertCurrentWalletScope(expectedWalletScope);
       if (controller.signal.aborted || claimAbortController.current !== controller) {
-        const error = new Error('Wallet account or network changed.');
+        const error = new Error(t('app.wallet.accountOrNetworkChanged'));
         error.name = 'AbortError';
         throw error;
       }
@@ -664,13 +676,13 @@ export default function App({ autoConnect = false }) {
     };
     setTransaction(null);
     setClaimSubmitting(true);
-    claimStatusLine.show('Checking current incident and claim requirements.');
+    claimStatusLine.show(waitingText('app.claim.checkingRequirements'));
     try {
       const network = requireProtocolNetwork();
       const { contracts } = network;
       const client = transactionClientFor(network.id);
       const insuredToken = contracts.insuredTokens?.[token];
-      if (!insuredToken) throw new Error('This token is not enabled for claims on the selected network.');
+      if (!insuredToken) throw new Error(t('app.claim.tokenNotEnabled'));
       const claimTokenSymbol = CLAIM_TOKEN_ROWS.find((row) => row.id === token)?.symbol || token;
       const ensureCurrentlyInsured = async () => {
         const listed = await client.readContract({
@@ -680,7 +692,7 @@ export default function App({ autoConnect = false }) {
           args: [insuredToken],
         });
         if (listed !== true) {
-          throw new Error(`${claimTokenSymbol} is no longer enabled for new claims on ${network.name}.`);
+          throw new Error(t('app.claim.tokenNoLongerEnabled', { symbol: claimTokenSymbol, network: network.name }));
         }
       };
       await ensureCurrentlyInsured();
@@ -688,10 +700,10 @@ export default function App({ autoConnect = false }) {
 
       const insuredTokenAmount = parseTokenAmount(rawAmount, 18);
       const scoreToSpend = parseTokenAmount(rawScore, 18);
-      if (!/^\d+$/.test(String(rawBoosters ?? ''))) throw new Error('Please enter a valid Booster amount.');
+      if (!/^\d+$/.test(String(rawBoosters ?? ''))) throw new Error(t('app.claim.invalidBoosterAmount'));
       const boosterAmount = BigInt(rawBoosters);
-      if (insuredTokenAmount <= 0n) throw new Error('Insured token amount must be positive.');
-      if (scoreToSpend <= 0n) throw new Error('Insurance score to spend must be positive.');
+      if (insuredTokenAmount <= 0n) throw new Error(t('app.claim.insuredAmountPositive'));
+      if (scoreToSpend <= 0n) throw new Error(t('app.claim.scorePositive'));
 
       let activeIncidentId = await client.readContract({
         address: contracts.defiInsurance,
@@ -701,7 +713,7 @@ export default function App({ autoConnect = false }) {
       assertCurrentClaimOperation();
       if (activeIncidentId !== 0n
         && String(actionableIncident?.id ?? '') !== activeIncidentId.toString()) {
-        throw new Error('The active incident changed. Refresh its details before filing a claim.');
+        throw new Error(t('app.claim.incidentChanged'));
       }
       const claimBondAmount = await client.readContract({
         address: contracts.defiInsurance,
@@ -715,15 +727,15 @@ export default function App({ autoConnect = false }) {
         : claimBondAmount;
       if (usd8Required > usd8Balance) {
         throw new Error(insuredToken.toLowerCase() === contracts.usd8.toLowerCase()
-          ? 'Insufficient USD8 balance for the insured amount and claim bond.'
-          : 'Insufficient USD8 balance for the claim bond.');
+          ? t('app.claim.insufficientUsd8ForAmountAndBond')
+          : t('app.claim.insufficientUsd8ForBond'));
       }
       let referenceBlock = 0n;
       let signature = '0x';
       let authorization = null;
       const prepareFirstIncident = async () => {
         claimStep = 'verification';
-        setCurrentClaimStatus('Verifying incident in the TEE. First claim may take several minutes, please wait.');
+        setCurrentClaimStatus(waitingText('app.claim.verifyingIncident'));
         return prepareIncidentOpen(insuredToken, {
           chainId: network.id,
           registry: contracts.registry,
@@ -747,7 +759,7 @@ export default function App({ autoConnect = false }) {
       // approval costs gas. The binding check still runs after the approvals.
       if (activeIncidentId === 0n) {
         claimStep = 'verification';
-        setCurrentClaimStatus('Checking for a qualifying price drop.');
+        setCurrentClaimStatus(waitingText('app.claim.checkingPriceDrop'));
         await checkIncidentOpen(insuredToken, {
           chainId: network.id,
           registry: contracts.registry,
@@ -775,8 +787,8 @@ export default function App({ autoConnect = false }) {
             abi: erc20Abi,
             functionName: 'approve',
             args: [contracts.defiInsurance, requiredAmount],
-          }, 'Approve token in your wallet.', setCurrentClaimStatus, expectedWalletScope);
-          finishApproval('Token approval', receipt);
+          }, waitingText('app.claim.approveToken'), setCurrentClaimStatus, expectedWalletScope);
+          finishApproval('token', receipt);
         }
       }
 
@@ -787,7 +799,7 @@ export default function App({ autoConnect = false }) {
           functionName: 'boosterConfig',
         });
         assertCurrentClaimOperation();
-        if (boosterCollection === zeroAddress) throw new Error('Boosters are not enabled for claims.');
+        if (boosterCollection === zeroAddress) throw new Error(t('app.claim.boostersDisabled'));
         const currentBoosterBalance = await client.readContract({
           address: boosterCollection,
           abi: erc1155Abi,
@@ -795,7 +807,7 @@ export default function App({ autoConnect = false }) {
           args: [address, boosterTokenId],
         });
         assertCurrentClaimOperation();
-        if (currentBoosterBalance < boosterAmount) throw new Error('Insufficient Booster balance.');
+        if (currentBoosterBalance < boosterAmount) throw new Error(t('app.claim.insufficientBoosters'));
         const boostersApproved = await client.readContract({
           address: boosterCollection,
           abi: erc1155Abi,
@@ -810,14 +822,14 @@ export default function App({ autoConnect = false }) {
             abi: erc1155Abi,
             functionName: 'setApprovalForAll',
             args: [contracts.defiInsurance, true],
-          }, 'Approve Boosters in your wallet.', setCurrentClaimStatus, expectedWalletScope);
-          finishApproval('Booster approval', receipt);
+          }, waitingText('app.claim.approveBoosters'), setCurrentClaimStatus, expectedWalletScope);
+          finishApproval('booster', receipt);
         }
       }
 
       // Opening authorizations are block-bounded. Obtain one only after every
       // prerequisite approval is confirmed so wallet latency cannot age it out.
-      setCurrentClaimStatus('Checking the incident before filing your claim.');
+      setCurrentClaimStatus(waitingText('app.claim.checkingBeforeFiling'));
       await ensureCurrentlyInsured();
       assertCurrentClaimOperation();
       activeIncidentId = await client.readContract({
@@ -849,38 +861,38 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'fileClaim',
         args: [insuredToken, insuredTokenAmount, scoreToSpend, boosterAmount, referenceBlock, signature],
-      }, 'Confirm the claim in your wallet.', setCurrentClaimStatus, expectedWalletScope, minBlock);
+      }, waitingText('app.claim.confirmClaim'), setCurrentClaimStatus, expectedWalletScope, minBlock);
       assertCurrentClaimOperation();
       if (walletScopeRef.current === expectedWalletScope) {
-        claimStatusLine.show(`Claim confirmed on ${network.name}.`);
+        claimStatusLine.show(t('app.claim.claimConfirmed', { network: network.name }));
       }
     } catch (error) {
       if (claimAbortController.current === controller
         && walletScopeRef.current === expectedWalletScope
         && error?.name !== 'AbortError') {
         reportError(error, 'claim-file', { step: claimStep });
-        let stepLabel = {
-          requirements: 'Claim requirements check failed',
-          'token-approval': 'Token approval failed',
-          'booster-approval': 'Booster approval failed',
-          verification: 'Claim verification failed',
-          submission: 'Claim transaction failed',
+        const stepKey = {
+          requirements: 'requirements',
+          'token-approval': 'tokenApproval',
+          'booster-approval': 'boosterApproval',
+          verification: 'verification',
+          submission: 'submission',
         }[claimStep];
-        if (error?.name === 'TransactionConfirmationError') {
-          stepLabel = stepLabel.replace('failed', 'confirmation unavailable');
-        }
-        let reason = error?.shortMessage || error?.message || 'Please try again.';
+        const stepLabel = error?.name === 'TransactionConfirmationError'
+          ? t(`app.claim.stepConfirmationUnavailable.${stepKey}`)
+          : t(`app.claim.stepFailed.${stepKey}`);
+        let reason = error?.shortMessage || error?.message || t('app.claim.tryAgain');
         if (/failed to fetch|fetch failed|networkerror|load failed/i.test(reason)) {
           reason = claimStep === 'verification'
-            ? 'Could not reach the claim verification service. Check your connection and try again.'
-            : 'Could not connect to the blockchain. Check your connection and try again.';
+            ? t('app.claim.verificationUnreachable')
+            : t('app.claim.blockchainUnreachable');
         }
-        const approvals = [...new Set(confirmedApprovals)].map(label => `${label} confirmed.`).join(' ');
-        const outcome = claimStep !== 'submission' ? 'No claim transaction was submitted.' : '';
+        const approvals = [...new Set(confirmedApprovals)].map(kind => t(`app.claim.approvalConfirmed.${kind}`)).join(' ');
+        const outcome = claimStep !== 'submission' ? t('app.claim.noClaimSubmitted') : '';
         if (error?.name === 'ClaimServiceBusyError') {
           claimStatusLine.show([reason, approvals, outcome].filter(Boolean).join(' '));
         } else {
-          claimStatusLine.fail([`${stepLabel}: ${reason}`, approvals, outcome].filter(Boolean).join(' '));
+          claimStatusLine.fail([t('app.claim.stepReason', { step: stepLabel, reason }), approvals, outcome].filter(Boolean).join(' '));
         }
       }
     } finally {
@@ -901,13 +913,13 @@ export default function App({ autoConnect = false }) {
       claimStatusLine.clear();
       const latestChainData = await refreshChainData(expectedWalletScope);
       const latestClaim = latestChainData?.claim;
-      if (!latestClaim) throw new Error('This account no longer has an unresolved claim to cancel.');
-      if (latestClaim.resolved) throw new Error('This claim has already been resolved.');
+      if (!latestClaim) throw new Error(t('app.claim.cancel.noUnresolved'));
+      if (latestClaim.resolved) throw new Error(t('app.claim.alreadyResolved'));
       if (latestClaim.id !== initialClaimId || latestChainData.incident?.id !== initialIncidentId) {
-        throw new Error('The active claim changed. Review the current claim before cancelling.');
+        throw new Error(t('app.claim.cancel.changed'));
       }
       if (claimLifecycle(latestChainData.incident).state !== 'claim-open') {
-        throw new Error('This claim can no longer be cancelled. Review its current lifecycle state.');
+        throw new Error(t('app.claim.cancel.notCancellable'));
       }
       assertCurrentWalletScope(expectedWalletScope);
       await submitTransaction({
@@ -915,14 +927,14 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'cancelClaim',
         args: [],
-      }, 'Confirm claim cancellation in your wallet.', claimStatusLine.show, expectedWalletScope);
+      }, waitingText('app.claim.cancel.confirm'), claimStatusLine.show, expectedWalletScope);
       if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimToken(null);
       claimStatusLine.clear();
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
       reportError(error, 'claim-cancel');
-      claimStatusLine.fail(error?.shortMessage || error?.message || 'Claim cancellation failed.');
+      claimStatusLine.fail(error?.shortMessage || error?.message || t('app.claim.cancel.failed'));
     }
   }
 
@@ -944,7 +956,7 @@ export default function App({ autoConnect = false }) {
       expectedPoolOrder: chainData.incident.poolOrder,
     });
     if (claimContextRef.current !== requestedContextKey) {
-      const error = new Error('Wallet account or claim changed while payout details were loading.');
+      const error = new Error(t('app.claim.changedWhilePayoutLoading'));
       error.name = 'AbortError';
       throw error;
     }
@@ -969,10 +981,10 @@ export default function App({ autoConnect = false }) {
       if (beforePreparation?.incident?.id !== initialIncidentId
           || beforePreparation?.incident?.root?.toLowerCase() !== initialRoot?.toLowerCase()
           || claimLifecycle(beforePreparation?.incident).state !== 'settlement-open') {
-        throw new Error('The incident settlement state changed while the settlement was prepared.');
+        throw new Error(t('app.claim.settle.stateChanged'));
       }
       assertCurrentWalletScope(expectedWalletScope);
-      claimStatusLine.show('Preparing the TEE settlement. This may take several minutes.');
+      claimStatusLine.show(waitingText('app.claim.settle.preparing'));
       const settlement = await settlementArtifact();
       const latestChainData = await refreshChainData(expectedWalletScope);
       const latestIncident = latestChainData?.incident;
@@ -980,7 +992,7 @@ export default function App({ autoConnect = false }) {
           || latestIncident?.root?.toLowerCase() !== initialRoot?.toLowerCase()
           || claimLifecycle(latestIncident).state !== 'settlement-open'
           || !matchesSettlementTopology(settlement, latestIncident)) {
-        throw new Error('The incident settlement state changed while the settlement was prepared.');
+        throw new Error(t('app.claim.settle.stateChanged'));
       }
       assertCurrentWalletScope(expectedWalletScope);
       await submitTransaction({
@@ -988,14 +1000,14 @@ export default function App({ autoConnect = false }) {
         abi: claimWriteAbi,
         functionName: 'settleIncident',
         args: [settlement.root, settlement.poolPayouts, settlement.signature],
-      }, 'Confirm claim settlement in your wallet.', claimStatusLine.show, expectedWalletScope);
+      }, waitingText('app.claim.settle.confirm'), claimStatusLine.show, expectedWalletScope);
       if (walletScopeRef.current === expectedWalletScope) {
-        claimStatusLine.show(`Settlement confirmed on ${network.name}.`);
+        claimStatusLine.show(t('app.claim.settle.confirmed', { network: network.name }));
       }
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
       reportError(error, 'claim-settle');
-      claimStatusLine.fail(error?.shortMessage || error?.message || 'Claim settlement failed.');
+      claimStatusLine.fail(error?.shortMessage || error?.message || t('app.claim.settle.failed'));
     }
   }
 
@@ -1015,10 +1027,10 @@ export default function App({ autoConnect = false }) {
       const latestChainData = await refreshChainData(expectedWalletScope);
       const latestClaim = latestChainData?.claim;
       const latestIncident = latestChainData?.incident;
-      if (!latestClaim) throw new Error('This account no longer has an unresolved claim to finalize.');
-      if (latestClaim.resolved) throw new Error('This claim has already been resolved.');
+      if (!latestClaim) throw new Error(t('app.claim.finalize.noUnresolved'));
+      if (latestClaim.resolved) throw new Error(t('app.claim.alreadyResolved'));
       if (latestClaim.id !== initialClaimId || latestIncident?.id !== initialIncidentId) {
-        throw new Error('The active claim changed while payout details were loading. Review the current claim and try again.');
+        throw new Error(t('app.claim.finalize.changed'));
       }
 
       const latestLifecycle = claimLifecycle(latestIncident);
@@ -1027,12 +1039,12 @@ export default function App({ autoConnect = false }) {
         if (latestIncident.root?.toLowerCase() !== initialRoot?.toLowerCase()
             || (latestLifecycle.state !== 'payout-open' && latestLifecycle.state !== 'payout-expired')
             || !matchesSettlementTopology(settlement, latestIncident)) {
-          throw new Error('The payout state changed while details were loading. Review the current claim and try again.');
+          throw new Error(t('app.claim.finalize.payoutStateChanged'));
         }
         row = settlement.rows.find((candidate) => candidate.claimId === latestClaim.id);
-        if (!row) throw new Error('The settlement does not contain this claim.');
+        if (!row) throw new Error(t('app.claim.finalize.notInSettlement'));
         if (row.eligibleBoosterAmount > BigInt(latestClaim.boosterAmount)) {
-          throw new Error('The settlement booster amount exceeds this claim\'s escrow.');
+          throw new Error(t('app.claim.finalize.boosterExceedsEscrow'));
         }
       }
       assertCurrentWalletScope(expectedWalletScope);
@@ -1043,21 +1055,22 @@ export default function App({ autoConnect = false }) {
         args: row
           ? [BigInt(latestClaim.id), acceptPayout, row.amounts, row.scoreSpent, row.boostedScore, row.eligibleAmount, row.eligibleBoosterAmount, row.proof]
           : [BigInt(latestClaim.id), false, [], 0n, 0n, 0n, 0n, []],
-      }, acceptPayout ? 'Confirm payout acceptance in your wallet.' : 'Confirm token return in your wallet.', claimStatusLine.show, expectedWalletScope);
+      }, acceptPayout ? waitingText('app.claim.finalize.confirmAccept') : waitingText('app.claim.finalize.confirmReturn'), claimStatusLine.show, expectedWalletScope);
       if (walletScopeRef.current !== expectedWalletScope) return;
       setClaimToken(null);
       claimStatusLine.clear();
     } catch (error) {
       if (walletScopeRef.current !== expectedWalletScope) return;
-      const messages = {
-        FinalizeNotOpen: 'Payout acceptance is not open. Refresh the claim status to check the payout or token-return window.',
-        InvalidProof: 'The settlement proof is invalid. Refresh payout details before trying again.',
-        EligibleExceedsEscrow: 'The settlement eligibility exceeds the escrowed tokens or boosters. Refresh payout details before trying again.',
-        InvalidBoostedScore: 'The settlement payout weight does not match its eligible boosters. Refresh payout details before trying again.',
-        UnauthorizedClaim: 'This wallet cannot finalize this claim. Check the connected account and refresh.',
-        ClaimAlreadyResolved: 'This claim has already been resolved. Refresh the claim status.',
-        PayoutCapExceeded: 'The payout exceeds the pool’s remaining payout allowance. Refresh payout details before trying again.',
-      };
+      // Contract custom-error names map to translated explanations.
+      const messages = Object.fromEntries([
+        'FinalizeNotOpen',
+        'InvalidProof',
+        'EligibleExceedsEscrow',
+        'InvalidBoostedScore',
+        'UnauthorizedClaim',
+        'ClaimAlreadyResolved',
+        'PayoutCapExceeded',
+      ].map(name => [name, t(`app.claim.finalize.errors.${name}`)]));
       let reason;
       const seen = new Set();
       for (let cause = error; cause && !seen.has(cause); cause = cause.cause) {
@@ -1066,7 +1079,7 @@ export default function App({ autoConnect = false }) {
         if (reason) break;
       }
       reportError(error, 'claim-finalize');
-      claimStatusLine.fail(reason || error?.shortMessage || error?.message || 'Claim finalization failed.');
+      claimStatusLine.fail(reason || error?.shortMessage || error?.message || t('app.claim.finalize.failed'));
     }
   }
 
@@ -1079,7 +1092,7 @@ export default function App({ autoConnect = false }) {
       try {
         const rate = await transactionClientFor(protocolNetwork.id).readContract({ address: protocolNetwork.contracts.treasury, abi: treasuryWriteAbi, functionName: 'usd8ToUsdcRate' });
         if (walletScopeRef.current === walletScopeKey) setQuoteRate(rate);
-      } catch { usd8StatusLine.show('Could not load the redemption quote. Reopen the dialog to retry.'); }
+      } catch { usd8StatusLine.show(t('app.usd8.redeemQuoteFailed')); }
     }
   }
 
@@ -1090,7 +1103,7 @@ export default function App({ autoConnect = false }) {
       const client = transactionClientFor(network.id);
       const { contracts } = network;
       const amount = parseTokenAmount(raw, action === 'mint' ? 6 : 18);
-      if (amount <= 0n) throw new Error(`${action === 'mint' ? 'Mint' : 'Redemption'} amount must be positive.`);
+      if (amount <= 0n) throw new Error(action === 'mint' ? t('app.usd8.mintPositive') : t('app.usd8.redemptionPositive'));
       if (action === 'redeem') {
         const rate = await client.readContract({
           address: contracts.treasury,
@@ -1098,15 +1111,15 @@ export default function App({ autoConnect = false }) {
           functionName: 'usd8ToUsdcRate',
         });
         assertCurrentWalletScope(walletScopeKey);
-        if (rate !== quoteRate) { setQuoteRate(rate); usd8StatusLine.show('The redemption quote changed. Review the updated output and submit again.'); return; }
+        if (rate !== quoteRate) { setQuoteRate(rate); usd8StatusLine.show(t('app.usd8.redeemQuoteChanged')); return; }
         const minUsdcOut = amount * rate / 1_000_000_000_000_000_000_000_000_000_000n;
         await submitTransaction({
           address: contracts.treasury,
           abi: treasuryWriteAbi,
           functionName: 'redeemUSD8',
           args: [amount, minUsdcOut],
-        }, 'Confirm the USD8 redemption in your wallet.', usd8StatusLine.show);
-        usd8StatusLine.show(`Redemption confirmed on ${network.name}.`);
+        }, waitingText('app.usd8.confirmRedemption'), usd8StatusLine.show);
+        usd8StatusLine.show(t('app.usd8.redemptionConfirmed', { network: network.name }));
         return;
       }
 
@@ -1122,24 +1135,24 @@ export default function App({ autoConnect = false }) {
           abi: erc20Abi,
           functionName: 'approve',
           args: [contracts.treasury, amount],
-        }, 'Approve USDC in your wallet.', usd8StatusLine.show);
+        }, waitingText('app.usd8.approveUsdc'), usd8StatusLine.show);
       }
       await submitTransaction({
         address: contracts.treasury,
         abi: treasuryWriteAbi,
         functionName: 'mintUSD8',
         args: [amount],
-      }, 'Confirm the USD8 mint in your wallet.', usd8StatusLine.show);
-      usd8StatusLine.show(`Mint confirmed on ${network.name}.`);
+      }, waitingText('app.usd8.confirmMint'), usd8StatusLine.show);
+      usd8StatusLine.show(t('app.usd8.mintConfirmed', { network: network.name }));
     } catch (error) {
       reportError(error, 'usd8-action');
-      usd8StatusLine.fail(error?.shortMessage || error?.message || 'Transaction failed.');
+      usd8StatusLine.fail(error?.shortMessage || error?.message || t('app.transaction.failed'));
     }
   }
 
   function dataUnavailableFor(resources) {
     return chainDataStatus === 'error' || resources.some(resource => chainData.resourceErrors?.[resource])
-      ? 'Refresh unavailable data before continuing.' : '';
+      ? t('app.data.refreshUnavailable') : '';
   }
 
   const scoreNeedsBalanceRefresh = connected
@@ -1296,7 +1309,7 @@ export default function App({ autoConnect = false }) {
   const statusMessage = claimStatus.message || usd8Status.message || poolStatus.message;
 
   return (
-    <WalletNoticeProvider key={walletScopeKey} wallet={{ connected, connecting, onConnect: connect, connectUnavailableReason: !walletConnectorConfigured ? WALLET_CONNECT_UNAVAILABLE_REASON : '' }}>
+    <WalletNoticeProvider key={walletScopeKey} wallet={{ connected, connecting, onConnect: connect, connectUnavailableReason: !walletConnectorConfigured ? t('app.wallet.connectUnavailable') : '' }}>
       {termsRequired ? (
         <TermsAcceptanceDialog
           onAgree={() => {
@@ -1308,15 +1321,15 @@ export default function App({ autoConnect = false }) {
         />
       ) : null}
       <NoticeMessage
-        message={transaction?.refreshError ? `${statusMessage || 'Transaction confirmed.'} Transaction confirmed. Balances could not be refreshed.` : statusMessage || (transaction ? (transaction.phase === 'confirmed' ? 'Transaction confirmed.' : transaction.message) : '')}
-        actionLabel={transaction?.refreshError ? 'Retry Refresh' : undefined}
+        message={transaction?.refreshError ? t('app.transaction.confirmedRefreshFailed', { status: statusMessage || t('app.transaction.confirmed') }) : statusMessage || (transaction ? (transaction.phase === 'confirmed' ? t('app.transaction.confirmed') : transaction.message) : '')}
+        actionLabel={transaction?.refreshError ? t('app.transaction.retryRefresh') : undefined}
         onAction={() => refreshChainData().then(() => setTransaction(previous => previous ? ({ ...previous, refreshError: false }) : previous)).catch(() => {})}
         tone={transaction?.refreshError || claimStatus.failed || usd8Status.failed || poolStatus.failed || transaction?.phase === 'failed' ? 'error' : 'status'}
-        label={claimStatus.message ? 'Claim submission status' : 'Transaction status'}
+        label={claimStatus.message ? t('app.claim.statusLabel') : t('app.transaction.statusLabel')}
         busy={operationBusy && transaction?.phase !== 'confirmed' && transaction?.phase !== 'failed'}
         href={transaction?.hash ? `${getNetwork(transaction.chainId)?.chain.blockExplorers?.default.url || 'https://etherscan.io'}/tx/${transaction.hash}` : undefined}
       />
-      <NoticeMessage message={scoreError} actionLabel="Retry Score" onAction={() => {
+      <NoticeMessage message={scoreError} actionLabel={t('app.score.retry')} onAction={() => {
         scoreRetryForcesRefresh.current = true;
         setScoreRetry(value => value + 1);
       }} />
@@ -1325,11 +1338,11 @@ export default function App({ autoConnect = false }) {
           address,
           connected,
           connecting,
-          networkName: activeNetwork?.name || (connected ? `Chain ${chainId}` : ''),
+          networkName: activeNetwork?.name || (connected ? t('app.wallet.chainName', { chainId }) : ''),
           networkUnavailableReason: protocolUnavailableReason,
-          connectUnavailableReason: !connected && !walletConnectorConfigured ? WALLET_CONNECT_UNAVAILABLE_REASON : '',
+          connectUnavailableReason: !connected && !walletConnectorConfigured ? t('app.wallet.connectUnavailable') : '',
           onConnect: connect,
-          onDisconnect: () => open({ view: 'Account' }).catch(error => setDataError(error?.message || 'Wallet details could not be opened.')),
+          onDisconnect: () => open({ view: 'Account' }).catch(error => setDataError(error?.message || t('app.wallet.detailsUnavailable'))),
           onSwitchNetwork: () => switchChainAsync({ chainId: PROTOCOL_CHAIN_ID }).catch(error => setDataError(error.shortMessage || error.message)),
         }}
         score={connected ? displayedScore : EMPTY_SCORE}
@@ -1349,12 +1362,12 @@ export default function App({ autoConnect = false }) {
         scoreRatesPerTokenPerDay={chainData.scoreRatesPerTokenPerDay}
         scoreRatesLoading={!chainData.scoreRatesPerTokenPerDay && chainDataStatus !== 'error'}
         onFileClaim={fileClaimAction}
-        fileClaimUnavailableReason={connected ? protocolUnavailableReason || (chainDataStatus === 'error' ? 'Refresh unavailable data before continuing.' : '') : CONNECT_WALLET_REASON}
+        fileClaimUnavailableReason={connected ? protocolUnavailableReason || (chainDataStatus === 'error' ? t('app.data.refreshUnavailable') : '') : CONNECT_WALLET_REASON}
         onPoolAction={openPoolAction}
         onUsd8Action={openUsd8Action}
       />
       {connected && claimToken ? (
-        <Suspense fallback={<div role="status">Loading claim details…</div>}><FileClaimDialog
+        <Suspense fallback={<div role="status">{t('app.claim.loadingDetails')}</div>}><FileClaimDialog
           token={claimToken.id}
           insuredTokens={currentClaimTokenRows.map((row) => ({
             id: row.id,
@@ -1378,22 +1391,24 @@ export default function App({ autoConnect = false }) {
           claimStatus={selectedClaimStatus}
           incident={actionableIncident?.tokenId === claimToken.id ? actionableIncident : null}
           payoutLoading={payoutLoading}
-          submitUnavailableReason={(!score ? 'Insurance Score is unavailable. Retry to load it before filing a claim.' : '') || (activeIncidentDetailsLoading
-            ? 'Incident details are still loading. Refresh before filing a claim.'
+          submitUnavailableReason={(!score ? t('app.score.unavailableForClaim') : '') || (activeIncidentDetailsLoading
+            ? t('app.claim.incidentLoading')
             : '') || (actionableIncident?.tokenId === claimToken.id && actionableIncident.minHoldingRequiredBlocks == null
-            ? 'Holding window is unavailable. Refresh before filing a claim.'
+            ? t('app.claim.holdingWindowUnavailable')
             : '') || dataUnavailableFor(['configuration', 'account-balances', 'boosters', 'claim-bond', 'head', 'incident', 'incident-settlement-params']) || ( !protocolNetwork?.contracts.insuredTokens?.[claimToken.id]
             || !insuredTokenStates[claimToken.id]?.enabled
-            ? `${claimToken.symbol} is not enabled for claims on ${protocolNetwork?.name || 'the selected network'}.`
+            ? (protocolNetwork?.name
+              ? t('app.claim.tokenNotEnabledOn', { symbol: claimToken.symbol, network: protocolNetwork.name })
+              : t('app.claim.tokenNotEnabledOnSelected', { symbol: claimToken.symbol }))
             : (operationBusy
-              ? 'Claim preparation is in progress.'
+              ? t('app.claim.preparationInProgress')
               : ((!chainData.activeIncidentId || chainData.activeIncidentId === '0') && !claimApiConfigured
-                ? 'Claim verification service is not configured.'
+                ? t('app.claim.verificationNotConfigured')
                 : '')))}
           statusMessage=""
           statusTone={claimStatus.failed
             ? 'warning'
-            : (isWaitingStatus(claimStatus.message) ? 'loading' : 'neutral')}
+            : (isWaitingMessage(claimStatus.message) ? 'loading' : 'neutral')}
           onClearStatus={() => {
             claimStatusLine.clear();
           }}
@@ -1423,13 +1438,13 @@ export default function App({ autoConnect = false }) {
             setUsd8Action(null);
           }}
           onSubmit={(...args) => runOperation(() => submitUsd8Action(...args))}
-          submitUnavailableReason={protocolUnavailableReason || (operationBusy ? 'A transaction is already in progress.' : '') || dataUnavailableFor(['account-balances'])}
+          submitUnavailableReason={protocolUnavailableReason || (operationBusy ? t('app.transaction.inProgress') : '') || dataUnavailableFor(['account-balances'])}
         />
       ) : null}
       {connected && poolAction ? (
         <PoolActionDialog
           mode={poolAction}
-          poolName={activePool?.name || 'cover pool'}
+          poolName={activePool?.name || t('app.pool.fallbackName')}
           poolAddress={activePool?.address || ''}
           account={address}
           assetSymbol={activePool?.assetSymbol || ''}
@@ -1459,7 +1474,7 @@ export default function App({ autoConnect = false }) {
             setPoolAction(null);
           }}
           onSubmit={(...args) => runOperation(() => submitPoolAction(...args))}
-          submitUnavailableReason={protocolUnavailableReason || (operationBusy ? 'A transaction is already in progress.' : '') || dataUnavailableFor(['head', `pool:${activePool?.id}`, `account-pool:${activePool?.id}`, `account-pool-derived:${activePool?.id}`])}
+          submitUnavailableReason={protocolUnavailableReason || (operationBusy ? t('app.transaction.inProgress') : '') || dataUnavailableFor(['head', `pool:${activePool?.id}`, `account-pool:${activePool?.id}`, `account-pool-derived:${activePool?.id}`])}
         />
       ) : null}
     </WalletNoticeProvider>

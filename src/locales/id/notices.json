@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "Pemberitahuan beta privat",
+    "message": "<strong>Selamat datang di Beta Privat USD8.</strong> Selama beta privat, USD8 yang Anda pegang menghasilkan skor asuransi 3x lipat dari laju normal, dan Anda akan menerima 3 Booster di akhir beta. Ada masukan atau kendala? Silakan sampaikan di <link>grup Telegram</link> kami."
+  },
+  "wallet": {
+    "defaultLabel": "Notifikasi",
+    "viewTransaction": "Lihat transaksi",
+    "dismissWallet": "Tutup pemberitahuan dompet",
+    "dismiss": "Tutup notifikasi",
+    "connectRequired": {
+      "label": "Dompet perlu dihubungkan",
+      "message": "Hubungkan dompet Anda untuk melanjutkan.",
+      "action": "Hubungkan Dompet"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+var e={connectWallet:`Спершу підключіть гаманець.`};export{e as default};

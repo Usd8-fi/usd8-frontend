@@ -1,6 +1,6 @@
 import { cachedData, checkAbort, protocolKey, queryClient } from './dataCache.js';
 import { measuredRequest } from './requestUtils.js';
-import { readErrorMessage } from './readErrorMessage.js';
+import { readErrorText } from './readErrorMessage.js';
 
 // Multicall3 is deployed at the same address on every supported chain. Reading
 // the block number inside the batch saves a separate eth_blockNumber round trip.
@@ -87,7 +87,7 @@ export async function snapshotReads(client, network, descriptors, { account, blo
       entries.forEach((entry, index) => { values[entry.index] = result.values[index]; });
     } catch (error) {
       checkAbort(signal);
-      errors[resource] = readErrorMessage(error);
+      errors[resource] = readErrorText(error);
       entries.forEach(entry => { values[entry.index] = entry.fallback; });
     }
   }));

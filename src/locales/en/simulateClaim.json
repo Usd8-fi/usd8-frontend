@@ -1,0 +1,31 @@
+{
+  "title": "Simulate Claim",
+  "close": "Close claim simulator",
+  "intro": "Estimate your reimbursement using live cover pool sizes and prices. Settlement recalculates everything in the TEE, so the final payout may differ.",
+  "sliderLabel": "{label} slider",
+  "insuredToken": {
+    "label": "Insured Token",
+    "helpLabel": "About insured token",
+    "help": "The token you claim for. Its max coverage sets the loss cap, and a cover pool holding this same token is excluded from its incident."
+  },
+  "lossValue": {
+    "label": "Loss Value (USD)",
+    "helpLabel": "About loss value (usd)",
+    "help": "Value of the insured tokens you claim for, at the 7-day average price before the drop. The loss cap is a percentage of this value."
+  },
+  "scoreWeight": {
+    "label": "Your Score Weight",
+    "helpLabel": "About your score weight",
+    "help": "Your insurance score, including boosters, as a share of all claimants' scores in the same incident."
+  },
+  "results": {
+    "estimatedReimbursement": "Estimated Reimbursement",
+    "coverPoolBudget": "Cover Pool Budget",
+    "scoreShare": "A. Score Share ({percent}%)",
+    "lossCap": "B. Loss Cap ({percent}%)",
+    "payoutFormula": "Payout = min(A, B)",
+    "paidFromCoverPools": "Paid From Cover Pools",
+    "excluded": "Excluded",
+    "noPoolData": "No cover pool data yet."
+  }
+}

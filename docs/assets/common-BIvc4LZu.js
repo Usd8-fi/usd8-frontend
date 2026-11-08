@@ -1,0 +1,1 @@
+var e={language:`언어`,metrics:{apy:`연수익률`,tvl:`총 예치액`,window7D:`7일`,window30D:`30일`,apySuffix:` 연수익률`,windowApy:`{window} 연수익률`},pools:{wsteth:`wstETH 커버 풀`,usd8:`USD8 커버 풀`,msloss:`msLOSS 커버 풀`}};export{e as default};

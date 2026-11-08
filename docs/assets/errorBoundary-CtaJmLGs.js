@@ -1,0 +1,1 @@
+var e={crash:{message:`Beim Anzeigen dieser Seite ist ein Fehler aufgetreten.`,reload:`Neu laden`}};export{e as default};

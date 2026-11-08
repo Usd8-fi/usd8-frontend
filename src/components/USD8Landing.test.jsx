@@ -140,7 +140,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByText('Use your insurance score to file a claim if an insured token drops more than 20% against its underlying asset.', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cover Pools', level: 2 })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About Cover Pools' })).toBeInTheDocument();
-    expect(screen.getByText(/the pool backs insured tokens: if one drops 20% or more/)).toBeInTheDocument();
+    expect(screen.getByText(/the pool backs insured tokens: if one drops more than 20%/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'wstEth Cover Pool' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'White Hat Economy', level: 2 })).toBeInTheDocument();
     expect(screen.getByText(/The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process\./)).toBeInTheDocument();
@@ -538,11 +538,11 @@ describe('USD8 landing navigation', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    const flag = within(usd8Card).getByText('x300% for private beta');
+    const flag = within(usd8Card).getByText('3x for private beta');
     expect(flag).toHaveClass('insurance-asset-flag');
     // Sits beside the USD8 score rate, inside the Score Rate value.
     expect(flag.closest('dd')).toBe(within(usd8Card).getByRole('button', { name: 'About score rate' }).closest('dd'));
-    expect(within(savingsCard).queryByText('x300% for private beta')).toBeNull();
+    expect(within(savingsCard).queryByText('3x for private beta')).toBeNull();
   });
 
   it('states that all code is open sourced in the footer, with the data time when known', () => {

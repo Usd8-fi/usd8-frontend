@@ -1,0 +1,1 @@
+var e={ariaLabel:`Son protokol hareketleri`,block:`blok {block}`};export{e as default};

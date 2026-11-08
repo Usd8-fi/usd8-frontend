@@ -1,4 +1,5 @@
 import { checkAbort } from './dataCache.js';
+import { t } from './i18n.js';
 import { mapLimited } from './requestUtils.js';
 
 const accounts = new Map();
@@ -23,7 +24,7 @@ function chunks(items) {
 export async function unresolvedHistoricalClaim({ key, account, nextIncidentId, readClaimIds, readClaims, signal, now = Date.now() }) {
   const count = Number(nextIncidentId - 1n);
   if (!Number.isSafeInteger(count) || count < 0 || count > 10_000) {
-    throw new Error('Claim history exceeds the supported range. Contact support to load this claim.');
+    throw new Error(t('lib.claimHistory.outOfRange'));
   }
   let known = accounts.get(key);
   // A lower incident count means a different deployment or a reset chain.

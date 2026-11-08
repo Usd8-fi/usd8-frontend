@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "請求ステータスを閉じる",
+    "fileClaim": "請求画面を閉じる"
+  },
+  "dialogLabel": {
+    "status": "{symbol}の請求ステータス",
+    "file": "{symbol}の保険金を請求"
+  },
+  "title": {
+    "yourClaimStatus": "あなたの請求ステータス",
+    "incidentStatus": "インシデントのステータス",
+    "fileClaim": "保険金の請求"
+  },
+  "requirement": "請求するには、{symbol}の価値が原資産に対して20%を超えて下落している必要があります。下落幅は、下落直前と直後のTWAP価格で測定します。<link>詳しくはこちら</link>",
+  "noClaimInIncident": "このインシデントにあなたの請求はありません。請求の受付は終了しましたが、精算はパーミッションレスで、誰でも実行できます。",
+  "validation": {
+    "noAvailableScore": "使用できる保険スコアがありません。",
+    "amountExceedsBalance": "{symbol}の数量が利用可能な残高を超えています。",
+    "enterAmount": "請求する{symbol}の数量を入力してください。",
+    "enterScore": "使用する保険スコアを入力してください。"
+  },
+  "holdingRequirement": {
+    "blocks": "インシデントの{blocks}ブロック以上前から保有している必要があります。",
+    "unavailable": "インシデント前の所定の期間を通じて保有している必要があります。保有期間を取得できないため、請求の前に再読み込みしてください。"
+  },
+  "stage": {
+    "claimOpen": "請求受付中",
+    "claimClosed": "請求締切",
+    "settle": "精算",
+    "settleOpen": "精算受付中",
+    "notSettled": "未精算",
+    "settled": "精算済み",
+    "payout": "支払い",
+    "payoutOpen": "支払い受付中",
+    "payoutClosed": "支払い締切",
+    "progress": "{stage}の進捗"
+  },
+  "statusDescription": {
+    "claimOpen": "ほかの請求者の参加を待っています。",
+    "settlementOpenClaimant": "精算待ち",
+    "settlementOpenAnyone": "精算待ち。誰でも精算できます。",
+    "settlementExpired": "精算期間が終了しました。エスクローしたトークンを引き出してください。",
+    "settlementPending": "精算済み。異議申し立て期間中です",
+    "payoutOpen": "支払い期間中です。お早めに確定してください。",
+    "payoutExpired": "支払い期間が終了しました。エスクローしたトークンを引き出してください。"
+  },
+  "statusLabel": {
+    "plain": "ステータス",
+    "withDescription": "ステータス：{description}"
+  },
+  "currentStage": "現在のステージ：{stage}",
+  "action": {
+    "cancelClaim": "請求を取り下げ",
+    "settleAllClaims": "すべての請求を精算",
+    "returnTokens": "トークンを引き出す",
+    "acceptPayout": "支払いを受け取る",
+    "cancelPayoutReturnTokens": "支払いを辞退してトークンを引き出す",
+    "fileClaim": "請求を提出"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "エスクロー中の保険対象トークン",
+    "claimBondEscrowed": "エスクロー中の請求保証金",
+    "bondFullyRefunded": "全額返金されます",
+    "bondNotRefunded": "返金されません（条件未達）",
+    "insuranceScoreToSpend": "使用する保険スコア",
+    "effectiveScoreAfterBoosters": "ブースター適用後の実効スコア：{score}、",
+    "scoreCommitted": "全請求者が投入したスコアの{percent}",
+    "boostersEscrowed": "エスクロー中のブースター",
+    "loadingBoostersTaken": "算入されるブースターを読み込み中",
+    "boostersTaken": "{count}個を算入"
+  },
+  "payout": {
+    "ineligible": "支払いの対象外のため、{bond} USD8の保証金は返金されません。トークンを引き出して請求を終了してください。",
+    "totalUsdValue": "支払総額（USD）",
+    "loadingValue": "支払額を読み込み中",
+    "vsLossValue": "損失額に対する支払額",
+    "loadingComparison": "支払額の比較を読み込み中",
+    "details": "支払いの詳細",
+    "loadingDetails": "支払いの詳細を読み込み中"
+  },
+  "time": {
+    "days_one": "{count}日",
+    "days_other": "{count}日",
+    "hours_one": "{count}時間",
+    "hours_other": "{count}時間",
+    "minutes_one": "{count}分",
+    "minutes_other": "{count}分",
+    "minutesLeft": "残り{minutes}",
+    "hoursMinutesLeft": "残り{hours}{minutes}",
+    "daysHoursLeft": "残り{days}{hours}",
+    "rangeDays": "{from}〜{to}日",
+    "rangeHours": "{from}〜{to}時間",
+    "rangeMinutes": "{from}〜{to}分"
+  },
+  "submissionStatus": "請求の送信ステータス",
+  "form": {
+    "tokenAmountLabel": "{symbol}の数量",
+    "tokenAmountHelpLabel": "保険対象トークンの数量について",
+    "tokenAmountHelp": "{symbol}を{holding}対象かどうかはその期間中の最低残高で判定されるため、後から取得したトークンは算入されません。その残高がゼロの場合は対象外となり、請求保証金は没収されます。",
+    "tokenAmountInput": "保険対象の{symbol}の数量",
+    "availableWithPeriod": "利用可能：{amount}",
+    "available": "利用可能：{amount}",
+    "claimBond": "請求保証金",
+    "claimBondHelpLabel": "請求保証金について",
+    "claimBondHelp": "請求には、スパム防止のための10 USD8の保証金が必要です。請求の対象外だった場合、保証金は返金されません。",
+    "scoreLabel": "使用する保険スコア",
+    "scoreHelpLabel": "使用する保険スコアについて",
+    "scoreHelp": "使用したいスコアを指定します。精算時には利用可能なスコアが上限となり、スコアが実際に使用されるのは、対象となる支払いを受け取った場合のみです。",
+    "boostersLabel": "エスクローに預けるブースター",
+    "boostersHelpLabel": "エスクローに預けるブースターについて",
+    "boostersHelp": "任意です。ブースターも保険対象トークンと同じく、{holding}支払いウェイトを高めるのは対象となるブースターのみで、支払いを受け取るとバーンされます。余ったブースターは返還され、支払いを辞退した場合はすべて返還されます。"
+  },
+  "weight": {
+    "summary": "最大支払いウェイト：{weight}{boosters}。暫定エスクローウェイト全体の{share}に相当し、最終的なウェイトは保有要件の判定で決まります。",
+    "boosters_one": "（ブースター{count}個を含む）",
+    "boosters_other": "（ブースター{count}個を含む）"
+  }
+}

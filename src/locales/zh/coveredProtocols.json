@@ -1,0 +1,25 @@
+{
+  "tableLabel": "受保代币",
+  "columns": {
+    "insuredToken": "受保代币",
+    "insuredTokenHelpLabel": "关于受保代币",
+    "insuredTokenHelp": "发生受保损失事件后可申请理赔的资产，须符合保险积分和理赔规则。",
+    "maxCoverage": "最高赔付比例",
+    "maxCoverageHelpLabel": "关于最高赔付比例",
+    "maxCoverageHelp": "各代币当前在链上设定的最高赔付比例。实际赔付取决于用户的保险积分和承保池赔付上限。",
+    "claim": "理赔"
+  },
+  "openTokenSite": "在{token}官网打开",
+  "actions": {
+    "fileClaim": "申请理赔",
+    "fileClaimFor": "为{token}申请理赔",
+    "actionFor": "{token}：{action}",
+    "claimOpen": "开放申请中",
+    "settleClaims": "结算理赔",
+    "settleAndDispute": "结算与争议",
+    "finalisePayout": "确认赔付",
+    "minutesLeft": "{label}（剩余{minutes}分钟）",
+    "daysHoursLeft": "{label}（剩余{days}天{hours}小时）"
+  },
+  "simulateClaim": "模拟理赔"
+}

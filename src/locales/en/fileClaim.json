@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "Close claim status",
+    "fileClaim": "Close file claim"
+  },
+  "dialogLabel": {
+    "status": "Claim Status for {symbol}",
+    "file": "File claim for {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "Your Claim Status",
+    "incidentStatus": "Incident Status",
+    "fileClaim": "File A Claim"
+  },
+  "requirement": "{symbol} must lose more than 20% of its value against its underlying, measured between its TWAP price immediately before and after the drop. <link>Learn More</link>.",
+  "noClaimInIncident": "You have no claim in this incident. Filing has closed, but settlement is permissionless — anyone can settle it.",
+  "validation": {
+    "noAvailableScore": "You do not have any available insurance score to spend.",
+    "amountExceedsBalance": "The {symbol} amount exceeds your available balance.",
+    "enterAmount": "Enter the {symbol} amount you want to claim for.",
+    "enterScore": "Enter the insurance score you want to spend."
+  },
+  "holdingRequirement": {
+    "blocks": "{blocks} blocks before the incident.",
+    "unavailable": "the configured pre-incident window. Holding window unavailable; refresh before filing."
+  },
+  "stage": {
+    "claimOpen": "Claim Open",
+    "claimClosed": "Claim Closed",
+    "settle": "Settle",
+    "settleOpen": "Settle Open",
+    "notSettled": "Not Settled",
+    "settled": "Settled",
+    "payout": "Payout",
+    "payoutOpen": "Payout Open",
+    "payoutClosed": "Payout Closed",
+    "progress": "{stage} progress"
+  },
+  "statusDescription": {
+    "claimOpen": "waiting for others to join in the claim.",
+    "settlementOpenClaimant": "waiting for settlement",
+    "settlementOpenAnyone": "waiting for settlement, anyone can settle.",
+    "settlementExpired": "settlement window closed, please withdraw your escrow.",
+    "settlementPending": "settled, Window open for potential disputes",
+    "payoutOpen": "Payout window open, please finalised asap.",
+    "payoutExpired": "Payout window closed, please withdraw your escrow."
+  },
+  "statusLabel": {
+    "plain": "Status",
+    "withDescription": "Status - {description}"
+  },
+  "currentStage": "Current stage: {stage}",
+  "action": {
+    "cancelClaim": "Cancel Claim",
+    "settleAllClaims": "Settle All Claims",
+    "returnTokens": "Return Tokens",
+    "acceptPayout": "Accept Payout",
+    "cancelPayoutReturnTokens": "Cancel Payout and Return Tokens",
+    "fileClaim": "File Claim"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "Insured Token Escrowed",
+    "claimBondEscrowed": "Claim Bond Escrowed",
+    "bondFullyRefunded": "Will be fully refunded",
+    "bondNotRefunded": "Will not be refunded: conditions not met",
+    "insuranceScoreToSpend": "Insurance Score to Spend",
+    "effectiveScoreAfterBoosters": "Effective insurance score after boosters {score}, ",
+    "scoreCommitted": "{percent} of all score committed",
+    "boostersEscrowed": "Boosters Escrowed",
+    "loadingBoostersTaken": "Loading boosters taken into account",
+    "boostersTaken": "{count} taken into account"
+  },
+  "payout": {
+    "ineligible": "You are not eligible for a payout, and your {bond} USD8 bond will not be refunded. Return your tokens to close the claim.",
+    "totalUsdValue": "Total Payout USD Value",
+    "loadingValue": "Loading payout value",
+    "vsLossValue": "Payout vs Loss Value",
+    "loadingComparison": "Loading payout comparison",
+    "details": "Payout Details",
+    "loadingDetails": "Loading payout details"
+  },
+  "time": {
+    "days_one": "{count} day",
+    "days_other": "{count} days",
+    "hours_one": "{count} hour",
+    "hours_other": "{count} hours",
+    "minutes_one": "{count} minute",
+    "minutes_other": "{count} minutes",
+    "minutesLeft": "{minutes} left",
+    "hoursMinutesLeft": "{hours} {minutes} left",
+    "daysHoursLeft": "{days} {hours} left",
+    "rangeDays": "{from}-{to} days",
+    "rangeHours": "{from}-{to} hours",
+    "rangeMinutes": "{from}-{to} minutes"
+  },
+  "submissionStatus": "Claim submission status",
+  "form": {
+    "tokenAmountLabel": "{symbol} Amount",
+    "tokenAmountHelpLabel": "About insured token amount",
+    "tokenAmountHelp": "You must have held {symbol} for at least {holding} Eligibility uses your lowest balance over that window, so tokens acquired later do not count. If that balance is zero you are not eligible and your claim bond is forfeited.",
+    "tokenAmountInput": "Insured {symbol} amount",
+    "availableWithPeriod": "{amount} available.",
+    "available": "{amount} available",
+    "claimBond": "Claim Bond",
+    "claimBondHelpLabel": "About claim bond",
+    "claimBondHelp": "A 10 USD8 anti-spam bond is required to file. It will not be returned if you are not eligible for a claim.",
+    "scoreLabel": "Insurance Score to Spend",
+    "scoreHelpLabel": "About insurance score to spend",
+    "scoreHelp": "Requested score spend. Settlement caps it to your available score, and score is spent only if an eligible payout is accepted.",
+    "boostersLabel": "Boosters to Escrow",
+    "boostersHelpLabel": "About boosters to escrow",
+    "boostersHelp": "Optional. Boosters must meet the same pre-incident holding requirement as the insured token: {holding} Only eligible boosters increase payout weight and are burned on acceptance. Excess boosters are returned. Declining returns all boosters."
+  },
+  "weight": {
+    "summary": "Maximum payout weight: {weight}{boosters} — {share} of provisional escrow weight; final weight depends on holding eligibility.",
+    "boosters_one": " (incl. {count} booster)",
+    "boosters_other": " (incl. {count} boosters)"
+  }
+}

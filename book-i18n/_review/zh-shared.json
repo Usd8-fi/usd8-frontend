@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "USD8应用",
+    "language": "语言"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "请输入有效的以太坊地址。",
+    "checking": "查询中…",
+    "noBoosters": "该地址暂无加成卡。",
+    "found_one": "恭喜！你拥有{count}张加成卡。",
+    "found_other": "恭喜！你拥有{count}张加成卡。",
+    "error": "出错了：{message}",
+    "fetchFailed": "无法获取余额",
+    "executed": "已执行",
+    "cancelled": "已取消",
+    "queued": "排队中 · {time}",
+    "ready": "可执行",
+    "executableFrom": "{date}起可执行",
+    "transaction": "交易",
+    "description": "说明",
+    "status": "状态",
+    "empty": "暂无时间锁交易",
+    "loading": "加载中",
+    "loadFailed": "时间锁交易加载失败",
+    "retry": "重试",
+    "hoursLeft": "剩余{n}小时",
+    "minutesLeft": "剩余{n}分钟"
+  },
+  "CONSENT_TEXT": {
+    "label": "Cookie与分析偏好设置",
+    "title": "Cookie与分析偏好设置",
+    "message": "USD8使用可选的Google Analytics Cookie来了解网站的整体使用情况。只有在你同意后，我们才会加载分析功能；拒绝不会影响应用的正常使用。",
+    "privacy": "隐私说明",
+    "reject": "拒绝分析Cookie",
+    "accept": "接受分析Cookie"
+  }
+}

@@ -1,0 +1,1 @@
+var e={ariaLabel:`فعالیت‌های اخیر پروتکل`,block:`بلاک {block}`};export{e as default};

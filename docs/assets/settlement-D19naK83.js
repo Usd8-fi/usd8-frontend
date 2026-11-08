@@ -1,0 +1,1 @@
+var e={finality:{explanation:`Врегулювання можна розпочати, щойно фіналізований блок перетне межу строку подання заявок.`,heads:`Поточний блок {latest} · Фіналізований блок {finalized}`,readyToSettle:`Можна врегулювати`,minutesToGo:`залишилось близько {minutes} хв`}};export{e as default};

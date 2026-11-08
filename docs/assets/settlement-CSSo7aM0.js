@@ -1,0 +1,1 @@
+var e={finality:{explanation:`يمكن بدء التسوية بمجرد أن تتجاوز آخرُ كتلة مؤكَّدة نهائيًا الموعدَ النهائي للمطالبات.`,heads:`الكتلة الحالية {latest} · الكتلة المؤكَّدة نهائيًا {finalized}`,readyToSettle:`جاهزة للتسوية`,minutesToGo:`يتبقى نحو {minutes} د`}};export{e as default};

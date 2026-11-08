@@ -1,0 +1,31 @@
+{
+  "title": "Simuler une demande",
+  "close": "Fermer le simulateur",
+  "intro": "Estimez votre remboursement à partir de la taille actuelle des pools de couverture et des prix en temps réel. Le règlement recalcule tout dans le TEE : l’indemnisation finale peut donc être différente.",
+  "sliderLabel": "Curseur : {label}",
+  "insuredToken": {
+    "label": "Token assuré",
+    "helpLabel": "À propos du token assuré",
+    "help": "Le token pour lequel vous faites la demande. Sa couverture maximale fixe le plafond de remboursement, et un pool de couverture qui détient ce même token est exclu de l’incident correspondant."
+  },
+  "lossValue": {
+    "label": "Valeur de la perte (USD)",
+    "helpLabel": "À propos de la valeur de la perte (USD)",
+    "help": "Valeur des tokens assurés pour lesquels vous faites la demande, au prix moyen sur 7 jours avant la baisse. Le plafond de remboursement est un pourcentage de cette valeur."
+  },
+  "scoreWeight": {
+    "label": "Poids de votre score",
+    "helpLabel": "À propos du poids de votre score",
+    "help": "Votre score d’assurance, Boosters compris, rapporté au score de l’ensemble des demandeurs du même incident."
+  },
+  "results": {
+    "estimatedReimbursement": "Remboursement estimé",
+    "coverPoolBudget": "Budget des pools de couverture",
+    "scoreShare": "A. Part de score ({percent} %)",
+    "lossCap": "B. Plafond de remboursement ({percent} %)",
+    "payoutFormula": "Indemnisation = min(A, B)",
+    "paidFromCoverPools": "Versé par les pools de couverture",
+    "excluded": "Exclu",
+    "noPoolData": "Pas encore de données sur les pools de couverture."
+  }
+}

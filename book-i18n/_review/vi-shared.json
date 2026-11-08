@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "Ứng dụng USD8",
+    "language": "Ngôn ngữ"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "Hãy nhập một địa chỉ Ethereum hợp lệ.",
+    "checking": "Đang kiểm tra...",
+    "noBoosters": "Không tìm thấy Booster nào cho địa chỉ này.",
+    "found_one": "Chúc mừng! Bạn đang có {count} Booster.",
+    "found_other": "Chúc mừng! Bạn đang có {count} Booster.",
+    "error": "Lỗi: {message}",
+    "fetchFailed": "không lấy được số dư",
+    "executed": "Đã thực thi",
+    "cancelled": "Đã hủy",
+    "queued": "Đã lên lịch · {time}",
+    "ready": "Sẵn sàng thực thi",
+    "executableFrom": "Có thể thực thi từ {date}",
+    "transaction": "Giao dịch",
+    "description": "Mô tả",
+    "status": "Trạng thái",
+    "empty": "Chưa có giao dịch Timelock nào",
+    "loading": "Đang tải",
+    "loadFailed": "Không tải được các giao dịch Timelock",
+    "retry": "Thử lại",
+    "hoursLeft": "còn {n} giờ",
+    "minutesLeft": "còn {n} phút"
+  },
+  "CONSENT_TEXT": {
+    "label": "Tùy chọn cookie và phân tích",
+    "title": "Tùy chọn cookie & phân tích",
+    "message": "USD8 dùng cookie Google Analytics (không bắt buộc) để nắm được số liệu tổng hợp về cách trang web được sử dụng. Chúng tôi chỉ bật công cụ phân tích khi bạn đồng ý, và việc từ chối không ảnh hưởng đến ứng dụng.",
+    "privacy": "Chi tiết về quyền riêng tư",
+    "reject": "Từ chối cookie phân tích",
+    "accept": "Chấp nhận cookie phân tích"
+  }
+}

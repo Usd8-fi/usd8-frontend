@@ -1,0 +1,1 @@
+var e={title:`Condiciones de uso`,requirement:`Para usar USD8 con esta billetera, acepta las <terms>Condiciones</terms> y el <risk>Aviso de riesgos</risk>.`,disagreeNote:`Si no aceptas, se desconectará tu billetera. No hace falta firmar nada ni enviar ninguna transacción.`,agree:`Acepto`,disagree:`No acepto`};export{e as default};

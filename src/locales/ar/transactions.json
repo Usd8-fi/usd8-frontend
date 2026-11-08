@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "سكّ USD8",
+    "redeemTitle": "استرداد USD8",
+    "closeMint": "إغلاق نافذة سكّ USD8",
+    "closeRedeem": "إغلاق نافذة استرداد USD8",
+    "waitingForQuote": "في انتظار سعر استرداد صالح.",
+    "amountInput": "كمية {token}",
+    "output": "{token} المستلَم",
+    "mint": "سكّ",
+    "redeem": "استرداد"
+  },
+  "available": "المتاح: {amount}",
+  "earnings": {
+    "label": "أرباح USD8",
+    "availableToWithdraw": "المتاح للسحب: {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "جاهز للسحب",
+    "waitingForClaims": "انتهت فترة الانتظار، وننتظر إتمام المطالبات",
+    "cooldown": "تقدّم فترة الانتظار",
+    "barLabel": "تقدّم فترة الانتظار قبل السحب"
+  },
+  "pool": {
+    "defaultName": "مجمع التغطية",
+    "depositTitle": "إيداع",
+    "withdrawTitle": "سحب",
+    "withdrawEarningsTitle": "سحب الأرباح",
+    "closeDeposit": "إغلاق نافذة الإيداع في {pool}",
+    "closeWithdraw": "إغلاق نافذة السحب من {pool}",
+    "closeWithdrawEarnings": "إغلاق نافذة سحب الأرباح من {pool}",
+    "sharesToRedeem": "حصص المجمع المراد استردادها",
+    "withdrawAvailability": "الحصص المتاحة: {amount}. يمكنك السحب بعد انقضاء {cooldown} إذا لم تكن هناك مطالبات معلّقة، وإلا فبعد إتمام جميع المطالبات. <link>اعرف المزيد</link>.",
+    "cooldownWithLength": "فترة انتظار مدتها {length}",
+    "cooldown": "فترة الانتظار",
+    "depositAvailabilityWithCapacity": "المتاح: {amount}. <capacity>السعة المتبقية في المجمع: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "{symbol} المتوقَّع استلامه",
+    "mayDecrease": "قد ينخفض المبلغ إذا دفع المجمع تعويضات قبل اكتمال سحبك.",
+    "startCooldown": "بدء فترة الانتظار",
+    "withdraw": "سحب",
+    "withdrawEarnings": "سحب الأرباح",
+    "deposit": "إيداع",
+    "balances": {
+      "summary": "{withdrawable}، {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} جاهز للسحب",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} جاهز للسحب بعد إتمام المطالبات",
+      "estimatedForWithdrawal": "نحو {amount} {symbol} متوقَّع للسحب",
+      "estimatedForWithdrawalAfterClaims": "نحو {amount} {symbol} متوقَّع للسحب بعد إتمام المطالبات",
+      "inCooldown": "{amount} {symbol} في فترة الانتظار",
+      "inCooldownWithTiming": "{amount} {symbol} في فترة الانتظار، {timing}"
+    }
+  }
+}

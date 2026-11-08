@@ -1,0 +1,16 @@
+{
+  "language": "Ngôn ngữ",
+  "metrics": {
+    "apy": "APY",
+    "tvl": "TVL",
+    "window7D": "7 ngày",
+    "window30D": "30 ngày",
+    "apySuffix": " APY",
+    "windowApy": "APY {window}"
+  },
+  "pools": {
+    "wsteth": "Pool bảo hiểm wstETH",
+    "usd8": "Pool bảo hiểm USD8",
+    "msloss": "Pool bảo hiểm msLOSS"
+  }
+}

@@ -1,0 +1,1 @@
+var e={finality:{explanation:`一旦最终确认区块的时间超过理赔申请截止时间，即可开始结算。`,heads:`当前区块{latest} · 最终确认区块{finalized}`,readyToSettle:`可以结算`,minutesToGo:`约{minutes}分钟后可结算`}};export{e as default};

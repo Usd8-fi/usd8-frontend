@@ -15,6 +15,7 @@ import AvailabilityAction from './AvailabilityAction.jsx';
 import InfoTooltip from './InfoTooltip.jsx';
 import PercentRing from './PercentRing.jsx';
 import TableTokenCell from './TableTokenCell.jsx';
+import { t, useTranslation } from '../lib/i18n.js';
 
 // Names are one line; the cell wraps them only when the column is too narrow.
 export const COVERED_PROTOCOL_ROWS = [
@@ -91,29 +92,36 @@ export const COVERED_PROTOCOL_ROWS = [
 
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;
 
-function timedLabel(label, deadline, nowMilliseconds) {
+const FILE_CLAIM = 'fileClaim';
+
+function timedLabel(phase, deadline, nowMilliseconds) {
+  const label = t(`coveredProtocols.actions.${phase}`);
   const { daysLeft, hoursLeft, minutesLeft } = remainingTimeParts(deadline, nowMilliseconds);
-  if (daysLeft === 0 && hoursLeft === 0) return `${label} (${minutesLeft}m left)`;
-  return `${label} (${daysLeft}d ${hoursLeft}h left)`;
+  if (daysLeft === 0 && hoursLeft === 0) return t('coveredProtocols.actions.minutesLeft', { label, minutes: minutesLeft });
+  return t('coveredProtocols.actions.daysHoursLeft', { label, days: daysLeft, hours: hoursLeft });
 }
 
-function incidentActionLabel(incident, nowMilliseconds) {
+/// Returns { phase, label }: `phase` is the language-independent state
+/// (FILE_CLAIM selects the plain button style), `label` the translated text.
+function incidentAction(incident, nowMilliseconds) {
+  const plain = (phase) => ({ phase, label: t(`coveredProtocols.actions.${phase}`) });
+  const timed = (phase, deadline) => ({ phase, label: timedLabel(phase, deadline, nowMilliseconds) });
   const deadline = Number(incident.phaseDeadlineMilliseconds);
   const phaseWindow = Number(incident.phaseWindowMilliseconds);
-  if (!Number.isFinite(deadline) || !Number.isFinite(phaseWindow)) return 'File Claim';
+  if (!Number.isFinite(deadline) || !Number.isFinite(phaseWindow)) return plain(FILE_CLAIM);
 
   if (String(incident.root).toLowerCase() === ZERO_ROOT) {
-    if (nowMilliseconds <= deadline) return timedLabel('Claim Open', deadline, nowMilliseconds);
+    if (nowMilliseconds <= deadline) return timed('claimOpen', deadline);
     if (nowMilliseconds <= deadline + phaseWindow) {
-      return timedLabel('Settle Claims', deadline + phaseWindow, nowMilliseconds);
+      return timed('settleClaims', deadline + phaseWindow);
     }
-    return 'Finalise Payout';
+    return plain('finalisePayout');
   }
-  if (nowMilliseconds <= deadline) return timedLabel('Settle & Dispute', deadline, nowMilliseconds);
+  if (nowMilliseconds <= deadline) return timed('settleAndDispute', deadline);
   if (nowMilliseconds <= deadline + phaseWindow) {
-    return timedLabel('Finalise Payout', deadline + phaseWindow, nowMilliseconds);
+    return timed('finalisePayout', deadline + phaseWindow);
   }
-  return 'Finalise Payout';
+  return plain('finalisePayout');
 }
 
 function coverageShare(value) {
@@ -140,6 +148,7 @@ export default function CoveredProtocolsTable({
   nowMilliseconds = Date.now(),
   onSimulate,
 }) {
+  const { t } = useTranslation();
   const displayedRows = COVERED_PROTOCOL_ROWS.filter((row) => (
     insuredTokenStates[row.id]?.enabled || row.id === incident?.tokenId
   ));
@@ -149,27 +158,27 @@ export default function CoveredProtocolsTable({
       <div className="landing-table-shell">
         <table
           className="cover-table covered-protocols-table covered-protocols-table--claims"
-          aria-label="Insured tokens"
+          aria-label={t('coveredProtocols.tableLabel')}
         >
       <thead>
         <tr>
           <th scope="col">
             <span className="table-heading-with-help">
-              Insured Token
-              <InfoTooltip ariaLabel="About insured token" className="dashboard-help--table">
-                An asset eligible for a claim after a covered loss incident, subject to insurance score and claim rules.
+              {t('coveredProtocols.columns.insuredToken')}
+              <InfoTooltip ariaLabel={t('coveredProtocols.columns.insuredTokenHelpLabel')} className="dashboard-help--table">
+                {t('coveredProtocols.columns.insuredTokenHelp')}
               </InfoTooltip>
             </span>
           </th>
           <th scope="col">
             <span className="table-heading-with-help">
-              Max Coverage
-              <InfoTooltip ariaLabel="About max coverage" className="dashboard-help--table">
-                Current onchain maximum reimbursement for each listed token. Actual payout depends on the user&apos;s insurance score and cover pool limits.
+              {t('coveredProtocols.columns.maxCoverage')}
+              <InfoTooltip ariaLabel={t('coveredProtocols.columns.maxCoverageHelpLabel')} className="dashboard-help--table">
+                {t('coveredProtocols.columns.maxCoverageHelp')}
               </InfoTooltip>
             </span>
           </th>
-          <th scope="col" className="table-action-cell covered-protocols-action-cell">Claim</th>
+          <th scope="col" className="table-action-cell covered-protocols-action-cell">{t('coveredProtocols.columns.claim')}</th>
         </tr>
       </thead>
       <tbody>
@@ -178,18 +187,18 @@ export default function CoveredProtocolsTable({
           const reimbursement = insuranceState?.enabled
             ? formatCoverageBps(insuranceState.maxCoverageBps)
             : UNKNOWN_VALUE;
-          const actionLabel = row.id === incident?.tokenId
-            ? incidentActionLabel(incident, nowMilliseconds)
-            : 'File Claim';
-          const actionAriaLabel = actionLabel === 'File Claim'
-            ? `File claim for ${row.id}`
-            : `${actionLabel} for ${row.id}`;
+          const { phase: actionPhase, label: actionLabel } = row.id === incident?.tokenId
+            ? incidentAction(incident, nowMilliseconds)
+            : { phase: FILE_CLAIM, label: t('coveredProtocols.actions.fileClaim') };
+          const actionAriaLabel = actionPhase === FILE_CLAIM
+            ? t('coveredProtocols.actions.fileClaimFor', { token: row.id })
+            : t('coveredProtocols.actions.actionFor', { action: actionLabel, token: row.id });
           return (
           <tr key={row.id}>
             <td>
               <TableTokenCell iconSrc={row.iconSrc}>
                 {row.url ? (
-                  <a href={row.url} target="_blank" rel="noreferrer" aria-label={`Open ${row.token} on its own site`}>{row.token}</a>
+                  <a href={row.url} target="_blank" rel="noreferrer" aria-label={t('coveredProtocols.openTokenSite', { token: row.token })}>{row.token}</a>
                 ) : row.token}
               </TableTokenCell>
             </td>
@@ -202,7 +211,7 @@ export default function CoveredProtocolsTable({
             <td className="table-action-cell covered-protocols-action-cell">
               <AvailabilityAction
                 unavailableReason={fileClaimUnavailableReason}
-                className={`dashboard-action-button dashboard-table-action-button${actionLabel === 'File Claim' ? '' : ' dashboard-table-action-button--claim-status'}`}
+                className={`dashboard-action-button dashboard-table-action-button${actionPhase === FILE_CLAIM ? '' : ' dashboard-table-action-button--claim-status'}`}
                 type="button"
                 onClick={() => onFileClaim?.(row)}
                 aria-label={actionAriaLabel}
@@ -219,7 +228,7 @@ export default function CoveredProtocolsTable({
       {onSimulate ? (
         <div className="covered-protocols-footer">
           <button className="covered-protocols-simulate-link" type="button" onClick={onSimulate}>
-            Simulate Claim
+            {t('coveredProtocols.simulateClaim')}
           </button>
         </div>
       ) : null}

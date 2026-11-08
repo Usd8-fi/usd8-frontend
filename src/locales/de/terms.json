@@ -1,0 +1,7 @@
+{
+  "title": "Nutzungsbedingungen",
+  "requirement": "Um USD8 mit dieser Wallet zu nutzen, stimmen Sie bitte den <terms>Nutzungsbedingungen</terms> und dem <risk>Risikohinweis</risk> zu.",
+  "disagreeNote": "Wenn Sie ablehnen, wird Ihre Wallet getrennt. Dafür ist weder eine Signatur noch eine Transaktion nötig.",
+  "agree": "Zustimmen",
+  "disagree": "Ablehnen"
+}

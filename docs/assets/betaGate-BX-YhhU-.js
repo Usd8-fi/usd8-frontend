@@ -1,0 +1,1 @@
+var e={codeLabel:`Код запрошення до приватної бети`,invalidCode:`Недійсний код запрошення.`,submit:`Увійти в бету`,help:`Код можна отримати в нашому <telegram>Telegram</telegram> або в <x>особистих повідомленнях на X</x>`};export{e as default};

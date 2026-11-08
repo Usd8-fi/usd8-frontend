@@ -9,6 +9,7 @@ import { poolAbi, defiInsuranceAbi, priceOracleAbi, claimRegisteredEvent, claimC
 import { fallback, formatUnits, http, zeroAddress } from './viemLite.js';
 import { createReadClient } from './readClient.js';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
+import { t } from './i18n.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
 import { boostedScore, liveEarningsDecimals, UNKNOWN_VALUE, WAD } from './units.js';
 
@@ -28,7 +29,7 @@ const LOG_QUERY_BLOCK_RANGE = 10_000n;
 
 function protocolUnavailableError(chainId) {
   const network = getNetwork(chainId);
-  return new Error(network ? `USD8 is not deployed on ${network.name}` : 'USD8 is not deployed on the selected network');
+  return new Error(network ? t('lib.network.notDeployedOn', { network: network.name }) : t('lib.network.notDeployed'));
 }
 
 function throwIfRequestAborted(signal) {

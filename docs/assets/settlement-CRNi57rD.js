@@ -1,0 +1,1 @@
+var e={finality:{explanation:`Penyelesaian bisa dimulai setelah blok final melewati batas waktu klaim.`,heads:`Blok saat ini {latest} · Blok final {finalized}`,readyToSettle:`Siap diselesaikan`,minutesToGo:`sekitar {minutes} menit lagi`}};export{e as default};

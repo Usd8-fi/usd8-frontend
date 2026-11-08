@@ -1,0 +1,1 @@
+var e={ariaLabel:`Aktivitas protokol terbaru`,block:`blok {block}`};export{e as default};

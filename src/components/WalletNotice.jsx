@@ -1,11 +1,13 @@
 import LoadingSpinner from './LoadingSpinner.jsx';
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { t, useTranslation } from '../lib/i18n.js';
 
 const WalletNoticeContext = createContext(null);
 export const useWalletNotice = () => useContext(WalletNoticeContext);
 
 function NoticeToast({ entry, onDismiss }) {
+  const { t } = useTranslation();
   const notice = useRef(null);
   const [portalTarget, setPortalTarget] = useState(document.body);
   useLayoutEffect(() => {
@@ -31,9 +33,14 @@ function NoticeToast({ entry, onDismiss }) {
     return () => document.removeEventListener('keydown', escape, true);
   }, [dismiss]);
   const warning = entry.tone !== 'status';
+  // The connect-wallet notice is fixed copy: translate it at render so a
+  // language switch while it is open updates it too.
+  const label = entry.wallet ? t('notices.wallet.connectRequired.label') : entry.label;
+  const message = entry.wallet ? t('notices.wallet.connectRequired.message') : entry.message;
+  const actionLabel = entry.wallet ? t('notices.wallet.connectRequired.action') : entry.actionLabel;
   // Keep notices inside an open modal's accessible focus scope, outside its layout.
   return createPortal(
-    <aside ref={notice} className={`wallet-notice wallet-notice--${warning ? 'warning' : 'status'}`} role={warning ? 'alert' : 'status'} aria-label={entry.label || 'Notification'}>
+    <aside ref={notice} className={`wallet-notice wallet-notice--${warning ? 'warning' : 'status'}`} role={warning ? 'alert' : 'status'} aria-label={label || t('notices.wallet.defaultLabel')}>
       <span className="wallet-notice-icon" aria-hidden="true">
         {entry.busy ? <LoadingSpinner /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="12" cy="12" r="9" />
@@ -41,13 +48,13 @@ function NoticeToast({ entry, onDismiss }) {
         </svg>}
       </span>
       <div className="wallet-notice-message">
-        <p id={entry.id}>{entry.message}</p>
+        <p id={entry.id}>{message}</p>
         {entry.detail ? <small>{entry.detail}</small> : null}
-        {entry.href ? <a href={entry.href} target="_blank" rel="noreferrer">View transaction</a> : null}
+        {entry.href ? <a href={entry.href} target="_blank" rel="noreferrer">{t('notices.wallet.viewTransaction')}</a> : null}
       </div>
-      {entry.actionLabel ? <button className="wallet-notice-connect" type="button" disabled={!entry.onAction}
-        onClick={() => { dismiss(); entry.onAction?.(); }}>{entry.actionLabel}</button> : null}
-      <button className="wallet-notice-close" type="button" aria-label={entry.wallet ? 'Dismiss wallet notice' : 'Dismiss notification'} onClick={dismiss}>×</button>
+      {actionLabel ? <button className="wallet-notice-connect" type="button" disabled={!entry.onAction}
+        onClick={() => { dismiss(); entry.onAction?.(); }}>{actionLabel}</button> : null}
+      <button className="wallet-notice-close" type="button" aria-label={entry.wallet ? t('notices.wallet.dismissWallet') : t('notices.wallet.dismiss')} onClick={dismiss}>×</button>
     </aside>, portalTarget,
   );
 }
@@ -58,9 +65,9 @@ function NoticeHost({ wallet, children }) {
   const publish = useCallback(entry => setEntries(previous => [...previous.filter(item => item.id !== entry.id), entry]), []);
   const remove = useCallback(id => setEntries(previous => previous.some(item => item.id === id) ? previous.filter(item => item.id !== id) : previous), []);
   const show = useCallback(button => publish({
-    id: messageId, wallet: true, trigger: button, label: 'Wallet connection required',
-    message: 'Connect your wallet to continue.', detail: wallet.connectUnavailableReason,
-    actionLabel: 'Connect Wallet', onAction: wallet.connectUnavailableReason ? undefined : wallet.onConnect,
+    id: messageId, wallet: true, trigger: button, label: t('notices.wallet.connectRequired.label'),
+    message: t('notices.wallet.connectRequired.message'), detail: wallet.connectUnavailableReason,
+    actionLabel: t('notices.wallet.connectRequired.action'), onAction: wallet.connectUnavailableReason ? undefined : wallet.onConnect,
   }), [publish, messageId, wallet.connectUnavailableReason, wallet.onConnect]);
   useEffect(() => { if (wallet.connected || wallet.connecting) remove(messageId); }, [wallet.connected, wallet.connecting, remove, messageId]);
   const current = entries.at(-1);

@@ -9,8 +9,10 @@ import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from './lib/networkConfig.js';
 import { mergeSnapshot } from './lib/mergeSnapshot.js';
 import { readErrorMessage, resourceErrorMessage } from './lib/readErrorMessage.js';
 import { onForegroundRefresh } from './lib/foregroundRefresh.js';
+import { useTranslation } from './lib/i18n.js';
 
 export default function PublicApp({ onConnect, connecting = false, connectError = '' }) {
+  const { t } = useTranslation();
   const network = getProtocolNetwork(PROTOCOL_CHAIN_ID);
   const [data, setData] = useState({ pools: network.contracts.coverPools.map(pool => ({ ...pool, tvl: null, apy: null, capacityPercent: null })) });
   const [vault, setVault] = useState({});
@@ -27,7 +29,7 @@ export default function PublicApp({ onConnect, connecting = false, connectError 
       try {
         const next = await fetchLandingChainData(zeroAddress, network.id, { signal: controller.signal, onPartial: apply, refresh: retry > 0 });
         apply(next);
-        if (!controller.signal.aborted) setError(resourceErrorMessage(next.resourceErrors, 'Some data is unavailable. Retry to update it.'));
+        if (!controller.signal.aborted) setError(resourceErrorMessage(next.resourceErrors, t('app.data.someUnavailable')));
         if (!analyticsPending) {
           analyticsPending = true;
           fetchLandingAnalytics(next, zeroAddress, network.id, { signal: controller.signal }).then(extra => {

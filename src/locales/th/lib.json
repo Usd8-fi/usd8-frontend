@@ -1,0 +1,111 @@
+{
+  "duration": {
+    "day_one": "{count} วัน",
+    "day_other": "{count} วัน",
+    "hour_one": "{count} ชั่วโมง",
+    "hour_other": "{count} ชั่วโมง",
+    "minute_one": "{count} นาที",
+    "minute_other": "{count} นาที",
+    "second_one": "{count} วินาที",
+    "second_other": "{count} วินาที",
+    "adjective": {
+      "day_other": "{count} วัน",
+      "hour_other": "{count} ชั่วโมง",
+      "minute_other": "{count} นาที",
+      "second_other": "{count} วินาที"
+    }
+  },
+  "cooldown": {
+    "readyNow": "ถอนได้แล้ว",
+    "readyIn": {
+      "day_one": "ถอนได้ในอีก {count} วัน",
+      "day_other": "ถอนได้ในอีก {count} วัน",
+      "hour_one": "ถอนได้ในอีก {count} ชั่วโมง",
+      "hour_other": "ถอนได้ในอีก {count} ชั่วโมง",
+      "minute_one": "ถอนได้ในอีก {count} นาที",
+      "minute_other": "ถอนได้ในอีก {count} นาที"
+    }
+  },
+  "amount": {
+    "invalidNumber": "โปรดใส่ตัวเลขที่ถูกต้อง",
+    "tooManyDecimals": "ใส่ทศนิยมได้ไม่เกิน {decimals} ตำแหน่ง",
+    "noBalance": {
+      "deposit": "คุณไม่มี {token} ที่ฝากได้",
+      "startCooldown": "คุณไม่มี {token} ที่เริ่มคูลดาวน์ได้",
+      "mint": "คุณไม่มี {token} สำหรับมินต์ USD8",
+      "redeem": "คุณไม่มี {token} ที่ไถ่ถอนได้",
+      "generic": "คุณไม่มี {token} ที่ใช้ {action} ได้"
+    },
+    "invalid": {
+      "deposit": "ใส่จำนวน {token} ที่จะฝากให้ถูกต้อง",
+      "startCooldown": "ใส่จำนวน {token} ที่จะเริ่มคูลดาวน์ให้ถูกต้อง",
+      "mint": "ใส่จำนวน {token} ที่จะใช้มินต์ USD8 ให้ถูกต้อง",
+      "redeem": "ใส่จำนวน {token} ที่จะไถ่ถอนให้ถูกต้อง",
+      "generic": "ใส่จำนวน {token} สำหรับ {action} ให้ถูกต้อง"
+    },
+    "zero": {
+      "deposit": "ใส่จำนวน {token} ที่จะฝากให้มากกว่าศูนย์",
+      "startCooldown": "ใส่จำนวน {token} ที่จะเริ่มคูลดาวน์ให้มากกว่าศูนย์",
+      "mint": "ใส่จำนวน {token} ที่จะใช้มินต์ USD8 ให้มากกว่าศูนย์",
+      "redeem": "ใส่จำนวน {token} ที่จะไถ่ถอนให้มากกว่าศูนย์",
+      "generic": "ใส่จำนวน {token} สำหรับ {action} ให้มากกว่าศูนย์"
+    },
+    "exceedsBalance": "จำนวน {token} เกินยอดคงเหลือที่ใช้ได้ของคุณ"
+  },
+  "pool": {
+    "existingWithdrawalRequest": "โปรดทำคำขอถอนที่มีอยู่ให้เสร็จก่อนเริ่มคำขอใหม่",
+    "withdrawalAmountsUnavailable": "ยังไม่มีข้อมูลจำนวนที่ถอนได้ กด “โหลดข้อมูลใหม่” เพื่อดำเนินการต่อ",
+    "noEarnings": "ยังไม่มีรายได้ให้ถอน",
+    "depositsPausedForIncident": "ปิดรับเงินฝากชั่วคราวระหว่างที่เหตุการณ์ประกัน #{incident} ยังเปิดอยู่ โปรดลองใหม่หลังเหตุการณ์สิ้นสุด",
+    "exceedsCapacity": "จำนวนที่ฝากเกินความจุที่เหลือของพูลคุ้มครอง ฝากได้สูงสุด {amount} {symbol}",
+    "full": "พูลคุ้มครองเต็มแล้ว ไม่สามารถรับเงินฝาก {symbol} เพิ่มได้",
+    "waitingForEstimate": "กำลังรอประมาณการจำนวนที่จะถอนได้",
+    "waitingForClaims": "รอให้เคลมดำเนินการเสร็จ",
+    "noWithdrawal": "ยังไม่มียอดที่ถอนออกจากพูลคุ้มครองได้"
+  },
+  "claimStage": {
+    "claimOpen": "เปิดรับเคลม",
+    "settleOpen": "เปิดสรุปผล",
+    "notSettled": "ไม่ได้สรุปผล",
+    "settled": "สรุปผลแล้ว",
+    "payoutOpen": "เปิดรับเงินชดเชย",
+    "payoutClosed": "ปิดรับเงินชดเชย"
+  },
+  "errors": {
+    "rpcRead": "RPC ผิดพลาด: อ่านข้อมูลบล็อกเชนไม่ได้ เนื่องจากคำขอ RPC ล้มเหลวหรือหมดเวลา โปรดลองอีกครั้ง",
+    "dataUnavailable": "โหลดข้อมูลไม่ได้"
+  },
+  "claimService": {
+    "settlementNotFinal": "ยังสรุปผลจากสถานะเชนที่ finalized แล้วไม่ได้ โปรดรอให้เครือข่ายยืนยันสมบูรณ์แล้วลองอีกครั้ง",
+    "noQualifyingDrop": "ไม่พบการร่วงของราคาเกิน 20% ที่เข้าเงื่อนไข",
+    "incidentActive": "มีเหตุการณ์ที่เปิดอยู่แล้ว โปรดปิดแล้วเปิดเคลมนี้ใหม่",
+    "busy": "บริการตรวจสอบเคลมมีผู้ใช้งานมาก โปรดรอสักครู่แล้วลองอีกครั้ง",
+    "unavailable": "บริการตรวจสอบเคลมใช้งานไม่ได้ชั่วคราว",
+    "requestFailed": "คำขอตรวจสอบเคลมไม่สำเร็จ ({status})",
+    "busyNoPreviousCheck": "บริการตรวจสอบเคลมมีผู้ใช้งานมาก กำลังรอผลตรวจใหม่ และยังไม่มีผลตรวจครั้งก่อน",
+    "busyStaleCheck": "บริการตรวจสอบเคลมมีผู้ใช้งานมาก ผลตรวจเก่าเมื่อ {time}: {result} แสดงเพื่อทราบเท่านั้น ยังต้องตรวจสอบใหม่",
+    "staleNoDrop": "ไม่พบการร่วงของราคาที่เข้าเงื่อนไข",
+    "staleQualifyingDrop": "พบการร่วงของราคาที่เข้าเงื่อนไข",
+    "verificationTimedOut": "การตรวจสอบเคลมหมดเวลา โปรดลองอีกครั้ง",
+    "tooSlow": "บริการตรวจสอบเคลมตอบกลับช้าเกินไป โปรดลองอีกครั้ง",
+    "unreachable": "ติดต่อบริการตรวจสอบเคลมไม่ได้ โปรดตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
+    "notConfigured": "ยังไม่ได้ตั้งค่าบริการตรวจสอบเคลม",
+    "verificationFailed": "ตรวจสอบเคลมไม่สำเร็จ{code}",
+    "verificationExpired": "การตรวจสอบเคลมหมดอายุ{code}",
+    "settlementFailed": "สรุปผลเคลมไม่สำเร็จ{code}",
+    "settlementExpired": "การสรุปผลเคลมหมดอายุ{code}",
+    "settlementTimedOut": "การสรุปผลเคลมหมดเวลา โปรดลองอีกครั้ง",
+    "downloadFailed": "ดาวน์โหลดผลสรุปเคลมไม่สำเร็จ"
+  },
+  "claimHistory": {
+    "outOfRange": "ประวัติเคลมเกินช่วงที่รองรับ โปรดติดต่อทีมงานเพื่อโหลดเคลมนี้"
+  },
+  "settlement": {
+    "baseUnits": "หน่วยฐานของ {asset}",
+    "unknownAsset": "สินทรัพย์ที่ไม่รู้จัก"
+  },
+  "network": {
+    "notDeployed": "USD8 ยังไม่เปิดใช้งานบนเครือข่ายที่เลือก",
+    "notDeployedOn": "USD8 ยังไม่เปิดใช้งานบน {network}"
+  }
+}

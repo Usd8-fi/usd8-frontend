@@ -1,0 +1,1 @@
+var e={title:`Ketentuan Penggunaan`,requirement:`Untuk menggunakan USD8 dengan dompet ini, harap setujui <terms>Ketentuan</terms> dan <risk>Pernyataan Risiko</risk>.`,disagreeNote:`Jika Anda tidak setuju, koneksi dompet Anda akan diputus. Tidak perlu tanda tangan atau transaksi apa pun.`,agree:`Setuju`,disagree:`Tidak Setuju`};export{e as default};

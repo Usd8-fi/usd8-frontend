@@ -1,0 +1,154 @@
+{
+  "wallet": {
+    "connectUnavailable": "Koneksi dompet belum tersedia sampai VITE_REOWN_PROJECT_ID dikonfigurasi.",
+    "connectFailed": "Gagal menghubungkan dompet.",
+    "loadFailed": "Dompet tidak dapat dimuat. Silakan coba lagi.",
+    "detailsUnavailable": "Detail dompet tidak dapat dibuka.",
+    "chainName": "Jaringan {chainId}",
+    "scopeChanged": "Akun atau jaringan dompet berubah. Periksa kondisi terkini, lalu coba lagi.",
+    "accountOrNetworkChanged": "Akun atau jaringan dompet berubah."
+  },
+  "network": {
+    "notDeployedOn": "USD8 tidak tersedia di {network}.",
+    "notDeployedHere": "USD8 tidak tersedia di jaringan ini.",
+    "notDeployedSelected": "USD8 tidak tersedia di jaringan yang dipilih."
+  },
+  "score": {
+    "loadFailed": "Skor Asuransi gagal dimuat. Coba lagi untuk melihat skor tersedia Anda.",
+    "refreshFailed": "Skor Asuransi gagal diperbarui. Coba lagi untuk memperbarui skor tersedia Anda.",
+    "unavailableForClaim": "Skor Asuransi tidak tersedia. Muat ulang skor sebelum mengajukan klaim.",
+    "retry": "Muat Ulang Skor"
+  },
+  "data": {
+    "someUnavailable": "Sebagian data tidak tersedia. Coba lagi untuk memperbaruinya.",
+    "someBalancesUnavailable": "Sebagian saldo atau data protokol gagal diperbarui. Coba lagi untuk memperbaruinya.",
+    "refreshUnavailable": "Muat ulang data yang belum tersedia sebelum melanjutkan."
+  },
+  "transaction": {
+    "cancelled": "Transaksi dibatalkan di dompet Anda.",
+    "submitted": "Transaksi terkirim: {hash}",
+    "confirmationUnknown": "Transaksi sudah terkirim, tetapi konfirmasinya tidak dapat diperiksa. Cek status transaksi sebelum mencoba lagi.",
+    "reverted": "Transaksi gagal (di-revert).",
+    "failed": "Transaksi gagal.",
+    "confirmed": "Transaksi terkonfirmasi.",
+    "confirmedRefreshFailed": "{status} Transaksi terkonfirmasi, tetapi saldo gagal diperbarui.",
+    "retryRefresh": "Perbarui Lagi",
+    "statusLabel": "Status transaksi",
+    "inProgress": "Masih ada transaksi yang sedang diproses."
+  },
+  "pool": {
+    "noneConfigured": "Belum ada pool proteksi di jaringan ini.",
+    "fallbackName": "pool proteksi",
+    "depositPositive": "Jumlah setoran harus lebih dari nol.",
+    "approveAsset": "Setujui {symbol} di dompet Anda.",
+    "confirmDeposit": "Konfirmasi setoran ke pool proteksi di dompet Anda.",
+    "depositConfirmed": "Setoran terkonfirmasi di {network}.",
+    "sharePositive": "Masukkan jumlah share lebih dari nol.",
+    "shareBalanceChanged": "Saldo share pool Anda berubah. Perbarui jumlahnya, lalu coba lagi.",
+    "confirmCooldown": "Konfirmasi permintaan masa tunggu di dompet Anda.",
+    "cooldownStarted": "Masa tunggu dimulai. Jumlah ini berhenti menghasilkan imbal hasil dan bisa berkurang jika pool membayar klaim sebelum penarikan Anda tuntas.",
+    "completeWithdrawal": "Selesaikan penarikan yang sudah siap di dompet Anda.",
+    "withdrawalCompleted": "Penarikan selesai di {network}.",
+    "confirmRewardClaim": "Konfirmasi penarikan pendapatan USD8 di dompet Anda.",
+    "rewardsClaimed": "Pendapatan berhasil ditarik di {network}."
+  },
+  "usd8": {
+    "redeemQuoteFailed": "Estimasi penebusan gagal dimuat. Buka ulang dialog untuk mencoba lagi.",
+    "mintPositive": "Jumlah mint harus lebih dari nol.",
+    "redemptionPositive": "Jumlah penebusan harus lebih dari nol.",
+    "redeemQuoteChanged": "Estimasi penebusan berubah. Periksa hasil terbaru, lalu kirim lagi.",
+    "confirmRedemption": "Konfirmasi penebusan USD8 di dompet Anda.",
+    "redemptionConfirmed": "Penebusan terkonfirmasi di {network}.",
+    "approveUsdc": "Setujui USDC di dompet Anda.",
+    "confirmMint": "Konfirmasi mint USD8 di dompet Anda.",
+    "mintConfirmed": "Mint terkonfirmasi di {network}."
+  },
+  "claim": {
+    "loadingDetails": "Memuat detail klaim…",
+    "statusLabel": "Status pengajuan klaim",
+    "loadingPayout": "Memuat detail pembayaran beserta buktinya.",
+    "payoutUnavailable": "Detail pembayaran untuk sementara tidak tersedia.",
+    "incidentLoading": "Detail insiden masih dimuat. Muat ulang sebelum mengajukan klaim.",
+    "holdingWindowUnavailable": "Periode kepemilikan tidak tersedia. Muat ulang sebelum mengajukan klaim.",
+    "tokenNotEnabledOn": "{symbol} belum bisa diklaim di {network}.",
+    "tokenNotEnabledOnSelected": "{symbol} belum bisa diklaim di jaringan yang dipilih.",
+    "preparationInProgress": "Klaim sedang disiapkan.",
+    "verificationNotConfigured": "Layanan verifikasi klaim belum dikonfigurasi.",
+    "checkingRequirements": "Memeriksa insiden yang sedang berlangsung dan persyaratan klaim.",
+    "tokenNotEnabled": "Token ini belum bisa diklaim di jaringan yang dipilih.",
+    "tokenNoLongerEnabled": "{symbol} tidak lagi menerima klaim baru di {network}.",
+    "invalidBoosterAmount": "Masukkan jumlah Booster yang valid.",
+    "insuredAmountPositive": "Jumlah token yang diasuransikan harus lebih dari nol.",
+    "scorePositive": "Skor asuransi yang digunakan harus lebih dari nol.",
+    "incidentChanged": "Insiden aktif berubah. Muat ulang detailnya sebelum mengajukan klaim.",
+    "insufficientUsd8ForAmountAndBond": "Saldo USD8 tidak cukup untuk jumlah yang diasuransikan ditambah jaminan klaim.",
+    "insufficientUsd8ForBond": "Saldo USD8 tidak cukup untuk jaminan klaim.",
+    "verifyingIncident": "Memverifikasi insiden di TEE. Klaim pertama bisa memakan waktu beberapa menit, mohon tunggu.",
+    "checkingPriceDrop": "Memeriksa apakah ada penurunan harga yang memenuhi syarat.",
+    "approveToken": "Setujui token di dompet Anda.",
+    "boostersDisabled": "Booster tidak dapat digunakan untuk klaim.",
+    "insufficientBoosters": "Saldo Booster tidak cukup.",
+    "approveBoosters": "Setujui Booster di dompet Anda.",
+    "checkingBeforeFiling": "Memeriksa insiden sebelum klaim Anda diajukan.",
+    "confirmClaim": "Konfirmasi klaim di dompet Anda.",
+    "claimConfirmed": "Klaim terkonfirmasi di {network}.",
+    "stepFailed": {
+      "requirements": "Pemeriksaan persyaratan klaim gagal",
+      "tokenApproval": "Persetujuan token gagal",
+      "boosterApproval": "Persetujuan Booster gagal",
+      "verification": "Verifikasi klaim gagal",
+      "submission": "Transaksi klaim gagal"
+    },
+    "stepConfirmationUnavailable": {
+      "requirements": "Konfirmasi pemeriksaan persyaratan klaim tidak tersedia",
+      "tokenApproval": "Konfirmasi persetujuan token tidak tersedia",
+      "boosterApproval": "Konfirmasi persetujuan Booster tidak tersedia",
+      "verification": "Konfirmasi verifikasi klaim tidak tersedia",
+      "submission": "Konfirmasi transaksi klaim tidak tersedia"
+    },
+    "stepReason": "{step}: {reason}",
+    "tryAgain": "Silakan coba lagi.",
+    "verificationUnreachable": "Layanan verifikasi klaim tidak dapat dihubungi. Periksa koneksi Anda, lalu coba lagi.",
+    "blockchainUnreachable": "Tidak dapat terhubung ke blockchain. Periksa koneksi Anda, lalu coba lagi.",
+    "approvalConfirmed": {
+      "token": "Persetujuan token terkonfirmasi.",
+      "booster": "Persetujuan Booster terkonfirmasi."
+    },
+    "noClaimSubmitted": "Tidak ada transaksi klaim yang dikirim.",
+    "alreadyResolved": "Klaim ini sudah tuntas.",
+    "changedWhilePayoutLoading": "Akun dompet atau klaim berubah saat detail pembayaran sedang dimuat.",
+    "cancel": {
+      "noUnresolved": "Akun ini tidak lagi memiliki klaim yang belum tuntas untuk dibatalkan.",
+      "changed": "Klaim aktif berubah. Periksa klaim terkini sebelum membatalkannya.",
+      "notCancellable": "Klaim ini sudah tidak bisa dibatalkan. Periksa tahap klaim saat ini.",
+      "confirm": "Konfirmasi pembatalan klaim di dompet Anda.",
+      "failed": "Pembatalan klaim gagal."
+    },
+    "settle": {
+      "stateChanged": "Status penyelesaian insiden berubah saat penyelesaian sedang disiapkan.",
+      "preparing": "Menyiapkan penyelesaian di TEE. Proses ini bisa memakan waktu beberapa menit.",
+      "confirm": "Konfirmasi penyelesaian klaim di dompet Anda.",
+      "confirmed": "Penyelesaian terkonfirmasi di {network}.",
+      "failed": "Penyelesaian klaim gagal."
+    },
+    "finalize": {
+      "noUnresolved": "Akun ini tidak lagi memiliki klaim yang belum tuntas untuk difinalisasi.",
+      "changed": "Klaim aktif berubah saat detail pembayaran sedang dimuat. Periksa klaim terkini, lalu coba lagi.",
+      "payoutStateChanged": "Status pembayaran berubah saat detail sedang dimuat. Periksa klaim terkini, lalu coba lagi.",
+      "notInSettlement": "Klaim ini tidak tercantum dalam penyelesaian.",
+      "boosterExceedsEscrow": "Jumlah Booster dalam penyelesaian melebihi Booster di escrow klaim ini.",
+      "confirmAccept": "Konfirmasi penerimaan pembayaran di dompet Anda.",
+      "confirmReturn": "Konfirmasi pengambilan kembali token di dompet Anda.",
+      "failed": "Finalisasi klaim gagal.",
+      "errors": {
+        "FinalizeNotOpen": "Penerimaan pembayaran belum dibuka. Muat ulang status klaim untuk memeriksa periode pembayaran atau periode pengambilan kembali token.",
+        "InvalidProof": "Bukti penyelesaian tidak valid. Muat ulang detail pembayaran sebelum mencoba lagi.",
+        "EligibleExceedsEscrow": "Jumlah yang memenuhi syarat dalam penyelesaian melebihi token atau Booster di escrow. Muat ulang detail pembayaran sebelum mencoba lagi.",
+        "InvalidBoostedScore": "Bobot pembayaran dalam penyelesaian tidak sesuai dengan Booster yang memenuhi syarat. Muat ulang detail pembayaran sebelum mencoba lagi.",
+        "UnauthorizedClaim": "Dompet ini tidak dapat memfinalisasi klaim ini. Periksa akun yang terhubung, lalu muat ulang.",
+        "ClaimAlreadyResolved": "Klaim ini sudah tuntas. Muat ulang status klaim.",
+        "PayoutCapExceeded": "Pembayaran melebihi sisa batas pembayaran pool. Muat ulang detail pembayaran sebelum mencoba lagi."
+      }
+    }
+  }
+}

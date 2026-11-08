@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "ปิดหน้าสถานะเคลม",
+    "fileClaim": "ปิดหน้ายื่นเคลม"
+  },
+  "dialogLabel": {
+    "status": "สถานะเคลม {symbol}",
+    "file": "ยื่นเคลม {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "สถานะเคลมของคุณ",
+    "incidentStatus": "สถานะเหตุการณ์",
+    "fileClaim": "ยื่นเคลม"
+  },
+  "requirement": "{symbol} ต้องเสียมูลค่าเทียบกับสินทรัพย์อ้างอิงมากกว่า 20% โดยเทียบราคา TWAP ทันทีก่อนและหลังการร่วง <link>ดูเพิ่มเติม</link>",
+  "noClaimInIncident": "คุณไม่มีเคลมในเหตุการณ์นี้ ตอนนี้ปิดรับเคลมแล้ว แต่การสรุปผลเปิดให้ทุกคนทำได้โดยไม่ต้องขออนุญาต",
+  "validation": {
+    "noAvailableScore": "คุณยังไม่มีคะแนนประกันที่ใช้ได้",
+    "amountExceedsBalance": "จำนวน {symbol} เกินยอดคงเหลือที่ใช้ได้ของคุณ",
+    "enterAmount": "ใส่จำนวน {symbol} ที่ต้องการเคลม",
+    "enterScore": "ใส่คะแนนประกันที่ต้องการใช้"
+  },
+  "holdingRequirement": {
+    "blocks": " {blocks} บล็อกก่อนเกิดเหตุการณ์ ",
+    "unavailable": "ก่อนเกิดเหตุการณ์ตามที่กำหนด (ขณะนี้โหลดข้อมูลช่วงถือครองไม่ได้ โปรดรีเฟรชก่อนยื่นเคลม) "
+  },
+  "stage": {
+    "claimOpen": "เปิดรับเคลม",
+    "claimClosed": "ปิดรับเคลม",
+    "settle": "สรุปผล",
+    "settleOpen": "เปิดสรุปผล",
+    "notSettled": "ไม่ได้สรุปผล",
+    "settled": "สรุปผลแล้ว",
+    "payout": "จ่ายชดเชย",
+    "payoutOpen": "เปิดรับเงินชดเชย",
+    "payoutClosed": "ปิดรับเงินชดเชย",
+    "progress": "ความคืบหน้า {stage}"
+  },
+  "statusDescription": {
+    "claimOpen": "รอผู้อื่นร่วมยื่นเคลม",
+    "settlementOpenClaimant": "รอการสรุปผล",
+    "settlementOpenAnyone": "รอการสรุปผล ทุกคนกดสรุปผลได้",
+    "settlementExpired": "หมดช่วงสรุปผลแล้ว โปรดถอนสินทรัพย์ที่พักไว้คืน",
+    "settlementPending": "สรุปผลแล้ว อยู่ในช่วงเปิดให้โต้แย้ง",
+    "payoutOpen": "เปิดรับเงินชดเชยแล้ว โปรดดำเนินการโดยเร็ว",
+    "payoutExpired": "หมดช่วงรับเงินชดเชยแล้ว โปรดถอนสินทรัพย์ที่พักไว้คืน"
+  },
+  "statusLabel": {
+    "plain": "สถานะ",
+    "withDescription": "สถานะ - {description}"
+  },
+  "currentStage": "ขั้นตอนปัจจุบัน: {stage}",
+  "action": {
+    "cancelClaim": "ยกเลิกเคลม",
+    "settleAllClaims": "สรุปผลทุกเคลม",
+    "returnTokens": "รับโทเคนคืน",
+    "acceptPayout": "รับเงินชดเชย",
+    "cancelPayoutReturnTokens": "ไม่รับเงินชดเชยและรับโทเคนคืน",
+    "fileClaim": "ยื่นเคลม"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "โทเคนที่มีประกันที่พักไว้",
+    "claimBondEscrowed": "เงินมัดจำเคลมที่พักไว้",
+    "bondFullyRefunded": "จะได้รับคืนเต็มจำนวน",
+    "bondNotRefunded": "จะไม่ได้รับคืน: ไม่เข้าเงื่อนไข",
+    "insuranceScoreToSpend": "คะแนนประกันที่จะใช้",
+    "effectiveScoreAfterBoosters": "คะแนนประกันสุทธิหลังรวมบูสเตอร์ {score} · ",
+    "scoreCommitted": "คิดเป็น {percent} ของคะแนนที่ยื่นเคลมทั้งหมด",
+    "boostersEscrowed": "บูสเตอร์ที่พักไว้",
+    "loadingBoostersTaken": "กำลังโหลดจำนวนบูสเตอร์ที่นำมาคำนวณ",
+    "boostersTaken": "นำมาคำนวณ {count} ชิ้น"
+  },
+  "payout": {
+    "ineligible": "คุณไม่มีสิทธิ์ได้รับเงินชดเชย และจะไม่ได้รับเงินมัดจำ {bond} USD8 คืน โปรดรับโทเคนคืนเพื่อปิดเคลม",
+    "totalUsdValue": "มูลค่าเงินชดเชยรวม (USD)",
+    "loadingValue": "กำลังโหลดมูลค่าเงินชดเชย",
+    "vsLossValue": "เงินชดเชยเทียบกับมูลค่าความเสียหาย",
+    "loadingComparison": "กำลังโหลดการเปรียบเทียบเงินชดเชย",
+    "details": "รายละเอียดเงินชดเชย",
+    "loadingDetails": "กำลังโหลดรายละเอียดเงินชดเชย"
+  },
+  "time": {
+    "days_one": "{count} วัน",
+    "days_other": "{count} วัน",
+    "hours_one": "{count} ชั่วโมง",
+    "hours_other": "{count} ชั่วโมง",
+    "minutes_one": "{count} นาที",
+    "minutes_other": "{count} นาที",
+    "minutesLeft": "เหลือ {minutes}",
+    "hoursMinutesLeft": "เหลือ {hours} {minutes}",
+    "daysHoursLeft": "เหลือ {days} {hours}",
+    "rangeDays": "{from}-{to} วัน",
+    "rangeHours": "{from}-{to} ชั่วโมง",
+    "rangeMinutes": "{from}-{to} นาที"
+  },
+  "submissionStatus": "สถานะการยื่นเคลม",
+  "form": {
+    "tokenAmountLabel": "จำนวน {symbol}",
+    "tokenAmountHelpLabel": "เกี่ยวกับจำนวนโทเคนที่มีประกัน",
+    "tokenAmountHelp": "คุณต้องถือ {symbol} ไว้ตลอดช่วง{holding}สิทธิ์เคลมจะคิดจากยอดคงเหลือต่ำสุดของคุณในช่วงนั้น โทเคนที่ได้มาภายหลังจึงไม่นับ หากยอดต่ำสุดเป็นศูนย์ คุณจะไม่มีสิทธิ์เคลมและจะเสียเงินมัดจำเคลม",
+    "tokenAmountInput": "จำนวน {symbol} ที่มีประกัน",
+    "availableWithPeriod": "ใช้ได้ {amount}",
+    "available": "ใช้ได้ {amount}",
+    "claimBond": "เงินมัดจำเคลม",
+    "claimBondHelpLabel": "เกี่ยวกับเงินมัดจำเคลม",
+    "claimBondHelp": "ต้องวางเงินมัดจำกันสแปม 10 USD8 เพื่อยื่นเคลม หากคุณไม่มีสิทธิ์เคลม เงินมัดจำนี้จะไม่ได้รับคืน",
+    "scoreLabel": "คะแนนประกันที่จะใช้",
+    "scoreHelpLabel": "เกี่ยวกับคะแนนประกันที่จะใช้",
+    "scoreHelp": "คะแนนที่คุณขอใช้ ตอนสรุปผลจะจำกัดไม่ให้เกินคะแนนที่ใช้ได้ของคุณ และคะแนนจะถูกใช้จริงก็ต่อเมื่อคุณรับเงินชดเชยที่มีสิทธิ์เท่านั้น",
+    "boostersLabel": "บูสเตอร์ที่จะพักไว้",
+    "boostersHelpLabel": "เกี่ยวกับบูสเตอร์ที่จะพักไว้",
+    "boostersHelp": "ไม่บังคับ บูสเตอร์ต้องผ่านเงื่อนไขการถือครองก่อนเกิดเหตุการณ์แบบเดียวกับโทเคนที่มีประกัน คือต้องถือไว้ตลอดช่วง{holding}เฉพาะบูสเตอร์ที่มีสิทธิ์เท่านั้นที่จะเพิ่มน้ำหนักการจ่าย และจะถูกเบิร์นเมื่อคุณรับเงินชดเชย บูสเตอร์ส่วนเกินจะได้รับคืน หากไม่รับเงินชดเชยจะได้บูสเตอร์คืนทั้งหมด"
+  },
+  "weight": {
+    "summary": "น้ำหนักการจ่ายสูงสุด: {weight}{boosters} — คิดเป็น {share} ของน้ำหนักรวมที่พักไว้ในตอนนี้ (ยังไม่ใช่ตัวเลขสุดท้าย) น้ำหนักจริงขึ้นอยู่กับสิทธิ์ตามการถือครอง",
+    "boosters_one": " (รวมบูสเตอร์ {count} ชิ้น)",
+    "boosters_other": " (รวมบูสเตอร์ {count} ชิ้น)"
+  }
+}

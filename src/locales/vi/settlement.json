@@ -1,0 +1,8 @@
+{
+  "finality": {
+    "explanation": "Có thể bắt đầu quyết toán khi block đã chốt vượt qua hạn chót nhận yêu cầu bồi thường.",
+    "heads": "Block hiện tại {latest} · Block đã chốt {finalized}",
+    "readyToSettle": "Sẵn sàng quyết toán",
+    "minutesToGo": "còn khoảng {minutes} phút"
+  }
+}

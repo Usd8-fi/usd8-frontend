@@ -1,0 +1,1 @@
+var e={language:`اللغة`,metrics:{apy:`العائد السنوي`,tvl:`القيمة المقفلة`,window7D:`7 أيام`,window30D:`30 يومًا`,apySuffix:` العائد السنوي`,windowApy:`العائد السنوي ({window})`},pools:{wsteth:`مجمع تغطية wstETH`,usd8:`مجمع تغطية USD8`,msloss:`مجمع تغطية msLOSS`}};export{e as default};

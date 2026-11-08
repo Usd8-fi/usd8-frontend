@@ -1,3 +1,5 @@
+import { tCount } from './plural.js';
+
 const UNITS = [
   ['day', 86_400],
   ['hour', 3_600],
@@ -16,16 +18,16 @@ function parts(seconds) {
   return [Math.max(1, Math.round(value / 60)), 'minute'];
 }
 
-/// "7 days", "1 hour", "5 minutes"; null when the deployment value is unknown.
+/// "7 days", "1 hour", "5 minutes" (translated); null when the deployment value is unknown.
 export function durationPhrase(seconds) {
   const result = parts(seconds);
   if (!result) return null;
   const [count, unit] = result;
-  return `${count} ${unit}${count === 1 ? '' : 's'}`;
+  return tCount(`lib.duration.${unit}`, count);
 }
 
-/// "7-day", "1-hour", "5-minute", for use before a noun; null when unknown.
+/// "7-day", "1-hour", "5-minute", for use before a noun (translated); null when unknown.
 export function durationAdjective(seconds) {
   const result = parts(seconds);
-  return result ? `${result[0]}-${result[1]}` : null;
+  return result ? tCount(`lib.duration.adjective.${result[1]}`, result[0]) : null;
 }

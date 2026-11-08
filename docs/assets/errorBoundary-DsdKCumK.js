@@ -1,0 +1,1 @@
+var e={crash:{message:`حدث خطأ أثناء عرض هذه الصفحة.`,reload:`إعادة التحميل`}};export{e as default};

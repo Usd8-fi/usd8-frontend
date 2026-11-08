@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "มินต์ USD8",
+    "redeemTitle": "ไถ่ถอน USD8",
+    "closeMint": "ปิดหน้ามินต์ USD8",
+    "closeRedeem": "ปิดหน้าไถ่ถอน USD8",
+    "waitingForQuote": "กำลังรอราคาไถ่ถอนที่ใช้ได้",
+    "amountInput": "จำนวน {token}",
+    "output": "{token} ที่จะได้รับ",
+    "mint": "มินต์",
+    "redeem": "ไถ่ถอน"
+  },
+  "available": "ใช้ได้ {amount}",
+  "earnings": {
+    "label": "รายได้ USD8",
+    "availableToWithdraw": "ถอนได้ {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "พร้อมถอน",
+    "waitingForClaims": "ครบคูลดาวน์แล้ว รอให้เคลมสิ้นสุด",
+    "cooldown": "ความคืบหน้าคูลดาวน์",
+    "barLabel": "ความคืบหน้าคูลดาวน์การถอน"
+  },
+  "pool": {
+    "defaultName": "พูลคุ้มครอง",
+    "depositTitle": "ฝาก",
+    "withdrawTitle": "ถอน",
+    "withdrawEarningsTitle": "ถอนรายได้",
+    "closeDeposit": "ปิดหน้าฝากเข้า {pool}",
+    "closeWithdraw": "ปิดหน้าถอนจาก {pool}",
+    "closeWithdrawEarnings": "ปิดหน้าถอนรายได้จาก {pool}",
+    "sharesToRedeem": "แชร์พูลที่จะไถ่ถอน",
+    "withdrawAvailability": "มี {amount} แชร์ที่ถอนได้ หากไม่มีเคลมค้างอยู่ จะถอนได้หลัง{cooldown} หากมี ต้องรอจนเคลมทั้งหมดสิ้นสุด <link>ดูเพิ่มเติม</link>",
+    "cooldownWithLength": "คูลดาวน์ {length}",
+    "cooldown": "คูลดาวน์",
+    "depositAvailabilityWithCapacity": "ใช้ได้ {amount} <capacity>พูลรับได้อีก {capacity} {symbol}</capacity>",
+    "estimatedReceived": "{symbol} ที่คาดว่าจะได้รับ",
+    "mayDecrease": "อาจลดลงหากพูลต้องจ่ายเคลมก่อนการถอนของคุณเสร็จสิ้น",
+    "startCooldown": "เริ่มคูลดาวน์",
+    "withdraw": "ถอน",
+    "withdrawEarnings": "ถอนรายได้",
+    "deposit": "ฝาก",
+    "balances": {
+      "summary": "{withdrawable} · {cooldown}",
+      "readyToWithdraw": "พร้อมถอน {amount} {symbol}",
+      "readyToWithdrawAfterClaims": "ถอนได้ {amount} {symbol} หลังเคลมสิ้นสุด",
+      "estimatedForWithdrawal": "ถอนได้ประมาณ {amount} {symbol}",
+      "estimatedForWithdrawalAfterClaims": "ถอนได้ประมาณ {amount} {symbol} หลังเคลมสิ้นสุด",
+      "inCooldown": "อยู่ในคูลดาวน์ {amount} {symbol}",
+      "inCooldownWithTiming": "อยู่ในคูลดาวน์ {amount} {symbol} — {timing}"
+    }
+  }
+}

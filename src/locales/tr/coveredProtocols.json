@@ -1,0 +1,25 @@
+{
+  "tableLabel": "Sigortalı token'lar",
+  "columns": {
+    "insuredToken": "Sigortalı Token",
+    "insuredTokenHelpLabel": "Sigortalı token hakkında",
+    "insuredTokenHelp": "Teminat kapsamındaki bir kayıp olayından sonra talep edilebilen varlık. Sigorta puanı ve talep kurallarına tabidir.",
+    "maxCoverage": "Azami Teminat",
+    "maxCoverageHelpLabel": "Azami teminat hakkında",
+    "maxCoverageHelp": "Listelenen her token için zincir üstünde tanımlı güncel azami tazminat oranı. Gerçek ödeme, kullanıcının sigorta puanına ve teminat havuzu limitlerine bağlıdır.",
+    "claim": "Talep"
+  },
+  "openTokenSite": "{token} için resmi siteyi aç",
+  "actions": {
+    "fileClaim": "Talep Oluştur",
+    "fileClaimFor": "{token} için talep oluştur",
+    "actionFor": "{token} için: {action}",
+    "claimOpen": "Talep Açık",
+    "settleClaims": "Talepleri Uzlaştır",
+    "settleAndDispute": "Uzlaştır ve İtiraz Et",
+    "finalisePayout": "Ödemeyi Sonuçlandır",
+    "minutesLeft": "{label} ({minutes} dk kaldı)",
+    "daysHoursLeft": "{label} ({days} g {hours} sa kaldı)"
+  },
+  "simulateClaim": "Talep Simülasyonu"
+}

@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "Fermer le statut de la demande",
+    "fileClaim": "Fermer le formulaire de demande"
+  },
+  "dialogLabel": {
+    "status": "Statut de la demande pour {symbol}",
+    "file": "Demande d’indemnisation pour {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "Statut de votre demande",
+    "incidentStatus": "Statut de l’incident",
+    "fileClaim": "Demande d’indemnisation"
+  },
+  "requirement": "{symbol} doit perdre plus de 20 % de sa valeur par rapport à son actif sous-jacent, mesurée entre son prix TWAP juste avant et juste après la baisse. <link>En savoir plus</link>.",
+  "noClaimInIncident": "Vous n’avez aucune demande dans cet incident. Le dépôt des demandes est clos, mais le règlement est ouvert à tous : n’importe qui peut le déclencher.",
+  "validation": {
+    "noAvailableScore": "Vous n’avez aucun score d’assurance disponible à utiliser.",
+    "amountExceedsBalance": "Le montant de {symbol} dépasse votre solde disponible.",
+    "enterAmount": "Saisissez le montant de {symbol} pour lequel vous faites une demande.",
+    "enterScore": "Saisissez le score d’assurance que vous souhaitez utiliser."
+  },
+  "holdingRequirement": {
+    "blocks": "{blocks} blocs avant l’incident.",
+    "unavailable": "au début de la période configurée avant l’incident. Période de détention indisponible : actualisez avant de déposer votre demande."
+  },
+  "stage": {
+    "claimOpen": "Demandes ouvertes",
+    "claimClosed": "Demandes closes",
+    "settle": "Règlement",
+    "settleOpen": "Règlement ouvert",
+    "notSettled": "Non réglé",
+    "settled": "Réglé",
+    "payout": "Indemnisation",
+    "payoutOpen": "Indemnisation ouverte",
+    "payoutClosed": "Indemnisation close",
+    "progress": "Progression : {stage}"
+  },
+  "statusDescription": {
+    "claimOpen": "en attente d’autres demandeurs.",
+    "settlementOpenClaimant": "en attente du règlement",
+    "settlementOpenAnyone": "en attente du règlement ; tout le monde peut le déclencher.",
+    "settlementExpired": "période de règlement close ; récupérez vos actifs sous séquestre.",
+    "settlementPending": "réglé ; période de contestation en cours",
+    "payoutOpen": "période d’indemnisation ouverte ; finalisez au plus vite.",
+    "payoutExpired": "période d’indemnisation close ; récupérez vos actifs sous séquestre."
+  },
+  "statusLabel": {
+    "plain": "Statut",
+    "withDescription": "Statut : {description}"
+  },
+  "currentStage": "Étape actuelle : {stage}",
+  "action": {
+    "cancelClaim": "Annuler la demande",
+    "settleAllClaims": "Régler toutes les demandes",
+    "returnTokens": "Récupérer les tokens",
+    "acceptPayout": "Accepter l’indemnisation",
+    "cancelPayoutReturnTokens": "Refuser et récupérer les tokens",
+    "fileClaim": "Déposer la demande"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "Tokens assurés sous séquestre",
+    "claimBondEscrowed": "Caution sous séquestre",
+    "bondFullyRefunded": "Sera intégralement remboursée",
+    "bondNotRefunded": "Ne sera pas remboursée : conditions non remplies",
+    "insuranceScoreToSpend": "Score d’assurance engagé",
+    "effectiveScoreAfterBoosters": "Score effectif avec Boosters : {score}, ",
+    "scoreCommitted": "{percent} du score total engagé",
+    "boostersEscrowed": "Boosters sous séquestre",
+    "loadingBoostersTaken": "Chargement des Boosters pris en compte",
+    "boostersTaken": "Pris en compte : {count}"
+  },
+  "payout": {
+    "ineligible": "Vous n’êtes pas éligible à une indemnisation et votre caution de {bond} USD8 ne sera pas remboursée. Récupérez vos tokens pour clôturer la demande.",
+    "totalUsdValue": "Valeur totale de l’indemnisation (USD)",
+    "loadingValue": "Chargement de la valeur de l’indemnisation",
+    "vsLossValue": "Indemnisation / valeur de la perte",
+    "loadingComparison": "Chargement de la comparaison",
+    "details": "Détail de l’indemnisation",
+    "loadingDetails": "Chargement du détail de l’indemnisation"
+  },
+  "time": {
+    "days_one": "{count} jour",
+    "days_other": "{count} jours",
+    "hours_one": "{count} heure",
+    "hours_other": "{count} heures",
+    "minutes_one": "{count} minute",
+    "minutes_other": "{count} minutes",
+    "minutesLeft": "encore {minutes}",
+    "hoursMinutesLeft": "encore {hours} et {minutes}",
+    "daysHoursLeft": "encore {days} et {hours}",
+    "rangeDays": "{from} à {to} jours",
+    "rangeHours": "{from} à {to} heures",
+    "rangeMinutes": "{from} à {to} minutes"
+  },
+  "submissionStatus": "Statut d’envoi de la demande",
+  "form": {
+    "tokenAmountLabel": "Montant de {symbol}",
+    "tokenAmountHelpLabel": "À propos du montant de tokens assurés",
+    "tokenAmountHelp": "Les {symbol} doivent être en votre possession au plus tard {holding} L’éligibilité repose sur votre solde le plus bas sur cette période : les tokens acquis ensuite ne comptent pas. Si ce solde est nul, vous n’êtes pas éligible et votre caution est perdue.",
+    "tokenAmountInput": "Montant de {symbol} assuré",
+    "availableWithPeriod": "Disponible : {amount}.",
+    "available": "Disponible : {amount}",
+    "claimBond": "Caution",
+    "claimBondHelpLabel": "À propos de la caution",
+    "claimBondHelp": "Une caution anti-spam de 10 USD8 est exigée pour déposer une demande. Elle n’est pas rendue si vous n’êtes pas éligible.",
+    "scoreLabel": "Score d’assurance à utiliser",
+    "scoreHelpLabel": "À propos du score d’assurance à utiliser",
+    "scoreHelp": "Score que vous demandez à utiliser. Le règlement le plafonne à votre score disponible, et il n’est consommé que si vous acceptez une indemnisation éligible.",
+    "boostersLabel": "Boosters à placer sous séquestre",
+    "boostersHelpLabel": "À propos des Boosters à placer sous séquestre",
+    "boostersHelp": "Facultatif. Les Boosters sont soumis à la même condition de détention que le token assuré : ils doivent être en votre possession au plus tard {holding} Seuls les Boosters éligibles augmentent le poids de votre indemnisation, et ils sont brûlés si vous l’acceptez. Les Boosters excédentaires vous sont rendus ; si vous refusez, ils vous sont tous rendus."
+  },
+  "weight": {
+    "summary": "Poids d’indemnisation maximal : {weight}{boosters} — {share} du poids total provisoire sous séquestre ; le poids final dépend du respect de la condition de détention.",
+    "boosters_one": " (dont {count} Booster)",
+    "boosters_other": " (dont {count} Boosters)"
+  }
+}

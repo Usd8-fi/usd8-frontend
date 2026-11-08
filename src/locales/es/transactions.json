@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "Acuñar USD8",
+    "redeemTitle": "Canjear USD8",
+    "closeMint": "Cerrar acuñación de USD8",
+    "closeRedeem": "Cerrar canje de USD8",
+    "waitingForQuote": "Esperando una cotización de canje válida.",
+    "amountInput": "Cantidad de {token}",
+    "output": "{token} que recibes",
+    "mint": "Acuñar",
+    "redeem": "Canjear"
+  },
+  "available": "Disponible: {amount}",
+  "earnings": {
+    "label": "Ganancias en USD8",
+    "availableToWithdraw": "Disponible para retirar: {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "Disponible para retirar",
+    "waitingForClaims": "Período de espera completado; a la espera de que se finalicen las reclamaciones",
+    "cooldown": "Progreso del período de espera",
+    "barLabel": "Progreso del período de espera del retiro"
+  },
+  "pool": {
+    "defaultName": "pool de cobertura",
+    "depositTitle": "Depositar",
+    "withdrawTitle": "Retirar",
+    "withdrawEarningsTitle": "Retirar ganancias",
+    "closeDeposit": "Cerrar depósito en {pool}",
+    "closeWithdraw": "Cerrar retiro de {pool}",
+    "closeWithdrawEarnings": "Cerrar retiro de ganancias de {pool}",
+    "sharesToRedeem": "Participaciones del pool a canjear",
+    "withdrawAvailability": "Participaciones disponibles: {amount}. {cooldown} si no hay reclamaciones pendientes; si las hay, el retiro espera a que se finalicen todas. <link>Más información</link>.",
+    "cooldownWithLength": "Período de espera de {length}",
+    "cooldown": "Período de espera",
+    "depositAvailabilityWithCapacity": "Disponible: {amount}. <capacity>Capacidad restante del pool: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "{symbol} que recibirás (estimado)",
+    "mayDecrease": "Puede reducirse si el pool paga reclamaciones antes de que se liquide tu retiro.",
+    "startCooldown": "Iniciar período de espera",
+    "withdraw": "Retirar",
+    "withdrawEarnings": "Retirar ganancias",
+    "deposit": "Depositar",
+    "balances": {
+      "summary": "{withdrawable}. {cooldown}.",
+      "readyToWithdraw": "Disponible para retirar: {amount} {symbol}",
+      "readyToWithdrawAfterClaims": "Disponible para retirar cuando se finalicen las reclamaciones: {amount} {symbol}",
+      "estimatedForWithdrawal": "Retiro estimado: {amount} {symbol}",
+      "estimatedForWithdrawalAfterClaims": "Retiro estimado cuando se finalicen las reclamaciones: {amount} {symbol}",
+      "inCooldown": "En período de espera: {amount} {symbol}",
+      "inCooldownWithTiming": "En período de espera: {amount} {symbol} ({timing})"
+    }
+  }
+}

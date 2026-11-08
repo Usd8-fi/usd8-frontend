@@ -1,0 +1,1 @@
+var e={connectWallet:`โปรดเชื่อมต่อวอลเล็ตก่อน`};export{e as default};

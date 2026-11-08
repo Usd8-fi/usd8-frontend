@@ -1,6 +1,8 @@
 import { NoticeMessage, useWalletNotice } from './WalletNotice.jsx';
 import { useEffect, useId, useState } from 'react';
+import { useTranslation } from '../lib/i18n.js';
 
+// Identifier compared by callers; the shown text is translated at render.
 export const CONNECT_WALLET_REASON = 'Please connect your wallet first.';
 
 export default function AvailabilityAction({
@@ -11,6 +13,7 @@ export default function AvailabilityAction({
   onClick,
   ...buttonProps
 }) {
+  const { t } = useTranslation();
   const walletNotice = useWalletNotice();
   const walletRequired = unavailableReason === CONNECT_WALLET_REASON && Boolean(walletNotice);
   const warningId = useId();
@@ -44,7 +47,7 @@ export default function AvailabilityAction({
       >
         {children}
       </button>
-      {warning ? <NoticeMessage key={attempt} id={warningId} message={warning} trigger={trigger} onDismiss={() => setWarning('')} /> : null}
+      {warning ? <NoticeMessage key={attempt} id={warningId} message={warning === CONNECT_WALLET_REASON ? t('availability.connectWallet') : warning} trigger={trigger} onDismiss={() => setWarning('')} /> : null}
     </span>
   );
 }

@@ -1,0 +1,1 @@
+var e={finality:{explanation:`Kesinleşmiş blok talep son tarihini geçtiğinde uzlaştırma başlayabilir.`,heads:`Güncel blok {latest} · Kesinleşmiş blok {finalized}`,readyToSettle:`Uzlaştırmaya hazır`,minutesToGo:`yaklaşık {minutes} dk kaldı`}};export{e as default};

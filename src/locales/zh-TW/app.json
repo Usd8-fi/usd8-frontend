@@ -1,0 +1,154 @@
+{
+  "wallet": {
+    "connectUnavailable": "尚未設定VITE_REOWN_PROJECT_ID，目前無法連接錢包。",
+    "connectFailed": "錢包連接失敗。",
+    "loadFailed": "無法載入錢包，請再試一次。",
+    "detailsUnavailable": "無法開啟錢包詳細資訊。",
+    "chainName": "鏈ID {chainId}",
+    "scopeChanged": "錢包帳戶或網路已變更，請確認目前狀態後再試一次。",
+    "accountOrNetworkChanged": "錢包帳戶或網路已變更。"
+  },
+  "network": {
+    "notDeployedOn": "USD8尚未部署在{network}上。",
+    "notDeployedHere": "USD8尚未部署在這個網路上。",
+    "notDeployedSelected": "USD8尚未部署在所選網路上。"
+  },
+  "score": {
+    "loadFailed": "無法載入保險積分，請重試以取得你的可用積分。",
+    "refreshFailed": "無法更新保險積分，請重試以更新你的可用積分。",
+    "unavailableForClaim": "目前無法取得保險積分，請先重新載入再申請理賠。",
+    "retry": "重新載入積分"
+  },
+  "data": {
+    "someUnavailable": "部分資料暫時無法取得，請重試以更新。",
+    "someBalancesUnavailable": "部分餘額或協議資料無法更新，請重試。",
+    "refreshUnavailable": "請先重新載入無法取得的資料再繼續。"
+  },
+  "transaction": {
+    "cancelled": "你已在錢包中取消交易。",
+    "submitted": "交易已送出：{hash}",
+    "confirmationUnknown": "交易已送出，但無法確認是否已上鏈。重試前請先查看交易狀態。",
+    "reverted": "交易執行失敗，狀態已還原。",
+    "failed": "交易失敗。",
+    "confirmed": "交易已確認。",
+    "confirmedRefreshFailed": "{status}交易已確認，但無法更新餘額。",
+    "retryRefresh": "重試更新",
+    "statusLabel": "交易狀態",
+    "inProgress": "已有一筆交易正在處理中。"
+  },
+  "pool": {
+    "noneConfigured": "這個網路尚未設定承保池。",
+    "fallbackName": "承保池",
+    "depositPositive": "存入金額必須大於零。",
+    "approveAsset": "請在錢包中授權{symbol}。",
+    "confirmDeposit": "請在錢包中確認存入承保池。",
+    "depositConfirmed": "已在{network}上確認存入。",
+    "sharePositive": "請輸入大於零的份額。",
+    "shareBalanceChanged": "你的承保池份額餘額已變動，請重新載入金額後再試一次。",
+    "confirmCooldown": "請在錢包中確認冷卻申請。",
+    "cooldownStarted": "冷卻期已開始。這部分資產會停止產生收益；若承保池在你退出結算前給付理賠，金額可能會減少。",
+    "completeWithdrawal": "請在錢包中確認提領冷卻期已滿的資產。",
+    "withdrawalCompleted": "已在{network}上完成提領。",
+    "confirmRewardClaim": "請在錢包中確認領取USD8收益。",
+    "rewardsClaimed": "已在{network}上領取收益。"
+  },
+  "usd8": {
+    "redeemQuoteFailed": "無法載入贖回報價，請關閉視窗後重新開啟再試一次。",
+    "mintPositive": "鑄造金額必須大於零。",
+    "redemptionPositive": "贖回金額必須大於零。",
+    "redeemQuoteChanged": "贖回報價已變動，請確認更新後的可取得金額，再重新送出。",
+    "confirmRedemption": "請在錢包中確認贖回USD8。",
+    "redemptionConfirmed": "已在{network}上確認贖回。",
+    "approveUsdc": "請在錢包中授權USDC。",
+    "confirmMint": "請在錢包中確認鑄造USD8。",
+    "mintConfirmed": "已在{network}上確認鑄造。"
+  },
+  "claim": {
+    "loadingDetails": "正在載入理賠詳情…",
+    "statusLabel": "理賠申請狀態",
+    "loadingPayout": "正在載入附有證明的理賠金明細。",
+    "payoutUnavailable": "目前無法取得理賠金明細。",
+    "incidentLoading": "理賠事件詳情仍在載入中，請重新整理後再申請理賠。",
+    "holdingWindowUnavailable": "目前無法取得持有期間，請重新整理後再申請理賠。",
+    "tokenNotEnabledOn": "{symbol}在{network}上尚未開放理賠。",
+    "tokenNotEnabledOnSelected": "{symbol}在所選網路上尚未開放理賠。",
+    "preparationInProgress": "正在準備理賠申請。",
+    "verificationNotConfigured": "尚未設定理賠驗證服務。",
+    "checkingRequirements": "正在檢查目前的理賠事件與申請條件。",
+    "tokenNotEnabled": "這個代幣在所選網路上尚未開放理賠。",
+    "tokenNoLongerEnabled": "{symbol}在{network}上已不再受理新的理賠申請。",
+    "invalidBoosterAmount": "請輸入有效的加成卡數量。",
+    "insuredAmountPositive": "受保代幣數量必須大於零。",
+    "scorePositive": "要使用的保險積分必須大於零。",
+    "incidentChanged": "目前的理賠事件已變動，請重新整理事件詳情後再申請理賠。",
+    "insufficientUsd8ForAmountAndBond": "USD8餘額不足以同時支應申請理賠的數量與理賠保證金。",
+    "insufficientUsd8ForBond": "USD8餘額不足以支付理賠保證金。",
+    "verifyingIncident": "正在TEE中驗證理賠事件。第一筆理賠可能需要幾分鐘，請耐心等候。",
+    "checkingPriceDrop": "正在檢查是否有符合條件的價格下跌。",
+    "approveToken": "請在錢包中授權代幣。",
+    "boostersDisabled": "目前理賠不開放使用加成卡。",
+    "insufficientBoosters": "加成卡數量不足。",
+    "approveBoosters": "請在錢包中授權加成卡。",
+    "checkingBeforeFiling": "送出理賠前，正在檢查理賠事件。",
+    "confirmClaim": "請在錢包中確認理賠申請。",
+    "claimConfirmed": "已在{network}上確認理賠申請。",
+    "stepFailed": {
+      "requirements": "理賠條件檢查失敗",
+      "tokenApproval": "代幣授權失敗",
+      "boosterApproval": "加成卡授權失敗",
+      "verification": "理賠驗證失敗",
+      "submission": "理賠交易失敗"
+    },
+    "stepConfirmationUnavailable": {
+      "requirements": "無法確認理賠條件檢查結果",
+      "tokenApproval": "無法確認代幣授權結果",
+      "boosterApproval": "無法確認加成卡授權結果",
+      "verification": "無法確認理賠驗證結果",
+      "submission": "無法確認理賠交易結果"
+    },
+    "stepReason": "{step}：{reason}",
+    "tryAgain": "請再試一次。",
+    "verificationUnreachable": "無法連上理賠驗證服務，請檢查網路連線後再試一次。",
+    "blockchainUnreachable": "無法連上區塊鏈，請檢查網路連線後再試一次。",
+    "approvalConfirmed": {
+      "token": "代幣授權已確認。",
+      "booster": "加成卡授權已確認。"
+    },
+    "noClaimSubmitted": "未送出任何理賠交易。",
+    "alreadyResolved": "這筆理賠已處理完畢。",
+    "changedWhilePayoutLoading": "載入理賠金明細期間，錢包帳戶或理賠已變動。",
+    "cancel": {
+      "noUnresolved": "這個帳戶已沒有可撤銷的未結案理賠。",
+      "changed": "目前的理賠已變動，撤銷前請先查看最新的理賠內容。",
+      "notCancellable": "這筆理賠已無法撤銷，請查看它目前所處的階段。",
+      "confirm": "請在錢包中確認撤銷理賠。",
+      "failed": "撤銷理賠失敗。"
+    },
+    "settle": {
+      "stateChanged": "準備結算期間，理賠事件的結算狀態已變動。",
+      "preparing": "正在準備TEE結算，可能需要幾分鐘。",
+      "confirm": "請在錢包中確認理賠結算。",
+      "confirmed": "已在{network}上確認結算。",
+      "failed": "理賠結算失敗。"
+    },
+    "finalize": {
+      "noUnresolved": "這個帳戶已沒有待確認的未結案理賠。",
+      "changed": "載入理賠金明細期間，目前的理賠已變動，請查看最新理賠後再試一次。",
+      "payoutStateChanged": "載入明細期間，理賠金狀態已變動，請查看最新理賠後再試一次。",
+      "notInSettlement": "此結算結果不包含這筆理賠。",
+      "boosterExceedsEscrow": "結算中的加成卡數量超過這筆理賠託管的數量。",
+      "confirmAccept": "請在錢包中確認接受理賠金。",
+      "confirmReturn": "請在錢包中確認取回代幣。",
+      "failed": "確認理賠金失敗。",
+      "errors": {
+        "FinalizeNotOpen": "尚未開放領取理賠金。請重新整理理賠狀態，查看理賠金領取期或代幣取回期。",
+        "InvalidProof": "結算證明無效，請重新整理理賠金明細後再試一次。",
+        "EligibleExceedsEscrow": "結算中的合格數量超過已託管的代幣或加成卡，請重新整理理賠金明細後再試一次。",
+        "InvalidBoostedScore": "結算中的理賠權重與合格加成卡不符，請重新整理理賠金明細後再試一次。",
+        "UnauthorizedClaim": "目前的錢包無權確認這筆理賠，請檢查已連接的帳戶並重新整理。",
+        "ClaimAlreadyResolved": "這筆理賠已處理完畢，請重新整理理賠狀態。",
+        "PayoutCapExceeded": "理賠金超過承保池剩餘的可給付額度，請重新整理理賠金明細後再試一次。"
+      }
+    }
+  }
+}

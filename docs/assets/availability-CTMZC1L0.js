@@ -1,0 +1,1 @@
+var e={connectWallet:`先にウォレットを接続してください。`};export{e as default};

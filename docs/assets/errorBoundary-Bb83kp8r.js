@@ -1,0 +1,1 @@
+var e={crash:{message:`Đã xảy ra lỗi khi hiển thị trang này.`,reload:`Tải lại`}};export{e as default};

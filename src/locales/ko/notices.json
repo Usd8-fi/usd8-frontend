@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "비공개 베타 안내",
+    "message": "<strong>USD8 비공개 베타에 오신 것을 환영합니다.</strong> 비공개 베타 사용자는 USD8 보유분에 대해 보험 점수 적립률이 300%(3배)로 높아지며, 베타 종료 시 부스터 3개를 받습니다. 피드백이나 문제가 있으면 <link>Telegram 그룹</link>에 남겨 주세요."
+  },
+  "wallet": {
+    "defaultLabel": "알림",
+    "viewTransaction": "트랜잭션 보기",
+    "dismissWallet": "지갑 알림 닫기",
+    "dismiss": "알림 닫기",
+    "connectRequired": {
+      "label": "지갑 연결 필요",
+      "message": "계속하려면 지갑을 연결하세요.",
+      "action": "지갑 연결"
+    }
+  }
+}

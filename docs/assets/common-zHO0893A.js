@@ -1,0 +1,1 @@
+var e={language:`زبان`,metrics:{apy:`بازده سالانه`,tvl:`ارزش کل قفل‌شده`,window7D:`7 روز`,window30D:`30 روز`,apySuffix:` بازده سالانه`,windowApy:`بازده سالانه ({window})`},pools:{wsteth:`استخر پوشش wstETH`,usd8:`استخر پوشش USD8`,msloss:`استخر پوشش msLOSS`}};export{e as default};

@@ -1,0 +1,121 @@
+{
+  "header": {
+    "homeLabel": "USD8ホーム",
+    "beta": "ベータ",
+    "switchNetwork": "{network}に切り替え",
+    "retryData": "データを再取得"
+  },
+  "wallet": {
+    "connect": "ウォレットを接続",
+    "connecting": "接続中…",
+    "manageLabel": "{address}のウォレットを管理"
+  },
+  "footer": {
+    "homeLabel": "USD8ホーム（フッター）",
+    "navLabel": "フッター",
+    "docs": "ドキュメント",
+    "auditReport": "監査レポート",
+    "addresses": "アドレス一覧",
+    "timelockQueues": "タイムロックキュー",
+    "faqs": "よくある質問",
+    "checkBoosters": "ブースターを確認",
+    "transparency": "透明性",
+    "contacts": "お問い合わせ",
+    "legal": "法的情報",
+    "cookieSettings": "Cookie設定",
+    "openSource": "すべてのコードをオープンソースで公開",
+    "openSourceWithDataTime": "すべてのコードをオープンソースで公開。{time}時点のデータ"
+  },
+  "score": {
+    "title": "無料の保険スコア",
+    "intro": "USD8またはsUSD8を保有するだけで、ブロックごとに保険スコアを無料で獲得できます。",
+    "total": "あなたの保険スコア",
+    "totalHelpLabel": "保険スコア合計について",
+    "totalHelp": "すべての保有資産で獲得した保険スコアの合計です。Ethereumのブロックがファイナライズされるまで、スコアの反映が13〜19分ほど遅れることがあります。",
+    "loading": "保険スコアを読み込み中",
+    "cooldownIn": "+{amount}が{duration}後に利用可能",
+    "cooldownAfterHolding": "+{amount}が保有期間の経過後に利用可能",
+    "holdingPeriod": "所定の保有期間"
+  },
+  "asset": {
+    "insured": "保険対象",
+    "insuredValue": "対象（上限あり）",
+    "coverageHelpLabel": "補償上限について",
+    "coverageHelp": "補償額は、カバープールで利用可能な資金の範囲内に限られます。",
+    "scoreRate": "スコア獲得レート",
+    "scoreRateValue": "1 {unit}あたり{rate}/日",
+    "scoreRateLoading": "スコア獲得レートを読み込み中",
+    "scoreRateHelpLabel": "スコア獲得レートについて",
+    "scoreRateHelp": "1 {unit}保有するごとに、1日あたり{rate}スコアを獲得できます。スコアはブロックごとに付与されます。",
+    "scoreRateHelpPending": "1 {unit}保有するごとに1日あたり獲得できるスコアです。スコアはブロックごとに付与されます。",
+    "balance": "あなたの残高",
+    "balanceLoading": "ウォレット残高を読み込み中",
+    "apyHelpLabel": "{title}の年利について",
+    "apyLoading": "年利を読み込み中",
+    "scoreEarned": "獲得スコア"
+  },
+  "usd8": {
+    "flag": "3倍（プライベートベータ限定）",
+    "mint": "ミント",
+    "redeem": "償還"
+  },
+  "susd8": {
+    "title": "sUSD8 Savings USD8（Morpho）",
+    "balance": "あなたの預け入れ（USD8）",
+    "apyHelp": "USD8のトレジャリー利回りからUSD8で支払われます。USD8を裏付けるUSDCをDeFiで運用して利回りを得て、その一部をsUSD8ボールトに分配します。",
+    "yieldTarget": "sUSD8ボールト",
+    "comingSoon": "近日公開"
+  },
+  "claims": {
+    "title": "保険金の請求",
+    "intro": "保険対象トークンが原資産に対して20%を超えて下落した場合、保険スコアを使って保険金を請求できます。",
+    "available": "利用可能なスコア",
+    "availableHelpLabel": "利用可能なスコアについて",
+    "availableHelp": "スコアは獲得から{duration}後に利用可能になります。請求にすでに使用したスコアは差し引かれます。"
+  },
+  "coverPools": {
+    "title": "カバープール",
+    "helpLabel": "カバープールについて",
+    "help": "プールの対象トークン（例：wstETH）を預け入れると、USD8のトレジャリー利回りを原資とする利回りをUSD8で受け取れます。その代わりに、プールは保険対象トークンを補償します。いずれかが20%を超えて下落してインシデントが開始されると、プールの資産から有効な請求への支払いが行われます（1インシデントあたりの上限はプールの一定割合）。引き出しには7日間のクールダウンがあり、引き出し待ちの資産も引き続き請求の補償に充てられます。",
+    "warning": "カバープールに預け入れると、保険対象トークンを補償しながら利回りを得られます。年利が高くなることもありますが、保険対象トークンに損失が発生した場合、預け入れた資産が請求の支払いに使われる可能性があります。<link>リスク</link>を十分に理解したうえでご利用ください。"
+  },
+  "whiteHat": {
+    "title": "ホワイトハット・エコノミー",
+    "message": "ホワイトハット・エコノミーは、請求プロセスを通じて取得した保険対象トークンをUSD8が一定量保有した時点で開始します。<link>詳しくはこちら</link>"
+  },
+  "pool": {
+    "apyWindowLabel": "{pool}の平均年利の期間",
+    "apyHelpLabel": "{pool}の{days}日平均年利について",
+    "apyHelpSource": "USD8のトレジャリー利回りからUSD8で支払われます。すべてのUSD8を裏付けるUSDCをDeFiで運用して利回りを得て、その一部をカバープールに分配します。",
+    "apyHelpWhyHigh": "プールはUSD8の供給量に比べて小規模に抑えられているため、その利回りをずっと少ない預け入れで分け合うことになり、年利が高くなることがあります。",
+    "yieldTarget": "カバープール",
+    "loading": "プールのデータを読み込み中",
+    "filled": "プール充足率",
+    "filledHelpLabel": "{pool}の充足率について",
+    "filledHelpUncapped": "このプールには預け入れ上限がありません。",
+    "filledHelp": "預け入れ上限に対して、このプールがどの程度埋まっているかを示します。100%になると、誰かが引き出すまで新たな預け入れはできません。",
+    "capacityLoading": "プールの充足率を読み込み中",
+    "uncapped": "上限なし",
+    "uncappedLabel": "{assets} {asset}預け入れ済み（上限なし）",
+    "capacityFilledLabel": "充足率{percent}%",
+    "deposit": "あなたの預け入れ",
+    "depositLoading": "あなたの預け入れ額を読み込み中",
+    "earnings": "あなたの収益",
+    "earningsHelpLabel": "{pool}での収益について",
+    "earningsHelp": "収益は{asset}ではなくUSD8で支払われます。保険の請求に充てられることはなく、いつでも引き出せます。",
+    "actions": {
+      "deposit": "預け入れ",
+      "withdraw": "引き出し",
+      "claimReward": "収益を引き出す"
+    }
+  },
+  "yieldIllustration": {
+    "label": "USD8を裏付けるUSDCのトレジャリー利回りは、{target}に分配されます",
+    "backing": "全USD8の裏付け資産",
+    "defiYield": "DeFi利回り",
+    "viaTreasury": "USD8トレジャリー経由",
+    "highApy": "高年利 ↑",
+    "largeSupply": "大きな供給量",
+    "smallPool": "上限付きの小さなプール"
+  }
+}

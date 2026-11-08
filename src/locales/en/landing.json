@@ -1,0 +1,121 @@
+{
+  "header": {
+    "homeLabel": "USD8 home",
+    "beta": "beta",
+    "switchNetwork": "Switch to {network}",
+    "retryData": "Retry Data"
+  },
+  "wallet": {
+    "connect": "Connect Wallet",
+    "connecting": "Connecting...",
+    "manageLabel": "Manage Wallet {address}"
+  },
+  "footer": {
+    "homeLabel": "USD8 footer home",
+    "navLabel": "Footer",
+    "docs": "Docs",
+    "auditReport": "Audit Report",
+    "addresses": "Addresses",
+    "timelockQueues": "Timelock Queues",
+    "faqs": "FAQs",
+    "checkBoosters": "Check Boosters",
+    "transparency": "Transparency",
+    "contacts": "Contacts",
+    "legal": "Legal",
+    "cookieSettings": "Cookie Settings",
+    "openSource": "All code open sourced",
+    "openSourceWithDataTime": "All code open sourced. Data as of {time}"
+  },
+  "score": {
+    "title": "Free Insurance Score",
+    "intro": "Earn free insurance score every block by holding USD8 or sUSD8.",
+    "total": "Your Insurance Score",
+    "totalHelpLabel": "About total insurance score",
+    "totalHelp": "Your total insurance score earned across all holdings. Score updates may be delayed by around 13–19 minutes while Ethereum blocks finalize.",
+    "loading": "Loading insurance score",
+    "cooldownIn": "+{amount} available in {duration}",
+    "cooldownAfterHolding": "+{amount} available after the holding period",
+    "holdingPeriod": "the holding period"
+  },
+  "asset": {
+    "insured": "Insured",
+    "insuredValue": "YES with limits",
+    "coverageHelpLabel": "About coverage limits",
+    "coverageHelp": "Coverage is subject to the amount available in the cover pools.",
+    "scoreRate": "Score Rate",
+    "scoreRateValue": "{rate} per {unit} per day",
+    "scoreRateLoading": "Loading score rate",
+    "scoreRateHelpLabel": "About score rate",
+    "scoreRateHelp": "You get {rate} score per day for every {unit} you hold. Rewarded every block.",
+    "scoreRateHelpPending": "Score earned per day for every {unit} you hold. Rewarded every block.",
+    "balance": "Your Balance",
+    "balanceLoading": "Loading wallet balance",
+    "apyHelpLabel": "About APY for {title}",
+    "apyLoading": "Loading APY",
+    "scoreEarned": "Score Earned"
+  },
+  "usd8": {
+    "flag": "3x for private beta",
+    "mint": "Mint",
+    "redeem": "Redeem"
+  },
+  "susd8": {
+    "title": "sUSD8 Savings USD8 (Morpho)",
+    "balance": "Your Deposit (USD8)",
+    "apyHelp": "Paid in USD8 from USD8's treasury yield: the USDC backing USD8 earns DeFi yield, and part of it goes to the sUSD8 vault.",
+    "yieldTarget": "sUSD8 vault",
+    "comingSoon": "Coming Soon"
+  },
+  "claims": {
+    "title": "File Insurance Claims",
+    "intro": "Use your insurance score to file a claim if an insured token drops more than 20% against its underlying asset.",
+    "available": "Your Available Score",
+    "availableHelpLabel": "About available score",
+    "availableHelp": "Score becomes available to use after {duration}, minus any score already spent on claims."
+  },
+  "coverPools": {
+    "title": "Cover Pools",
+    "helpLabel": "About Cover Pools",
+    "help": "Deposit a pool's token (e.g. wstETH) to earn yield in USD8, paid from USD8's treasury yield. In return, the pool backs insured tokens: if one drops more than 20% and an incident opens, pool assets pay valid claims, up to a capped share of the pool per incident. Withdrawals have a 7-day cooldown, and assets waiting to withdraw still cover claims.",
+    "warning": "Deposit into a Cover Pool to back insured tokens and earn yield. APYs can be high, but be aware: if an insured token suffers a loss, pool deposits may be used to pay claims. Make sure you understand the <link>risks involved</link>."
+  },
+  "whiteHat": {
+    "title": "White Hat Economy",
+    "message": "The White Hat Economy will launch once USD8 holds a meaningful amount of insured tokens acquired through the claim process. <link>Learn More</link>."
+  },
+  "pool": {
+    "apyWindowLabel": "APY window for {pool}",
+    "apyHelpLabel": "About {days}-day APY for {pool}",
+    "apyHelpSource": "Paid in USD8 from USD8's treasury yield: the USDC backing all USD8 earns DeFi yield, and part of it goes to cover pools.",
+    "apyHelpWhyHigh": "It can be high because pools are kept small compared with USD8's supply, so that yield is shared by far fewer deposits.",
+    "yieldTarget": "Cover pool",
+    "loading": "Loading pool data",
+    "filled": "Pool Filled",
+    "filledHelpLabel": "About how full {pool} is",
+    "filledHelpUncapped": "This pool has no deposit cap.",
+    "filledHelp": "How full this pool is against its deposit cap. At 100% it stops accepting deposits until someone withdraws.",
+    "capacityLoading": "Loading pool capacity",
+    "uncapped": "Uncapped",
+    "uncappedLabel": "{assets} {asset} deposited, uncapped",
+    "capacityFilledLabel": "{percent}% capacity filled",
+    "deposit": "Your Deposit",
+    "depositLoading": "Loading your deposit",
+    "earnings": "Your Earnings",
+    "earningsHelpLabel": "About your earnings in {pool}",
+    "earningsHelp": "Earnings are paid in USD8, not {asset}. Earnings are not exposed to insurance claims and can be withdrawn at any time.",
+    "actions": {
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "claimReward": "Withdraw Earnings"
+    }
+  },
+  "yieldIllustration": {
+    "label": "Treasury yield from the USDC backing USD8 flows to the {target}",
+    "backing": "backing all USD8",
+    "defiYield": "DeFi yield",
+    "viaTreasury": "via USD8 Treasury",
+    "highApy": "High APY ↑",
+    "largeSupply": "large supply",
+    "smallPool": "small, capped pool"
+  }
+}

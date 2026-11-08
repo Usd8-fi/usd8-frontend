@@ -1,0 +1,1 @@
+var e={codeLabel:`Code d’invitation à la bêta privée`,invalidCode:`Code d’invitation invalide.`,submit:`Accéder à la bêta`,help:`Obtenez un code sur notre <telegram>Telegram</telegram> ou en <x>message privé sur X</x>`};export{e as default};

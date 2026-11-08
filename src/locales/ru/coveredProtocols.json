@@ -1,0 +1,25 @@
+{
+  "tableLabel": "Застрахованные токены",
+  "columns": {
+    "insuredToken": "Застрахованный токен",
+    "insuredTokenHelpLabel": "О застрахованном токене",
+    "insuredTokenHelp": "Актив, по которому можно подать заявку, если произошёл покрываемый инцидент с убытком. Действуют правила подачи заявок и учитываются страховые баллы.",
+    "maxCoverage": "Макс. покрытие",
+    "maxCoverageHelpLabel": "О максимальном покрытии",
+    "maxCoverageHelp": "Максимальное возмещение по каждому токену из списка — текущее значение в контракте. Фактическая выплата зависит от страховых баллов пользователя и лимитов пулов покрытия.",
+    "claim": "Заявка"
+  },
+  "openTokenSite": "Открыть {token} на сайте протокола",
+  "actions": {
+    "fileClaim": "Подать заявку",
+    "fileClaimFor": "Подать заявку по {token}",
+    "actionFor": "{action}: {token}",
+    "claimOpen": "Приём заявок",
+    "settleClaims": "Урегулировать",
+    "settleAndDispute": "Окно оспаривания",
+    "finalisePayout": "Завершить выплату",
+    "minutesLeft": "{label} (ещё {minutes} мин)",
+    "daysHoursLeft": "{label} (ещё {days} дн. {hours} ч)"
+  },
+  "simulateClaim": "Смоделировать заявку"
+}

@@ -1,0 +1,1 @@
+var e={finality:{explanation:`Le règlement peut commencer dès que le bloc finalisé a dépassé la date limite de dépôt des demandes.`,heads:`Bloc actuel {latest} · Bloc finalisé {finalized}`,readyToSettle:`Prêt pour le règlement`,minutesToGo:`encore {minutes}\xA0min environ`}};export{e as default};

@@ -778,3 +778,64 @@ body {
 :where(.content) img {
     height: auto;
 }
+
+/* Docs language menu in the top bar. */
+.docs-language-select {
+    align-self: center;
+    margin-left: auto;
+    margin-right: 8px;
+    padding: 2px 6px;
+    border: 1px solid var(--sidebar-spacer, rgba(255, 255, 255, 0.2));
+    border-radius: 0;
+    background: transparent;
+    color: var(--icons, inherit);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.docs-language-select option { color: #111; }
+
+/* Blex Mono for Latin letters, digits and symbols only, never the space or
+   sentence punctuation (. , : ;):
+   Arabic, Persian and Thai pages use it so those scripts and their word
+   spaces come from a proportional script font (Blex's monospace space
+   leaves wide gaps between Arabic/Thai words). */
+@font-face {
+    font-family: "Blex Latin";
+    src: url("../../../assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 200;
+    font-display: swap;
+    unicode-range: U+0021-002B, U+002D, U+002F-0039, U+003C-007E, U+00A1-02FF, U+2010-2027, U+2030-205E, U+20A0-20CF, U+2100-23FF, U+25A0-25FF;
+}
+
+@font-face {
+    font-family: "Blex Latin";
+    src: url("../../../assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0021-002B, U+002D, U+002F-0039, U+003C-007E, U+00A1-02FF, U+2010-2027, U+2030-205E, U+20A0-20CF, U+2100-23FF, U+25A0-25FF;
+}
+
+@font-face {
+    font-family: "Blex Latin";
+    src: url("../../../assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    unicode-range: U+0021-002B, U+002D, U+002F-0039, U+003C-007E, U+00A1-02FF, U+2010-2027, U+2030-205E, U+20A0-20CF, U+2100-23FF, U+25A0-25FF;
+}
+
+/* Arabic, Persian, Thai: Blex Mono lacks these scripts, and the monospace
+   fallback stretches them; put a proportional script font next in the stack
+   and drop letter spacing (it breaks Arabic joining and Thai marks).
+   Code blocks and the FontAwesome social icons keep their own fonts. */
+html:is([lang="ar"], [lang="fa"]) :not(code, kbd, pre, code *, pre *, .sidebar-telegram > span, .sidebar-github > span) {
+    font-family: "Blex Latin", "SF Arabic", "Geeza Pro", "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif !important;
+    letter-spacing: 0 !important;
+}
+html[lang="th"] :not(code, kbd, pre, code *, pre *, .sidebar-telegram > span, .sidebar-github > span) {
+    font-family: "Blex Latin", "Thonburi", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif !important;
+    letter-spacing: 0 !important;
+}

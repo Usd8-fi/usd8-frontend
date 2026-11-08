@@ -1,0 +1,31 @@
+{
+  "title": "模拟理赔",
+  "close": "关闭理赔模拟器",
+  "intro": "根据实时承保池规模和价格估算你的赔付金额。结算时会在TEE中重新计算全部数据，最终赔付可能有所不同。",
+  "sliderLabel": "{label}滑块",
+  "insuredToken": {
+    "label": "受保代币",
+    "helpLabel": "关于受保代币",
+    "help": "你申请理赔的代币。其最高赔付比例决定损失上限；持有同一代币的承保池不参与该代币理赔事件的赔付。"
+  },
+  "lossValue": {
+    "label": "损失价值（USD）",
+    "helpLabel": "关于损失价值（USD）",
+    "help": "你申请理赔的受保代币价值，按下跌前7天均价计算。损失上限为该价值的一定比例。"
+  },
+  "scoreWeight": {
+    "label": "你的积分权重",
+    "helpLabel": "关于你的积分权重",
+    "help": "你的保险积分（含加成卡）占同一理赔事件中所有申请人积分的比例。"
+  },
+  "results": {
+    "estimatedReimbursement": "预计赔付",
+    "coverPoolBudget": "承保池预算",
+    "scoreShare": "A. 积分份额（{percent}%）",
+    "lossCap": "B. 损失上限（{percent}%）",
+    "payoutFormula": "赔付 = min(A, B)",
+    "paidFromCoverPools": "由承保池支付",
+    "excluded": "已排除",
+    "noPoolData": "暂无承保池数据。"
+  }
+}

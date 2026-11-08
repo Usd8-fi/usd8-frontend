@@ -1,0 +1,1 @@
+var e={finality:{explanation:`เริ่มสรุปผลได้เมื่อบล็อกที่ยืนยันสมบูรณ์แล้ว (finalized) ผ่านกำหนดปิดรับเคลม`,heads:`บล็อกล่าสุด {latest} · บล็อกที่ยืนยันสมบูรณ์ {finalized}`,readyToSettle:`พร้อมสรุปผล`,minutesToGo:`อีกประมาณ {minutes} นาที`}};export{e as default};

@@ -1,0 +1,1 @@
+var e={crash:{message:`Terjadi kesalahan saat menampilkan halaman ini.`,reload:`Muat Ulang`}};export{e as default};

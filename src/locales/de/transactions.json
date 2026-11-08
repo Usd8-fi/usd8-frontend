@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "USD8 minten",
+    "redeemTitle": "USD8 einlösen",
+    "closeMint": "Fenster „USD8 minten“ schließen",
+    "closeRedeem": "Fenster „USD8 einlösen“ schließen",
+    "waitingForQuote": "Warten auf einen gültigen Einlösekurs.",
+    "amountInput": "{token}-Betrag",
+    "output": "Sie erhalten ({token})",
+    "mint": "Minten",
+    "redeem": "Einlösen"
+  },
+  "available": "{amount} verfügbar",
+  "earnings": {
+    "label": "USD8-Erträge",
+    "availableToWithdraw": "{amount} USD8 abhebbar"
+  },
+  "exitProgress": {
+    "ready": "Bereit zum Abheben",
+    "waitingForClaims": "Wartezeit abgelaufen – warten auf den Abschluss der Anträge",
+    "cooldown": "Fortschritt der Wartezeit",
+    "barLabel": "Fortschritt der Wartezeit bis zur Abhebung"
+  },
+  "pool": {
+    "defaultName": "Cover Pool",
+    "depositTitle": "Einzahlen",
+    "withdrawTitle": "Abheben",
+    "withdrawEarningsTitle": "Erträge abheben",
+    "closeDeposit": "Einzahlung in den {pool} schließen",
+    "closeWithdraw": "Abhebung aus dem {pool} schließen",
+    "closeWithdrawEarnings": "Ertragsabhebung aus dem {pool} schließen",
+    "sharesToRedeem": "Einzulösende Pool-Anteile",
+    "withdrawAvailability": "{amount} Anteile verfügbar. {cooldown}, sofern keine Anträge offen sind – andernfalls erst, wenn alle Anträge abgeschlossen sind. <link>Mehr erfahren</link>.",
+    "cooldownWithLength": "{length} Wartezeit",
+    "cooldown": "Wartezeit",
+    "depositAvailabilityWithCapacity": "{amount} verfügbar. <capacity>Freie Pool-Kapazität: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "Voraussichtlich erhalten ({symbol})",
+    "mayDecrease": "Kann sinken, falls der Pool Erstattungen auszahlt, bevor Ihre Abhebung abgewickelt ist.",
+    "startCooldown": "Wartezeit starten",
+    "withdraw": "Abheben",
+    "withdrawEarnings": "Erträge abheben",
+    "deposit": "Einzahlen",
+    "balances": {
+      "summary": "{withdrawable}, {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} abhebbar",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} abhebbar, sobald die Anträge abgeschlossen sind",
+      "estimatedForWithdrawal": "{amount} {symbol} voraussichtlich abhebbar",
+      "estimatedForWithdrawalAfterClaims": "{amount} {symbol} voraussichtlich abhebbar, sobald die Anträge abgeschlossen sind",
+      "inCooldown": "{amount} {symbol} in der Wartezeit",
+      "inCooldownWithTiming": "{amount} {symbol} in der Wartezeit – {timing}"
+    }
+  }
+}

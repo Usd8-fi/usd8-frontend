@@ -1,0 +1,1 @@
+var e={codeLabel:`Kapalı Beta Davet Kodu`,invalidCode:`Geçersiz davet kodu.`,submit:`Betaya Gir`,help:`Kod almak için <telegram>Telegram</telegram> grubumuza ya da <x>X DM</x> üzerinden bize yazın`};export{e as default};

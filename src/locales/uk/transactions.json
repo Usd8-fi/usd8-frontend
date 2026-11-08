@@ -1,0 +1,53 @@
+{
+  "usd8": {
+    "mintTitle": "Випуск USD8",
+    "redeemTitle": "Погашення USD8",
+    "closeMint": "Закрити випуск USD8",
+    "closeRedeem": "Закрити погашення USD8",
+    "waitingForQuote": "Очікуємо дійсне котирування погашення.",
+    "amountInput": "Сума {token}",
+    "output": "До отримання: {token}",
+    "mint": "Випустити",
+    "redeem": "Погасити"
+  },
+  "available": "Доступно: {amount}",
+  "earnings": {
+    "label": "Дохід у USD8",
+    "availableToWithdraw": "Доступно до виведення: {amount} USD8"
+  },
+  "exitProgress": {
+    "ready": "Можна вивести",
+    "waitingForClaims": "Період очікування завершено, чекаємо на завершення заявок",
+    "cooldown": "Перебіг періоду очікування",
+    "barLabel": "Перебіг періоду очікування перед виведенням"
+  },
+  "pool": {
+    "defaultName": "пул покриття",
+    "depositTitle": "Депозит",
+    "withdrawTitle": "Виведення",
+    "withdrawEarningsTitle": "Виведення доходу",
+    "closeDeposit": "Закрити депозит: {pool}",
+    "closeWithdraw": "Закрити виведення: {pool}",
+    "closeWithdrawEarnings": "Закрити виведення доходу: {pool}",
+    "sharesToRedeem": "Частки пулу до погашення",
+    "withdrawAvailability": "Доступно часток: {amount}. Вивести їх можна після {cooldown}, якщо немає незавершених заявок, інакше — після завершення всіх заявок. <link>Докладніше</link>.",
+    "cooldownWithLength": "{length} періоду очікування",
+    "cooldown": "періоду очікування",
+    "depositAvailabilityWithCapacity": "Доступно: {amount}. <capacity>Вільно в пулі: {capacity} {symbol}</capacity>",
+    "estimatedReceived": "Орієнтовно до отримання, {symbol}",
+    "mayDecrease": "Може зменшитися, якщо пул здійснить виплати за заявками до завершення виведення.",
+    "startCooldown": "Запросити виведення",
+    "withdraw": "Вивести",
+    "withdrawEarnings": "Вивести дохід",
+    "deposit": "Внести",
+    "balances": {
+      "summary": "{withdrawable}, {cooldown}.",
+      "readyToWithdraw": "{amount} {symbol} можна вивести",
+      "readyToWithdrawAfterClaims": "{amount} {symbol} можна буде вивести після завершення заявок",
+      "estimatedForWithdrawal": "Орієнтовно {amount} {symbol} до виведення",
+      "estimatedForWithdrawalAfterClaims": "Орієнтовно {amount} {symbol} до виведення після завершення заявок",
+      "inCooldown": "{amount} {symbol} у періоді очікування",
+      "inCooldownWithTiming": "{amount} {symbol} у періоді очікування — {timing}"
+    }
+  }
+}

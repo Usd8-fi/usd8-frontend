@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "关闭理赔状态窗口",
+    "fileClaim": "关闭理赔申请窗口"
+  },
+  "dialogLabel": {
+    "status": "{symbol}理赔状态",
+    "file": "为{symbol}申请理赔"
+  },
+  "title": {
+    "yourClaimStatus": "你的理赔状态",
+    "incidentStatus": "理赔事件状态",
+    "fileClaim": "申请理赔"
+  },
+  "requirement": "{symbol}相对其底层资产须贬值超过20%（按下跌前后相邻两个TWAP价格计算）。<link>了解更多</link>。",
+  "noClaimInIncident": "你没有参与本次理赔事件。申请通道已关闭，但结算无需许可，任何人都可以发起。",
+  "validation": {
+    "noAvailableScore": "你没有可用的保险积分。",
+    "amountExceedsBalance": "{symbol}数量超过了你的可用余额。",
+    "enterAmount": "请输入你要申请理赔的{symbol}数量。",
+    "enterScore": "请输入你要使用的保险积分。"
+  },
+  "holdingRequirement": {
+    "blocks": "须在理赔事件发生前至少{blocks}个区块就已持有。",
+    "unavailable": "须在系统设定的事件前期间内持续持有。暂时无法获取持有期信息，请刷新后再申请理赔。"
+  },
+  "stage": {
+    "claimOpen": "开放申请",
+    "claimClosed": "申请截止",
+    "settle": "结算",
+    "settleOpen": "开放结算",
+    "notSettled": "未结算",
+    "settled": "已结算",
+    "payout": "赔付",
+    "payoutOpen": "开放赔付",
+    "payoutClosed": "赔付截止",
+    "progress": "{stage}进度"
+  },
+  "statusDescription": {
+    "claimOpen": "等待其他人加入本次理赔。",
+    "settlementOpenClaimant": "等待结算",
+    "settlementOpenAnyone": "等待结算，任何人都可以发起结算。",
+    "settlementExpired": "结算窗口已关闭，请取回你的托管资产。",
+    "settlementPending": "已结算，争议期进行中",
+    "payoutOpen": "赔付窗口已开放，请尽快确认。",
+    "payoutExpired": "赔付窗口已关闭，请取回你的托管资产。"
+  },
+  "statusLabel": {
+    "plain": "状态",
+    "withDescription": "状态：{description}"
+  },
+  "currentStage": "当前阶段：{stage}",
+  "action": {
+    "cancelClaim": "撤销理赔",
+    "settleAllClaims": "结算全部理赔",
+    "returnTokens": "取回代币",
+    "acceptPayout": "接受赔付",
+    "cancelPayoutReturnTokens": "放弃赔付并取回代币",
+    "fileClaim": "申请理赔"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "已托管受保代币",
+    "claimBondEscrowed": "已托管理赔保证金",
+    "bondFullyRefunded": "将全额退还",
+    "bondNotRefunded": "不予退还：未满足条件",
+    "insuranceScoreToSpend": "使用的保险积分",
+    "effectiveScoreAfterBoosters": "加成后有效积分{score}，",
+    "scoreCommitted": "占全部已提交积分的{percent}",
+    "boostersEscrowed": "已托管加成卡",
+    "loadingBoostersTaken": "正在加载计入的加成卡",
+    "boostersTaken": "计入{count}张"
+  },
+  "payout": {
+    "ineligible": "你不符合赔付条件，你的{bond} USD8保证金也不予退还。请取回代币以关闭此理赔。",
+    "totalUsdValue": "赔付总价值（USD）",
+    "loadingValue": "正在加载赔付价值",
+    "vsLossValue": "赔付与损失价值对比",
+    "loadingComparison": "正在加载赔付对比",
+    "details": "赔付详情",
+    "loadingDetails": "正在加载赔付详情"
+  },
+  "time": {
+    "days_one": "{count}天",
+    "days_other": "{count}天",
+    "hours_one": "{count}小时",
+    "hours_other": "{count}小时",
+    "minutes_one": "{count}分钟",
+    "minutes_other": "{count}分钟",
+    "minutesLeft": "剩余{minutes}",
+    "hoursMinutesLeft": "剩余{hours}{minutes}",
+    "daysHoursLeft": "剩余{days}{hours}",
+    "rangeDays": "{from}-{to}天",
+    "rangeHours": "{from}-{to}小时",
+    "rangeMinutes": "{from}-{to}分钟"
+  },
+  "submissionStatus": "理赔提交状态",
+  "form": {
+    "tokenAmountLabel": "{symbol}数量",
+    "tokenAmountHelpLabel": "关于受保代币数量",
+    "tokenAmountHelp": "{symbol}的持有要求：{holding}资格按这段期间内你的最低余额计算，之后才买入的代币不计入。若该余额为零，你将不符合条件，理赔保证金也会被没收。",
+    "tokenAmountInput": "受保{symbol}数量",
+    "availableWithPeriod": "可用{amount}。",
+    "available": "可用{amount}",
+    "claimBond": "理赔保证金",
+    "claimBondHelpLabel": "关于理赔保证金",
+    "claimBondHelp": "申请理赔需缴纳10 USD8防滥用保证金。如果你不符合理赔条件，保证金将不予退还。",
+    "scoreLabel": "使用的保险积分",
+    "scoreHelpLabel": "关于使用的保险积分",
+    "scoreHelp": "申请使用的积分数。结算时以你的可用积分为上限，且只有在你接受合格赔付时才会实际扣除。",
+    "boostersLabel": "托管的加成卡",
+    "boostersHelpLabel": "关于托管的加成卡",
+    "boostersHelp": "可选。加成卡的事件前持有要求与受保代币相同：{holding}只有合格的加成卡会提高赔付权重，并在接受赔付时销毁；多余的加成卡会退还。放弃赔付则退还全部加成卡。"
+  },
+  "weight": {
+    "summary": "最高赔付权重：{weight}{boosters}，占当前暂定托管总权重的{share}；最终权重取决于持有资格。",
+    "boosters_one": "（含{count}张加成卡）",
+    "boosters_other": "（含{count}张加成卡）"
+  }
+}

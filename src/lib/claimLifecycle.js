@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 const ZERO_ROOT = `0x${'00'.repeat(32)}`;
 const HOUR_MILLISECONDS = 3_600_000;
 const DAY_MILLISECONDS = 24 * HOUR_MILLISECONDS;
@@ -26,7 +28,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   if (!Number.isFinite(deadline) || !Number.isFinite(phaseWindow)) {
     return {
       state: 'unavailable',
-      stage: 'Claim Open',
+      stage: t('lib.claimStage.claimOpen'),
       stageIndex: 0,
       daysLeft: 0,
       hoursLeft: 0,
@@ -37,7 +39,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   if (!hasRoot && nowMilliseconds <= deadline) {
     return {
       state: 'claim-open',
-      stage: 'Claim Open',
+      stage: t('lib.claimStage.claimOpen'),
       stageIndex: 0,
       ...remainingTimeParts(deadline, nowMilliseconds),
       progressPercent: progressPercent(deadline - phaseWindow, deadline, nowMilliseconds),
@@ -47,7 +49,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   if (!hasRoot && nowMilliseconds <= deadline + phaseWindow) {
     return {
       state: 'settlement-open',
-      stage: 'Settle Open',
+      stage: t('lib.claimStage.settleOpen'),
       stageIndex: 1,
       ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
       progressPercent: progressPercent(deadline, deadline + phaseWindow, nowMilliseconds),
@@ -57,7 +59,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   if (!hasRoot) {
     return {
       state: 'settlement-expired',
-      stage: 'Not Settled',
+      stage: t('lib.claimStage.notSettled'),
       stageIndex: 1,
       ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
       progressPercent: 100,
@@ -67,7 +69,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   if (nowMilliseconds <= deadline) {
     return {
       state: 'settlement-pending',
-      stage: 'Settled',
+      stage: t('lib.claimStage.settled'),
       stageIndex: 1,
       ...remainingTimeParts(deadline, nowMilliseconds),
       progressPercent: progressPercent(deadline - phaseWindow, deadline, nowMilliseconds),
@@ -76,7 +78,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   }
   if (nowMilliseconds <= deadline + phaseWindow) return {
     state: 'payout-open',
-    stage: 'Payout Open',
+    stage: t('lib.claimStage.payoutOpen'),
     stageIndex: 2,
     ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
     progressPercent: progressPercent(deadline, deadline + phaseWindow, nowMilliseconds),
@@ -84,7 +86,7 @@ export function claimLifecycle(incident, nowMilliseconds = Date.now()) {
   };
   return {
     state: 'payout-expired',
-    stage: 'Payout Closed',
+    stage: t('lib.claimStage.payoutClosed'),
     stageIndex: 2,
     ...remainingTimeParts(deadline + phaseWindow, nowMilliseconds),
     progressPercent: 100,

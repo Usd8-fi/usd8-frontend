@@ -1,0 +1,115 @@
+{
+  "duration": {
+    "day_one": "{count} gün",
+    "day_other": "{count} gün",
+    "hour_one": "{count} saat",
+    "hour_other": "{count} saat",
+    "minute_one": "{count} dakika",
+    "minute_other": "{count} dakika",
+    "second_one": "{count} saniye",
+    "second_other": "{count} saniye",
+    "adjective": {
+      "day_one": "{count} günlük",
+      "day_other": "{count} günlük",
+      "hour_one": "{count} saatlik",
+      "hour_other": "{count} saatlik",
+      "minute_one": "{count} dakikalık",
+      "minute_other": "{count} dakikalık",
+      "second_one": "{count} saniyelik",
+      "second_other": "{count} saniyelik"
+    }
+  },
+  "cooldown": {
+    "readyNow": "şimdi çekilebilir",
+    "readyIn": {
+      "day_one": "{count} gün sonra çekilebilir",
+      "day_other": "{count} gün sonra çekilebilir",
+      "hour_one": "{count} saat sonra çekilebilir",
+      "hour_other": "{count} saat sonra çekilebilir",
+      "minute_one": "{count} dakika sonra çekilebilir",
+      "minute_other": "{count} dakika sonra çekilebilir"
+    }
+  },
+  "amount": {
+    "invalidNumber": "Lütfen geçerli bir sayı girin.",
+    "tooManyDecimals": "En fazla {decimals} ondalık basamak kullanın.",
+    "noBalance": {
+      "deposit": "Yatırabileceğiniz {token} bakiyeniz yok.",
+      "startCooldown": "Bekleme süresini başlatmak için kullanılabilir {token} bakiyeniz yok.",
+      "mint": "USD8 basmak için kullanılabilir {token} bakiyeniz yok.",
+      "redeem": "USD8 itfası için kullanılabilir {token} bakiyeniz yok.",
+      "generic": "Bu işlem ({action}) için kullanılabilir {token} bakiyeniz yok."
+    },
+    "invalid": {
+      "deposit": "Yatırmak için geçerli bir {token} tutarı girin.",
+      "startCooldown": "Bekleme süresini başlatmak için geçerli bir {token} tutarı girin.",
+      "mint": "USD8 basmak için geçerli bir {token} tutarı girin.",
+      "redeem": "USD8 itfası için geçerli bir {token} tutarı girin.",
+      "generic": "Bu işlem ({action}) için geçerli bir {token} tutarı girin."
+    },
+    "zero": {
+      "deposit": "Yatırmak için sıfırdan büyük bir {token} tutarı girin.",
+      "startCooldown": "Bekleme süresini başlatmak için sıfırdan büyük bir {token} tutarı girin.",
+      "mint": "USD8 basmak için sıfırdan büyük bir {token} tutarı girin.",
+      "redeem": "USD8 itfası için sıfırdan büyük bir {token} tutarı girin.",
+      "generic": "Bu işlem ({action}) için sıfırdan büyük bir {token} tutarı girin."
+    },
+    "exceedsBalance": "{token} tutarı kullanılabilir bakiyenizi aşıyor."
+  },
+  "pool": {
+    "existingWithdrawalRequest": "Yeni bir çekim başlatmadan önce lütfen devam eden çekim işleminizi tamamlayın.",
+    "withdrawalAmountsUnavailable": "Çekim tutarları alınamadı. Devam etmek için Verileri Yenile'ye tıklayın.",
+    "noEarnings": "Çekilecek kazanç yok.",
+    "depositsPausedForIncident": "#{incident} numaralı sigorta olayı aktif olduğu için yatırma işlemleri geçici olarak durduruldu. Olay sonuçlandıktan sonra tekrar deneyin.",
+    "exceedsCapacity": "Bu tutar teminat havuzunun kalan kapasitesini aşıyor. En fazla {amount} {symbol} yatırabilirsiniz.",
+    "full": "Teminat havuzu dolu; daha fazla {symbol} yatırımı kabul edemiyor.",
+    "waitingForEstimate": "Geçerli bir çekim tahmini bekleniyor.",
+    "waitingForClaims": "Taleplerin sonuçlanması bekleniyor",
+    "noWithdrawal": "Teminat havuzundan henüz çekilebilecek bir tutar yok."
+  },
+  "claimStage": {
+    "claimOpen": "Talep Açık",
+    "settleOpen": "Uzlaştırma Açık",
+    "notSettled": "Uzlaştırılmadı",
+    "settled": "Uzlaştırıldı",
+    "payoutOpen": "Ödeme Açık",
+    "payoutClosed": "Ödeme Kapandı"
+  },
+  "errors": {
+    "rpcRead": "RPC hatası: Blokzincir verileri okunamadı. RPC isteği başarısız oldu veya zaman aşımına uğradı. Lütfen tekrar deneyin.",
+    "dataUnavailable": "Veri alınamadı"
+  },
+  "claimService": {
+    "settlementNotFinal": "Uzlaştırma, kesinleşmiş zincir durumunda henüz mevcut değil. Lütfen ağın kesinleşmesini bekleyip tekrar deneyin.",
+    "noQualifyingDrop": "Şartları karşılayan, %20'nin üzerinde bir fiyat düşüşü tespit edilmedi.",
+    "incidentActive": "Zaten aktif bir olay var. Bu talebi kapatıp yeniden açın.",
+    "busy": "Talep doğrulama hizmeti şu anda yoğun. Lütfen biraz bekleyip tekrar deneyin.",
+    "unavailable": "Talep doğrulama hizmeti geçici olarak kullanılamıyor.",
+    "requestFailed": "Talep doğrulama isteği başarısız oldu ({status}).",
+    "busyNoPreviousCheck": "Talep doğrulama hizmeti yoğun. Yeni bir kontrol bekleniyor; önceki bir sonuç yok.",
+    "busyStaleCheck": "Talep doğrulama hizmeti yoğun. {time} tarihli eski kontrolün sonucu: {result}. Yalnızca bilgi amaçlıdır; yeni bir doğrulama gerekir.",
+    "staleNoDrop": "şartları karşılayan fiyat düşüşü tespit edilmedi",
+    "staleQualifyingDrop": "şartları karşılayan fiyat düşüşü tespit edildi",
+    "verificationTimedOut": "Talep doğrulaması zaman aşımına uğradı. Lütfen tekrar deneyin.",
+    "tooSlow": "Talep doğrulama hizmeti çok geç yanıt verdi. Lütfen tekrar deneyin.",
+    "unreachable": "Talep doğrulama hizmetine ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+    "notConfigured": "Talep doğrulama hizmeti yapılandırılmamış.",
+    "verificationFailed": "Talep doğrulaması başarısız oldu{code}.",
+    "verificationExpired": "Talep doğrulamasının süresi doldu{code}.",
+    "settlementFailed": "Talep uzlaştırması başarısız oldu{code}.",
+    "settlementExpired": "Talep uzlaştırmasının süresi doldu{code}.",
+    "settlementTimedOut": "Talep uzlaştırması zaman aşımına uğradı. Lütfen tekrar deneyin.",
+    "downloadFailed": "Talep uzlaştırması indirilemedi."
+  },
+  "claimHistory": {
+    "outOfRange": "Talep geçmişi desteklenen aralığı aşıyor. Bu talebi yüklemek için destek ekibiyle iletişime geçin."
+  },
+  "settlement": {
+    "baseUnits": "temel birim ({asset})",
+    "unknownAsset": "bilinmeyen varlık"
+  },
+  "network": {
+    "notDeployed": "USD8 seçili ağda mevcut değil",
+    "notDeployedOn": "USD8, {network} ağında mevcut değil"
+  }
+}

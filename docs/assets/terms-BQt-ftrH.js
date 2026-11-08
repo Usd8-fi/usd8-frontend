@@ -1,0 +1,1 @@
+var e={title:`Termos de uso`,requirement:`Para usar o USD8 com esta carteira, aceite os <terms>Termos</terms> e o <risk>Aviso de riscos</risk>.`,disagreeNote:`Se você não concordar, sua carteira será desconectada. Não é preciso assinar nada nem fazer nenhuma transação.`,agree:`Concordo`,disagree:`Não concordo`};export{e as default};

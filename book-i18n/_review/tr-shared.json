@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "USD8 Uygulaması",
+    "language": "Dil"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "Geçerli bir Ethereum adresi girin.",
+    "checking": "Sorgulanıyor...",
+    "noBoosters": "Bu adreste Booster bulunamadı.",
+    "found_one": "Tebrikler! {count} Booster'ınız var.",
+    "found_other": "Tebrikler! {count} Booster'ınız var.",
+    "error": "Hata: {message}",
+    "fetchFailed": "bakiye alınamadı",
+    "executed": "Yürütüldü",
+    "cancelled": "İptal Edildi",
+    "queued": "Kuyrukta · {time}",
+    "ready": "Yürütülmeye Hazır",
+    "executableFrom": "Yürütülebileceği tarih: {date}",
+    "transaction": "İşlem",
+    "description": "Açıklama",
+    "status": "Durum",
+    "empty": "Henüz Timelock işlemi yok",
+    "loading": "Yükleniyor",
+    "loadFailed": "Timelock işlemleri yüklenemedi",
+    "retry": "Tekrar Dene",
+    "hoursLeft": "{n} sa kaldı",
+    "minutesLeft": "{n} dk kaldı"
+  },
+  "CONSENT_TEXT": {
+    "label": "Çerez ve analiz tercihleri",
+    "title": "Çerez ve Analiz Tercihleri",
+    "message": "USD8, sitenin genel kullanımını anlamak için isteğe bağlı Google Analytics çerezleri kullanır. Analiz araçlarını yalnızca siz kabul ettikten sonra yükleriz. Reddetmeniz uygulamanın kullanımını etkilemez.",
+    "privacy": "Gizlilik ayrıntıları",
+    "reject": "Analiz Çerezlerini Reddet",
+    "accept": "Analiz Çerezlerini Kabul Et"
+  }
+}

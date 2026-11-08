@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "Avviso beta privata",
+    "message": "<strong>Ti diamo il benvenuto nella beta privata di USD8.</strong> Durante la beta privata i tuoi USD8 accumulano punteggio assicurativo al triplo del tasso normale e alla fine della beta riceverai 3 Booster. Feedback o problemi? Scrivici nel nostro <link>gruppo Telegram</link>."
+  },
+  "wallet": {
+    "defaultLabel": "Notifica",
+    "viewTransaction": "Vedi transazione",
+    "dismissWallet": "Chiudi l’avviso del wallet",
+    "dismiss": "Chiudi la notifica",
+    "connectRequired": {
+      "label": "Devi connettere il wallet",
+      "message": "Connetti il tuo wallet per continuare.",
+      "action": "Connetti wallet"
+    }
+  }
+}

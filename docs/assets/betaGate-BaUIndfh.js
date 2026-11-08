@@ -1,0 +1,1 @@
+var e={codeLabel:`内测邀请码`,invalidCode:`邀请码无效。`,submit:`进入内测`,help:`可通过我们的<telegram>Telegram</telegram>或<x>X私信</x>获取邀请码`};export{e as default};

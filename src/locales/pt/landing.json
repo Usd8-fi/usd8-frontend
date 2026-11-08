@@ -1,0 +1,121 @@
+{
+  "header": {
+    "homeLabel": "Início do USD8",
+    "beta": "beta",
+    "switchNetwork": "Mudar para {network}",
+    "retryData": "Recarregar dados"
+  },
+  "wallet": {
+    "connect": "Conectar carteira",
+    "connecting": "Conectando...",
+    "manageLabel": "Gerenciar carteira {address}"
+  },
+  "footer": {
+    "homeLabel": "Início do USD8 (rodapé)",
+    "navLabel": "Rodapé",
+    "docs": "Documentação",
+    "auditReport": "Relatório de auditoria",
+    "addresses": "Endereços",
+    "timelockQueues": "Filas do Timelock",
+    "faqs": "Perguntas frequentes",
+    "checkBoosters": "Verificar Boosters",
+    "transparency": "Transparência",
+    "contacts": "Contato",
+    "legal": "Jurídico",
+    "cookieSettings": "Configurações de cookies",
+    "openSource": "Todo o código é aberto",
+    "openSourceWithDataTime": "Todo o código é aberto. Dados de {time}"
+  },
+  "score": {
+    "title": "Score de seguro grátis",
+    "intro": "Ganhe score de seguro grátis a cada bloco mantendo USD8 ou sUSD8.",
+    "total": "Seu score de seguro",
+    "totalHelpLabel": "Sobre o score de seguro total",
+    "totalHelp": "Seu score de seguro total, somando tudo o que você mantém. A atualização pode atrasar cerca de 13–19 minutos enquanto os blocos do Ethereum são finalizados.",
+    "loading": "Carregando o score de seguro",
+    "cooldownIn": "+{amount} disponível em {duration}",
+    "cooldownAfterHolding": "+{amount} disponível após o período de carência",
+    "holdingPeriod": "o período de carência"
+  },
+  "asset": {
+    "insured": "Segurado",
+    "insuredValue": "SIM, com limites",
+    "coverageHelpLabel": "Sobre os limites de cobertura",
+    "coverageHelp": "A cobertura depende do valor disponível nos pools de cobertura.",
+    "scoreRate": "Taxa de score",
+    "scoreRateValue": "{rate} por {unit} por dia",
+    "scoreRateLoading": "Carregando a taxa de score",
+    "scoreRateHelpLabel": "Sobre a taxa de score",
+    "scoreRateHelp": "Para cada {unit} que você mantém, você ganha {rate} de score por dia, creditado a cada bloco.",
+    "scoreRateHelpPending": "Score ganho por dia para cada {unit} que você mantém, creditado a cada bloco.",
+    "balance": "Seu saldo",
+    "balanceLoading": "Carregando o saldo da carteira",
+    "apyHelpLabel": "Sobre o APY de {title}",
+    "apyLoading": "Carregando o APY",
+    "scoreEarned": "Score ganho"
+  },
+  "usd8": {
+    "flag": "3x no beta privado",
+    "mint": "Emitir",
+    "redeem": "Resgatar"
+  },
+  "susd8": {
+    "title": "sUSD8: USD8 com rendimento (Morpho)",
+    "balance": "Seu depósito (USD8)",
+    "apyHelp": "Pago em USD8 com o rendimento da tesouraria do USD8: o USDC que lastreia o USD8 rende em DeFi, e parte desse rendimento vai para o vault sUSD8.",
+    "yieldTarget": "Vault sUSD8",
+    "comingSoon": "Em breve"
+  },
+  "claims": {
+    "title": "Pedir indenização do seguro",
+    "intro": "Use seu score de seguro para pedir indenização se um token segurado cair mais de 20% em relação ao ativo subjacente.",
+    "available": "Seu score disponível",
+    "availableHelpLabel": "Sobre o score disponível",
+    "availableHelp": "O score fica disponível para uso após {duration}, descontado o que você já usou em pedidos de indenização."
+  },
+  "coverPools": {
+    "title": "Pools de cobertura",
+    "helpLabel": "Sobre os pools de cobertura",
+    "help": "Deposite o token de um pool (por exemplo, wstETH) para ganhar rendimento em USD8, pago com o rendimento da tesouraria do USD8. Em troca, o pool dá cobertura aos tokens segurados: se um deles cair mais de 20% e um incidente for aberto, os ativos do pool pagam os pedidos válidos, até uma fração limitada do pool por incidente. Os saques têm período de espera de 7 dias, e os ativos aguardando saque continuam cobrindo pedidos.",
+    "warning": "Deposite em um pool de cobertura para dar cobertura aos tokens segurados e ganhar rendimento. O APY pode ser alto, mas atenção: se um token segurado sofrer perdas, os depósitos do pool podem ser usados para pagar indenizações. Entenda bem os <link>riscos envolvidos</link>."
+  },
+  "whiteHat": {
+    "title": "Economia White Hat",
+    "message": "A Economia White Hat será lançada quando o USD8 tiver uma quantidade relevante de tokens segurados recebidos nos pedidos de indenização. <link>Saiba mais</link>."
+  },
+  "pool": {
+    "apyWindowLabel": "Período do APY do {pool}",
+    "apyHelpLabel": "Sobre o APY de {days} dias do {pool}",
+    "apyHelpSource": "Pago em USD8 com o rendimento da tesouraria do USD8: o USDC que lastreia todo o USD8 rende em DeFi, e parte desse rendimento vai para os pools de cobertura.",
+    "apyHelpWhyHigh": "Ele pode ser alto porque os pools são mantidos pequenos em relação à oferta de USD8, então esse rendimento é dividido entre muito menos depósitos.",
+    "yieldTarget": "Pool",
+    "loading": "Carregando dados do pool",
+    "filled": "Ocupação do pool",
+    "filledHelpLabel": "Sobre a ocupação do {pool}",
+    "filledHelpUncapped": "Este pool não tem limite de depósito.",
+    "filledHelp": "Quanto do limite de depósito deste pool já foi preenchido. Em 100%, ele para de aceitar depósitos até que alguém saque.",
+    "capacityLoading": "Carregando a capacidade do pool",
+    "uncapped": "Sem limite",
+    "uncappedLabel": "{assets} {asset} depositados, sem limite",
+    "capacityFilledLabel": "{percent}% da capacidade preenchida",
+    "deposit": "Seu depósito",
+    "depositLoading": "Carregando seu depósito",
+    "earnings": "Seus rendimentos",
+    "earningsHelpLabel": "Sobre seus rendimentos no {pool}",
+    "earningsHelp": "Os rendimentos são pagos em USD8, não em {asset}. Eles não ficam expostos a pedidos de indenização e podem ser sacados a qualquer momento.",
+    "actions": {
+      "deposit": "Depositar",
+      "withdraw": "Sacar",
+      "claimReward": "Sacar rendimentos"
+    }
+  },
+  "yieldIllustration": {
+    "label": "Rendimento da tesouraria gerado pelo USDC que lastreia o USD8, destinado a: {target}",
+    "backing": "lastro do USD8",
+    "defiYield": "Rendimento DeFi",
+    "viaTreasury": "via tesouraria USD8",
+    "highApy": "APY alto ↑",
+    "largeSupply": "oferta grande",
+    "smallPool": "pool pequeno"
+  }
+}

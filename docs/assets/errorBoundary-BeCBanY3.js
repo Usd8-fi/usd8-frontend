@@ -1,0 +1,1 @@
+var e={crash:{message:`Bu sayfa görüntülenirken bir sorun oluştu.`,reload:`Yeniden Yükle`}};export{e as default};

@@ -1,0 +1,121 @@
+{
+  "header": {
+    "homeLabel": "Accueil USD8",
+    "beta": "bêta",
+    "switchNetwork": "Passer sur {network}",
+    "retryData": "Recharger les données"
+  },
+  "wallet": {
+    "connect": "Connecter le portefeuille",
+    "connecting": "Connexion…",
+    "manageLabel": "Gérer le portefeuille {address}"
+  },
+  "footer": {
+    "homeLabel": "Accueil USD8 (pied de page)",
+    "navLabel": "Pied de page",
+    "docs": "Documentation",
+    "auditReport": "Rapport d’audit",
+    "addresses": "Adresses",
+    "timelockQueues": "Files d’attente du Timelock",
+    "faqs": "FAQ",
+    "checkBoosters": "Vérifier mes Boosters",
+    "transparency": "Transparence",
+    "contacts": "Contacts",
+    "legal": "Mentions légales",
+    "cookieSettings": "Paramètres des cookies",
+    "openSource": "Tout le code est open source",
+    "openSourceWithDataTime": "Tout le code est open source. Données mises à jour à {time}"
+  },
+  "score": {
+    "title": "Score d’assurance gratuit",
+    "intro": "Détenez des USD8 ou des sUSD8 et gagnez gratuitement du score d’assurance à chaque bloc.",
+    "total": "Votre score d’assurance",
+    "totalHelpLabel": "À propos de votre score d’assurance total",
+    "totalHelp": "Votre score d’assurance total, cumulé sur l’ensemble de vos avoirs. Sa mise à jour peut prendre environ 13 à 19 minutes, le temps que les blocs Ethereum soient finalisés.",
+    "loading": "Chargement du score d’assurance",
+    "cooldownIn": "Disponible dans {duration} : +{amount}",
+    "cooldownAfterHolding": "Disponible après la période de détention : +{amount}",
+    "holdingPeriod": "la période de détention"
+  },
+  "asset": {
+    "insured": "Assuré",
+    "insuredValue": "OUI, avec limites",
+    "coverageHelpLabel": "À propos des limites de couverture",
+    "coverageHelp": "La couverture dépend des montants disponibles dans les pools de couverture.",
+    "scoreRate": "Taux de score",
+    "scoreRateValue": "{rate} par {unit} et par jour",
+    "scoreRateLoading": "Chargement du taux de score",
+    "scoreRateHelpLabel": "À propos du taux de score",
+    "scoreRateHelp": "Pour chaque {unit} détenu, votre score augmente de {rate} par jour. Crédité à chaque bloc.",
+    "scoreRateHelpPending": "Score gagné chaque jour pour chaque {unit} détenu. Crédité à chaque bloc.",
+    "balance": "Votre solde",
+    "balanceLoading": "Chargement du solde du portefeuille",
+    "apyHelpLabel": "À propos de l’APY de {title}",
+    "apyLoading": "Chargement de l’APY",
+    "scoreEarned": "Score gagné"
+  },
+  "usd8": {
+    "flag": "x3 en bêta privée",
+    "mint": "Émettre",
+    "redeem": "Racheter"
+  },
+  "susd8": {
+    "title": "sUSD8 Savings USD8 (Morpho)",
+    "balance": "Votre dépôt (USD8)",
+    "apyHelp": "Versé en USD8, à partir du rendement de la trésorerie d’USD8 : l’USDC qui adosse l’USD8 génère du rendement DeFi, dont une partie revient au vault sUSD8.",
+    "yieldTarget": "vault sUSD8",
+    "comingSoon": "Bientôt disponible"
+  },
+  "claims": {
+    "title": "Demander une indemnisation",
+    "intro": "Si un token assuré perd plus de 20 % par rapport à son actif sous-jacent, utilisez votre score d’assurance pour déposer une demande.",
+    "available": "Votre score disponible",
+    "availableHelpLabel": "À propos du score disponible",
+    "availableHelp": "Le score devient utilisable au bout de {duration}, déduction faite du score déjà utilisé pour des demandes."
+  },
+  "coverPools": {
+    "title": "Pools de couverture",
+    "helpLabel": "À propos des pools de couverture",
+    "help": "Déposez le token d’un pool (par ex. wstETH) pour percevoir un rendement en USD8, financé par le rendement de la trésorerie d’USD8. En contrepartie, le pool garantit les tokens assurés : si l’un d’eux chute de plus de 20 % et qu’un incident est ouvert, les actifs du pool paient les demandes valides, dans la limite d’une part plafonnée du pool par incident. Les retraits sont soumis à une période d’attente de 7 jours, et les actifs en attente de retrait continuent de couvrir les demandes.",
+    "warning": "Déposez dans un pool de couverture pour garantir les tokens assurés et percevoir un rendement. L’APY peut être élevé, mais attention : si un token assuré subit une perte, les dépôts du pool peuvent servir à payer les demandes. Assurez-vous de bien comprendre les <link>risques encourus</link>."
+  },
+  "whiteHat": {
+    "title": "White Hat Economy",
+    "message": "La White Hat Economy sera lancée dès qu’USD8 détiendra un montant significatif de tokens assurés acquis via le processus d’indemnisation. <link>En savoir plus</link>."
+  },
+  "pool": {
+    "apyWindowLabel": "Période de calcul de l’APY ({pool})",
+    "apyHelpLabel": "À propos de l’APY sur {days} jours ({pool})",
+    "apyHelpSource": "Versé en USD8, à partir du rendement de la trésorerie d’USD8 : l’USDC qui adosse l’ensemble des USD8 génère du rendement DeFi, dont une partie revient aux pools de couverture.",
+    "apyHelpWhyHigh": "Il peut être élevé, car les pools restent petits par rapport à l’offre d’USD8 : ce rendement est donc partagé entre beaucoup moins de dépôts.",
+    "yieldTarget": "pool",
+    "loading": "Chargement des données du pool",
+    "filled": "Remplissage",
+    "filledHelpLabel": "À propos du remplissage ({pool})",
+    "filledHelpUncapped": "Ce pool n’a pas de plafond de dépôts.",
+    "filledHelp": "Taux de remplissage du pool par rapport à son plafond de dépôts. À 100 %, il n’accepte plus de dépôts jusqu’au prochain retrait.",
+    "capacityLoading": "Chargement de la capacité du pool",
+    "uncapped": "Sans plafond",
+    "uncappedLabel": "{assets} {asset} déposés, sans plafond",
+    "capacityFilledLabel": "Capacité remplie à {percent} %",
+    "deposit": "Votre dépôt",
+    "depositLoading": "Chargement de votre dépôt",
+    "earnings": "Vos gains",
+    "earningsHelpLabel": "À propos de vos gains ({pool})",
+    "earningsHelp": "Les gains sont versés en USD8, et non en {asset}. Ils ne sont pas exposés aux demandes d’indemnisation et peuvent être retirés à tout moment.",
+    "actions": {
+      "deposit": "Déposer",
+      "withdraw": "Retirer",
+      "claimReward": "Retirer les gains"
+    }
+  },
+  "yieldIllustration": {
+    "label": "Le rendement de trésorerie issu de l’USDC qui adosse l’USD8 est reversé au {target}",
+    "backing": "adosse les USD8",
+    "defiYield": "Rendement DeFi",
+    "viaTreasury": "via la trésorerie",
+    "highApy": "APY élevé ↑",
+    "largeSupply": "offre importante",
+    "smallPool": "petit, plafonné"
+  }
+}

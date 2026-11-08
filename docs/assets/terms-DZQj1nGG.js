@@ -1,0 +1,1 @@
+var e={title:`Termini di utilizzo`,requirement:`Per usare USD8 con questo wallet, accetta i <terms>Termini</terms> e l’<risk>Informativa sui rischi</risk>.`,disagreeNote:`Se non accetti, il wallet verrà disconnesso. Non serve alcuna firma né transazione.`,agree:`Accetto`,disagree:`Non accetto`};export{e as default};

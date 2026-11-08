@@ -1,0 +1,7 @@
+{
+  "title": "Conditions d’utilisation",
+  "requirement": "Pour utiliser USD8 avec ce portefeuille, veuillez accepter les <terms>Conditions</terms> et l’<risk>Avertissement sur les risques</risk>.",
+  "disagreeNote": "Si vous refusez, votre portefeuille sera déconnecté. Aucune signature ni transaction n’est requise.",
+  "agree": "J’accepte",
+  "disagree": "Je refuse"
+}

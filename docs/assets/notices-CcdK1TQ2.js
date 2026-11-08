@@ -1,0 +1,1 @@
+var e={site:{ariaLabel:`内测公告`,message:`<strong>欢迎参与USD8内测。</strong>内测期间持有USD8，保险积分累积速率提升至平时的3倍，内测结束时还将获得3张加成卡。有反馈或遇到问题？欢迎在我们的<link>Telegram群组</link>留言。`},wallet:{defaultLabel:`通知`,viewTransaction:`查看交易`,dismissWallet:`关闭钱包通知`,dismiss:`关闭通知`,connectRequired:{label:`需要连接钱包`,message:`请连接钱包以继续。`,action:`连接钱包`}}};export{e as default};

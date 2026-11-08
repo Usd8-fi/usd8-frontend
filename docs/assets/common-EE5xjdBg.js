@@ -1,0 +1,1 @@
+var e={language:`言語`,metrics:{apy:`年利`,tvl:`預け入れ総額`,window7D:`7日`,window30D:`30日`,apySuffix:`平均年利`,windowApy:`{window}平均年利`},pools:{wsteth:`wstETHカバープール`,usd8:`USD8カバープール`,msloss:`msLOSSカバープール`}};export{e as default};

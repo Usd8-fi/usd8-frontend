@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "Đóng trạng thái yêu cầu bồi thường",
+    "fileClaim": "Đóng cửa sổ yêu cầu bồi thường"
+  },
+  "dialogLabel": {
+    "status": "Trạng thái yêu cầu bồi thường cho {symbol}",
+    "file": "Yêu cầu bồi thường cho {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "Trạng thái yêu cầu của bạn",
+    "incidentStatus": "Trạng thái sự cố",
+    "fileClaim": "Gửi yêu cầu bồi thường"
+  },
+  "requirement": "{symbol} phải mất hơn 20% giá trị so với tài sản cơ sở, tính theo giá TWAP ngay trước và ngay sau đợt giảm. <link>Tìm hiểu thêm</link>.",
+  "noClaimInIncident": "Bạn không có yêu cầu bồi thường nào trong sự cố này. Sự cố đã ngừng nhận yêu cầu, nhưng quyết toán thì mở cho tất cả — bất kỳ ai cũng có thể thực hiện.",
+  "validation": {
+    "noAvailableScore": "Bạn không còn điểm bảo hiểm khả dụng nào để sử dụng.",
+    "amountExceedsBalance": "Số lượng {symbol} vượt quá số dư khả dụng của bạn.",
+    "enterAmount": "Hãy nhập số lượng {symbol} bạn muốn yêu cầu bồi thường.",
+    "enterScore": "Hãy nhập số điểm bảo hiểm bạn muốn sử dụng."
+  },
+  "holdingRequirement": {
+    "blocks": "từ ít nhất {blocks} block trước sự cố.",
+    "unavailable": "trong suốt khoảng thời gian quy định trước sự cố. Hiện chưa có thông tin về khoảng thời gian nắm giữ; hãy làm mới trước khi gửi yêu cầu."
+  },
+  "stage": {
+    "claimOpen": "Đang nhận yêu cầu",
+    "claimClosed": "Ngừng nhận yêu cầu",
+    "settle": "Quyết toán",
+    "settleOpen": "Mở quyết toán",
+    "notSettled": "Chưa quyết toán",
+    "settled": "Đã quyết toán",
+    "payout": "Chi trả",
+    "payoutOpen": "Mở nhận chi trả",
+    "payoutClosed": "Hết hạn nhận chi trả",
+    "progress": "Tiến độ {stage}"
+  },
+  "statusDescription": {
+    "claimOpen": "đang chờ những người khác cùng tham gia yêu cầu bồi thường.",
+    "settlementOpenClaimant": "đang chờ quyết toán",
+    "settlementOpenAnyone": "đang chờ quyết toán, bất kỳ ai cũng có thể thực hiện.",
+    "settlementExpired": "đã hết thời hạn quyết toán, vui lòng rút tài sản ký quỹ của bạn.",
+    "settlementPending": "đã quyết toán, đang trong thời hạn tranh chấp",
+    "payoutOpen": "đang mở nhận chi trả, vui lòng hoàn tất sớm nhất có thể.",
+    "payoutExpired": "đã hết thời hạn nhận chi trả, vui lòng rút tài sản ký quỹ của bạn."
+  },
+  "statusLabel": {
+    "plain": "Trạng thái",
+    "withDescription": "Trạng thái - {description}"
+  },
+  "currentStage": "Giai đoạn hiện tại: {stage}",
+  "action": {
+    "cancelClaim": "Hủy yêu cầu",
+    "settleAllClaims": "Quyết toán tất cả",
+    "returnTokens": "Nhận lại token",
+    "acceptPayout": "Nhận chi trả",
+    "cancelPayoutReturnTokens": "Từ chối chi trả, nhận lại token",
+    "fileClaim": "Gửi yêu cầu"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "Token đã ký quỹ",
+    "claimBondEscrowed": "Tiền cọc đã ký quỹ",
+    "bondFullyRefunded": "Sẽ được hoàn lại toàn bộ",
+    "bondNotRefunded": "Không được hoàn lại: chưa đáp ứng điều kiện",
+    "insuranceScoreToSpend": "Điểm bảo hiểm sẽ dùng",
+    "effectiveScoreAfterBoosters": "Điểm thực tế sau Booster: {score}, ",
+    "scoreCommitted": "chiếm {percent} tổng số điểm đã cam kết",
+    "boostersEscrowed": "Booster đã ký quỹ",
+    "loadingBoostersTaken": "Đang tải số Booster được tính",
+    "boostersTaken": "{count} được tính"
+  },
+  "payout": {
+    "ineligible": "Bạn không đủ điều kiện nhận chi trả và khoản cọc {bond} USD8 sẽ không được hoàn lại. Hãy nhận lại token để đóng yêu cầu bồi thường.",
+    "totalUsdValue": "Tổng giá trị chi trả (USD)",
+    "loadingValue": "Đang tải giá trị chi trả",
+    "vsLossValue": "Chi trả so với giá trị tổn thất",
+    "loadingComparison": "Đang tải so sánh chi trả",
+    "details": "Chi tiết chi trả",
+    "loadingDetails": "Đang tải chi tiết chi trả"
+  },
+  "time": {
+    "days_one": "{count} ngày",
+    "days_other": "{count} ngày",
+    "hours_one": "{count} giờ",
+    "hours_other": "{count} giờ",
+    "minutes_one": "{count} phút",
+    "minutes_other": "{count} phút",
+    "minutesLeft": "còn {minutes}",
+    "hoursMinutesLeft": "còn {hours} {minutes}",
+    "daysHoursLeft": "còn {days} {hours}",
+    "rangeDays": "{from}-{to} ngày",
+    "rangeHours": "{from}-{to} giờ",
+    "rangeMinutes": "{from}-{to} phút"
+  },
+  "submissionStatus": "Trạng thái gửi yêu cầu bồi thường",
+  "form": {
+    "tokenAmountLabel": "Số lượng {symbol}",
+    "tokenAmountHelpLabel": "Về số lượng token được bảo hiểm",
+    "tokenAmountHelp": "Bạn phải nắm giữ {symbol} {holding} Điều kiện được xét theo số dư thấp nhất của bạn trong khoảng thời gian đó, nên token có thêm sau đó sẽ không được tính. Nếu số dư này bằng 0, bạn không đủ điều kiện và sẽ mất khoản cọc yêu cầu bồi thường.",
+    "tokenAmountInput": "Số lượng {symbol} được bảo hiểm",
+    "availableWithPeriod": "Khả dụng: {amount}.",
+    "available": "Khả dụng: {amount}",
+    "claimBond": "Tiền cọc yêu cầu",
+    "claimBondHelpLabel": "Về tiền cọc yêu cầu bồi thường",
+    "claimBondHelp": "Để gửi yêu cầu, bạn cần đặt cọc 10 USD8 nhằm chống spam. Khoản cọc này sẽ không được hoàn lại nếu bạn không đủ điều kiện bồi thường.",
+    "scoreLabel": "Điểm bảo hiểm sẽ dùng",
+    "scoreHelpLabel": "Về số điểm bảo hiểm sẽ dùng",
+    "scoreHelp": "Số điểm bạn muốn dùng. Khi quyết toán, số này được giới hạn trong mức điểm khả dụng của bạn, và điểm chỉ bị trừ khi bạn chấp nhận một khoản chi trả hợp lệ.",
+    "boostersLabel": "Booster ký quỹ",
+    "boostersHelpLabel": "Về Booster ký quỹ",
+    "boostersHelp": "Không bắt buộc. Booster phải đáp ứng cùng yêu cầu nắm giữ trước sự cố như token được bảo hiểm, tức là phải được nắm giữ {holding} Chỉ Booster đủ điều kiện mới tăng trọng số chi trả và sẽ bị đốt khi bạn nhận chi trả. Booster dư sẽ được trả lại. Nếu bạn từ chối chi trả, toàn bộ Booster được trả lại."
+  },
+  "weight": {
+    "summary": "Trọng số chi trả tối đa: {weight}{boosters} — chiếm {share} tổng trọng số ký quỹ tạm tính; trọng số cuối cùng phụ thuộc vào điều kiện nắm giữ.",
+    "boosters_one": " (gồm {count} Booster)",
+    "boosters_other": " (gồm {count} Booster)"
+  }
+}

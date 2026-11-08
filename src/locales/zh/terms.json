@@ -1,0 +1,7 @@
+{
+  "title": "使用条款",
+  "requirement": "使用此钱包访问USD8前，请先同意<terms>使用条款</terms>和<risk>风险免责声明</risk>。",
+  "disagreeNote": "如果你不同意，钱包将断开连接。此操作无需签名，也不会发起交易。",
+  "agree": "同意",
+  "disagree": "不同意"
+}

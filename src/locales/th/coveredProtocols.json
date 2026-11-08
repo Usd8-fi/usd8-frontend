@@ -1,0 +1,25 @@
+{
+  "tableLabel": "โทเคนที่มีประกัน",
+  "columns": {
+    "insuredToken": "โทเคนที่มีประกัน",
+    "insuredTokenHelpLabel": "เกี่ยวกับโทเคนที่มีประกัน",
+    "insuredTokenHelp": "สินทรัพย์ที่ยื่นเคลมได้เมื่อเกิดเหตุการณ์ความเสียหายที่อยู่ในความคุ้มครอง ทั้งนี้ขึ้นอยู่กับคะแนนประกันและกฎการเคลม",
+    "maxCoverage": "คุ้มครองสูงสุด",
+    "maxCoverageHelpLabel": "เกี่ยวกับความคุ้มครองสูงสุด",
+    "maxCoverageHelp": "อัตราชดเชยสูงสุดของแต่ละโทเคนในรายการ ตามค่าที่ตั้งไว้บนเชนในปัจจุบัน เงินชดเชยจริงขึ้นอยู่กับคะแนนประกันของผู้ใช้และวงเงินของพูลคุ้มครอง",
+    "claim": "เคลม"
+  },
+  "openTokenSite": "เปิด {token} บนเว็บไซต์ของโปรเจกต์",
+  "actions": {
+    "fileClaim": "ยื่นเคลม",
+    "fileClaimFor": "ยื่นเคลม {token}",
+    "actionFor": "{action} สำหรับ {token}",
+    "claimOpen": "เปิดรับเคลม",
+    "settleClaims": "สรุปผลเคลม",
+    "settleAndDispute": "สรุปผลและโต้แย้ง",
+    "finalisePayout": "จัดการเงินชดเชย",
+    "minutesLeft": "{label} (เหลือ {minutes} นาที)",
+    "daysHoursLeft": "{label} (เหลือ {days} วัน {hours} ชม.)"
+  },
+  "simulateClaim": "จำลองการเคลม"
+}

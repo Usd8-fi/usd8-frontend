@@ -1,0 +1,8 @@
+{
+  "finality": {
+    "explanation": "확정된 블록이 청구 마감 시점을 지나면 정산을 시작할 수 있습니다.",
+    "heads": "현재 블록 {latest} · 확정 블록 {finalized}",
+    "readyToSettle": "정산 가능",
+    "minutesToGo": "약 {minutes}분 남음"
+  }
+}

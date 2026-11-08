@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "Private beta notice",
+    "message": "<strong>Welcome to the USD8 Private Beta.</strong> Private beta users earn insurance score on USD8 holdings at 3x the normal rate and will receive 3 boosters at the end of the beta. Feedback or problems? Please post in our <link>Telegram group</link>."
+  },
+  "wallet": {
+    "defaultLabel": "Notification",
+    "viewTransaction": "View transaction",
+    "dismissWallet": "Dismiss wallet notice",
+    "dismiss": "Dismiss notification",
+    "connectRequired": {
+      "label": "Wallet connection required",
+      "message": "Connect your wallet to continue.",
+      "action": "Connect Wallet"
+    }
+  }
+}

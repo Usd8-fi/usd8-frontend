@@ -1,0 +1,25 @@
+{
+  "tableLabel": "توکن‌های بیمه‌شده",
+  "columns": {
+    "insuredToken": "توکن بیمه‌شده",
+    "insuredTokenHelpLabel": "درباره‌ی توکن بیمه‌شده",
+    "insuredTokenHelp": "دارایی‌ای که پس از یک حادثه‌ی زیان‌بارِ تحت پوشش می‌توان برایش درخواست خسارت داد؛ مشروط به امتیاز بیمه و قواعد درخواست خسارت.",
+    "maxCoverage": "سقف پوشش",
+    "maxCoverageHelpLabel": "درباره‌ی سقف پوشش",
+    "maxCoverageHelp": "حداکثر جبران خسارت فعلی برای هر توکن فهرست‌شده، طبق تنظیمات آن‌چین. مبلغ واقعی پرداخت به امتیاز بیمه‌ی کاربر و محدودیت‌های استخر پوشش بستگی دارد.",
+    "claim": "درخواست"
+  },
+  "openTokenSite": "باز کردن سایت {token}",
+  "actions": {
+    "fileClaim": "ثبت درخواست",
+    "fileClaimFor": "ثبت درخواست خسارت برای {token}",
+    "actionFor": "{action} برای {token}",
+    "claimOpen": "مهلت ثبت درخواست",
+    "settleClaims": "تسویه‌ی درخواست‌ها",
+    "settleAndDispute": "تسویه و اعتراض",
+    "finalisePayout": "نهایی‌سازی پرداخت",
+    "minutesLeft": "{label} ({minutes} دقیقه مانده)",
+    "daysHoursLeft": "{label} ({days} روز و {hours} ساعت مانده)"
+  },
+  "simulateClaim": "شبیه‌سازی خسارت"
+}

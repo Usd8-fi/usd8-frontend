@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "Annonce de la bêta privée",
+    "message": "<strong>Bienvenue dans la bêta privée d’USD8.</strong> Pendant la bêta privée, vos USD8 vous rapportent du score d’assurance au triple du taux normal, et vous recevrez 3 Boosters à la fin de la bêta. Un retour ou un problème ? Écrivez-nous dans notre <link>groupe Telegram</link>."
+  },
+  "wallet": {
+    "defaultLabel": "Notification",
+    "viewTransaction": "Voir la transaction",
+    "dismissWallet": "Fermer l’avis du portefeuille",
+    "dismiss": "Fermer la notification",
+    "connectRequired": {
+      "label": "Connexion du portefeuille requise",
+      "message": "Connectez votre portefeuille pour continuer.",
+      "action": "Connecter le portefeuille"
+    }
+  }
+}

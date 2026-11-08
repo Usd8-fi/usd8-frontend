@@ -1,0 +1,8 @@
+{
+  "finality": {
+    "explanation": "Settlement can start once the finalized block passes the claim deadline.",
+    "heads": "Current block {latest} · Finalized block {finalized}",
+    "readyToSettle": "Ready to settle",
+    "minutesToGo": "about {minutes} min to go"
+  }
+}

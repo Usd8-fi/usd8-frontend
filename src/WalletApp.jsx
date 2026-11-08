@@ -3,10 +3,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import App from './App.jsx';
 import WalletRestore from './components/WalletRestore.jsx';
 import { queryClient } from './lib/dataCache.js';
+import { t } from './lib/i18n.js';
 import { initializeWalletConnector, wagmiConfig, walletConnectorConfigured } from './lib/walletConnector.js';
 
 export function prepareWallet() {
-  if (!walletConnectorConfigured || !wagmiConfig) throw new Error('Wallet connection is unavailable until VITE_REOWN_PROJECT_ID is configured.');
+  if (!walletConnectorConfigured || !wagmiConfig) throw new Error(t('app.wallet.connectUnavailable'));
   initializeWalletConnector();
 }
 export default function WalletApp({ autoConnect }) {

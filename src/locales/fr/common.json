@@ -1,0 +1,16 @@
+{
+  "language": "Langue",
+  "metrics": {
+    "apy": "APY",
+    "tvl": "TVL",
+    "window7D": "7J",
+    "window30D": "30J",
+    "apySuffix": " APY",
+    "windowApy": "APY {window}"
+  },
+  "pools": {
+    "wsteth": "Pool de couverture wstETH",
+    "usd8": "Pool de couverture USD8",
+    "msloss": "Pool de couverture msLOSS"
+  }
+}

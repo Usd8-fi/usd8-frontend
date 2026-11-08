@@ -4,19 +4,21 @@ import { fetchActivity } from '../lib/activityFeed.js';
 import { onForegroundRefresh } from '../lib/foregroundRefresh.js';
 import { getProtocolNetwork, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 import { useStickToVisualBottom } from '../lib/visualViewport.js';
+import { useTranslation } from '../lib/i18n.js';
 
 const REFRESH_MS = 60_000;
 const SPEED_PX_PER_SECOND = 55;
 const MIN_CYCLE_PX = 1400;
 
 function Entry({ item, explorer, interactive }) {
+  const { t } = useTranslation();
   const content = (
     <>
       {item.actor ? <span className="activity-ticker-actor">{item.actor}</span> : null}
       {' '}{item.action}
       {item.amount ? <>{' '}<b>{item.amount}</b></> : null}
       {item.target ? ` ${item.target}` : ''}
-      {item.block === null ? null : <span className="activity-ticker-age"> · block {item.block}</span>}
+      {item.block === null ? null : <span className="activity-ticker-age">{` · ${t('activity.block', { block: item.block })}`}</span>}
     </>
   );
   return (
@@ -32,6 +34,7 @@ function Entry({ item, explorer, interactive }) {
 /// real activity has loaded and when the index is unreachable, so it never shows
 /// invented or stale-looking entries.
 export default function ActivityTicker() {
+  const { t } = useTranslation();
   const network = getProtocolNetwork(PROTOCOL_CHAIN_ID);
   const [items, setItems] = useState([]);
   const tickerRef = useRef(null);
@@ -60,7 +63,7 @@ export default function ActivityTicker() {
   const characters = items.reduce((sum, item) => sum + `${item.actor || ''} ${item.action} ${item.amount || ''} ${item.target || ''} · block 00000000`.length, 0);
   const cyclePixels = Math.max(MIN_CYCLE_PX, characters * 7.3 + items.length * 56);
   return (
-    <aside ref={tickerRef} className="activity-ticker" aria-label="Recent protocol activity">
+    <aside ref={tickerRef} className="activity-ticker" aria-label={t('activity.ariaLabel')}>
       <div className="activity-ticker-track" style={{ '--ticker-seconds': `${Math.round(cyclePixels / SPEED_PX_PER_SECOND)}s` }}>
         <ul className="activity-ticker-list">
           {items.map(item => <Entry key={item.id} item={item} explorer={explorer} interactive />)}

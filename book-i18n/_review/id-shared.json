@@ -1,0 +1,37 @@
+{
+  "UI_TEXT": {
+    "app": "Aplikasi USD8",
+    "language": "Bahasa"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "Masukkan alamat Ethereum yang valid.",
+    "checking": "Mengecek...",
+    "noBoosters": "Tidak ada Booster di alamat ini.",
+    "found_one": "Selamat! Anda memiliki {count} Booster.",
+    "found_other": "Selamat! Anda memiliki {count} Booster.",
+    "error": "Kesalahan: {message}",
+    "fetchFailed": "saldo gagal diambil",
+    "executed": "Dieksekusi",
+    "cancelled": "Dibatalkan",
+    "queued": "Dalam antrean · {time}",
+    "ready": "Siap Dieksekusi",
+    "executableFrom": "Dapat dieksekusi mulai {date}",
+    "transaction": "Transaksi",
+    "description": "Deskripsi",
+    "status": "Status",
+    "empty": "Belum ada transaksi timelock",
+    "loading": "Memuat",
+    "loadFailed": "Transaksi timelock gagal dimuat",
+    "retry": "Coba Lagi",
+    "hoursLeft": "sisa {n} jam",
+    "minutesLeft": "sisa {n} mnt"
+  },
+  "CONSENT_TEXT": {
+    "label": "Preferensi cookie dan analitik",
+    "title": "Preferensi Cookie & Analitik",
+    "message": "USD8 menggunakan cookie Google Analytics opsional untuk memahami penggunaan situs secara agregat. Analitik baru dimuat setelah Anda menyetujuinya. Jika Anda menolak, aplikasi tetap berfungsi seperti biasa.",
+    "privacy": "Detail privasi",
+    "reject": "Tolak Cookie Analitik",
+    "accept": "Terima Cookie Analitik"
+  }
+}

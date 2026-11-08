@@ -1,0 +1,31 @@
+{
+  "title": "청구 시뮬레이션",
+  "close": "청구 시뮬레이터 닫기",
+  "intro": "실시간 커버 풀 규모와 가격으로 예상 보상금을 계산합니다. 정산 시 TEE에서 모든 값을 다시 계산하므로 최종 보상금은 달라질 수 있습니다.",
+  "sliderLabel": "{label} 슬라이더",
+  "insuredToken": {
+    "label": "보험 대상 토큰",
+    "helpLabel": "보험 대상 토큰 안내",
+    "help": "청구 대상 토큰입니다. 이 토큰의 최대 보장률로 손실 한도가 정해지며, 같은 토큰을 보유한 커버 풀은 해당 사고의 지급 재원에서 제외됩니다."
+  },
+  "lossValue": {
+    "label": "손실 가치 (USD)",
+    "helpLabel": "손실 가치 (USD) 안내",
+    "help": "청구하는 보험 대상 토큰의 가치로, 하락 전 7일 평균 가격 기준입니다. 손실 한도는 이 가치의 일정 비율입니다."
+  },
+  "scoreWeight": {
+    "label": "내 점수 비중",
+    "helpLabel": "내 점수 비중 안내",
+    "help": "부스터를 포함한 내 보험 점수가 같은 사고의 전체 청구자 점수에서 차지하는 비중입니다."
+  },
+  "results": {
+    "estimatedReimbursement": "예상 보상금",
+    "coverPoolBudget": "커버 풀 예산",
+    "scoreShare": "A. 점수 비중 ({percent}%)",
+    "lossCap": "B. 손실 한도 ({percent}%)",
+    "payoutFormula": "보상금 = min(A, B)",
+    "paidFromCoverPools": "커버 풀별 지급액",
+    "excluded": "제외",
+    "noPoolData": "아직 커버 풀 데이터가 없습니다."
+  }
+}

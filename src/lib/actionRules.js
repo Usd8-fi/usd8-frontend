@@ -1,6 +1,8 @@
 // Pure rules behind the transaction dialogs: amount defaults, parsing, and the
 // ordered blocker checks that decide which inline warning an action shows.
 // Kept free of React so every precedence rule is unit-tested directly.
+import { t } from './i18n.js';
+import { tCount } from './plural.js';
 import { tokenAmountExceedsBalance } from './tokenAmount.js';
 import { parseUnits } from './viemLite.js';
 
@@ -11,41 +13,66 @@ export function defaultTokenAmount(available) {
   return DECIMAL.test(normalized) && /[1-9]/.test(normalized) ? normalized : '';
 }
 
-export function cooldownReadyLabel(endsAtMilliseconds, nowMilliseconds) {
+/// Time left on a cooldown as a language-independent value: null when the end
+/// is unknown, { ready: true } once it has passed, else { count, unit }.
+export function cooldownRemaining(endsAtMilliseconds, nowMilliseconds) {
   const end = Number(endsAtMilliseconds);
   const remainingMinutes = Math.ceil((end - nowMilliseconds) / 60_000);
-  if (!Number.isFinite(remainingMinutes) || end <= 0) return '';
-  if (remainingMinutes <= 0) return 'ready now';
-  if (remainingMinutes < 60) return `ready in ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}`;
+  if (!Number.isFinite(remainingMinutes) || end <= 0) return null;
+  if (remainingMinutes <= 0) return { ready: true };
+  if (remainingMinutes < 60) return { ready: false, count: remainingMinutes, unit: 'minute' };
   const remainingHours = Math.ceil(remainingMinutes / 60);
-  if (remainingHours < 24) return `ready in ${remainingHours} ${remainingHours === 1 ? 'hour' : 'hours'}`;
-  const remainingDays = Math.ceil(remainingHours / 24);
-  return `ready in ${remainingDays} ${remainingDays === 1 ? 'day' : 'days'}`;
+  if (remainingHours < 24) return { ready: false, count: remainingHours, unit: 'hour' };
+  return { ready: false, count: Math.ceil(remainingHours / 24), unit: 'day' };
+}
+
+/// "ready now" / "ready in 6 days", in the current language ('' when unknown).
+/// Compare `cooldownRemaining(...).ready`, never this text.
+export function cooldownReadyLabel(endsAtMilliseconds, nowMilliseconds) {
+  const remaining = cooldownRemaining(endsAtMilliseconds, nowMilliseconds);
+  if (!remaining) return '';
+  if (remaining.ready) return t('lib.cooldown.readyNow');
+  return tCount(`lib.cooldown.readyIn.${remaining.unit}`, remaining.count);
 }
 
 export function parseTokenAmount(raw, decimals) {
   const normalized = String(raw ?? '').trim();
-  if (!DECIMAL.test(normalized)) throw new Error('Please enter a valid number.');
-  if ((normalized.split('.')[1] || '').length > decimals) throw new Error(`Use at most ${decimals} decimal places.`);
+  if (!DECIMAL.test(normalized)) throw new Error(t('lib.amount.invalidNumber'));
+  if ((normalized.split('.')[1] || '').length > decimals) throw new Error(t('lib.amount.tooManyDecimals', { decimals }));
   try {
     return parseUnits(normalized, decimals);
   } catch {
-    throw new Error('Please enter a valid number.');
+    throw new Error(t('lib.amount.invalidNumber'));
   }
+}
+
+// Callers name the action in English ('deposit', 'mint USD8' ...); each known
+// action has its own full sentence per language so word order can change.
+const AMOUNT_ACTIONS = Object.freeze({
+  deposit: 'deposit',
+  'start cooldown': 'startCooldown',
+  'mint USD8': 'mint',
+  'redeem USD8': 'redeem',
+});
+
+function amountReason(reason, token, action) {
+  const id = AMOUNT_ACTIONS[action];
+  return id ? t(`lib.amount.${reason}.${id}`, { token }) : t(`lib.amount.${reason}.generic`, { token, action });
 }
 
 export function tokenAmountValidationReason(raw, available, token, action) {
   const normalized = String(raw ?? '').trim();
-  if (!defaultTokenAmount(available)) return `You do not have any ${token} available to ${action}.`;
-  if (!DECIMAL.test(normalized)) return `Enter a valid ${token} amount to ${action}.`;
-  if (!/[1-9]/.test(normalized)) return `Enter a ${token} amount greater than zero to ${action}.`;
+  if (!defaultTokenAmount(available)) return amountReason('noBalance', token, action);
+  if (!DECIMAL.test(normalized)) return amountReason('invalid', token, action);
+  if (!/[1-9]/.test(normalized)) return amountReason('zero', token, action);
   return tokenAmountExceedsBalance(normalized, available)
-    ? `The ${token} amount exceeds your available balance.`
+    ? t('lib.amount.exceedsBalance', { token })
     : '';
 }
 
 // Anything the user has to wait on spins. Terminal confirmations and errors
-// are absent from this list and stay static.
+// are absent from this list and stay static. These match the English status
+// lines only; App.jsx remembers translated waiting lines separately.
 const WAITING_STATUS_PREFIXES = [
   'Checking ',
   'Loading ',
@@ -58,8 +85,6 @@ export function isWaitingStatus(message) {
   return message.includes('in your wallet.')
     || WAITING_STATUS_PREFIXES.some((prefix) => message.startsWith(prefix));
 }
-
-const EXISTING_WITHDRAWAL_REQUEST_REASON = 'Please finish the existing withdrawal request before starting a new one.';
 
 /**
  * Cover-pool dialog state for one render. Blockers are returned in the order
@@ -96,19 +121,23 @@ export function poolActionState({
   const cooldownElapsed = Number(cooldownEndsAtMilliseconds) > 0
     && nowMilliseconds >= Number(cooldownEndsAtMilliseconds);
   const cooldownCompleteWaitingForClaims = incidentActive && cooldownElapsed && hasCooldownBalance;
-  const cooldownTiming = hasCooldownBalance && !cooldownCompleteWaitingForClaims
+  const showCooldownTiming = hasCooldownBalance && !cooldownCompleteWaitingForClaims;
+  const cooldownTiming = showCooldownTiming
     ? cooldownReadyLabel(cooldownEndsAtMilliseconds, nowMilliseconds)
     : '';
+  // Language-independent twin of cooldownTiming === 'ready now'.
+  const cooldownReady = showCooldownTiming
+    && cooldownRemaining(cooldownEndsAtMilliseconds, nowMilliseconds)?.ready === true;
   const hasWithdrawAvailable = !/^0(?:\.0+)?$/.test(String(availableForWithdraw ?? '0').replace(/,/g, ''));
 
   const actionUnavailableReason = submitUnavailableReason
-    || (withdrawing && availableForCooldownAssets == null ? 'Withdrawal amounts are unavailable. Retry Data to continue.' : '')
-    || (withdrawingEarnings && !hasEarnings ? 'No earnings to withdraw.' : '');
+    || (withdrawing && availableForCooldownAssets == null ? t('lib.pool.withdrawalAmountsUnavailable') : '')
+    || (withdrawingEarnings && !hasEarnings ? t('lib.pool.noEarnings') : '');
   const cooldownUnavailableReason = withdrawing && (hasCooldownBalance || hasWithdrawAvailable)
-    ? EXISTING_WITHDRAWAL_REQUEST_REASON
+    ? t('lib.pool.existingWithdrawalRequest')
     : '';
   const activeIncidentDepositReason = depositing && incidentActive
-    ? `Deposits are temporarily unavailable while insurance incident #${activeIncidentId} is active. Try again after the incident is finalized.`
+    ? t('lib.pool.depositsPausedForIncident', { incident: activeIncidentId })
     : '';
   const tokenValidationReason = withdrawingEarnings
     ? ''
@@ -118,22 +147,23 @@ export function poolActionState({
     && !tokenValidationReason
     && tokenAmountExceedsBalance(amount, remainingDepositCapacity)
     ? (defaultTokenAmount(remainingDepositCapacity)
-      ? `This deposit exceeds the cover pool's remaining capacity. You can deposit up to ${remainingDepositCapacity} ${assetSymbol}.`
-      : `The cover pool is full and cannot accept additional ${assetSymbol} deposits.`)
+      ? t('lib.pool.exceedsCapacity', { amount: remainingDepositCapacity, symbol: assetSymbol })
+      : t('lib.pool.full', { symbol: assetSymbol }))
     : '';
 
   return {
     cooldownCompleteWaitingForClaims,
     cooldownTiming,
+    cooldownReady,
     hasWithdrawAvailable,
     amountUnavailableReason: actionUnavailableReason
       || cooldownUnavailableReason
       || activeIncidentDepositReason
       || tokenValidationReason
       || capacityDepositReason
-      || (withdrawing && estimatedAssets === null ? 'Waiting for a valid withdrawal estimate.' : ''),
+      || (withdrawing && estimatedAssets === null ? t('lib.pool.waitingForEstimate') : ''),
     withdrawUnavailableReason: actionUnavailableReason
-      || (withdrawing && cooldownCompleteWaitingForClaims ? 'Waiting for claims to finish' : '')
-      || (!hasWithdrawAvailable ? 'No cover-pool withdrawal is available yet.' : ''),
+      || (withdrawing && cooldownCompleteWaitingForClaims ? t('lib.pool.waitingForClaims') : '')
+      || (!hasWithdrawAvailable ? t('lib.pool.noWithdrawal') : ''),
   };
 }

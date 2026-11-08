@@ -1,0 +1,25 @@
+{
+  "tableLabel": "受保代幣",
+  "columns": {
+    "insuredToken": "受保代幣",
+    "insuredTokenHelpLabel": "關於受保代幣",
+    "insuredTokenHelp": "發生受保的損失事件後，可用來申請理賠的資產；能否獲賠仍須視保險積分與理賠規則而定。",
+    "maxCoverage": "最高理賠比例",
+    "maxCoverageHelpLabel": "關於最高理賠比例",
+    "maxCoverageHelp": "各代幣目前在鏈上設定的最高理賠比例。實際理賠金額取決於使用者的保險積分與承保池理賠上限。",
+    "claim": "理賠"
+  },
+  "openTokenSite": "前往{token}官網",
+  "actions": {
+    "fileClaim": "申請理賠",
+    "fileClaimFor": "為{token}申請理賠",
+    "actionFor": "{token}：{action}",
+    "claimOpen": "開放申請中",
+    "settleClaims": "結算理賠",
+    "settleAndDispute": "結算與爭議",
+    "finalisePayout": "確認理賠金",
+    "minutesLeft": "{label}（剩{minutes}分鐘）",
+    "daysHoursLeft": "{label}（剩{days}天{hours}小時）"
+  },
+  "simulateClaim": "模擬理賠"
+}

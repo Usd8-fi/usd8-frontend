@@ -1,0 +1,121 @@
+{
+  "header": {
+    "homeLabel": "USD8首頁",
+    "beta": "Beta",
+    "switchNetwork": "切換至{network}",
+    "retryData": "重新載入資料"
+  },
+  "wallet": {
+    "connect": "連接錢包",
+    "connecting": "連接中…",
+    "manageLabel": "管理錢包{address}"
+  },
+  "footer": {
+    "homeLabel": "USD8首頁（頁尾）",
+    "navLabel": "頁尾導覽",
+    "docs": "文件",
+    "auditReport": "稽核報告",
+    "addresses": "合約地址",
+    "timelockQueues": "時間鎖佇列",
+    "faqs": "常見問題",
+    "checkBoosters": "查詢加成卡",
+    "transparency": "透明度",
+    "contacts": "聯絡我們",
+    "legal": "法律條款",
+    "cookieSettings": "Cookie設定",
+    "openSource": "所有程式碼皆已開源",
+    "openSourceWithDataTime": "所有程式碼皆已開源。資料更新時間：{time}"
+  },
+  "score": {
+    "title": "免費保險積分",
+    "intro": "持有USD8或sUSD8，每個區塊都能免費累積保險積分。",
+    "total": "你的保險積分",
+    "totalHelpLabel": "關於保險積分總額",
+    "totalHelp": "你所有持有的資產累計獲得的保險積分總額。由於需要等待以太坊區塊最終確認，積分更新可能會延遲約13–19分鐘。",
+    "loading": "正在載入保險積分",
+    "cooldownIn": "+{amount}將於{duration}後可用",
+    "cooldownAfterHolding": "+{amount}將於持有期結束後可用",
+    "holdingPeriod": "持有期"
+  },
+  "asset": {
+    "insured": "受保",
+    "insuredValue": "是（有上限）",
+    "coverageHelpLabel": "關於保障上限",
+    "coverageHelp": "保障額度以承保池的可用資金為限。",
+    "scoreRate": "積分速率",
+    "scoreRateValue": "每天{rate}積分/{unit}",
+    "scoreRateLoading": "正在載入積分速率",
+    "scoreRateHelpLabel": "關於積分速率",
+    "scoreRateHelp": "每持有1 {unit}，每天可獲得{rate}積分，每個區塊即時發放。",
+    "scoreRateHelpPending": "每持有1 {unit}每天可獲得的積分，每個區塊即時發放。",
+    "balance": "你的餘額",
+    "balanceLoading": "正在載入錢包餘額",
+    "apyHelpLabel": "關於{title}的年化報酬率",
+    "apyLoading": "正在載入年化報酬率",
+    "scoreEarned": "已獲得積分"
+  },
+  "usd8": {
+    "flag": "封測期3倍",
+    "mint": "鑄造",
+    "redeem": "贖回"
+  },
+  "susd8": {
+    "title": "sUSD8（USD8儲蓄版，Morpho）",
+    "balance": "你的存款（USD8）",
+    "apyHelp": "以USD8發放，來自USD8金庫收益：支撐USD8的USDC會投入DeFi賺取收益，其中一部分分配給sUSD8金庫。",
+    "yieldTarget": "sUSD8金庫",
+    "comingSoon": "即將推出"
+  },
+  "claims": {
+    "title": "申請保險理賠",
+    "intro": "若受保代幣相對其底層資產下跌超過20%，你可以用保險積分申請理賠。",
+    "available": "你的可用積分",
+    "availableHelpLabel": "關於可用積分",
+    "availableHelp": "積分獲得後須經過{duration}才能使用，並會扣除已用於理賠的積分。"
+  },
+  "coverPools": {
+    "title": "承保池",
+    "helpLabel": "關於承保池",
+    "help": "存入承保池指定的代幣（例如wstETH），即可賺取以USD8發放的收益，資金來自USD8金庫收益。相對地，承保池要為受保代幣提供保障：若某個受保代幣下跌超過20%並觸發理賠事件，承保池資產將用來支付有效理賠，每起事件的給付以承保池一定比例為上限。提領須經過7天冷卻期，等待提領的資產仍須承擔理賠。",
+    "warning": "存入承保池，為受保代幣提供保障並賺取收益。年化報酬率可能很高，但請留意：一旦受保代幣發生損失，承保池的存款可能會被用來支付理賠。請務必了解<link>其中的風險</link>。"
+  },
+  "whiteHat": {
+    "title": "白帽經濟",
+    "message": "等USD8透過理賠流程累積到相當數量的受保代幣，白帽經濟就會正式啟動。<link>了解更多</link>。"
+  },
+  "pool": {
+    "apyWindowLabel": "{pool}年化報酬率統計期間",
+    "apyHelpLabel": "關於{pool}的{days}日年化報酬率",
+    "apyHelpSource": "以USD8發放，來自USD8金庫收益：支撐所有USD8的USDC會投入DeFi賺取收益，其中一部分分配給承保池。",
+    "apyHelpWhyHigh": "承保池的規模相對USD8供應量刻意維持在較小的水準，同一份收益由少得多的存款分享，所以年化報酬率可能很高。",
+    "yieldTarget": "承保池",
+    "loading": "正在載入承保池資料",
+    "filled": "容量使用率",
+    "filledHelpLabel": "關於{pool}的容量使用率",
+    "filledHelpUncapped": "這個承保池沒有存款上限。",
+    "filledHelp": "這個承保池的存款佔存款上限的比例。達到100%後會暫停受理存款，直到有人提領。",
+    "capacityLoading": "正在載入承保池容量",
+    "uncapped": "無上限",
+    "uncappedLabel": "已存入{assets} {asset}，無上限",
+    "capacityFilledLabel": "容量已使用{percent}%",
+    "deposit": "你的存款",
+    "depositLoading": "正在載入你的存款",
+    "earnings": "你的收益",
+    "earningsHelpLabel": "關於你在{pool}的收益",
+    "earningsHelp": "收益以USD8發放，而不是{asset}。收益不承擔保險理賠，可隨時提領。",
+    "actions": {
+      "deposit": "存入",
+      "withdraw": "提領",
+      "claimReward": "提領收益"
+    }
+  },
+  "yieldIllustration": {
+    "label": "支撐USD8的USDC所產生的金庫收益會流向{target}",
+    "backing": "支撐所有USD8",
+    "defiYield": "DeFi收益",
+    "viaTreasury": "經由USD8金庫",
+    "highApy": "高年化 ↑",
+    "largeSupply": "供應量大",
+    "smallPool": "規模小且有上限的池"
+  }
+}

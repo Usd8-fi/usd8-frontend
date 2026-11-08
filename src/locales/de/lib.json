@@ -1,0 +1,111 @@
+{
+  "duration": {
+    "day_one": "{count} Tag",
+    "day_other": "{count} Tagen",
+    "hour_one": "{count} Stunde",
+    "hour_other": "{count} Stunden",
+    "minute_one": "{count} Minute",
+    "minute_other": "{count} Minuten",
+    "second_one": "{count} Sekunde",
+    "second_other": "{count} Sekunden",
+    "adjective": {
+      "day_other": "{count}-tägige",
+      "hour_other": "{count}-stündige",
+      "minute_other": "{count}-minütige",
+      "second_other": "{count}-sekündige"
+    }
+  },
+  "cooldown": {
+    "readyNow": "jetzt abhebbar",
+    "readyIn": {
+      "day_one": "abhebbar in {count} Tag",
+      "day_other": "abhebbar in {count} Tagen",
+      "hour_one": "abhebbar in {count} Stunde",
+      "hour_other": "abhebbar in {count} Stunden",
+      "minute_one": "abhebbar in {count} Minute",
+      "minute_other": "abhebbar in {count} Minuten"
+    }
+  },
+  "amount": {
+    "invalidNumber": "Bitte geben Sie eine gültige Zahl ein.",
+    "tooManyDecimals": "Höchstens {decimals} Nachkommastellen erlaubt.",
+    "noBalance": {
+      "deposit": "Kein {token} zum Einzahlen verfügbar.",
+      "startCooldown": "Kein {token} verfügbar, um die Wartezeit zu starten.",
+      "mint": "Kein {token} verfügbar, um USD8 zu minten.",
+      "redeem": "Kein {token} verfügbar, um USD8 einzulösen.",
+      "generic": "Kein {token} verfügbar für: {action}."
+    },
+    "invalid": {
+      "deposit": "Geben Sie einen gültigen {token}-Betrag zum Einzahlen ein.",
+      "startCooldown": "Geben Sie einen gültigen {token}-Betrag ein, um die Wartezeit zu starten.",
+      "mint": "Geben Sie einen gültigen {token}-Betrag ein, um USD8 zu minten.",
+      "redeem": "Geben Sie einen gültigen {token}-Betrag ein, um USD8 einzulösen.",
+      "generic": "Geben Sie einen gültigen {token}-Betrag ein für: {action}."
+    },
+    "zero": {
+      "deposit": "Geben Sie zum Einzahlen einen {token}-Betrag größer als null ein.",
+      "startCooldown": "Geben Sie einen {token}-Betrag größer als null ein, um die Wartezeit zu starten.",
+      "mint": "Geben Sie einen {token}-Betrag größer als null ein, um USD8 zu minten.",
+      "redeem": "Geben Sie einen {token}-Betrag größer als null ein, um USD8 einzulösen.",
+      "generic": "Geben Sie einen {token}-Betrag größer als null ein für: {action}."
+    },
+    "exceedsBalance": "Der {token}-Betrag übersteigt Ihr verfügbares Guthaben."
+  },
+  "pool": {
+    "existingWithdrawalRequest": "Bitte schließen Sie die laufende Abhebung ab, bevor Sie eine neue starten.",
+    "withdrawalAmountsUnavailable": "Die Abhebungsbeträge sind nicht verfügbar. Klicken Sie auf „Daten neu laden“, um fortzufahren.",
+    "noEarnings": "Keine Erträge zum Abheben.",
+    "depositsPausedForIncident": "Solange Versicherungsvorfall #{incident} aktiv ist, sind Einzahlungen vorübergehend gesperrt. Versuchen Sie es erneut, sobald der Vorfall abgeschlossen ist.",
+    "exceedsCapacity": "Diese Einzahlung übersteigt die verbleibende Kapazität des Cover Pools. Sie können höchstens {amount} {symbol} einzahlen.",
+    "full": "Der Cover Pool ist voll und nimmt keine weiteren {symbol}-Einzahlungen an.",
+    "waitingForEstimate": "Warten auf eine gültige Schätzung des Abhebungsbetrags.",
+    "waitingForClaims": "Warten auf den Abschluss der Anträge",
+    "noWithdrawal": "Noch keine Abhebung aus dem Cover Pool verfügbar."
+  },
+  "claimStage": {
+    "claimOpen": "Anträge offen",
+    "settleOpen": "Abrechnung offen",
+    "notSettled": "Nicht abgerechnet",
+    "settled": "Abgerechnet",
+    "payoutOpen": "Auszahlung offen",
+    "payoutClosed": "Auszahlung geschlossen"
+  },
+  "errors": {
+    "rpcRead": "RPC-Fehler: Blockchain-Daten können nicht gelesen werden, weil die RPC-Anfrage fehlgeschlagen ist oder zu lange gedauert hat. Bitte versuchen Sie es erneut.",
+    "dataUnavailable": "Daten nicht verfügbar"
+  },
+  "claimService": {
+    "settlementNotFinal": "Auf Basis des finalisierten Chain-Zustands ist die Abrechnung noch nicht möglich. Bitte warten Sie die Finalität des Netzwerks ab und versuchen Sie es erneut.",
+    "noQualifyingDrop": "Es wurde kein maßgeblicher Kursrückgang von mehr als 20 % festgestellt.",
+    "incidentActive": "Es ist bereits ein Vorfall aktiv. Schließen Sie diesen Antrag und öffnen Sie ihn erneut.",
+    "busy": "Der Dienst zur Anspruchsprüfung ist ausgelastet. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+    "unavailable": "Der Dienst zur Anspruchsprüfung ist vorübergehend nicht verfügbar.",
+    "requestFailed": "Die Anfrage zur Anspruchsprüfung ist fehlgeschlagen ({status}).",
+    "busyNoPreviousCheck": "Der Dienst zur Anspruchsprüfung ist ausgelastet. Eine neue Prüfung steht aus; ein früheres Ergebnis liegt nicht vor.",
+    "busyStaleCheck": "Der Dienst zur Anspruchsprüfung ist ausgelastet. Letzte Prüfung von {time}: {result}. Nur zur Information – eine neue Prüfung ist erforderlich.",
+    "staleNoDrop": "kein maßgeblicher Kursrückgang festgestellt",
+    "staleQualifyingDrop": "maßgeblicher Kursrückgang festgestellt",
+    "verificationTimedOut": "Bei der Anspruchsprüfung wurde das Zeitlimit überschritten. Bitte versuchen Sie es erneut.",
+    "tooSlow": "Der Dienst zur Anspruchsprüfung hat zu lange für eine Antwort gebraucht. Bitte versuchen Sie es erneut.",
+    "unreachable": "Der Dienst zur Anspruchsprüfung ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "notConfigured": "Der Dienst zur Anspruchsprüfung ist nicht konfiguriert.",
+    "verificationFailed": "Die Anspruchsprüfung ist fehlgeschlagen{code}.",
+    "verificationExpired": "Die Anspruchsprüfung ist abgelaufen{code}.",
+    "settlementFailed": "Die Abrechnung ist fehlgeschlagen{code}.",
+    "settlementExpired": "Die Abrechnung ist abgelaufen{code}.",
+    "settlementTimedOut": "Bei der Abrechnung wurde das Zeitlimit überschritten. Bitte versuchen Sie es erneut.",
+    "downloadFailed": "Die Abrechnung konnte nicht heruntergeladen werden."
+  },
+  "claimHistory": {
+    "outOfRange": "Der Antragsverlauf überschreitet den unterstützten Bereich. Wenden Sie sich an den Support, um diesen Antrag zu laden."
+  },
+  "settlement": {
+    "baseUnits": "Basiseinheiten von {asset}",
+    "unknownAsset": "unbekanntem Asset"
+  },
+  "network": {
+    "notDeployed": "USD8 ist im ausgewählten Netzwerk nicht verfügbar",
+    "notDeployedOn": "USD8 ist auf {network} nicht verfügbar"
+  }
+}

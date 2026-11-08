@@ -1,0 +1,1 @@
+var e={connectWallet:`먼저 지갑을 연결해 주세요.`};export{e as default};

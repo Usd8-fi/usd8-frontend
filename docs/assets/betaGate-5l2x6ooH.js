@@ -1,0 +1,1 @@
+var e={codeLabel:`รหัสเชิญเบต้าแบบปิด`,invalidCode:`รหัสเชิญไม่ถูกต้อง`,submit:`เข้าสู่เบต้า`,help:`ขอรหัสได้ทาง <telegram>Telegram</telegram> หรือ <x>DM บน X</x> ของเรา`};export{e as default};

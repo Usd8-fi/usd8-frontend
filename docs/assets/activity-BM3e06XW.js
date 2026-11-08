@@ -1,0 +1,1 @@
+var e={ariaLabel:`최근 프로토콜 활동`,block:`블록 {block}`};export{e as default};

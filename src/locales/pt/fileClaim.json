@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "Fechar status do pedido",
+    "fileClaim": "Fechar a janela de pedido de indenização"
+  },
+  "dialogLabel": {
+    "status": "Status do pedido – {symbol}",
+    "file": "Pedir indenização por {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "Status do seu pedido",
+    "incidentStatus": "Status do incidente",
+    "fileClaim": "Pedir indenização"
+  },
+  "requirement": "{symbol} precisa perder mais de 20% do valor em relação ao ativo subjacente, medido pelo preço TWAP imediatamente antes e depois da queda. <link>Saiba mais</link>.",
+  "noClaimInIncident": "Você não tem pedido neste incidente. O prazo para novos pedidos já fechou, mas a liquidação é aberta: qualquer pessoa pode liquidar.",
+  "validation": {
+    "noAvailableScore": "Você não tem score de seguro disponível para usar.",
+    "amountExceedsBalance": "A quantidade de {symbol} excede seu saldo disponível.",
+    "enterAmount": "Informe a quantidade de {symbol} pela qual você quer pedir indenização.",
+    "enterScore": "Informe quanto score de seguro você quer usar."
+  },
+  "holdingRequirement": {
+    "blocks": "{blocks} blocos antes do incidente.",
+    "unavailable": "o período configurado antes do incidente. O período de posse está indisponível; atualize antes de enviar o pedido."
+  },
+  "stage": {
+    "claimOpen": "Pedidos abertos",
+    "claimClosed": "Pedidos encerrados",
+    "settle": "Liquidação",
+    "settleOpen": "Liquidação aberta",
+    "notSettled": "Não liquidado",
+    "settled": "Liquidado",
+    "payout": "Indenização",
+    "payoutOpen": "Indenização aberta",
+    "payoutClosed": "Indenização encerrada",
+    "progress": "Progresso: {stage}"
+  },
+  "statusDescription": {
+    "claimOpen": "aguardando outras pessoas também fazerem seus pedidos.",
+    "settlementOpenClaimant": "aguardando a liquidação",
+    "settlementOpenAnyone": "aguardando a liquidação; qualquer pessoa pode liquidar.",
+    "settlementExpired": "o prazo de liquidação fechou; retire seus tokens em custódia.",
+    "settlementPending": "liquidado; prazo aberto para eventuais contestações",
+    "payoutOpen": "prazo de indenização aberto; conclua o quanto antes.",
+    "payoutExpired": "o prazo de indenização fechou; retire seus tokens em custódia."
+  },
+  "statusLabel": {
+    "plain": "Status",
+    "withDescription": "Status – {description}"
+  },
+  "currentStage": "Etapa atual: {stage}",
+  "action": {
+    "cancelClaim": "Cancelar pedido",
+    "settleAllClaims": "Liquidar todos os pedidos",
+    "returnTokens": "Retirar tokens",
+    "acceptPayout": "Aceitar indenização",
+    "cancelPayoutReturnTokens": "Recusar e retirar tokens",
+    "fileClaim": "Pedir indenização"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "Token segurado em custódia",
+    "claimBondEscrowed": "Caução em custódia",
+    "bondFullyRefunded": "Será devolvida integralmente",
+    "bondNotRefunded": "Não será devolvida: condições não cumpridas",
+    "insuranceScoreToSpend": "Score de seguro a usar",
+    "effectiveScoreAfterBoosters": "Score efetivo com Boosters: {score}; ",
+    "scoreCommitted": "{percent} de todo o score comprometido",
+    "boostersEscrowed": "Boosters em custódia",
+    "loadingBoostersTaken": "Carregando os Boosters considerados",
+    "boostersTaken": "Considerados: {count}"
+  },
+  "payout": {
+    "ineligible": "Você não tem direito a indenização, e sua caução de {bond} USD8 não será devolvida. Retire seus tokens para encerrar o pedido.",
+    "totalUsdValue": "Valor total da indenização (USD)",
+    "loadingValue": "Carregando o valor da indenização",
+    "vsLossValue": "Indenização x valor da perda",
+    "loadingComparison": "Carregando a comparação",
+    "details": "Detalhes da indenização",
+    "loadingDetails": "Carregando os detalhes da indenização"
+  },
+  "time": {
+    "days_one": "{count} dia",
+    "days_other": "{count} dias",
+    "hours_one": "{count} hora",
+    "hours_other": "{count} horas",
+    "minutes_one": "{count} minuto",
+    "minutes_other": "{count} minutos",
+    "minutesLeft": "fecha em {minutes}",
+    "hoursMinutesLeft": "restam {hours} e {minutes}",
+    "daysHoursLeft": "restam {days} e {hours}",
+    "rangeDays": "{from}–{to} dias",
+    "rangeHours": "{from}–{to} horas",
+    "rangeMinutes": "{from}–{to} minutos"
+  },
+  "submissionStatus": "Status do envio do pedido",
+  "form": {
+    "tokenAmountLabel": "Quantidade de {symbol}",
+    "tokenAmountHelpLabel": "Sobre a quantidade do token segurado",
+    "tokenAmountHelp": "Você precisa ter mantido {symbol} por, no mínimo, {holding} A elegibilidade considera o seu menor saldo nesse período, então tokens adquiridos depois não contam. Se esse saldo for zero, você não tem direito à indenização e perde a caução do pedido.",
+    "tokenAmountInput": "Quantidade de {symbol} segurado",
+    "availableWithPeriod": "Disponível: {amount}.",
+    "available": "Disponível: {amount}",
+    "claimBond": "Caução do pedido",
+    "claimBondHelpLabel": "Sobre a caução do pedido",
+    "claimBondHelp": "Para enviar o pedido, é exigida uma caução antispam de 10 USD8. Ela não é devolvida se você não tiver direito à indenização.",
+    "scoreLabel": "Score de seguro a usar",
+    "scoreHelpLabel": "Sobre o score de seguro a usar",
+    "scoreHelp": "Quanto score você pretende usar. Na liquidação, esse valor é limitado ao seu score disponível, e o score só é gasto se você aceitar uma indenização a que tenha direito.",
+    "boostersLabel": "Boosters para custódia",
+    "boostersHelpLabel": "Sobre os Boosters para custódia",
+    "boostersHelp": "Opcional. Os Boosters precisam cumprir o mesmo requisito de posse antes do incidente que o token segurado: ter sido mantidos por, no mínimo, {holding} Só os Boosters elegíveis aumentam o peso na indenização, e eles são queimados quando você aceita. Os Boosters excedentes são devolvidos. Se você recusar, todos os Boosters são devolvidos."
+  },
+  "weight": {
+    "summary": "Peso máximo na indenização: {weight}{boosters} — {share} do peso provisório em custódia; o peso final depende da elegibilidade de posse.",
+    "boosters_one": " (incl. {count} Booster)",
+    "boosters_other": " (incl. {count} Boosters)"
+  }
+}

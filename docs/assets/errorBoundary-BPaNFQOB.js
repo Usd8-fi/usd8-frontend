@@ -1,0 +1,1 @@
+var e={crash:{message:`เกิดข้อผิดพลาดระหว่างแสดงหน้านี้`,reload:`โหลดใหม่`}};export{e as default};

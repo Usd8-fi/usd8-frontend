@@ -1,0 +1,1 @@
+var e={language:`語言`,metrics:{apy:`年化報酬率`,tvl:`總鎖倉價值`,window7D:`7日`,window30D:`30日`,apySuffix:`年化`,windowApy:`{window}年化`},pools:{wsteth:`wstETH承保池`,usd8:`USD8承保池`,msloss:`msLOSS承保池`}};export{e as default};

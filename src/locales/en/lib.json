@@ -1,0 +1,111 @@
+{
+  "duration": {
+    "day_one": "{count} day",
+    "day_other": "{count} days",
+    "hour_one": "{count} hour",
+    "hour_other": "{count} hours",
+    "minute_one": "{count} minute",
+    "minute_other": "{count} minutes",
+    "second_one": "{count} second",
+    "second_other": "{count} seconds",
+    "adjective": {
+      "day_other": "{count}-day",
+      "hour_other": "{count}-hour",
+      "minute_other": "{count}-minute",
+      "second_other": "{count}-second"
+    }
+  },
+  "cooldown": {
+    "readyNow": "ready now",
+    "readyIn": {
+      "day_one": "ready in {count} day",
+      "day_other": "ready in {count} days",
+      "hour_one": "ready in {count} hour",
+      "hour_other": "ready in {count} hours",
+      "minute_one": "ready in {count} minute",
+      "minute_other": "ready in {count} minutes"
+    }
+  },
+  "amount": {
+    "invalidNumber": "Please enter a valid number.",
+    "tooManyDecimals": "Use at most {decimals} decimal places.",
+    "noBalance": {
+      "deposit": "You do not have any {token} available to deposit.",
+      "startCooldown": "You do not have any {token} available to start cooldown.",
+      "mint": "You do not have any {token} available to mint USD8.",
+      "redeem": "You do not have any {token} available to redeem USD8.",
+      "generic": "You do not have any {token} available to {action}."
+    },
+    "invalid": {
+      "deposit": "Enter a valid {token} amount to deposit.",
+      "startCooldown": "Enter a valid {token} amount to start cooldown.",
+      "mint": "Enter a valid {token} amount to mint USD8.",
+      "redeem": "Enter a valid {token} amount to redeem USD8.",
+      "generic": "Enter a valid {token} amount to {action}."
+    },
+    "zero": {
+      "deposit": "Enter a {token} amount greater than zero to deposit.",
+      "startCooldown": "Enter a {token} amount greater than zero to start cooldown.",
+      "mint": "Enter a {token} amount greater than zero to mint USD8.",
+      "redeem": "Enter a {token} amount greater than zero to redeem USD8.",
+      "generic": "Enter a {token} amount greater than zero to {action}."
+    },
+    "exceedsBalance": "The {token} amount exceeds your available balance."
+  },
+  "pool": {
+    "existingWithdrawalRequest": "Please finish the existing withdrawal request before starting a new one.",
+    "withdrawalAmountsUnavailable": "Withdrawal amounts are unavailable. Retry Data to continue.",
+    "noEarnings": "No earnings to withdraw.",
+    "depositsPausedForIncident": "Deposits are temporarily unavailable while insurance incident #{incident} is active. Try again after the incident is finalized.",
+    "exceedsCapacity": "This deposit exceeds the cover pool's remaining capacity. You can deposit up to {amount} {symbol}.",
+    "full": "The cover pool is full and cannot accept additional {symbol} deposits.",
+    "waitingForEstimate": "Waiting for a valid withdrawal estimate.",
+    "waitingForClaims": "Waiting for claims to finish",
+    "noWithdrawal": "No cover-pool withdrawal is available yet."
+  },
+  "claimStage": {
+    "claimOpen": "Claim Open",
+    "settleOpen": "Settle Open",
+    "notSettled": "Not Settled",
+    "settled": "Settled",
+    "payoutOpen": "Payout Open",
+    "payoutClosed": "Payout Closed"
+  },
+  "errors": {
+    "rpcRead": "RPC error: Unable to read blockchain data. The RPC request failed or timed out. Please try again.",
+    "dataUnavailable": "Data unavailable"
+  },
+  "claimService": {
+    "settlementNotFinal": "Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.",
+    "noQualifyingDrop": "No qualifying >20% price drop was detected.",
+    "incidentActive": "An incident is already active. Close and reopen this claim.",
+    "busy": "Claim verification service is busy. Please wait a moment and try again.",
+    "unavailable": "Claim verification service is temporarily unavailable.",
+    "requestFailed": "Claim verification request failed ({status}).",
+    "busyNoPreviousCheck": "Claim verification service is busy. Waiting for a fresh check; no previous result is available.",
+    "busyStaleCheck": "Claim verification service is busy. Stale check at {time}: {result}. Display only; fresh verification is required.",
+    "staleNoDrop": "no qualifying price drop detected",
+    "staleQualifyingDrop": "qualifying price drop detected",
+    "verificationTimedOut": "Claim verification timed out. Please try again.",
+    "tooSlow": "The claim verification service took too long to respond. Please try again.",
+    "unreachable": "Could not reach the claim verification service. Check your connection and try again.",
+    "notConfigured": "Claim verification service is not configured.",
+    "verificationFailed": "Claim verification failed{code}.",
+    "verificationExpired": "Claim verification expired{code}.",
+    "settlementFailed": "Claim settlement failed{code}.",
+    "settlementExpired": "Claim settlement expired{code}.",
+    "settlementTimedOut": "Claim settlement timed out. Please try again.",
+    "downloadFailed": "Claim settlement download failed."
+  },
+  "claimHistory": {
+    "outOfRange": "Claim history exceeds the supported range. Contact support to load this claim."
+  },
+  "settlement": {
+    "baseUnits": "base units of {asset}",
+    "unknownAsset": "unknown asset"
+  },
+  "network": {
+    "notDeployed": "USD8 is not deployed on the selected network",
+    "notDeployedOn": "USD8 is not deployed on {network}"
+  }
+}

@@ -1,0 +1,1 @@
+var e={language:`Dil`,metrics:{apy:`Yıllık Getiri`,tvl:`Toplam Yatırılan`,window7D:`7G`,window30D:`30G`,apySuffix:` Yıllık Getiri`,windowApy:`{window} Yıllık Getiri`},pools:{wsteth:`wstETH Teminat Havuzu`,usd8:`USD8 Teminat Havuzu`,msloss:`msLOSS Teminat Havuzu`}};export{e as default};

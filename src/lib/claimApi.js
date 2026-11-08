@@ -5,6 +5,7 @@ import {
 import { claimApiBaseUrlForChain, claimApiConfigured } from './claimContext.js';
 export { CLAIM_API_BASE_URL, claimApiBaseUrlForChain, claimApiConfigured, matchesSettlementContext } from './claimContext.js';
 import { cachedData, checkAbort, queryClient } from './dataCache.js';
+import { t } from './i18n.js';
 
 const JOB_ID_PATTERN = /^[0-9a-f]{64}$/;
 const DEFAULT_POLL_INTERVAL_MS = 3_000;
@@ -17,8 +18,10 @@ const JOB_RETENTION_MS = 3_600_000;
 // without extending the GC lifetime of unrelated metrics or cached artifacts.
 queryClient.setQueryDefaults(['claim-job'], { gcTime: JOB_RETENTION_MS });
 
-function terminalFailure(terminal) {
-  throw new Error(`Claim settlement ${terminal}.`);
+// `status` is the job's terminal status ('failed' or 'expired'); `code` is
+// the service's machine code, shown as-is.
+function terminalFailure({ status, code }) {
+  throw new Error(t(status === 'expired' ? 'lib.claimService.settlementExpired' : 'lib.claimService.settlementFailed', { code }));
 }
 // Match the candidate worker's bounded result capacity; streamed actual bytes,
 // digest and terminal bindings remain authoritative, not Content-Length.
@@ -32,13 +35,13 @@ function apiError(status, operation = 'incident-open') {
   // Settlement preflight reads finalized state: an incident newer than the
   // finalized head is "not found" there until finality catches up.
   if (status === 422 || (status === 404 && operation === 'settlement')) return new Error(operation === 'settlement'
-    ? 'Settlement is not available at the finalized chain state yet. Please wait for network finality and try again.'
-    : 'No qualifying >20% price drop was detected.');
-  if (status === 409) return new Error('An incident is already active. Close and reopen this claim.');
-  if (status === 429) return new Error('Claim verification service is busy. Please wait a moment and try again.');
+    ? t('lib.claimService.settlementNotFinal')
+    : t('lib.claimService.noQualifyingDrop'));
+  if (status === 409) return new Error(t('lib.claimService.incidentActive'));
+  if (status === 429) return new Error(t('lib.claimService.busy'));
   return new Error(status === 503
-    ? 'Claim verification service is temporarily unavailable.'
-    : `Claim verification request failed (${status}).`);
+    ? t('lib.claimService.unavailable')
+    : t('lib.claimService.requestFailed', { status }));
 }
 
 function validAdvisory(advisory, expected) {
@@ -59,9 +62,9 @@ function validAdvisory(advisory, expected) {
 }
 
 function advisoryBusyMessage(advisory) {
-  if (!advisory) return 'Claim verification service is busy. Waiting for a fresh check; no previous result is available.';
-  const result = advisory.snapshot.result.outcome === 'noDrop' ? 'no qualifying price drop detected' : 'qualifying price drop detected';
-  return `Claim verification service is busy. Stale check at ${new Date(advisory.snapshot.checkedAt * 1000).toISOString()}: ${result}. Display only; fresh verification is required.`;
+  if (!advisory) return t('lib.claimService.busyNoPreviousCheck');
+  const result = advisory.snapshot.result.outcome === 'noDrop' ? t('lib.claimService.staleNoDrop') : t('lib.claimService.staleQualifyingDrop');
+  return t('lib.claimService.busyStaleCheck', { time: new Date(advisory.snapshot.checkedAt * 1000).toISOString(), result });
 }
 
 function canonicalAddress(value, label) {
@@ -140,7 +143,7 @@ async function fetchWithRateLimitRetry(url, options, {
   while (true) {
     checkAbort(signal);
     if (Date.now() >= deadline) {
-      const error = new Error(throttled ? busyMessage() : 'Claim verification timed out. Please try again.');
+      const error = new Error(throttled ? busyMessage() : t('lib.claimService.verificationTimedOut'));
       if (throttled) error.name = 'ClaimServiceBusyError';
       throw error;
     }
@@ -151,9 +154,9 @@ async function fetchWithRateLimitRetry(url, options, {
     } catch (error) {
       checkAbort(signal);
       if (timeout.aborted || error?.name === 'TimeoutError') {
-        throw new Error('The claim verification service took too long to respond. Please try again.', { cause: error });
+        throw new Error(t('lib.claimService.tooSlow'), { cause: error });
       }
-      throw new Error('Could not reach the claim verification service. Check your connection and try again.', { cause: error });
+      throw new Error(t('lib.claimService.unreachable'), { cause: error });
     }
     await onResponse?.(response);
     if (response.status !== 429) return response;
@@ -288,7 +291,7 @@ async function downloadedTerminal(download, expectedJobId, signal) {
     referrerPolicy: 'no-referrer',
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
   });
-  if (!response.ok || !response.body) throw new Error('Claim settlement download failed.');
+  if (!response.ok || !response.body) throw new Error(t('lib.claimService.downloadFailed'));
   const contentLength = response.headers.get('content-length');
   if (contentLength !== null
       && (!/^(0|[1-9]\d*)$/.test(contentLength) || Number(contentLength) !== download.bytes)) {
@@ -444,7 +447,7 @@ async function prepareSettlementUncached(incidentId, {
   pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
   maxWaitMs = DEFAULT_SETTLEMENT_MAX_WAIT_MS,
 } = {}) {
-  if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
+  if (!claimApiConfigured) throw new Error(t('lib.claimService.notConfigured'));
   const incidentIdText = typeof incidentId === 'bigint' ? String(incidentId) : incidentId;
   if (typeof incidentIdText !== 'string' || !/^[1-9]\d*$/.test(incidentIdText)
       || BigInt(incidentIdText) > MAX_UINT256) throw new Error('Invalid incident id.');
@@ -555,7 +558,7 @@ async function prepareSettlementUncached(incidentId, {
       }
       if (job.status === 'failed' || job.status === 'expired') {
         const code = typeof job.payload?.code === 'string' ? ` (${job.payload.code})` : '';
-        spentTerminal = `${job.status}${code}`;
+        spentTerminal = { status: job.status, code };
         queryClient.removeQueries({ queryKey: resumeKey, exact: true });
         if (launchedHere) return terminalFailure(spentTerminal);
         break;
@@ -567,7 +570,7 @@ async function prepareSettlementUncached(incidentId, {
     if (!spentTerminal) break;
   }
   if (spentTerminal) return terminalFailure(spentTerminal);
-  throw new Error('Claim settlement timed out. Please try again.');
+  throw new Error(t('lib.claimService.settlementTimedOut'));
 }
 
 /// Display-only price-drop check run before any wallet approval, so users are not
@@ -585,7 +588,7 @@ export async function checkIncidentOpen(insuredToken, {
   onAdvisory,
   onStatus,
 } = {}) {
-  if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
+  if (!claimApiConfigured) throw new Error(t('lib.claimService.notConfigured'));
   const canonicalToken = canonicalAddress(insuredToken, 'insured token');
   const expected = { chainId, registry, defiInsurance, insuredToken: canonicalToken };
   let advisory = validAdvisory(previousAdvisory, expected);
@@ -631,7 +634,7 @@ export async function prepareIncidentOpen(insuredToken, {
   onAdvisory,
   onStatus,
 } = {}) {
-  if (!claimApiConfigured) throw new Error('Claim verification service is not configured.');
+  if (!claimApiConfigured) throw new Error(t('lib.claimService.notConfigured'));
   const canonicalToken = canonicalAddress(insuredToken, 'insured token');
   const expected = { chainId, registry, defiInsurance, insuredToken: canonicalToken };
   let advisory = validAdvisory(previousAdvisory, expected);
@@ -705,14 +708,14 @@ export async function prepareIncidentOpen(insuredToken, {
     if (job.status === 'failed' || job.status === 'expired') {
       queryClient.removeQueries({ queryKey: resumeKey, exact: true });
       const code = typeof job.payload?.code === 'string' ? ` (${job.payload.code})` : '';
-      throw new Error(`Claim verification ${job.status}${code}.`);
+      throw new Error(t(job.status === 'expired' ? 'lib.claimService.verificationExpired' : 'lib.claimService.verificationFailed', { code }));
     }
     if (job.status !== 'pending' && job.status !== 'running') {
       throw new Error('Claim service returned an invalid job status.');
     }
     await wait(pollIntervalMs, signal);
   }
-  throw new Error('Claim verification timed out. Please try again.');
+  throw new Error(t('lib.claimService.verificationTimedOut'));
 }
 
 // Only verified artifacts with an immutable onchain root are reusable. Job

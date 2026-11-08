@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "Thông báo beta kín",
+    "message": "<strong>Chào mừng bạn đến với bản beta kín của USD8.</strong> Người dùng beta kín được tích điểm bảo hiểm khi nắm giữ USD8 với tốc độ gấp 3 lần bình thường và sẽ nhận 3 Booster khi beta kết thúc. Có góp ý hoặc gặp sự cố? Hãy nhắn trong <link>nhóm Telegram</link> của chúng tôi."
+  },
+  "wallet": {
+    "defaultLabel": "Thông báo",
+    "viewTransaction": "Xem giao dịch",
+    "dismissWallet": "Đóng thông báo ví",
+    "dismiss": "Đóng thông báo",
+    "connectRequired": {
+      "label": "Cần kết nối ví",
+      "message": "Kết nối ví để tiếp tục.",
+      "action": "Kết nối ví"
+    }
+  }
+}

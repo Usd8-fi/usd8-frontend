@@ -1,0 +1,1 @@
+var e={finality:{explanation:`A liquidação pode começar quando o bloco finalizado passar do prazo final dos pedidos.`,heads:`Bloco atual {latest} · Bloco finalizado {finalized}`,readyToSettle:`Pronto para liquidar`,minutesToGo:`faltam cerca de {minutes} min`}};export{e as default};

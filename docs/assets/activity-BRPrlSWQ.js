@@ -1,0 +1,1 @@
+var e={ariaLabel:`近期协议动态`,block:`区块{block}`};export{e as default};

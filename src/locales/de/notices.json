@@ -1,0 +1,17 @@
+{
+  "site": {
+    "ariaLabel": "Hinweis zur Private Beta",
+    "message": "<strong>Willkommen in der USD8 Private Beta.</strong> Als Beta-Teilnehmer sammeln Sie mit Ihren USD8-Beständen Versicherungsscore zur dreifachen normalen Rate und erhalten zum Ende der Beta 3 Booster. Feedback oder Probleme? Schreiben Sie uns in unserer <link>Telegram-Gruppe</link>."
+  },
+  "wallet": {
+    "defaultLabel": "Benachrichtigung",
+    "viewTransaction": "Transaktion ansehen",
+    "dismissWallet": "Wallet-Hinweis schließen",
+    "dismiss": "Benachrichtigung schließen",
+    "connectRequired": {
+      "label": "Wallet-Verbindung erforderlich",
+      "message": "Verbinden Sie Ihre Wallet, um fortzufahren.",
+      "action": "Wallet verbinden"
+    }
+  }
+}

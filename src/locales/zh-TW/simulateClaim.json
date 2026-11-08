@@ -1,0 +1,31 @@
+{
+  "title": "模擬理賠",
+  "close": "關閉理賠模擬器",
+  "intro": "依即時的承保池規模與價格，估算你可獲得的理賠金。正式結算時會在TEE中重新計算所有數值，最終金額可能不同。",
+  "sliderLabel": "{label}滑桿",
+  "insuredToken": {
+    "label": "受保代幣",
+    "helpLabel": "關於受保代幣",
+    "help": "你要申請理賠的代幣。損失上限由它的最高理賠比例決定；持有同一種代幣的承保池不參與這起理賠事件的給付。"
+  },
+  "lossValue": {
+    "label": "損失價值（USD）",
+    "helpLabel": "關於損失價值（USD）",
+    "help": "你申請理賠的受保代幣價值，以下跌前7天的平均價格計算。損失上限是這個價值的特定百分比。"
+  },
+  "scoreWeight": {
+    "label": "你的積分權重",
+    "helpLabel": "關於你的積分權重",
+    "help": "你的保險積分（含加成卡）在同一起理賠事件所有申請人積分中所佔的比例。"
+  },
+  "results": {
+    "estimatedReimbursement": "預估理賠金",
+    "coverPoolBudget": "承保池預算",
+    "scoreShare": "A. 積分佔比（{percent}%）",
+    "lossCap": "B. 損失上限（{percent}%）",
+    "payoutFormula": "理賠金 = min(A, B)",
+    "paidFromCoverPools": "由承保池給付",
+    "excluded": "不計入",
+    "noPoolData": "目前還沒有承保池資料。"
+  }
+}

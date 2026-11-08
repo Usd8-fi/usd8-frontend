@@ -1,0 +1,25 @@
+{
+  "tableLabel": "Tokens asegurados",
+  "columns": {
+    "insuredToken": "Token asegurado",
+    "insuredTokenHelpLabel": "Acerca del token asegurado",
+    "insuredTokenHelp": "Un activo por el que puedes presentar una reclamación tras un incidente de pérdida cubierto, según tu puntuación de seguro y las reglas de reclamación.",
+    "maxCoverage": "Cobertura máxima",
+    "maxCoverageHelpLabel": "Acerca de la cobertura máxima",
+    "maxCoverageHelp": "Reembolso máximo vigente, fijado onchain, para cada token de la lista. La indemnización real depende de la puntuación de seguro del usuario y de los límites de los pools de cobertura.",
+    "claim": "Reclamación"
+  },
+  "openTokenSite": "Abrir {token} en su sitio web",
+  "actions": {
+    "fileClaim": "Presentar reclamación",
+    "fileClaimFor": "Presentar una reclamación por {token}",
+    "actionFor": "{action} para {token}",
+    "claimOpen": "Reclamaciones abiertas",
+    "settleClaims": "Liquidar reclamaciones",
+    "settleAndDispute": "Liquidar e impugnar",
+    "finalisePayout": "Finalizar indemnización",
+    "minutesLeft": "{label} (cierre en {minutes} min)",
+    "daysHoursLeft": "{label} (cierre en {days} d {hours} h)"
+  },
+  "simulateClaim": "Simular reclamación"
+}

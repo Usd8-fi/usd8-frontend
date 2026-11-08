@@ -1,0 +1,1 @@
+var e={ariaLabel:`أحدث نشاطات البروتوكول`,block:`الكتلة {block}`};export{e as default};

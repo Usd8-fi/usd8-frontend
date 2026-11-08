@@ -1,0 +1,1 @@
+var e={finality:{explanation:`La liquidazione può iniziare quando il blocco finalizzato supera la scadenza delle richieste.`,heads:`Blocco attuale {latest} · Blocco finalizzato {finalized}`,readyToSettle:`Liquidazione possibile`,minutesToGo:`ancora circa {minutes} min`}};export{e as default};

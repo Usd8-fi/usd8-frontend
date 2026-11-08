@@ -1,0 +1,1 @@
+var e={codeLabel:`Kode Undangan Beta Privat`,invalidCode:`Kode undangan tidak valid.`,submit:`Masuk Beta`,help:`Dapatkan kode lewat <telegram>Telegram</telegram> atau <x>DM X</x> kami`};export{e as default};

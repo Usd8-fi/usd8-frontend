@@ -17,7 +17,7 @@ Insured tokens are carefully evaluated, selected and adjusted on an ongoing basi
 
 - [OpenZeppelin](https://www.openzeppelin.com/) 
 - [Trail of Bits](https://trailofbits.com/)
-- [Consensys Deligence](https://diligence.security/)
+- [Consensys Diligence](https://diligence.security/)
 - [SEAL Certification from Security Alliance](https://frameworks.securityalliance.dev/certs/overview/) 
 
 

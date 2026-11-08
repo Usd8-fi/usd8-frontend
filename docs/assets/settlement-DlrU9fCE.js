@@ -1,0 +1,1 @@
+var e={finality:{explanation:`Урегулирование можно начать, когда финализированный блок окажется позже срока подачи заявок.`,heads:`Текущий блок {latest} · Финализированный блок {finalized}`,readyToSettle:`Готово к урегулированию`,minutesToGo:`осталось около {minutes} мин`}};export{e as default};

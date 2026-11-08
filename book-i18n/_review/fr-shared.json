@@ -1,0 +1,38 @@
+{
+  "UI_TEXT": {
+    "app": "App USD8",
+    "language": "Langue"
+  },
+  "WIDGET_TEXT": {
+    "invalidAddress": "Saisissez une adresse Ethereum valide.",
+    "checking": "Vérification…",
+    "noBoosters": "Aucun Booster trouvé pour cette adresse.",
+    "found_one": "Félicitations ! Vous avez {count} Booster.",
+    "found_many": "Félicitations ! Vous avez {count} de Boosters.",
+    "found_other": "Félicitations ! Vous avez {count} Boosters.",
+    "error": "Erreur : {message}",
+    "fetchFailed": "impossible de récupérer le solde",
+    "executed": "Exécutée",
+    "cancelled": "Annulée",
+    "queued": "Programmée · {time}",
+    "ready": "Prête à être exécutée",
+    "executableFrom": "Exécutable à partir de {date}",
+    "transaction": "Transaction",
+    "description": "Description",
+    "status": "Statut",
+    "empty": "Aucune transaction dans le Timelock pour le moment",
+    "loading": "Chargement",
+    "loadFailed": "Impossible de charger les transactions du Timelock",
+    "retry": "Réessayer",
+    "hoursLeft": "encore {n} h",
+    "minutesLeft": "encore {n} min"
+  },
+  "CONSENT_TEXT": {
+    "label": "Préférences de cookies et de mesure d’audience",
+    "title": "Cookies et mesure d’audience",
+    "message": "USD8 utilise des cookies Google Analytics facultatifs pour mesurer l’audience du site de façon agrégée. Ces outils ne sont chargés qu’après votre accord, et les refuser n’a aucun effet sur l’application.",
+    "privacy": "Détails sur la confidentialité",
+    "reject": "Refuser les cookies d’analyse",
+    "accept": "Accepter les cookies d’analyse"
+  }
+}

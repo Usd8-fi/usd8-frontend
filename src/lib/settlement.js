@@ -1,4 +1,5 @@
 // Settlement payout display and topology checks for incident finalization.
+import { t } from './i18n.js';
 import { groupDecimalString } from './units.js';
 
 function formattedPayoutAmount(amount, decimals) {
@@ -23,7 +24,7 @@ export function settlementPayoutDetails(amounts, poolOrder, payoutAssets = {}) {
       amount: metadata
         ? formattedPayoutAmount(amount, metadata.decimals)
         : groupDecimalString(amount),
-      symbol: metadata?.symbol || `base units of ${asset || 'unknown asset'}`,
+      symbol: metadata?.symbol || t('lib.settlement.baseUnits', { asset: asset || t('lib.settlement.unknownAsset') }),
       usd: '',
     };
   });

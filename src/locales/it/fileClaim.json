@@ -1,0 +1,119 @@
+{
+  "close": {
+    "claimStatus": "Chiudi la finestra di stato della richiesta",
+    "fileClaim": "Chiudi la finestra della richiesta di risarcimento"
+  },
+  "dialogLabel": {
+    "status": "Stato della richiesta per {symbol}",
+    "file": "Richiesta di risarcimento per {symbol}"
+  },
+  "title": {
+    "yourClaimStatus": "Stato della tua richiesta",
+    "incidentStatus": "Stato dell’incidente",
+    "fileClaim": "Richiedi un risarcimento"
+  },
+  "requirement": "{symbol} deve perdere più del 20% del proprio valore rispetto al sottostante, confrontando il prezzo TWAP immediatamente prima e dopo il calo. <link>Scopri di più</link>.",
+  "noClaimInIncident": "Non hai richieste in questo incidente. La presentazione delle richieste è chiusa, ma la liquidazione è aperta a tutti: chiunque può avviarla.",
+  "validation": {
+    "noAvailableScore": "Non hai punteggio assicurativo disponibile da spendere.",
+    "amountExceedsBalance": "L’importo di {symbol} supera il tuo saldo disponibile.",
+    "enterAmount": "Inserisci l’importo di {symbol} per cui chiedi il risarcimento.",
+    "enterScore": "Inserisci il punteggio assicurativo che vuoi spendere."
+  },
+  "holdingRequirement": {
+    "blocks": "{blocks} blocchi prima dell’incidente.",
+    "unavailable": "la durata configurata prima dell’incidente. Finestra di detenzione non disponibile: aggiorna prima di presentare la richiesta."
+  },
+  "stage": {
+    "claimOpen": "Richieste aperte",
+    "claimClosed": "Richieste chiuse",
+    "settle": "Liquidazione",
+    "settleOpen": "Liquidazione aperta",
+    "notSettled": "Non liquidato",
+    "settled": "Liquidato",
+    "payout": "Indennizzo",
+    "payoutOpen": "Indennizzi aperti",
+    "payoutClosed": "Indennizzi chiusi",
+    "progress": "Avanzamento: {stage}"
+  },
+  "statusDescription": {
+    "claimOpen": "in attesa di altre richieste.",
+    "settlementOpenClaimant": "in attesa di liquidazione",
+    "settlementOpenAnyone": "in attesa di liquidazione: chiunque può avviarla.",
+    "settlementExpired": "finestra di liquidazione chiusa: ritira ciò che hai vincolato.",
+    "settlementPending": "liquidato; finestra aperta per eventuali contestazioni",
+    "payoutOpen": "finestra di indennizzo aperta: finalizza il prima possibile.",
+    "payoutExpired": "finestra di indennizzo chiusa: ritira ciò che hai vincolato."
+  },
+  "statusLabel": {
+    "plain": "Stato",
+    "withDescription": "Stato: {description}"
+  },
+  "currentStage": "Fase attuale: {stage}",
+  "action": {
+    "cancelClaim": "Annulla richiesta",
+    "settleAllClaims": "Liquida tutte le richieste",
+    "returnTokens": "Ritira i token",
+    "acceptPayout": "Accetta indennizzo",
+    "cancelPayoutReturnTokens": "Rifiuta e ritira i token",
+    "fileClaim": "Presenta richiesta"
+  },
+  "metric": {
+    "insuredTokenEscrowed": "Token assicurato vincolato",
+    "claimBondEscrowed": "Cauzione vincolata",
+    "bondFullyRefunded": "Sarà rimborsata per intero",
+    "bondNotRefunded": "Non sarà rimborsata: condizioni non soddisfatte",
+    "insuranceScoreToSpend": "Punteggio assicurativo da spendere",
+    "effectiveScoreAfterBoosters": "Punteggio effettivo con i Booster: {score}, ",
+    "scoreCommitted": "{percent} del punteggio totale impegnato",
+    "boostersEscrowed": "Booster vincolati",
+    "loadingBoostersTaken": "Caricamento dei Booster conteggiati",
+    "boostersTaken": "Conteggiati: {count}"
+  },
+  "payout": {
+    "ineligible": "Non hai diritto all’indennizzo e la cauzione di {bond} USD8 non ti sarà rimborsata. Ritira i tuoi token per chiudere la richiesta.",
+    "totalUsdValue": "Valore totale dell’indennizzo (USD)",
+    "loadingValue": "Caricamento del valore dell’indennizzo",
+    "vsLossValue": "Indennizzo rispetto alla perdita",
+    "loadingComparison": "Caricamento del confronto dell’indennizzo",
+    "details": "Dettagli dell’indennizzo",
+    "loadingDetails": "Caricamento dei dettagli dell’indennizzo"
+  },
+  "time": {
+    "days_one": "{count} giorno",
+    "days_other": "{count} giorni",
+    "hours_one": "{count} ora",
+    "hours_other": "{count} ore",
+    "minutes_one": "{count} minuto",
+    "minutes_other": "{count} minuti",
+    "minutesLeft": "ancora {minutes}",
+    "hoursMinutesLeft": "ancora {hours} e {minutes}",
+    "daysHoursLeft": "ancora {days} e {hours}",
+    "rangeDays": "{from}-{to} giorni",
+    "rangeHours": "{from}-{to} ore",
+    "rangeMinutes": "{from}-{to} minuti"
+  },
+  "submissionStatus": "Stato dell’invio della richiesta",
+  "form": {
+    "tokenAmountLabel": "Importo {symbol}",
+    "tokenAmountHelpLabel": "Informazioni sull’importo del token assicurato",
+    "tokenAmountHelp": "Devi aver detenuto {symbol} per almeno {holding} L’idoneità si basa sul tuo saldo minimo in quella finestra, quindi i token acquisiti dopo non contano. Se quel saldo è zero, non hai diritto al risarcimento e perdi la cauzione.",
+    "tokenAmountInput": "Importo di {symbol} assicurato",
+    "availableWithPeriod": "{amount} disponibili.",
+    "available": "{amount} disponibili",
+    "claimBond": "Cauzione della richiesta",
+    "claimBondHelpLabel": "Informazioni sulla cauzione della richiesta",
+    "claimBondHelp": "Per presentare la richiesta serve una cauzione anti-spam di 10 USD8, che non ti verrà restituita se non hai diritto al risarcimento.",
+    "scoreLabel": "Punteggio assicurativo da spendere",
+    "scoreHelpLabel": "Informazioni sul punteggio assicurativo da spendere",
+    "scoreHelp": "Il punteggio che chiedi di spendere. In liquidazione viene limitato al tuo punteggio disponibile e viene speso solo se accetti un indennizzo idoneo.",
+    "boostersLabel": "Booster da vincolare",
+    "boostersHelpLabel": "Informazioni sui Booster da vincolare",
+    "boostersHelp": "Facoltativi. I Booster devono rispettare lo stesso requisito di detenzione pre-incidente del token assicurato: {holding} Solo i Booster idonei aumentano il peso dell’indennizzo e vengono bruciati quando lo accetti. Quelli in eccesso ti vengono restituiti; se rifiuti, ti vengono restituiti tutti."
+  },
+  "weight": {
+    "summary": "Peso massimo per l’indennizzo: {weight}{boosters} — {share} del peso provvisorio complessivo vincolato; il peso finale dipende dai requisiti di detenzione.",
+    "boosters_one": " (incl. {count} Booster)",
+    "boosters_other": " (incl. {count} Booster)"
+  }
+}
