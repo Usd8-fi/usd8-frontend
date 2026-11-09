@@ -14,7 +14,10 @@ const summary = source('book-src/SUMMARY.md');
 const deploy = source('deploy.sh');
 
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
+// Hidden chapters are reachable by direct link only: not in the sitemap or llms.txt.
+const HIDDEN_CHAPTERS = ['anti-scam-check'];
 const chapterUrls = [...summary.matchAll(/\[[^\]]+\]\(([^)]+)\.md\)/g)]
+  .filter(([, chapter]) => !HIDDEN_CHAPTERS.includes(chapter))
   .map(([, chapter]) => `https://usd8.fi/docs/${chapter === 'usd8' ? '' : `${chapter}.html`}`);
 
 describe('search crawler publication', () => {
@@ -31,7 +34,17 @@ describe('search crawler publication', () => {
     expect(sitemapUrls).toContain('https://usd8.fi/');
     expect(sitemapUrls.filter((url) => url.includes('/beta'))).toEqual([]);
     for (const chapterUrl of chapterUrls) expect(sitemapUrls).toContain(chapterUrl);
+    for (const hidden of HIDDEN_CHAPTERS) expect(sitemapUrls.filter((url) => url.includes(hidden))).toEqual([]);
     expect(new Set(sitemapUrls).size).toBe(sitemapUrls.length);
+  });
+
+  it('publishes an llms.txt that links every documentation chapter', () => {
+    const llms = source('public/llms.txt');
+    expect(llms.startsWith('# USD8\n\n> ')).toBe(true);
+    const llmsUrls = [...llms.matchAll(/\]\((https:\/\/[^)]+)\)/g)].map(([, url]) => url);
+    for (const chapterUrl of chapterUrls) expect(llmsUrls).toContain(chapterUrl);
+    expect(llmsUrls.filter((url) => url.includes('/beta'))).toEqual([]);
+    for (const hidden of HIDDEN_CHAPTERS) expect(llmsUrls.filter((url) => url.includes(hidden))).toEqual([]);
   });
 
   it('builds and publishes from main at the domain root, keeping the custom domain', () => {
@@ -54,7 +67,7 @@ describe('old URL redirects', () => {
       expect(REDIRECTS[page], page).toMatch(/^\/docs\//);
     }
     // Never shadow a page the app build publishes at the root.
-    for (const reserved of ['index.html', '404.html', 'robots.txt', 'sitemap.xml']) expect(REDIRECTS[reserved]).toBeUndefined();
+    for (const reserved of ['index.html', '404.html', 'robots.txt', 'sitemap.xml', 'llms.txt']) expect(REDIRECTS[reserved]).toBeUndefined();
   });
 
   it('keeps the old URL fragment and is not indexed', () => {

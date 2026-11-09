@@ -168,6 +168,6 @@ describe('Timelock Queues', () => {
     expect(page).toMatch(/^# System Stats\n\n## Addresses\n/);
     expect(page).toContain('## Timelock Queues');
     expect(page).toContain(`data-timelock="${TIMELOCK}"`);
-    expect(bookConfig).toMatch(/additional-js = \[[^\]]*"timelock-selectors\.js", "timelock-queue\.js"\]/);
+    expect(bookConfig).toMatch(/additional-js = \[[^\]]*"timelock-selectors\.js", "timelock-queue\.js"[,\]]/);
   });
 });

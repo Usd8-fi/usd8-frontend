@@ -839,3 +839,54 @@ html[lang="th"] :not(code, kbd, pre, code *, pre *, .sidebar-telegram > span, .s
     font-family: "Blex Latin", "Thonburi", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif !important;
     letter-spacing: 0 !important;
 }
+
+/* Anti-Scam Check: a hidden page (direct link only). Keep it out of the
+   sidebar, the previous/next arrows and the search results. */
+#mdbook-sidebar li:has(> .chapter-link-wrapper > a[href$="anti-scam-check.html"]),
+#mdbook-sidebar li:has(> a[href$="anti-scam-check.html"]),
+a.nav-chapters[href$="anti-scam-check.html"],
+a.mobile-nav-chapters[href$="anti-scam-check.html"],
+#mdbook-searchresults li:has(a[href*="anti-scam-check.html"]),
+#searchresults li:has(a[href*="anti-scam-check.html"]) { display: none !important; }
+
+.anti-scam-check { margin: 1.6rem 0; }
+.anti-scam-check label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+.anti-scam-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: stretch; }
+.anti-scam-field {
+    display: flex;
+    align-items: center;
+    width: 480px;
+    max-width: 100%;
+    height: 44px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+}
+.anti-scam-field:focus-within { box-shadow: 0 0 0 1px var(--accent); }
+.anti-scam-prefix { padding: 0 0 0 14px; user-select: none; }
+.anti-scam-field input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0 14px 0 2px;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    outline: none;
+}
+.anti-scam-check button {
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--accent);
+    border-radius: 0;
+    background: var(--accent);
+    color: var(--link-inverse);
+    font: inherit;
+    cursor: pointer;
+}
+.anti-scam-check button:hover:not(:disabled) { background: var(--accent-hover); }
+.anti-scam-check button:disabled { opacity: 0.6; cursor: not-allowed; }
+.anti-scam-result { margin-top: 0.6rem; min-height: 1.4em; line-height: 1.4; }
+.anti-scam-result[data-state="official"] { color: #08b18f; }
+.anti-scam-result[data-state="unknown"],
+.anti-scam-result[data-state="invalid"] { color: #dc2626; }

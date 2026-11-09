@@ -1,0 +1,26 @@
+# USD8
+
+> USD8 is a stablecoin on Ethereum, backed 1:1 by USDC, with built-in DeFi insurance. Holding USD8 or sUSD8 earns a non-transferable insurance score every block; the score can be spent to file claims when an insured DeFi token drops more than 20% against its underlying. Payouts come from permissionless Cover Pools, and forfeited tokens fund the White Hat Economy.
+
+The app at https://usd8.fi/ is a client-side web app: it needs JavaScript and a wallet, and its figures (APY, TVL, scores) are read live from Ethereum mainnet. For protocol rules, read the docs below. For current parameters and balances, read the contracts listed on the System Stats page; do not rely on numbers quoted from memory.
+
+## Docs
+
+- [USD8 overview](https://usd8.fi/docs/): what USD8 is and how it compares with USDC
+- [DeFi Insurance](https://usd8.fi/docs/defi-insurance.html): insurance score, claim eligibility, the 3-step claim process, bonds and boosters
+- [Cover Pools](https://usd8.fi/docs/cover-pools.html): the vaults that pay claims, insured-token selection and withdrawal cooldowns
+- [FAQs](https://usd8.fi/docs/faqs.html): short answers on score, payouts and coverage
+- [Transparency](https://usd8.fi/docs/transparency.html): admin and timelock powers, beta-only privileges and trust assumptions
+- [System Stats](https://usd8.fi/docs/addresses.html): canonical mainnet contract addresses and the live timelock queue
+
+## Background
+
+- [Philosophical Roots](https://usd8.fi/docs/philosophy.html): why USD8 exists
+- [White Hat Economy](https://usd8.fi/docs/white-hat-economy.html): how claim proceeds are used against attackers
+
+## Optional
+
+- [Legal](https://usd8.fi/docs/legal.html): terms, privacy policy and risk disclaimer
+- [Smart contracts source](https://github.com/Usd8-fi/usd8-core): protocol contracts and off-chain settlement code
+- [Website source](https://github.com/Usd8-fi/usd8-frontend): this site and its docs
+- [Community Telegram](https://t.me/+e84i2oYk1ao1MTk1): questions and feedback
