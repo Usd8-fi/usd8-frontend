@@ -23,6 +23,7 @@
     "contacts": "お問い合わせ",
     "legal": "法的情報",
     "cookieSettings": "Cookie設定",
+    "antiScamCheck": "詐欺アカウント確認",
     "openSource": "すべてのコードをオープンソースで公開",
     "openSourceWithDataTime": "すべてのコードをオープンソースで公開。{time}時点のデータ"
   },

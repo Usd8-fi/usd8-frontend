@@ -9,3 +9,6 @@
 - [الشفافية](transparency.md)
 - [إحصاءات النظام](addresses.md)
 - [الشروط القانونية](legal.md)
+
+<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
+- [التحقق من الاحتيال](anti-scam-check.md)

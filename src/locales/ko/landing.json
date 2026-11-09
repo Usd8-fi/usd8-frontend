@@ -23,6 +23,7 @@
     "contacts": "연락처",
     "legal": "법적 고지",
     "cookieSettings": "쿠키 설정",
+    "antiScamCheck": "사기 계정 확인",
     "openSource": "모든 코드 오픈소스 공개",
     "openSourceWithDataTime": "모든 코드 오픈소스 공개. {time} 기준 데이터"
   },

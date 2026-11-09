@@ -23,6 +23,7 @@
     "contacts": "Kontak",
     "legal": "Legal",
     "cookieSettings": "Pengaturan Cookie",
+    "antiScamCheck": "Cek Anti-Penipuan",
     "openSource": "Semua kode bersifat open source",
     "openSourceWithDataTime": "Semua kode bersifat open source. Data per {time}"
   },

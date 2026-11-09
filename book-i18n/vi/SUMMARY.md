@@ -9,3 +9,6 @@
 - [Minh bạch](transparency.md)
 - [Thông số hệ thống](addresses.md)
 - [Pháp lý](legal.md)
+
+<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
+- [Kiểm tra chống lừa đảo](anti-scam-check.md)

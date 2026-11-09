@@ -96,6 +96,9 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'Audit Report' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).queryByRole('link', { name: 'Risk disclaimer' })).not.toBeInTheDocument();
     expect(within(footerNav).getByRole('button', { name: 'Cookie Settings' })).toHaveAttribute('data-analytics-settings');
+    expect(footerNav.children[2]).toHaveTextContent(/^TransparencyContactsLegalCookie SettingsAnti-Scam Check$/);
+    expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('href', './docs/anti-scam-check.html');
+    expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', './docs/');
     expect(within(footerNav).getByRole('link', { name: 'Github' })).toHaveAttribute('href', 'https://github.com/Usd8-fi/usd8-core');
     expect(within(footerNav).getByRole('link', { name: 'Telegram' })).toHaveAttribute('href', 'https://t.me/+e84i2oYk1ao1MTk1');

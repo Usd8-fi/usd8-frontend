@@ -23,6 +23,7 @@
     "contacts": "Контакты",
     "legal": "Правовая информация",
     "cookieSettings": "Настройки cookie",
+    "antiScamCheck": "Проверка на мошенничество",
     "openSource": "Весь код открыт",
     "openSourceWithDataTime": "Весь код открыт. Данные на {time}"
   },

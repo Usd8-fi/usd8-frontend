@@ -9,3 +9,6 @@
 - [Transparence](transparency.md)
 - [Statistiques du système](addresses.md)
 - [Mentions légales](legal.md)
+
+<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
+- [Vérification anti-arnaque](anti-scam-check.md)

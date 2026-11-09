@@ -9,3 +9,6 @@
 - [透明度](transparency.md)
 - [系统数据](addresses.md)
 - [法律条款](legal.md)
+
+<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
+- [防诈骗核查](anti-scam-check.md)

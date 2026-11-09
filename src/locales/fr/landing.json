@@ -23,6 +23,7 @@
     "contacts": "Contacts",
     "legal": "Mentions légales",
     "cookieSettings": "Paramètres des cookies",
+    "antiScamCheck": "Vérification anti-arnaque",
     "openSource": "Tout le code est open source",
     "openSourceWithDataTime": "Tout le code est open source. Données mises à jour à {time}"
   },

@@ -9,3 +9,6 @@
 - [투명성](transparency.md)
 - [시스템 현황](addresses.md)
 - [법적 고지](legal.md)
+
+<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
+- [사기 계정 확인](anti-scam-check.md)

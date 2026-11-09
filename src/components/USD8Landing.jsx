@@ -174,6 +174,7 @@ function SiteFooter({ updatedAt }) {
           <a className="site-nav-link" href={docsUrl('usd8.html#contact')} target="_blank" rel="noreferrer">{t('landing.footer.contacts')}</a>
           <a className="site-nav-link" href={docsUrl('legal.html')} target="_blank" rel="noreferrer">{t('landing.footer.legal')}</a>
           <button className="site-nav-link analytics-settings-link" type="button" data-analytics-settings>{t('landing.footer.cookieSettings')}</button>
+          <a className="site-nav-link" href={docsUrl('anti-scam-check.html')} target="_blank" rel="noreferrer">{t('landing.footer.antiScamCheck')}</a>
         </div>
         <div className="landing-footer-language">
           <LanguagePicker />

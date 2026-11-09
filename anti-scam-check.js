@@ -13,6 +13,17 @@
         ]
     };
     var NAMES = { telegram: "Telegram", x: "X" };
+    // Localised by docs-theme.js (window.usd8DocsText); English when it is absent.
+    var EN = {
+        antiScamInvalid: "Enter a valid {platform} username.",
+        antiScamOfficial: "@{handle} is an official USD8 {platform} account.",
+        antiScamUnknown: "@{handle} is not an official USD8 {platform} account. Treat it as a likely scam: do not send funds, sign transactions or share your seed phrase.",
+        antiScamUnavailable: "Could not run the check in this browser."
+    };
+    function T(key, vars) {
+        if (window.usd8DocsText) return window.usd8DocsText(key, vars);
+        return EN[key].replace(/\{(\w+)\}/g, function (match, name) { return vars && vars[name] !== undefined ? String(vars[name]) : match; });
+    }
     // Telegram usernames are 5-32 characters, X handles 1-15; both use letters, digits and "_".
     var PATTERN = { telegram: /^[a-z0-9_]{5,32}$/, x: /^[a-z0-9_]{1,15}$/ };
     var URL_PREFIX = {
@@ -38,10 +49,10 @@
     }
 
     function message(platform, outcome) {
-        var name = NAMES[platform];
-        if (outcome.state === "invalid") return "Enter a valid " + name + " username.";
-        if (outcome.state === "official") return "@" + outcome.handle + " is an official USD8 " + name + " account.";
-        return "@" + outcome.handle + " is not an official USD8 " + name + " account. Treat it as a likely scam: do not send funds, sign transactions or share your seed phrase.";
+        var vars = { platform: NAMES[platform], handle: outcome.handle };
+        if (outcome.state === "invalid") return T("antiScamInvalid", vars);
+        if (outcome.state === "official") return T("antiScamOfficial", vars);
+        return T("antiScamUnknown", vars);
     }
 
     function setup() {
@@ -67,7 +78,7 @@
                     result.textContent = message(platform, outcome);
                 } catch (error) {
                     result.dataset.state = "invalid";
-                    result.textContent = "Could not run the check in this browser.";
+                    result.textContent = T("antiScamUnavailable");
                 } finally {
                     button.disabled = false;
                 }
