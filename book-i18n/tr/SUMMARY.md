@@ -8,6 +8,7 @@
 - [SSS](faqs.md)
 - [Şeffaflık](transparency.md)
 - [Sistem İstatistikleri](addresses.md)
+- [Marka Materyalleri](branding.md)
 - [Yasal](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

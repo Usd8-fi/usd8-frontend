@@ -8,6 +8,7 @@
 - [자주 묻는 질문](faqs.md)
 - [투명성](transparency.md)
 - [시스템 현황](addresses.md)
+- [브랜드 자료](branding.md)
 - [법적 고지](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

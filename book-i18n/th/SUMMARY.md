@@ -8,6 +8,7 @@
 - [คำถามที่พบบ่อย](faqs.md)
 - [ความโปร่งใส](transparency.md)
 - [ข้อมูลระบบ](addresses.md)
+- [แบรนด์และโลโก้](branding.md)
 - [ข้อกฎหมาย](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

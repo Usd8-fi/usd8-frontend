@@ -8,6 +8,7 @@
 - [FAQ](faqs.md)
 - [Transparenz](transparency.md)
 - [Systemstatus](addresses.md)
+- [Markenmaterial](branding.md)
 - [Rechtliches](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

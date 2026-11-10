@@ -12,6 +12,7 @@ The app at https://usd8.fi/ is a client-side web app: it needs JavaScript and a 
 - [FAQs](https://usd8.fi/docs/faqs.html): short answers on score, payouts and coverage
 - [Transparency](https://usd8.fi/docs/transparency.html): admin and timelock powers, beta-only privileges and trust assumptions
 - [System Stats](https://usd8.fi/docs/addresses.html): canonical mainnet contract addresses and the live timelock queue
+- [Branding and Assets](https://usd8.fi/docs/branding.html): USD8 logos and the Covered by USD8 badge as SVG files
 
 ## Background
 

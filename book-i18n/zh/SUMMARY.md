@@ -8,6 +8,7 @@
 - [常见问题](faqs.md)
 - [透明度](transparency.md)
 - [系统数据](addresses.md)
+- [品牌与素材](branding.md)
 - [法律条款](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

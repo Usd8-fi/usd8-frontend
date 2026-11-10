@@ -8,6 +8,7 @@
 - [FAQ](faqs.md)
 - [Transparansi](transparency.md)
 - [Statistik Sistem](addresses.md)
+- [Merek dan Aset](branding.md)
 - [Legal](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

@@ -8,6 +8,7 @@
 - [FAQs](faqs.md)
 - [Transparency](transparency.md)
 - [System Stats](addresses.md)
+- [Branding and Assets](branding.md)
 - [Legal](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

@@ -8,6 +8,7 @@
 - [Частые вопросы](faqs.md)
 - [Прозрачность](transparency.md)
 - [Статистика системы](addresses.md)
+- [Бренд и материалы](branding.md)
 - [Правовая информация](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

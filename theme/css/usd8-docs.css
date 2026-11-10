@@ -890,3 +890,36 @@ a.mobile-nav-chapters[href$="anti-scam-check.html"],
 .anti-scam-result[data-state="official"] { color: #08b18f; }
 .anti-scam-result[data-state="unknown"],
 .anti-scam-result[data-state="invalid"] { color: #dc2626; }
+
+/* Branding and Assets page: logo and badge previews on their intended backgrounds. */
+.brand-assets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 16px 0 24px;
+}
+.brand-asset {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 0;
+    flex: 1 1 200px;
+    box-sizing: border-box;
+    padding: 20px;
+    border: 1px solid #333;
+}
+.brand-asset-dark { background: #151515; }
+.brand-asset-light { background: #ffffff; }
+.brand-asset-plain { background: transparent; border: 0; padding: 0; flex: 0 0 auto; }
+.content .brand-asset img { height: auto; max-width: 100%; }
+.brand-asset figcaption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 1.3rem;
+    color: #a1a1aa;
+}
+.brand-asset-light figcaption { color: #52525b; }
+.content .brand-asset-light figcaption a { color: #8a5a00; }
+.content .brand-asset .brand-badge-link { display: inline-flex; line-height: 0; text-decoration: none; }

@@ -8,6 +8,7 @@
 - [الأسئلة الشائعة](faqs.md)
 - [الشفافية](transparency.md)
 - [إحصاءات النظام](addresses.md)
+- [الهوية البصرية والشعارات](branding.md)
 - [الشروط القانونية](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->

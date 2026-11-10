@@ -8,6 +8,7 @@
 - [Поширені запитання](faqs.md)
 - [Прозорість](transparency.md)
 - [Статистика системи](addresses.md)
+- [Бренд і матеріали](branding.md)
 - [Правова інформація](legal.md)
 
 <!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
