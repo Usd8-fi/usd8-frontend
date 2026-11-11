@@ -47,7 +47,7 @@ export default function ActivityTicker() {
       if (document.hidden || loading) return;
       loading = true;
       try {
-        const next = await cachedData(protocolKey(network, 'activity'), ({ signal }) => fetchActivity(network, { signal }), {
+        const next = await cachedData(protocolKey(network, 'activity-public'), ({ signal }) => fetchActivity(network, { signal, publicOnly: true }), {
           signal: controller.signal, staleTime: REFRESH_MS / 2,
         });
         if (!controller.signal.aborted) setItems(next);

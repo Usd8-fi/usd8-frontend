@@ -107,6 +107,16 @@ describe('fetchActivity', () => {
     expect(feed.some(item => item.hash === hash(8))).toBe(false);
   });
 
+  it('drops admin profit distributions from the public feed', async () => {
+    mockIndex(routes());
+    const all = await fetchActivity(network);
+    expect(all.find(item => item.hash === hash(4)).admin).toBe(true);
+    const publicFeed = await fetchActivity(network, { publicOnly: true });
+    expect(publicFeed.some(item => item.hash === hash(4))).toBe(false);
+    expect(publicFeed.some(item => /rewards added/.test(item.action))).toBe(false);
+    expect(publicFeed.map(item => item.hash)).toEqual([7, 6, 5, 3, 2, 1].map(hash));
+  });
+
   it('still lists actions when the amount index is unavailable', async () => {
     const all = routes();
     delete all[`/tokens/${usd8}/transfers`];

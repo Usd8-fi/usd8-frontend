@@ -68,7 +68,8 @@ function describe(kind, { pool, amount, symbol }) {
     case 'exitQueued': return { action: 'queued an exit from', amount: null, target: coverPool };
     case 'exitCompleted': return { action: 'completed an exit', amount: quantity, target: `from ${coverPool}` };
     case 'rewardClaimed': return { action: 'claimed', amount: quantity, target: `rewards from ${coverPool}` };
-    case 'rewardsAdded': return { action: 'rewards added:', amount: quantity, target: `to ${coverPool}`, anonymous: true };
+    // Admin profit distribution: shown on the admin dashboard, not the public ticker.
+    case 'rewardsAdded': return { action: 'rewards added:', amount: quantity, target: `to ${coverPool}`, anonymous: true, admin: true };
     case 'claimFiled': return { action: 'filed a claim', amount: null, target: null };
     // A finalized claim with no transfer to the claimant paid nothing; say so plainly.
     case 'claimPaid': return { action: quantity ? 'received a claim payout' : 'finalized a claim', amount: quantity, target: null };
@@ -129,8 +130,9 @@ function parseTransactions(payload, address, role, context) {
 }
 
 /// Newest-first list of recent actions, or `[]` when the network has no
-/// explorer index. Rejects only when every request failed.
-export async function fetchActivity(network, { signal } = {}) {
+/// explorer index. Rejects only when every request failed. `publicOnly` drops
+/// admin actions (profit distribution) for the public ticker.
+export async function fetchActivity(network, { signal, publicOnly = false } = {}) {
   const api = network?.explorerApiUrl;
   if (!api) return [];
   const { contracts } = network;
@@ -169,7 +171,7 @@ export async function fetchActivity(network, { signal } = {}) {
       if (seen.has(id)) return [];
       seen.add(id);
       const text = describe(row.action.kind, { pool: row.pool, ...transferAmount(row.action.kind, transfers.get(row.hash) || [], row.pool, { actor: row.actor, pools: contracts.coverPools }) });
-      if (!text) return [];
+      if (!text || (publicOnly && text.admin)) return [];
       return [{ id, hash: row.hash, at: row.at, block: row.block, actor: text.anonymous ? null : shortAddress(row.actor), ...text }];
     })
     .slice(0, ACTIVITY_LIMIT);

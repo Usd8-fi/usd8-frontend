@@ -37,4 +37,11 @@ describe('ActivityTicker', () => {
     expect(links[0]).toHaveAttribute('href', expect.stringMatching(/\/tx\/0x0{63}1$/));
     expect(region.querySelectorAll('.activity-ticker-copy li')).toHaveLength(2);
   });
+
+  it('asks the feed for public actions only', async () => {
+    mocks.fetchActivity.mockResolvedValue([item(1)]);
+    render(<ActivityTicker />);
+    await screen.findByRole('complementary', { name: 'Recent protocol activity' });
+    expect(mocks.fetchActivity).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ publicOnly: true }));
+  });
 });
