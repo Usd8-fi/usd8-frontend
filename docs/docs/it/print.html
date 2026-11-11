@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="theme/css/link-theme-27863558.css">
-        <link rel="stylesheet" href="theme/css/usd8-docs-655900f1.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-19a745d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-5576e1f3.js";
+            window.path_to_searchindex_js = "searchindex-206f3d02.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-2dd071b9.js"></script>
@@ -490,19 +490,21 @@ I <a href="https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f1
 <p>Chiunque può usare gratuitamente i loghi USD8 e il badge “Covered by USD8” quando parla di USD8. Scarica i file SVG qui sotto. Non modificare colori e proporzioni e lascia spazio libero intorno al logo.</p>
 <h2 id="logos"><a class="header" href="#logos">Loghi</a></h2>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-plain">
+<figure class="brand-asset brand-asset-coin">
 <img src="../../assets/brand/usd8-logo.svg" width="96" height="96" alt="Moneta USD8">
 <figcaption>Moneta USD8 <a href="../../assets/brand/usd8-logo.svg" download="">Scarica SVG</a></figcaption>
 </figure>
 </div>
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="Moneta con scritta, per sfondi scuri">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="Moneta con scritta, per sfondi scuri"></div>
+
 <figcaption>Moneta con scritta, per sfondi scuri <a href="../../assets/brand/usd8-logo-wordmark-on-dark.svg" download="">Scarica SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="Moneta con scritta, per sfondi chiari">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="Moneta con scritta, per sfondi chiari"></div>
+
 <figcaption>Moneta con scritta, per sfondi chiari <a href="../../assets/brand/usd8-logo-wordmark-on-light.svg" download="">Scarica SVG</a></figcaption>
 </figure>
 </div>
@@ -510,22 +512,44 @@ I <a href="https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f1
 <h2 id="covered-by-usd8-badge"><a class="header" href="#covered-by-usd8-badge">Badge “Covered by USD8”</a></h2>
 <p>I partner i cui token sono coperti da USD8 possono mostrare questo badge sul proprio sito. Collegalo a https://usd8.fi.</p>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>Badge scuro <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">Scarica SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>Badge piccolo, scuro <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">Scarica SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>Badge chiaro <a href="../../assets/brand/covered-by-usd8-light.svg" download="">Scarica SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>Badge piccolo, chiaro <a href="../../assets/brand/covered-by-usd8-light.svg" download="">Scarica SVG</a></figcaption>
 </figure>
 </div>
 
-<p>Per inserire il badge, incolla questo codice nella tua pagina. Per la versione chiara usa <code>covered-by-usd8-light.svg</code>.</p>
+<p>Per inserire il badge piccolo, incolla questo codice nella tua pagina:</p>
 <pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
   &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-dark.svg"
-       alt="Covered by USD8" height="32"&gt;
+       alt="Covered by USD8" width="159" height="32"&gt;
 &lt;/a&gt;
 </code></pre>
+<div class="brand-assets">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-dark.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>Badge medio, scuro <a href="../../assets/brand/covered-by-usd8-medium-dark.svg" download="">Scarica SVG</a></figcaption>
+</figure>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-light.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>Badge medio, chiaro <a href="../../assets/brand/covered-by-usd8-medium-light.svg" download="">Scarica SVG</a></figcaption>
+</figure>
+</div>
+
+<p>Per il badge medio, usa invece questo:</p>
+<pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
+  &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-medium-dark.svg"
+       alt="Covered by USD8" width="148" height="89"&gt;
+&lt;/a&gt;
+</code></pre>
+<p>Per la versione chiara di entrambi i badge, sostituisci <code>dark</code> con <code>light</code> nel nome del file.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
 <p><strong>Last updated: October 18, 2026</strong></p>

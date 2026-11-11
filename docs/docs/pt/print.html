@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="theme/css/link-theme-27863558.css">
-        <link rel="stylesheet" href="theme/css/usd8-docs-655900f1.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-19a745d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d091f09f.js";
+            window.path_to_searchindex_js = "searchindex-2dcc3b57.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-45df67d7.js"></script>
@@ -490,19 +490,21 @@ Os <a href="https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f
 <p>Qualquer pessoa pode usar gratuitamente os logotipos da USD8 e o selo “Covered by USD8” ao se referir à USD8. Baixe os arquivos SVG abaixo. Mantenha as cores e as proporções como estão e deixe espaço livre ao redor do logotipo.</p>
 <h2 id="logos"><a class="header" href="#logos">Logotipos</a></h2>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-plain">
+<figure class="brand-asset brand-asset-coin">
 <img src="../../assets/brand/usd8-logo.svg" width="96" height="96" alt="Moeda USD8">
 <figcaption>Moeda USD8 <a href="../../assets/brand/usd8-logo.svg" download="">Baixar SVG</a></figcaption>
 </figure>
 </div>
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="Moeda com letreiro, para fundos escuros">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="Moeda com letreiro, para fundos escuros"></div>
+
 <figcaption>Moeda com letreiro, para fundos escuros <a href="../../assets/brand/usd8-logo-wordmark-on-dark.svg" download="">Baixar SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="Moeda com letreiro, para fundos claros">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="Moeda com letreiro, para fundos claros"></div>
+
 <figcaption>Moeda com letreiro, para fundos claros <a href="../../assets/brand/usd8-logo-wordmark-on-light.svg" download="">Baixar SVG</a></figcaption>
 </figure>
 </div>
@@ -510,22 +512,44 @@ Os <a href="https://etherscan.io/address/0x6f74ce39bb1d75c56e2fe5f349a6a5f51ce6f
 <h2 id="covered-by-usd8-badge"><a class="header" href="#covered-by-usd8-badge">Selo “Covered by USD8”</a></h2>
 <p>Parceiros cujos tokens são cobertos pela USD8 podem exibir este selo em seu site. Faça o link para https://usd8.fi.</p>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>Selo escuro <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">Baixar SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>Selo pequeno, escuro <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">Baixar SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>Selo claro <a href="../../assets/brand/covered-by-usd8-light.svg" download="">Baixar SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>Selo pequeno, claro <a href="../../assets/brand/covered-by-usd8-light.svg" download="">Baixar SVG</a></figcaption>
 </figure>
 </div>
 
-<p>Para incorporar o selo, cole este código na sua página. Para a versão clara, use <code>covered-by-usd8-light.svg</code>.</p>
+<p>Para incorporar o selo pequeno, cole este código na sua página:</p>
 <pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
   &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-dark.svg"
-       alt="Covered by USD8" height="32"&gt;
+       alt="Covered by USD8" width="159" height="32"&gt;
 &lt;/a&gt;
 </code></pre>
+<div class="brand-assets">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-dark.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>Selo médio, escuro <a href="../../assets/brand/covered-by-usd8-medium-dark.svg" download="">Baixar SVG</a></figcaption>
+</figure>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-light.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>Selo médio, claro <a href="../../assets/brand/covered-by-usd8-medium-light.svg" download="">Baixar SVG</a></figcaption>
+</figure>
+</div>
+
+<p>Para o selo médio, use este no lugar:</p>
+<pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
+  &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-medium-dark.svg"
+       alt="Covered by USD8" width="148" height="89"&gt;
+&lt;/a&gt;
+</code></pre>
+<p>Para a versão clara de qualquer um dos selos, troque <code>dark</code> por <code>light</code> no nome do arquivo.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
 <p><strong>Last updated: October 18, 2026</strong></p>

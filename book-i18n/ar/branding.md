@@ -5,19 +5,19 @@
 ## الشعارات {#logos}
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-plain">
+<figure class="brand-asset brand-asset-coin">
 <img src="../assets/brand/usd8-logo.svg" width="96" height="96" alt="عملة USD8">
 <figcaption>عملة USD8 <a href="../assets/brand/usd8-logo.svg" download>تنزيل SVG</a></figcaption>
 </figure>
 </div>
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<img src="../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="العملة مع الكتابة، للخلفيات الداكنة">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><img src="../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="العملة مع الكتابة، للخلفيات الداكنة"></div>
 <figcaption>العملة مع الكتابة، للخلفيات الداكنة <a href="../assets/brand/usd8-logo-wordmark-on-dark.svg" download>تنزيل SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<img src="../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="العملة مع الكتابة، للخلفيات الفاتحة">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><img src="../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="العملة مع الكتابة، للخلفيات الفاتحة"></div>
 <figcaption>العملة مع الكتابة، للخلفيات الفاتحة <a href="../assets/brand/usd8-logo-wordmark-on-light.svg" download>تنزيل SVG</a></figcaption>
 </figure>
 </div>
@@ -27,21 +27,43 @@
 يمكن للشركاء الذين تحظى رموزهم بتغطية USD8 عرض هذه الشارة على مواقعهم الإلكترونية. اجعل الشارة رابطًا إلى https://usd8.fi.
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>شارة داكنة <a href="../assets/brand/covered-by-usd8-dark.svg" download>تنزيل SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+<figcaption>شارة صغيرة، داكنة <a href="../assets/brand/covered-by-usd8-dark.svg" download>تنزيل SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>شارة فاتحة <a href="../assets/brand/covered-by-usd8-light.svg" download>تنزيل SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+<figcaption>شارة صغيرة، فاتحة <a href="../assets/brand/covered-by-usd8-light.svg" download>تنزيل SVG</a></figcaption>
 </figure>
 </div>
 
-لتضمين الشارة، الصق هذه الشيفرة في صفحتك. وللنسخة الفاتحة استخدم `covered-by-usd8-light.svg` بدلًا منها.
+لتضمين الشارة الصغيرة، الصق هذه الشيفرة في صفحتك:
 
 ```html
 <a href="https://usd8.fi" target="_blank" rel="noopener">
   <img src="https://usd8.fi/assets/brand/covered-by-usd8-dark.svg"
-       alt="Covered by USD8" height="32">
+       alt="Covered by USD8" width="159" height="32">
 </a>
 ```
+
+<div class="brand-assets">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../assets/brand/covered-by-usd8-medium-dark.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+<figcaption>شارة متوسطة، داكنة <a href="../assets/brand/covered-by-usd8-medium-dark.svg" download>تنزيل SVG</a></figcaption>
+</figure>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../assets/brand/covered-by-usd8-medium-light.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+<figcaption>شارة متوسطة، فاتحة <a href="../assets/brand/covered-by-usd8-medium-light.svg" download>تنزيل SVG</a></figcaption>
+</figure>
+</div>
+
+وللشارة المتوسطة، استخدم هذه الشيفرة بدلًا منها:
+
+```html
+<a href="https://usd8.fi" target="_blank" rel="noopener">
+  <img src="https://usd8.fi/assets/brand/covered-by-usd8-medium-dark.svg"
+       alt="Covered by USD8" width="148" height="89">
+</a>
+```
+
+للنسخة الفاتحة من أيٍّ من الشارتين، غيّر `dark` إلى `light` في اسم الملف.

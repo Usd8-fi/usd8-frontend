@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="theme/css/link-theme-27863558.css">
-        <link rel="stylesheet" href="theme/css/usd8-docs-655900f1.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-19a745d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2e5be6df.js";
+            window.path_to_searchindex_js = "searchindex-6ffded79.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-749be01e.js"></script>
@@ -490,19 +490,21 @@
 <p>Bất kỳ ai cũng có thể dùng miễn phí logo USD8 và huy hiệu “Covered by USD8” khi nhắc đến USD8. Bạn có thể tải các tệp SVG bên dưới. Vui lòng giữ nguyên màu sắc và tỷ lệ, đồng thời chừa khoảng trống quanh logo.</p>
 <h2 id="logos"><a class="header" href="#logos">Logo</a></h2>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-plain">
+<figure class="brand-asset brand-asset-coin">
 <img src="../../assets/brand/usd8-logo.svg" width="96" height="96" alt="Đồng xu USD8">
 <figcaption>Đồng xu USD8 <a href="../../assets/brand/usd8-logo.svg" download="">Tải SVG</a></figcaption>
 </figure>
 </div>
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="Đồng xu kèm chữ, cho nền tối">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="Đồng xu kèm chữ, cho nền tối"></div>
+
 <figcaption>Đồng xu kèm chữ, cho nền tối <a href="../../assets/brand/usd8-logo-wordmark-on-dark.svg" download="">Tải SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="Đồng xu kèm chữ, cho nền sáng">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="Đồng xu kèm chữ, cho nền sáng"></div>
+
 <figcaption>Đồng xu kèm chữ, cho nền sáng <a href="../../assets/brand/usd8-logo-wordmark-on-light.svg" download="">Tải SVG</a></figcaption>
 </figure>
 </div>
@@ -510,22 +512,44 @@
 <h2 id="covered-by-usd8-badge"><a class="header" href="#covered-by-usd8-badge">Huy hiệu “Covered by USD8”</a></h2>
 <p>Các đối tác có token được USD8 bảo hiểm có thể hiển thị huy hiệu này trên website của mình. Hãy liên kết huy hiệu tới https://usd8.fi.</p>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>Huy hiệu tối <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">Tải SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>Huy hiệu nhỏ, tối <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">Tải SVG</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>Huy hiệu sáng <a href="../../assets/brand/covered-by-usd8-light.svg" download="">Tải SVG</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>Huy hiệu nhỏ, sáng <a href="../../assets/brand/covered-by-usd8-light.svg" download="">Tải SVG</a></figcaption>
 </figure>
 </div>
 
-<p>Để nhúng huy hiệu, hãy dán đoạn mã này vào trang của bạn. Với phiên bản sáng, hãy đổi sang <code>covered-by-usd8-light.svg</code>.</p>
+<p>Để nhúng huy hiệu nhỏ, hãy dán đoạn mã này vào trang của bạn:</p>
 <pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
   &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-dark.svg"
-       alt="Covered by USD8" height="32"&gt;
+       alt="Covered by USD8" width="159" height="32"&gt;
 &lt;/a&gt;
 </code></pre>
+<div class="brand-assets">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-dark.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>Huy hiệu vừa, tối <a href="../../assets/brand/covered-by-usd8-medium-dark.svg" download="">Tải SVG</a></figcaption>
+</figure>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-light.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>Huy hiệu vừa, sáng <a href="../../assets/brand/covered-by-usd8-medium-light.svg" download="">Tải SVG</a></figcaption>
+</figure>
+</div>
+
+<p>Với huy hiệu cỡ vừa, hãy dùng đoạn mã này:</p>
+<pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
+  &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-medium-dark.svg"
+       alt="Covered by USD8" width="148" height="89"&gt;
+&lt;/a&gt;
+</code></pre>
+<p>Để dùng phiên bản sáng của một trong hai huy hiệu, hãy đổi <code>dark</code> thành <code>light</code> trong tên tệp.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
 <p><strong>Last updated: October 18, 2026</strong></p>

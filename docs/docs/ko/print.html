@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="theme/css/link-theme-27863558.css">
-        <link rel="stylesheet" href="theme/css/usd8-docs-655900f1.css">
+        <link rel="stylesheet" href="theme/css/usd8-docs-19a745d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d61fd511.js";
+            window.path_to_searchindex_js = "searchindex-ee40316a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1c74ad4f.js"></script>
@@ -492,19 +492,21 @@
 <p>USD8 로고와 “Covered by USD8” 배지는 USD8을 언급할 때 누구나 무료로 사용할 수 있습니다. 아래에서 SVG 파일을 내려받으세요. 색상과 비율은 그대로 유지하고, 로고 주변에 충분한 여백을 두세요.</p>
 <h2 id="logos"><a class="header" href="#logos">로고</a></h2>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-plain">
+<figure class="brand-asset brand-asset-coin">
 <img src="../../assets/brand/usd8-logo.svg" width="96" height="96" alt="USD8 코인">
 <figcaption>USD8 코인 <a href="../../assets/brand/usd8-logo.svg" download="">SVG 다운로드</a></figcaption>
 </figure>
 </div>
 
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="코인과 글자, 어두운 배경용">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><img src="../../assets/brand/usd8-logo-wordmark-on-dark.svg" width="188" height="56" alt="코인과 글자, 어두운 배경용"></div>
+
 <figcaption>코인과 글자, 어두운 배경용 <a href="../../assets/brand/usd8-logo-wordmark-on-dark.svg" download="">SVG 다운로드</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="코인과 글자, 밝은 배경용">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><img src="../../assets/brand/usd8-logo-wordmark-on-light.svg" width="188" height="56" alt="코인과 글자, 밝은 배경용"></div>
+
 <figcaption>코인과 글자, 밝은 배경용 <a href="../../assets/brand/usd8-logo-wordmark-on-light.svg" download="">SVG 다운로드</a></figcaption>
 </figure>
 </div>
@@ -512,22 +514,44 @@
 <h2 id="covered-by-usd8-badge"><a class="header" href="#covered-by-usd8-badge">“Covered by USD8” 배지</a></h2>
 <p>USD8의 보장을 받는 토큰의 파트너는 자사 웹사이트에 이 배지를 게시할 수 있습니다. 배지는 https://usd8.fi로 연결해 주세요.</p>
 <div class="brand-assets">
-<figure class="brand-asset brand-asset-dark">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>어두운 배지 <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">SVG 다운로드</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-dark.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>작은 배지, 어두운 색 <a href="../../assets/brand/covered-by-usd8-dark.svg" download="">SVG 다운로드</a></figcaption>
 </figure>
-<figure class="brand-asset brand-asset-light">
-<a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a>
-<figcaption>밝은 배지 <a href="../../assets/brand/covered-by-usd8-light.svg" download="">SVG 다운로드</a></figcaption>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-light.svg" width="159" height="32" alt="Covered by USD8"></a></div>
+
+<figcaption>작은 배지, 밝은 색 <a href="../../assets/brand/covered-by-usd8-light.svg" download="">SVG 다운로드</a></figcaption>
 </figure>
 </div>
 
-<p>배지를 삽입하려면 아래 코드를 페이지에 붙여 넣으세요. 밝은 버전을 쓰려면 <code>covered-by-usd8-light.svg</code>로 바꾸세요.</p>
+<p>작은 배지를 삽입하려면 아래 코드를 페이지에 붙여 넣으세요.</p>
 <pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
   &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-dark.svg"
-       alt="Covered by USD8" height="32"&gt;
+       alt="Covered by USD8" width="159" height="32"&gt;
 &lt;/a&gt;
 </code></pre>
+<div class="brand-assets">
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-dark"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-dark.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>중간 배지, 어두운 색 <a href="../../assets/brand/covered-by-usd8-medium-dark.svg" download="">SVG 다운로드</a></figcaption>
+</figure>
+<figure class="brand-asset">
+<div class="brand-swatch brand-swatch-light"><a class="brand-badge-link" href="https://usd8.fi" target="_blank" rel="noopener"><img src="../../assets/brand/covered-by-usd8-medium-light.svg" width="148" height="89" alt="Covered by USD8"></a></div>
+
+<figcaption>중간 배지, 밝은 색 <a href="../../assets/brand/covered-by-usd8-medium-light.svg" download="">SVG 다운로드</a></figcaption>
+</figure>
+</div>
+
+<p>중간 배지는 대신 이 코드를 사용하세요.</p>
+<pre><code class="language-html">&lt;a href="https://usd8.fi" target="_blank" rel="noopener"&gt;
+  &lt;img src="https://usd8.fi/assets/brand/covered-by-usd8-medium-dark.svg"
+       alt="Covered by USD8" width="148" height="89"&gt;
+&lt;/a&gt;
+</code></pre>
+<p>두 배지 모두 밝은 버전을 쓰려면 파일 이름의 <code>dark</code>를 <code>light</code>로 바꾸세요.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="legal---terms-privacy-and-risk-disclaimer"><a class="header" href="#legal---terms-privacy-and-risk-disclaimer">Legal - Terms, Privacy and Risk Disclaimer</a></h1>
 <p><strong>Last updated: October 18, 2026</strong></p>

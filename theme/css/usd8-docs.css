@@ -341,7 +341,10 @@ h2 {
 h3 { font-size: 1.45em; }
 h4 { font-size: 1.2em; }
 h5, h6 { font-size: 1em; }
-h2, h3 { margin-block-start: 2.5em; }
+h2 { margin-block-start: 150px; }
+h3 { margin-block-start: 3.25em; }
+/* FAQ questions are h2s in an accordion list: keep their original spacing. */
+.content .faq-title ~ h2 { margin-block-start: 2.5em; }
 h4, h5 { margin-block-start: 2em; }
 
 h1:target::before,
@@ -891,35 +894,39 @@ a.mobile-nav-chapters[href$="anti-scam-check.html"],
 .anti-scam-result[data-state="unknown"],
 .anti-scam-result[data-state="invalid"] { color: #dc2626; }
 
-/* Branding and Assets page: logo and badge previews on their intended backgrounds. */
+/* Branding and Assets page: only the artwork sits on its dark/light swatch;
+   captions and download links are normal page text below it. */
 .brand-assets {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
-    margin: 16px 0 24px;
+    gap: 24px 16px;
+    margin: 24px 0 40px;
 }
 .brand-asset {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
+    align-items: stretch;
+    gap: 10px;
     margin: 0;
     flex: 1 1 200px;
-    box-sizing: border-box;
+    min-width: 0;
+}
+.brand-asset-coin { flex: 0 0 auto; }
+.brand-swatch {
+    display: flex;
+    align-items: center;
     padding: 20px;
     border: 1px solid #333;
+    box-sizing: border-box;
 }
-.brand-asset-dark { background: #151515; }
-.brand-asset-light { background: #ffffff; }
-.brand-asset-plain { background: transparent; border: 0; padding: 0; flex: 0 0 auto; }
+.brand-swatch-dark { background: #151515; }
+.brand-swatch-light { background: #ffffff; }
 .content .brand-asset img { height: auto; max-width: 100%; }
 .brand-asset figcaption {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    font-size: 1.3rem;
-    color: #a1a1aa;
+    gap: 2px;
 }
-.brand-asset-light figcaption { color: #52525b; }
-.content .brand-asset-light figcaption a { color: #8a5a00; }
 .content .brand-asset .brand-badge-link { display: inline-flex; line-height: 0; text-decoration: none; }
+/* Leave room between a badge embed snippet and the next badge row. */
+.content pre + .brand-assets { margin-top: 48px; }
