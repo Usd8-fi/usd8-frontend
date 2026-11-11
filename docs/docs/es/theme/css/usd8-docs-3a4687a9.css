@@ -926,7 +926,10 @@ a.mobile-nav-chapters[href$="anti-scam-check.html"],
     display: flex;
     flex-direction: column;
     gap: 2px;
+    font-size: 12px; /* the site's small text size (--font-small in src/styles.css) */
+    line-height: 1.5;
 }
+.content .brand-asset figcaption a { font-size: inherit; }
 .content .brand-asset .brand-badge-link { display: inline-flex; line-height: 0; text-decoration: none; }
 /* Leave room between a badge embed snippet and the next badge row. */
 .content pre + .brand-assets { margin-top: 48px; }

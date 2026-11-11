@@ -173,7 +173,7 @@
 /* USD8 docs shell: mirrors the current usd8.fi mdBook theme while retaining mdBook 0.5 search. */
 @font-face {
     font-family: "BlexMono Nerd Font Mono";
-    src: url("../../../assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
+    src: url("../../../../assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
     font-style: normal;
     font-weight: 200;
     font-display: swap;
@@ -181,7 +181,7 @@
 
 @font-face {
     font-family: "BlexMono Nerd Font Mono";
-    src: url("../../../assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
+    src: url("../../../../assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
     font-style: normal;
     font-weight: 400;
     font-display: swap;
@@ -189,7 +189,7 @@
 
 @font-face {
     font-family: "BlexMono Nerd Font Mono";
-    src: url("../../../assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
+    src: url("../../../../assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
     font-style: normal;
     font-weight: 600;
     font-display: swap;
@@ -197,7 +197,7 @@
 
 @font-face {
     font-family: "FontAwesome";
-    src: url("../../../assets/fonts/fontawesome-webfont.woff2") format("woff2");
+    src: url("../../../../assets/fonts/fontawesome-webfont.woff2") format("woff2");
     font-style: normal;
     font-weight: normal;
     font-display: block;
@@ -805,7 +805,7 @@ body {
    leaves wide gaps between Arabic/Thai words). */
 @font-face {
     font-family: "Blex Latin";
-    src: url("../../../assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
+    src: url("../../../../assets/fonts/BlexMonoNerdFontMono-ExtraLight.woff2") format("woff2");
     font-style: normal;
     font-weight: 200;
     font-display: swap;
@@ -814,7 +814,7 @@ body {
 
 @font-face {
     font-family: "Blex Latin";
-    src: url("../../../assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
+    src: url("../../../../assets/fonts/BlexMonoNerdFontMono-Regular.woff2") format("woff2");
     font-style: normal;
     font-weight: 400;
     font-display: swap;
@@ -823,7 +823,7 @@ body {
 
 @font-face {
     font-family: "Blex Latin";
-    src: url("../../../assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
+    src: url("../../../../assets/fonts/BlexMonoNerdFontMono-SemiBold.woff2") format("woff2");
     font-style: normal;
     font-weight: 600;
     font-display: swap;
@@ -926,7 +926,10 @@ a.mobile-nav-chapters[href$="anti-scam-check.html"],
     display: flex;
     flex-direction: column;
     gap: 2px;
+    font-size: 12px; /* the site's small text size (--font-small in src/styles.css) */
+    line-height: 1.5;
 }
+.content .brand-asset figcaption a { font-size: inherit; }
 .content .brand-asset .brand-badge-link { display: inline-flex; line-height: 0; text-decoration: none; }
 /* Leave room between a badge embed snippet and the next badge row. */
 .content pre + .brand-assets { margin-top: 48px; }
