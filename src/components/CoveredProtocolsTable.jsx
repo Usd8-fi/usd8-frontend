@@ -1,15 +1,16 @@
 import { UNKNOWN_VALUE } from '../lib/units.js';
 import { Fragment } from 'react';
-import aaveLogo from '../assets/aavelogo.svg';
+// Token icons (not protocol logos), from each issuer's app or the Curve/CoinGecko token lists.
 // Raster icons stay separate cached files; base64-inlining them would add
-// ~6.5 KB gzip of incompressible data to the public page's first-load JS.
-import curveLogo from '../assets/curve-scrvusd.webp?no-inline';
+// incompressible data to the public page's first-load JS.
+import sGhoIcon from '../assets/token-sgho.svg';
+import scrvUsdIcon from '../assets/token-scrvusd.webp?no-inline';
 import msLossLogo from '../assets/msloss-test.svg';
-import skyLogo from '../assets/sky-susds.webp?no-inline';
-import morphoLogo from '../assets/morpho-logo.svg';
-import flyingTulipLogo from '../assets/flyingtulip-logo.svg';
-import lidoWstethLogo from '../assets/cover-wsteth.png';
-import rocketPoolRethLogo from '../assets/rocketpool-reth.webp?no-inline';
+import sUsdsIcon from '../assets/token-susds.webp?no-inline';
+import steakUsdcIcon from '../assets/token-steakusdc.webp?no-inline';
+import ssftUsdIcon from '../assets/token-ssftusd.svg';
+import wstEthIcon from '../assets/token-wsteth.webp?no-inline';
+import rEthIcon from '../assets/token-reth.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
@@ -39,7 +40,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'aave-sgho',
     symbol: 'sGHO',
-    iconSrc: aaveLogo,
+    iconSrc: sGhoIcon,
     token: 'Aave Savings GHO sGHO',
     url: 'https://app.aave.com/sgho/',
     address: '0xE1753F2e00940cC31213dd92013cF019DFE4ca1d',
@@ -47,14 +48,14 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'curve-scrvusd',
     symbol: 'scrvUSD',
-    iconSrc: curveLogo,
+    iconSrc: scrvUsdIcon,
     token: 'Curve Savings scrvUSD',
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
   },
   {
     id: 'sky-susds',
     symbol: 'sUSDS',
-    iconSrc: skyLogo,
+    iconSrc: sUsdsIcon,
     token: 'Sky Savings sUSDS',
     url: 'https://app.sky.money/',
     address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
@@ -62,7 +63,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'morpho-steakusdc',
     symbol: 'steakUSDC',
-    iconSrc: morphoLogo,
+    iconSrc: steakUsdcIcon,
     token: 'Morpho Steakhouse USDC steakUSDC',
     address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
     url: 'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
@@ -70,7 +71,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'flyingtulip-ssftusd',
     symbol: 'ssftUSD',
-    iconSrc: flyingTulipLogo,
+    iconSrc: ssftUsdIcon,
     token: 'Flying Tulip Stable Staked ftUSD ssftUSD',
     address: '0x232128844e5aF56fD4B3f8BF97e08aB477282Ab5',
     url: 'https://flyingtulip.com/ftusd/',
@@ -78,7 +79,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'lido-wsteth',
     symbol: 'wstETH',
-    iconSrc: lidoWstethLogo,
+    iconSrc: wstEthIcon,
     token: 'Lido Wrapped Staked ETH wstETH',
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
     url: 'https://stake.lido.fi/wrap',
@@ -86,7 +87,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'rocketpool-reth',
     symbol: 'rETH',
-    iconSrc: rocketPoolRethLogo,
+    iconSrc: rEthIcon,
     token: 'Rocket Pool ETH rETH',
     address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
     url: 'https://stake.rocketpool.net/',
