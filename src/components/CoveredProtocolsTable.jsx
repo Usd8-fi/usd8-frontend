@@ -7,6 +7,9 @@ import curveLogo from '../assets/curve-scrvusd.webp?no-inline';
 import msLossLogo from '../assets/msloss-test.svg';
 import skyLogo from '../assets/sky-susds.webp?no-inline';
 import morphoLogo from '../assets/morpho-logo.svg';
+import flyingTulipLogo from '../assets/flyingtulip-logo.svg';
+import lidoWstethLogo from '../assets/cover-wsteth.png';
+import rocketPoolRethLogo from '../assets/rocketpool-reth.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
@@ -63,6 +66,30 @@ export const COVERED_PROTOCOL_ROWS = [
     token: 'Morpho Steakhouse USDC steakUSDC',
     address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
     url: 'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
+  },
+  {
+    id: 'flyingtulip-ssftusd',
+    symbol: 'ssftUSD',
+    iconSrc: flyingTulipLogo,
+    token: 'Flying Tulip Stable Staked ftUSD ssftUSD',
+    address: '0x232128844e5aF56fD4B3f8BF97e08aB477282Ab5',
+    url: 'https://flyingtulip.com/ftusd/',
+  },
+  {
+    id: 'lido-wsteth',
+    symbol: 'wstETH',
+    iconSrc: lidoWstethLogo,
+    token: 'Lido Wrapped Staked ETH wstETH',
+    address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
+    url: 'https://stake.lido.fi/wrap',
+  },
+  {
+    id: 'rocketpool-reth',
+    symbol: 'rETH',
+    iconSrc: rocketPoolRethLogo,
+    token: 'Rocket Pool ETH rETH',
+    address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
+    url: 'https://stake.rocketpool.net/',
   },
   {
     id: 'test-msloss',
@@ -140,6 +167,20 @@ function formatCoverageBps(value) {
   }
 }
 
+/// Highest max coverage first; equal coverage keeps the listing order, and rows
+/// without a readable coverage go last.
+export function sortByMaxCoverage(rows, insuredTokenStates = {}) {
+  const coverage = (row) => {
+    const state = insuredTokenStates[row.id];
+    const share = state?.enabled ? coverageShare(state.maxCoverageBps) : NaN;
+    return Number.isFinite(share) && share >= 0 && share <= 1 ? share : -1;
+  };
+  return rows
+    .map((row, index) => ({ row, index, coverage: coverage(row) }))
+    .sort((left, right) => right.coverage - left.coverage || left.index - right.index)
+    .map(({ row }) => row);
+}
+
 export default function CoveredProtocolsTable({
   onFileClaim,
   fileClaimUnavailableReason = '',
@@ -149,9 +190,9 @@ export default function CoveredProtocolsTable({
   onSimulate,
 }) {
   const { t } = useTranslation();
-  const displayedRows = COVERED_PROTOCOL_ROWS.filter((row) => (
+  const displayedRows = sortByMaxCoverage(COVERED_PROTOCOL_ROWS.filter((row) => (
     insuredTokenStates[row.id]?.enabled || row.id === incident?.tokenId
-  ));
+  )), insuredTokenStates);
 
   return (
     <Fragment>

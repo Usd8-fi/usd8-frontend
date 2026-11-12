@@ -110,6 +110,18 @@ const MAINNET_CONTRACTS = Object.freeze({
     // deployments/mainnet/27-list-steakusdc-plan.json, nonce 75): 70% coverage,
     // Chainlink USDC/USD oracle, conversion = convertToAssets(1e30) (18-dec shares over 6-dec USDC).
     'morpho-steakusdc': '0xbeef01735c132ada46aa9aa4c54623caa92a64cb',
+    // Flying Tulip Stable Staked ftUSD, listed by plan 30 (usd8-core
+    // deployments/mainnet/30-list-ssftusd-plan.json, nonces 88-89): 80% coverage,
+    // FtUSDPriceOracle 0x7b714d47248776244cf25c794985d0444bd7a3c6 (min of issuer feed, NAV,
+    // Curve EMA; capped at $1), conversion = convertToAssets(1e30) (18-dec shares over 6-dec ftUSD).
+    'flyingtulip-ssftusd': '0x232128844e5af56fd4b3f8bf97e08ab477282ab5',
+    // Lido wstETH and Rocket Pool rETH, listed by plan 31 (usd8-core
+    // deployments/mainnet/31-list-wsteth-reth-plan.json, nonces 90-91): 80% coverage each.
+    // wstETH: Chainlink stETH/USD, conversion = getStETHByWstETH(1e18). The wstETH cover pool's
+    // asset is this token, so that pool is excluded from wstETH incidents (circular).
+    'lido-wsteth': '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+    // rETH: Chainlink ETH/USD, conversion = getEthValue(1e18). Covered by every pool.
+    'rocketpool-reth': '0xae78736cd615f374d3085123a210448e74fc6393',
     // Mainnet E2E test token, local dev server only (see LOCAL_E2E_TEST_TOKEN).
     ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? { 'test-test': '0x116e4336047c97703f84619de03b6bf893667de1' } : {}),
   }),

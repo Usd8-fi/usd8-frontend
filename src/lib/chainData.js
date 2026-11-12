@@ -13,6 +13,9 @@ import { t } from './i18n.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
 import { boostedScore, liveEarningsDecimals, UNKNOWN_VALUE, WAD } from './units.js';
 
+/// Insured tokens read outside the fixed landing multicall (18-decimal ERC-20s).
+const EXTRA_INSURED_TOKEN_IDS = Object.freeze(['flyingtulip-ssftusd', 'lido-wsteth', 'rocketpool-reth']);
+
 export { erc20Abi };
 
 const clients = new Map();
@@ -581,6 +584,14 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       .then(() => client.readContract({ address: steakAddress, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber }))
       .catch(() => null)
     : 0n;
+  // Later mainnet listings (ssftUSD, wstETH, rETH): out-of-multicall reads so FIXED_READS stays
+  // stable. A failed read shows as unknown for that token only.
+  const extraInsuredBalances = Object.fromEntries(await Promise.all(EXTRA_INSURED_TOKEN_IDS
+    .filter((id) => contracts.insuredTokens[id])
+    .map(async (id) => [id, hasAccount
+      ? await client.readContract({ address: contracts.insuredTokens[id], abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber })
+        .catch(() => null)
+      : 0n])));
   const [usdc, usd8, savings, activeIncidentId, sGho, sUsds, msloss,
     usd8ScoreRates, savingsScoreRates, boosterPolicy, nextIncidentId,
     onchainScoreSpent] = landingValues.slice(0, FIXED_READS);
@@ -789,6 +800,8 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
         'sky-susds': formatted(sUsds),
         [testTokenId]: formatted(msloss),
         ...(steakAddress ? { 'morpho-steakusdc': steak === null ? UNKNOWN_VALUE : formatted(steak) } : {}),
+        ...Object.fromEntries(Object.entries(extraInsuredBalances)
+          .map(([id, balance]) => [id, balance === null ? UNKNOWN_VALUE : formatted(balance)])),
         ...(msloss2Address ? { 'test-msloss2': msloss2 === null ? UNKNOWN_VALUE : formatted(msloss2) } : {}),
       },
     },
