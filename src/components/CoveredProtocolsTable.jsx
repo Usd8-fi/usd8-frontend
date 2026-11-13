@@ -11,6 +11,7 @@ import steakUsdcIcon from '../assets/token-steakusdc.webp?no-inline';
 import ssftUsdIcon from '../assets/token-ssftusd.svg';
 import wstEthIcon from '../assets/token-wsteth.webp?no-inline';
 import rEthIcon from '../assets/token-reth.webp?no-inline';
+import sfrxUsdIcon from '../assets/token-sfrxusd.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
@@ -21,27 +22,28 @@ import PercentRing from './PercentRing.jsx';
 import TableTokenCell from './TableTokenCell.jsx';
 import { t, useTranslation } from '../lib/i18n.js';
 
-// Names are one line; the cell wraps them only when the column is too narrow.
+// Two lines per token: the symbol (linked to the issuer's site) and, below it in small grey
+// text, the issuer and full token name. `name` is empty when the symbol says it all (USD8).
 export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'usd8',
     symbol: 'USD8',
     iconSrc: usd8Logo,
-    token: 'USD8',
+    name: '',
     address: 'TBD',
   },
   {
     id: 'susd8',
     symbol: 'sUSD8',
     iconSrc: sUsd8Logo,
-    token: 'USD8 Protected Savings sUSD8',
+    name: 'USD8 Protected Savings',
     address: 'TBD',
   },
   {
     id: 'aave-sgho',
     symbol: 'sGHO',
     iconSrc: sGhoIcon,
-    token: 'Aave Savings GHO sGHO',
+    name: 'Aave Savings GHO',
     url: 'https://app.aave.com/sgho/',
     address: '0xE1753F2e00940cC31213dd92013cF019DFE4ca1d',
   },
@@ -49,14 +51,14 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'curve-scrvusd',
     symbol: 'scrvUSD',
     iconSrc: scrvUsdIcon,
-    token: 'Curve Savings scrvUSD',
+    name: 'Curve Savings crvUSD',
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
   },
   {
     id: 'sky-susds',
     symbol: 'sUSDS',
     iconSrc: sUsdsIcon,
-    token: 'Sky Savings sUSDS',
+    name: 'Sky Savings USDS',
     url: 'https://app.sky.money/',
     address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
   },
@@ -64,7 +66,7 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'morpho-steakusdc',
     symbol: 'steakUSDC',
     iconSrc: steakUsdcIcon,
-    token: 'Morpho Steakhouse USDC steakUSDC',
+    name: 'Morpho Steakhouse USDC',
     address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
     url: 'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
   },
@@ -72,7 +74,7 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'flyingtulip-ssftusd',
     symbol: 'ssftUSD',
     iconSrc: ssftUsdIcon,
-    token: 'Flying Tulip Stable Staked ftUSD ssftUSD',
+    name: 'Flying Tulip Stable Staked ftUSD',
     address: '0x232128844e5aF56fD4B3f8BF97e08aB477282Ab5',
     url: 'https://flyingtulip.com/ftusd/',
   },
@@ -80,7 +82,7 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'lido-wsteth',
     symbol: 'wstETH',
     iconSrc: wstEthIcon,
-    token: 'Lido Wrapped Staked ETH wstETH',
+    name: 'Lido Wrapped Staked ETH',
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
     url: 'https://stake.lido.fi/wrap',
   },
@@ -88,15 +90,23 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'rocketpool-reth',
     symbol: 'rETH',
     iconSrc: rEthIcon,
-    token: 'Rocket Pool ETH rETH',
+    name: 'Rocket Pool ETH',
     address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
     url: 'https://stake.rocketpool.net/',
+  },
+  {
+    id: 'frax-sfrxusd',
+    symbol: 'sfrxUSD',
+    iconSrc: sfrxUsdIcon,
+    name: 'Frax Staked frxUSD',
+    address: '0xcf62F905562626CfcDD2261162a51fd02Fc9c5b6',
+    url: 'https://frax.com/earn',
   },
   {
     id: 'test-msloss',
     symbol: 'msLOSS',
     iconSrc: msLossLogo,
-    token: 'Sepolia Test Loss msLOSS',
+    name: 'Sepolia Test Loss',
     address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
   },
   // Sepolia-only second loss vault (local dev server only, like the mainnet test token).
@@ -104,7 +114,7 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'test-msloss2',
     symbol: 'msLOSS2',
     iconSrc: msLossLogo,
-    token: 'Sepolia Test Loss msLOSS2',
+    name: 'Sepolia Test Loss',
     address: '0x18664D1a4E2DcC2F760EC648719C1B709D107d1C',
   }] : []),
   // Mainnet E2E test token: local dev server only (never in a production build).
@@ -113,7 +123,7 @@ export const COVERED_PROTOCOL_ROWS = [
     id: 'test-test',
     symbol: 'TEST',
     iconSrc: msLossLogo,
-    token: 'Test Token TEST',
+    name: 'Test Token',
     address: '0x116e4336047C97703F84619dE03b6Bf893667DE1',
   }] : []),
 ];
@@ -238,10 +248,10 @@ export default function CoveredProtocolsTable({
           return (
           <tr key={row.id}>
             <td>
-              <TableTokenCell iconSrc={row.iconSrc}>
+              <TableTokenCell iconSrc={row.iconSrc} subtitle={row.name}>
                 {row.url ? (
-                  <a href={row.url} target="_blank" rel="noreferrer" aria-label={t('coveredProtocols.openTokenSite', { token: row.token })}>{row.token}</a>
-                ) : row.token}
+                  <a href={row.url} target="_blank" rel="noreferrer" aria-label={t('coveredProtocols.openTokenSite', { token: [row.name, row.symbol].filter(Boolean).join(' ') })}>{row.symbol}</a>
+                ) : row.symbol}
               </TableTokenCell>
             </td>
             <td>

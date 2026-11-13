@@ -61,7 +61,7 @@ describe('network configuration', () => {
       usdOracle: '0xde84a1804e61f06a5bba3ac4fad9b66cc35e2b4a',
       deployBlock: 26276002,
     });
-    expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8', 'aave-sgho', 'sky-susds', 'morpho-steakusdc', 'flyingtulip-ssftusd', 'lido-wsteth', 'rocketpool-reth']);
+    expect(Object.keys(contracts.insuredTokens)).toEqual(['usd8', 'aave-sgho', 'sky-susds', 'morpho-steakusdc', 'flyingtulip-ssftusd', 'lido-wsteth', 'rocketpool-reth', 'frax-sfrxusd']);
     // The test environment serves Sepolia, so mainnet is not the protocol network here.
     expect(getProtocolNetwork(1)).toBeNull();
   });

@@ -764,6 +764,19 @@ small a,
   gap: 13px;
 }
 
+.table-token-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.table-token-subtitle {
+  color: var(--inactive);
+  font-size: var(--font-small);
+  line-height: 1.4;
+}
+
 .table-token-icon {
   width: 40px;
   height: 40px;

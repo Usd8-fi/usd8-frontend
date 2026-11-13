@@ -14,7 +14,7 @@ import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
 import { boostedScore, liveEarningsDecimals, UNKNOWN_VALUE, WAD } from './units.js';
 
 /// Insured tokens read outside the fixed landing multicall (18-decimal ERC-20s).
-const EXTRA_INSURED_TOKEN_IDS = Object.freeze(['flyingtulip-ssftusd', 'lido-wsteth', 'rocketpool-reth']);
+const EXTRA_INSURED_TOKEN_IDS = Object.freeze(['flyingtulip-ssftusd', 'lido-wsteth', 'rocketpool-reth', 'frax-sfrxusd']);
 
 export { erc20Abi };
 

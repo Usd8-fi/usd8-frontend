@@ -122,6 +122,10 @@ const MAINNET_CONTRACTS = Object.freeze({
     'lido-wsteth': '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
     // rETH: Chainlink ETH/USD, conversion = getEthValue(1e18). Covered by every pool.
     'rocketpool-reth': '0xae78736cd615f374d3085123a210448e74fc6393',
+    // Frax Staked frxUSD, listed by plan 32 (usd8-core deployments/mainnet/32-list-sfrxusd-plan.json,
+    // nonce 92): 80% coverage, Chainlink frxUSD/USD 0x9b4a96210bc8d9d55b1908b465d8b0de68b7ff83,
+    // conversion = convertToAssets(1e18) (18-dec shares over 18-dec frxUSD).
+    'frax-sfrxusd': '0xcf62f905562626cfcdd2261162a51fd02fc9c5b6',
     // Mainnet E2E test token, local dev server only (see LOCAL_E2E_TEST_TOKEN).
     ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? { 'test-test': '0x116e4336047c97703f84619de03b6bf893667de1' } : {}),
   }),
