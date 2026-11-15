@@ -10,6 +10,8 @@
     "claim": "Indenização"
   },
   "openTokenSite": "Abrir o site de {token}",
+  "coverageHelpLabel": "O que a cobertura de {symbol} inclui",
+  "coverageHelp": "Cobre a conversão de {symbol} para {underlying}. Se a quantidade de {underlying} que você recebe por {symbol} cair mais de 20%, você pode pedir indenização. Atenção: o {underlying} em si não está coberto.",
   "actions": {
     "fileClaim": "Pedir indenização",
     "fileClaimFor": "Pedir indenização por {token}",

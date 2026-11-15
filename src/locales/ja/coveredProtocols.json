@@ -10,6 +10,8 @@
     "claim": "請求"
   },
   "openTokenSite": "{token}の公式サイトを開く",
+  "coverageHelpLabel": "{symbol}の補償内容",
+  "coverageHelp": "補償の対象は{symbol}を{underlying}に交換するレートです。{symbol}あたりで受け取れる{underlying}の量が20%を超えて減少した場合、請求できます。注意：{underlying}自体は補償対象外です。",
   "actions": {
     "fileClaim": "請求する",
     "fileClaimFor": "{token}の保険金を請求",

@@ -10,6 +10,8 @@
     "claim": "เคลม"
   },
   "openTokenSite": "เปิด {token} บนเว็บไซต์ของโปรเจกต์",
+  "coverageHelpLabel": "ความคุ้มครองของ {symbol}",
+  "coverageHelp": "ความคุ้มครองนี้ครอบคลุมอัตราแปลงจาก {symbol} เป็น {underlying} หากจำนวน {underlying} ที่ได้รับต่อ 1 {symbol} ลดลงมากกว่า 20% คุณยื่นเคลมได้ โปรดทราบ: ไม่คุ้มครองตัว {underlying} เอง",
   "actions": {
     "fileClaim": "ยื่นเคลม",
     "fileClaimFor": "ยื่นเคลม {token}",

@@ -10,6 +10,8 @@
     "claim": "Заявка"
   },
   "openTokenSite": "Відкрити {token} на його сайті",
+  "coverageHelpLabel": "Що входить у покриття {symbol}",
+  "coverageHelp": "Покривається курс конвертації {symbol} у {underlying}. Якщо кількість {underlying}, яку ви отримуєте за кожен {symbol}, зменшиться більш ніж на 20 %, можна подати заявку. Зверніть увагу: сам {underlying} не покривається.",
   "actions": {
     "fileClaim": "Подати заявку",
     "fileClaimFor": "Подати заявку щодо {token}",

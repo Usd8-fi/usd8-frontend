@@ -10,6 +10,8 @@
     "claim": "Bồi thường"
   },
   "openTokenSite": "Mở trang chính thức của {token}",
+  "coverageHelpLabel": "Phạm vi bảo hiểm của {symbol}",
+  "coverageHelp": "Bảo hiểm này áp dụng cho tỷ lệ quy đổi từ {symbol} sang {underlying}. Nếu lượng {underlying} bạn nhận được cho mỗi {symbol} giảm hơn 20%, bạn có thể gửi yêu cầu bồi thường. Lưu ý: bản thân {underlying} không được bảo hiểm.",
   "actions": {
     "fileClaim": "Gửi yêu cầu",
     "fileClaimFor": "Yêu cầu bồi thường cho {token}",

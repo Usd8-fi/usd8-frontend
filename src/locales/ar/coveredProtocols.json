@@ -10,6 +10,8 @@
     "claim": "المطالبة"
   },
   "openTokenSite": "فتح موقع {token} الرسمي",
+  "coverageHelpLabel": "ما تشمله تغطية {symbol}",
+  "coverageHelp": "تشمل التغطية سعر تحويل {symbol} إلى {underlying}. إذا انخفضت كمية {underlying} التي تحصل عليها مقابل كل {symbol} بأكثر من 20%، يمكنك تقديم مطالبة. ملاحظة: {underlying} نفسه غير مشمول بالتغطية.",
   "actions": {
     "fileClaim": "تقديم مطالبة",
     "fileClaimFor": "تقديم مطالبة على {token}",

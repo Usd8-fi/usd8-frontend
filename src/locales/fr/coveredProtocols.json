@@ -10,6 +10,8 @@
     "claim": "Demande"
   },
   "openTokenSite": "Ouvrir le site de {token}",
+  "coverageHelpLabel": "Étendue de la couverture de {symbol}",
+  "coverageHelp": "La couverture porte sur le taux de conversion de {symbol} en {underlying}. Si la quantité de {underlying} obtenue pour chaque {symbol} baisse de plus de 20 %, vous pouvez déposer une demande d’indemnisation. Remarque : {underlying} lui-même n’est pas couvert.",
   "actions": {
     "fileClaim": "Déposer une demande",
     "fileClaimFor": "Déposer une demande pour {token}",

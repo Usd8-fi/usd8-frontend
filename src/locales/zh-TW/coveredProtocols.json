@@ -10,6 +10,8 @@
     "claim": "理賠"
   },
   "openTokenSite": "前往{token}官網",
+  "coverageHelpLabel": "{symbol}的保障範圍",
+  "coverageHelp": "保障的是{symbol}兌換成{underlying}的比率。如果每個{symbol}能換到的{underlying}減少超過20%，即可申請理賠。注意：{underlying}本身不在保障範圍內。",
   "actions": {
     "fileClaim": "申請理賠",
     "fileClaimFor": "為{token}申請理賠",

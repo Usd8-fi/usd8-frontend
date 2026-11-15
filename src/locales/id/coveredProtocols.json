@@ -10,6 +10,8 @@
     "claim": "Klaim"
   },
   "openTokenSite": "Buka {token} di situs resminya",
+  "coverageHelpLabel": "Cakupan perlindungan {symbol}",
+  "coverageHelp": "Yang ditanggung adalah rasio konversi {symbol} ke {underlying}. Jika jumlah {underlying} yang Anda terima untuk setiap {symbol} turun lebih dari 20%, Anda bisa mengajukan klaim. Catatan: {underlying} itu sendiri tidak ditanggung.",
   "actions": {
     "fileClaim": "Ajukan Klaim",
     "fileClaimFor": "Ajukan klaim untuk {token}",

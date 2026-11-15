@@ -10,6 +10,8 @@
     "claim": "درخواست"
   },
   "openTokenSite": "باز کردن سایت {token}",
+  "coverageHelpLabel": "دامنه‌ی پوشش {symbol}",
+  "coverageHelp": "این پوشش نرخ تبدیل {symbol} به {underlying} را در بر می‌گیرد. اگر مقدار {underlying} دریافتی شما به ازای هر {symbol} بیش از 20% کم شود، می‌توانید درخواست خسارت ثبت کنید. توجه: خودِ {underlying} پوشش داده نمی‌شود.",
   "actions": {
     "fileClaim": "ثبت درخواست",
     "fileClaimFor": "ثبت درخواست خسارت برای {token}",

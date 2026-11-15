@@ -10,6 +10,8 @@
     "claim": "Talep"
   },
   "openTokenSite": "{token} için resmi siteyi aç",
+  "coverageHelpLabel": "{symbol} teminatının kapsamı",
+  "coverageHelp": "Bu teminat, {symbol} ile {underlying} arasındaki dönüşüm oranını kapsar. Her {symbol} karşılığında aldığınız {underlying} miktarı %20'den fazla düşerse talep oluşturabilirsiniz. Not: {underlying} varlığının kendisi kapsam dışındadır.",
   "actions": {
     "fileClaim": "Talep Oluştur",
     "fileClaimFor": "{token} için talep oluştur",

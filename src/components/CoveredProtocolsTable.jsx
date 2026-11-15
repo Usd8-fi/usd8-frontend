@@ -24,10 +24,13 @@ import { t, useTranslation } from '../lib/i18n.js';
 
 // Two lines per token: the symbol (linked to the issuer's site) and, below it in small grey
 // text, the issuer and full token name. `name` is empty when the symbol says it all (USD8).
+// `underlying` is what the listed conversion recipe converts into (on-chain `getInsuredToken`):
+// the "?" beside the symbol says only that conversion is covered, not the underlying itself.
 export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'usd8',
     symbol: 'USD8',
+    underlying: 'USDC',
     iconSrc: usd8Logo,
     name: '',
     address: 'TBD',
@@ -35,6 +38,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'susd8',
     symbol: 'sUSD8',
+    underlying: 'USD8',
     iconSrc: sUsd8Logo,
     name: 'USD8 Protected Savings',
     address: 'TBD',
@@ -42,6 +46,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'aave-sgho',
     symbol: 'sGHO',
+    underlying: 'GHO',
     iconSrc: sGhoIcon,
     name: 'Aave Savings GHO',
     url: 'https://app.aave.com/sgho/',
@@ -50,6 +55,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'curve-scrvusd',
     symbol: 'scrvUSD',
+    underlying: 'crvUSD',
     iconSrc: scrvUsdIcon,
     name: 'Curve Savings crvUSD',
     address: <>0x0655977feb2f289a4ab78af67bab0d17aab84367<br />impl 0xd8063123bba3b480569244ae66bfe72b6c84b00d</>,
@@ -57,6 +63,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'sky-susds',
     symbol: 'sUSDS',
+    underlying: 'USDS',
     iconSrc: sUsdsIcon,
     name: 'Sky Savings USDS',
     url: 'https://app.sky.money/',
@@ -65,6 +72,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'morpho-steakusdc',
     symbol: 'steakUSDC',
+    underlying: 'USDC',
     iconSrc: steakUsdcIcon,
     name: 'Morpho Steakhouse USDC',
     address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
@@ -73,6 +81,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'flyingtulip-ssftusd',
     symbol: 'ssftUSD',
+    underlying: 'ftUSD',
     iconSrc: ssftUsdIcon,
     name: 'Flying Tulip Stable Staked ftUSD',
     address: '0x232128844e5aF56fD4B3f8BF97e08aB477282Ab5',
@@ -81,6 +90,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'lido-wsteth',
     symbol: 'wstETH',
+    underlying: 'stETH',
     iconSrc: wstEthIcon,
     name: 'Lido Wrapped Staked ETH',
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
@@ -89,6 +99,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'rocketpool-reth',
     symbol: 'rETH',
+    underlying: 'ETH',
     iconSrc: rEthIcon,
     name: 'Rocket Pool ETH',
     address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
@@ -97,6 +108,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'frax-sfrxusd',
     symbol: 'sfrxUSD',
+    underlying: 'frxUSD',
     iconSrc: sfrxUsdIcon,
     name: 'Frax Staked frxUSD',
     address: '0xcf62F905562626CfcDD2261162a51fd02Fc9c5b6',
@@ -105,6 +117,7 @@ export const COVERED_PROTOCOL_ROWS = [
   {
     id: 'test-msloss',
     symbol: 'msLOSS',
+    underlying: 'mLOSS',
     iconSrc: msLossLogo,
     name: 'Sepolia Test Loss',
     address: '0xD5B2a08F474f77eF29211Ccc59cd65e5fA6734dc',
@@ -113,6 +126,7 @@ export const COVERED_PROTOCOL_ROWS = [
   ...(import.meta.env.DEV ? [{
     id: 'test-msloss2',
     symbol: 'msLOSS2',
+    underlying: 'mLOSS',
     iconSrc: msLossLogo,
     name: 'Sepolia Test Loss',
     address: '0x18664D1a4E2DcC2F760EC648719C1B709D107d1C',
@@ -252,6 +266,11 @@ export default function CoveredProtocolsTable({
                 {row.url ? (
                   <a href={row.url} target="_blank" rel="noreferrer" aria-label={t('coveredProtocols.openTokenSite', { token: [row.name, row.symbol].filter(Boolean).join(' ') })}>{row.symbol}</a>
                 ) : row.symbol}
+                {row.underlying ? (
+                  <InfoTooltip ariaLabel={t('coveredProtocols.coverageHelpLabel', { symbol: row.symbol })} className="dashboard-help--table">
+                    {t('coveredProtocols.coverageHelp', { symbol: row.symbol, underlying: row.underlying })}
+                  </InfoTooltip>
+                ) : null}
               </TableTokenCell>
             </td>
             <td>

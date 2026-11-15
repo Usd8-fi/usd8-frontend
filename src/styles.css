@@ -771,6 +771,12 @@ small a,
   min-width: 0;
 }
 
+.table-token-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .table-token-subtitle {
   color: var(--inactive);
   font-size: var(--font-small);

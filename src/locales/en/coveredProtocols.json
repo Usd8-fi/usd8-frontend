@@ -10,6 +10,8 @@
     "claim": "Claim"
   },
   "openTokenSite": "Open {token} on its own site",
+  "coverageHelpLabel": "What {symbol} coverage includes",
+  "coverageHelp": "Covers the conversion of {symbol} to {underlying}. If the amount of {underlying} you get for each {symbol} drops by more than 20%, you can file a claim. Note: {underlying} itself is not covered.",
   "actions": {
     "fileClaim": "File Claim",
     "fileClaimFor": "File claim for {token}",

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import CoveredProtocolsTable from './CoveredProtocolsTable.jsx';
+import CoveredProtocolsTable, { COVERED_PROTOCOL_ROWS } from './CoveredProtocolsTable.jsx';
 import { getProtocolNetwork, NETWORKS, PROTOCOL_CHAIN_ID } from '../lib/networkConfig.js';
 
 const circumference = 2 * Math.PI * 8;
@@ -41,15 +41,26 @@ describe('insured token site link', () => {
     const { container } = render(<CoveredProtocolsTable insuredTokenStates={{ 'sky-susds': { enabled: true, maxCoverageBps: '8000' } }} />);
     const symbol = container.querySelector('.table-token-symbol');
     const subtitle = container.querySelector('.table-token-subtitle');
-    expect(symbol).toHaveTextContent(/^sUSDS$/);
+    expect(symbol).toHaveTextContent(/^sUSDS\?$/);
     expect(symbol.querySelector('a')).toHaveAttribute('href', 'https://app.sky.money/');
     expect(subtitle).toHaveTextContent(/^Sky Savings USDS$/);
     expect(subtitle.querySelector('a')).toBeNull();
   });
 
+  it('explains per token that only the conversion is covered, not the underlying', async () => {
+    render(<CoveredProtocolsTable insuredTokenStates={{ 'aave-sgho': { enabled: true, maxCoverageBps: '8000' } }} />);
+    const help = screen.getByRole('button', { name: 'What sGHO coverage includes' });
+    expect(help.closest('.table-token-symbol')).not.toBeNull();
+    expect(document.body.textContent).toContain('Covers the conversion of sGHO to GHO. If the amount of GHO you get for each sGHO drops by more than 20%, you can file a claim. Note: GHO itself is not covered.');
+  });
+
+  it('names the underlying of every listed mainnet token', () => {
+    for (const row of COVERED_PROTOCOL_ROWS.filter((r) => !r.id.startsWith('test-'))) expect(row.underlying, row.id).toMatch(/\S/);
+  });
+
   it('shows USD8 on one line with no subtitle', () => {
     const { container } = render(<CoveredProtocolsTable insuredTokenStates={{ usd8: { enabled: true, maxCoverageBps: '8000' } }} />);
-    expect(container.querySelector('.table-token-symbol')).toHaveTextContent(/^USD8$/);
+    expect(container.querySelector('.table-token-symbol')).toHaveTextContent(/^USD8\?$/);
     expect(container.querySelector('.table-token-subtitle')).toBeNull();
   });
 

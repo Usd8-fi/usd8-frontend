@@ -10,6 +10,8 @@
     "claim": "Antrag"
   },
   "openTokenSite": "{token} auf der Website des Anbieters öffnen",
+  "coverageHelpLabel": "Was die Deckung für {symbol} umfasst",
+  "coverageHelp": "Gedeckt ist der Umrechnungskurs von {symbol} in {underlying}. Sinkt die Menge {underlying}, die Sie pro {symbol} erhalten, um mehr als 20 %, können Sie eine Erstattung beantragen. Hinweis: {underlying} selbst ist nicht gedeckt.",
   "actions": {
     "fileClaim": "Antrag stellen",
     "fileClaimFor": "Antrag für {token} stellen",

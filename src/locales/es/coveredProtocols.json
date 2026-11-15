@@ -10,6 +10,8 @@
     "claim": "Reclamación"
   },
   "openTokenSite": "Abrir {token} en su sitio web",
+  "coverageHelpLabel": "Qué incluye la cobertura de {symbol}",
+  "coverageHelp": "Cubre la conversión de {symbol} a {underlying}. Si la cantidad de {underlying} que recibes por cada {symbol} cae más de un 20 %, puedes presentar una reclamación. Nota: {underlying} en sí no está cubierto.",
   "actions": {
     "fileClaim": "Presentar reclamación",
     "fileClaimFor": "Presentar una reclamación por {token}",
