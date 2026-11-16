@@ -39,10 +39,6 @@
     "holdingPeriod": "持有期"
   },
   "asset": {
-    "insured": "受保",
-    "insuredYes": "是",
-    "coverageHelpLabel": "关于保障上限",
-    "coverageHelp": "保障额度受承保池可用资金限制。",
     "scoreEarningRate": "保险积分速率",
     "scoreRateValue": "每天{rate}积分/{unit}",
     "scoreRateLoading": "正在加载积分速率",

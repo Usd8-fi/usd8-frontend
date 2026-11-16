@@ -39,10 +39,6 @@
     "holdingPeriod": "elde tutma süresinden"
   },
   "asset": {
-    "insured": "Sigortalı",
-    "insuredYes": "Evet",
-    "coverageHelpLabel": "Teminat limitleri hakkında",
-    "coverageHelp": "Kapsam, teminat havuzlarındaki mevcut tutarla sınırlıdır.",
     "scoreEarningRate": "Sigorta Puanı Oranı",
     "scoreRateValue": "Günde {unit} başına {rate}",
     "scoreRateLoading": "Puan oranı yükleniyor",

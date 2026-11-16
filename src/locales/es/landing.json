@@ -39,10 +39,6 @@
     "holdingPeriod": "el período de tenencia"
   },
   "asset": {
-    "insured": "Asegurado",
-    "insuredYes": "Sí",
-    "coverageHelpLabel": "Acerca de los límites de cobertura",
-    "coverageHelp": "La cobertura depende de los fondos disponibles en los pools de cobertura.",
     "scoreEarningRate": "Tasa de puntuación de seguro",
     "scoreRateValue": "{rate} por {unit} al día",
     "scoreRateLoading": "Cargando la tasa de puntuación",

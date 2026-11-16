@@ -39,10 +39,6 @@
     "holdingPeriod": "la période de détention"
   },
   "asset": {
-    "insured": "Assuré",
-    "insuredYes": "Oui",
-    "coverageHelpLabel": "À propos des limites de couverture",
-    "coverageHelp": "La couverture dépend des montants disponibles dans les pools de couverture.",
     "scoreEarningRate": "Taux de score d’assurance",
     "scoreRateValue": "{rate} par {unit} et par jour",
     "scoreRateLoading": "Chargement du taux de score",

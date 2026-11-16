@@ -39,6 +39,10 @@ src/lib/profitDistribution.js
 src/lib/profitDistribution.test.js
 src/components/ProfitDistribution.jsx
 src/components/ProfitDistribution.test.jsx
+src/components/PoolTopUp.jsx
+src/components/PoolTopUp.test.jsx
+src/lib/poolTopUp.js
+src/lib/poolTopUp.test.js
 src/lib/adminActivity.js
 src/lib/adminActivity.test.js
 src/lib/adminEventsAbi.json

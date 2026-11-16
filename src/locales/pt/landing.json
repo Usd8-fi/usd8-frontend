@@ -39,10 +39,6 @@
     "holdingPeriod": "o período de carência"
   },
   "asset": {
-    "insured": "Segurado",
-    "insuredYes": "Sim",
-    "coverageHelpLabel": "Sobre os limites de cobertura",
-    "coverageHelp": "A cobertura depende do valor disponível nos pools de cobertura.",
     "scoreEarningRate": "Taxa de score de seguro",
     "scoreRateValue": "{rate} por {unit} por dia",
     "scoreRateLoading": "Carregando a taxa de score",

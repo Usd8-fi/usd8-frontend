@@ -537,7 +537,7 @@ describe('USD8 landing navigation', () => {
     expect(screen.queryByText(/seven days/i)).toBeNull();
   });
 
-  it('leads each card with the earning rate (large number, small unit) and shows Insured beside the balance', () => {
+  it('leads each card with the earning rate (large number, small unit) and leaves coverage to the insured-token table', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} scoreRatesPerTokenPerDay={{ usd8: '3', savings: '0.1' }} savingsVault={{ apy: '4.1%' }} />);
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const rate = usd8Card.querySelector('.insurance-asset-rate');
@@ -546,16 +546,10 @@ describe('USD8 landing navigation', () => {
     const value = rate.querySelector('.insurance-asset-rate-value strong');
     expect(value).toHaveTextContent('3 per USD8 per day');
     expect(value.querySelector('small')).toHaveTextContent('per USD8 per day');
-    const values = [...usd8Card.querySelectorAll('.insurance-asset-values > div')].map((item) => item.textContent);
-    expect(values[0]).toMatch(/^Your Balance/);
-    expect(values[1]).toMatch(/^Insured\?Yes$/);
-    expect(within(usd8Card).getByRole('button', { name: 'About coverage limits' }).closest('.insurance-asset-values')).not.toBeNull();
-    // sUSD8 has APY in its first row, so Insured sits beside Score Earned instead.
+    // Insured is not shown on the cards: coverage lives in the insured-token table.
+    expect(usd8Card).not.toHaveTextContent('Insured');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
-    const scoreRow = [...savingsCard.querySelectorAll('.insurance-asset-score-row > div')].map((item) => item.textContent);
-    expect(scoreRow[0]).toMatch(/^Score Earned/);
-    expect(scoreRow[1]).toMatch(/^Insured\?Yes$/);
-    expect(savingsCard.querySelector('.insurance-asset-values')).not.toHaveTextContent('Insured');
+    expect(savingsCard).not.toHaveTextContent('Insured');
   });
 
   it('flags the USD8 card, and only the USD8 card, with the private beta boost', () => {
@@ -611,8 +605,6 @@ describe('USD8 landing navigation', () => {
       name: 'Your total insurance score earned across all holdings. Score updates may be delayed by around 13–19 minutes while Ethereum blocks finalize.',
     })).toBeInTheDocument();
     expect(screen.getByRole('tooltip', { name: /score becomes available to use after 7 days, minus any score already spent on claims/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'About coverage limits' })).toHaveLength(2);
-    expect(screen.getAllByRole('tooltip', { name: /subject to the amount available in the cover pools/i })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'About available score' })).toHaveTextContent('?');
 
     expect(screen.getByRole('button', { name: 'About 30-day APY for wstEth Cover Pool' })).toHaveTextContent('?');

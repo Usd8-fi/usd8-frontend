@@ -39,10 +39,6 @@
     "holdingPeriod": "период удержания"
   },
   "asset": {
-    "insured": "Застрахован",
-    "insuredYes": "Да",
-    "coverageHelpLabel": "О лимитах покрытия",
-    "coverageHelp": "Размер покрытия ограничен средствами в пулах покрытия.",
     "scoreEarningRate": "Начисление страховых баллов",
     "scoreRateValue": "{rate} за {unit} в день",
     "scoreRateLoading": "Загрузка начисления баллов",

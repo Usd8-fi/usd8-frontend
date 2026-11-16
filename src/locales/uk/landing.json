@@ -39,10 +39,6 @@
     "holdingPeriod": "встановлений період утримання"
   },
   "asset": {
-    "insured": "Застраховано",
-    "insuredYes": "Так",
-    "coverageHelpLabel": "Про ліміти покриття",
-    "coverageHelp": "Покриття обмежене коштами, доступними в пулах покриття.",
     "scoreEarningRate": "Нарахування страхових балів",
     "scoreRateValue": "{rate} за {unit} на день",
     "scoreRateLoading": "Завантажуємо швидкість нарахування балів",

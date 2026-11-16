@@ -492,7 +492,7 @@ a:focus-visible {
 }
 
 .insurance-asset-values > div,
-.insurance-asset-score-row > div {
+.insurance-asset-score {
   display: flex;
   flex-direction: column;
   gap: var(--metric-label-gap);
@@ -502,10 +502,7 @@ a:focus-visible {
   white-space: nowrap;
 }
 
-.insurance-asset-score-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px 56px;
+.insurance-asset-score {
   margin-top: var(--metric-section-gap);
   margin-bottom: 48px;
 }

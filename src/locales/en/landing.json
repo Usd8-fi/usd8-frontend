@@ -39,10 +39,6 @@
     "holdingPeriod": "the holding period"
   },
   "asset": {
-    "insured": "Insured",
-    "insuredYes": "Yes",
-    "coverageHelpLabel": "About coverage limits",
-    "coverageHelp": "Coverage is subject to the amount available in the cover pools.",
     "scoreEarningRate": "Insurance Score Rate",
     "scoreRateValue": "{rate} per {unit} per day",
     "scoreRateLoading": "Loading score rate",

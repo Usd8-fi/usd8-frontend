@@ -39,10 +39,6 @@
     "holdingPeriod": "보유 기간"
   },
   "asset": {
-    "insured": "보험 적용",
-    "insuredYes": "예",
-    "coverageHelpLabel": "보장 한도 안내",
-    "coverageHelp": "보장 금액은 커버 풀에 있는 자산 규모로 제한됩니다.",
     "scoreEarningRate": "보험 점수 적립률",
     "scoreRateValue": "{unit} 1개당 하루 {rate}점",
     "scoreRateLoading": "점수 적립률을 불러오는 중",

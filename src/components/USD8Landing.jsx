@@ -225,17 +225,6 @@ function AssetCard({
   children,
 }) {
   const { t } = useTranslation();
-  const insured = (
-    <div>
-      <span className="metric-label-with-help">
-        {t('landing.asset.insured')}
-        <InfoTooltip ariaLabel={t('landing.asset.coverageHelpLabel')}>
-          {t('landing.asset.coverageHelp')}
-        </InfoTooltip>
-      </span>
-      <strong>{t('landing.asset.insuredYes')}</strong>
-    </div>
-  );
   return (
     <article className="insurance-asset-card">
       <header>
@@ -280,16 +269,11 @@ function AssetCard({
             <strong><MetricValue value={apy} label={t('landing.asset.apyLoading')} /></strong>
           </div>
         ) : null}
-        {apy === undefined ? insured : null}
       </div>
 
-      <div className="insurance-asset-score-row">
-        <div className="insurance-asset-score">
-          <span>{t('landing.asset.scoreEarned')}</span>
-          <strong><LiveScoreValue loading={scoreLoading} score={score} valueKey={scoreKey} rateKey={scoreRateKey} /></strong>
-        </div>
-        {/* A card with APY has a full first row, so Insured shares the Score Earned row. */}
-        {apy !== undefined ? insured : null}
+      <div className="insurance-asset-score">
+        <span>{t('landing.asset.scoreEarned')}</span>
+        <strong><LiveScoreValue loading={scoreLoading} score={score} valueKey={scoreKey} rateKey={scoreRateKey} /></strong>
       </div>
 
       <div className="insurance-asset-actions">{children}</div>

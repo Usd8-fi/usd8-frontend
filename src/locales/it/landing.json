@@ -39,10 +39,6 @@
     "holdingPeriod": "il periodo di detenzione"
   },
   "asset": {
-    "insured": "Assicurato",
-    "insuredYes": "Sì",
-    "coverageHelpLabel": "Informazioni sui limiti di copertura",
-    "coverageHelp": "La copertura dipende dall’importo disponibile nei Cover Pool.",
     "scoreEarningRate": "Tasso di punteggio assicurativo",
     "scoreRateValue": "{rate} per {unit} al giorno",
     "scoreRateLoading": "Caricamento del tasso di punteggio",

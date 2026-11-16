@@ -39,10 +39,6 @@
     "holdingPeriod": "ช่วงถือครองที่กำหนด"
   },
   "asset": {
-    "insured": "มีประกัน",
-    "insuredYes": "ใช่",
-    "coverageHelpLabel": "เกี่ยวกับวงเงินคุ้มครอง",
-    "coverageHelp": "ความคุ้มครองขึ้นอยู่กับยอดเงินที่มีอยู่ในพูลคุ้มครอง",
     "scoreEarningRate": "อัตราคะแนนประกัน",
     "scoreRateValue": "{rate} ต่อ {unit} ต่อวัน",
     "scoreRateLoading": "กำลังโหลดอัตราคะแนน",

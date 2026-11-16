@@ -39,10 +39,6 @@
     "holdingPeriod": "der Haltedauer"
   },
   "asset": {
-    "insured": "Versichert",
-    "insuredYes": "Ja",
-    "coverageHelpLabel": "Info zu den Deckungsgrenzen",
-    "coverageHelp": "Die Deckung ist durch die in den Cover Pools verfügbaren Mittel begrenzt.",
     "scoreEarningRate": "Versicherungsscore-Rate",
     "scoreRateValue": "{rate} pro {unit} und Tag",
     "scoreRateLoading": "Score-Rate wird geladen",

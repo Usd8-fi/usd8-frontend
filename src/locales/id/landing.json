@@ -39,10 +39,6 @@
     "holdingPeriod": "periode kepemilikan"
   },
   "asset": {
-    "insured": "Diasuransikan",
-    "insuredYes": "Ya",
-    "coverageHelpLabel": "Tentang batas cakupan",
-    "coverageHelp": "Cakupan bergantung pada jumlah dana yang tersedia di pool proteksi.",
     "scoreEarningRate": "Laju Skor Asuransi",
     "scoreRateValue": "{rate} per {unit} per hari",
     "scoreRateLoading": "Memuat laju skor",

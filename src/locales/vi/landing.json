@@ -39,10 +39,6 @@
     "holdingPeriod": "thời gian nắm giữ"
   },
   "asset": {
-    "insured": "Được bảo hiểm",
-    "insuredYes": "Có",
-    "coverageHelpLabel": "Về giới hạn bảo hiểm",
-    "coverageHelp": "Mức bảo hiểm phụ thuộc vào số tài sản hiện có trong các pool bảo hiểm.",
     "scoreEarningRate": "Tốc độ điểm bảo hiểm",
     "scoreRateValue": "{rate} điểm/{unit}/ngày",
     "scoreRateLoading": "Đang tải tốc độ tích điểm",
