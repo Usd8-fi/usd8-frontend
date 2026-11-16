@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "بیمه‌شده",
-    "insuredValue": "بله، با محدودیت",
+    "insuredYes": "بله",
     "coverageHelpLabel": "درباره‌ی محدودیت‌های پوشش",
     "coverageHelp": "پوشش به موجودی در دسترس استخرهای پوشش محدود است.",
-    "scoreRate": "نرخ امتیاز",
+    "scoreEarningRate": "نرخ امتیاز بیمه",
     "scoreRateValue": "{rate} به ازای هر {unit} در روز",
     "scoreRateLoading": "در حال بارگذاری نرخ امتیاز",
     "scoreRateHelpLabel": "درباره‌ی نرخ امتیاز",

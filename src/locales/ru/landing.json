@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Застрахован",
-    "insuredValue": "Да, с лимитами",
+    "insuredYes": "Да",
     "coverageHelpLabel": "О лимитах покрытия",
     "coverageHelp": "Размер покрытия ограничен средствами в пулах покрытия.",
-    "scoreRate": "Начисление баллов",
+    "scoreEarningRate": "Начисление страховых баллов",
     "scoreRateValue": "{rate} за {unit} в день",
     "scoreRateLoading": "Загрузка начисления баллов",
     "scoreRateHelpLabel": "О начислении баллов",

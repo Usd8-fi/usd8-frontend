@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Segurado",
-    "insuredValue": "SIM, com limites",
+    "insuredYes": "Sim",
     "coverageHelpLabel": "Sobre os limites de cobertura",
     "coverageHelp": "A cobertura depende do valor disponível nos pools de cobertura.",
-    "scoreRate": "Taxa de score",
+    "scoreEarningRate": "Taxa de score de seguro",
     "scoreRateValue": "{rate} por {unit} por dia",
     "scoreRateLoading": "Carregando a taxa de score",
     "scoreRateHelpLabel": "Sobre a taxa de score",

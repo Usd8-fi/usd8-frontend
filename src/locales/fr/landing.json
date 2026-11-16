@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Assuré",
-    "insuredValue": "OUI, avec limites",
+    "insuredYes": "Oui",
     "coverageHelpLabel": "À propos des limites de couverture",
     "coverageHelp": "La couverture dépend des montants disponibles dans les pools de couverture.",
-    "scoreRate": "Taux de score",
+    "scoreEarningRate": "Taux de score d’assurance",
     "scoreRateValue": "{rate} par {unit} et par jour",
     "scoreRateLoading": "Chargement du taux de score",
     "scoreRateHelpLabel": "À propos du taux de score",

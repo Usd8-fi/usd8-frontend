@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Assicurato",
-    "insuredValue": "SÌ, con limiti",
+    "insuredYes": "Sì",
     "coverageHelpLabel": "Informazioni sui limiti di copertura",
     "coverageHelp": "La copertura dipende dall’importo disponibile nei Cover Pool.",
-    "scoreRate": "Tasso di punteggio",
+    "scoreEarningRate": "Tasso di punteggio assicurativo",
     "scoreRateValue": "{rate} per {unit} al giorno",
     "scoreRateLoading": "Caricamento del tasso di punteggio",
     "scoreRateHelpLabel": "Informazioni sul tasso di punteggio",

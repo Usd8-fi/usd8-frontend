@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Sigortalı",
-    "insuredValue": "EVET, limitli",
+    "insuredYes": "Evet",
     "coverageHelpLabel": "Teminat limitleri hakkında",
     "coverageHelp": "Kapsam, teminat havuzlarındaki mevcut tutarla sınırlıdır.",
-    "scoreRate": "Puan Oranı",
+    "scoreEarningRate": "Sigorta Puanı Oranı",
     "scoreRateValue": "Günde {unit} başına {rate}",
     "scoreRateLoading": "Puan oranı yükleniyor",
     "scoreRateHelpLabel": "Puan oranı hakkında",

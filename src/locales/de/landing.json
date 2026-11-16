@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Versichert",
-    "insuredValue": "JA, begrenzt",
+    "insuredYes": "Ja",
     "coverageHelpLabel": "Info zu den Deckungsgrenzen",
     "coverageHelp": "Die Deckung ist durch die in den Cover Pools verfügbaren Mittel begrenzt.",
-    "scoreRate": "Score-Rate",
+    "scoreEarningRate": "Versicherungsscore-Rate",
     "scoreRateValue": "{rate} pro {unit} und Tag",
     "scoreRateLoading": "Score-Rate wird geladen",
     "scoreRateHelpLabel": "Info zur Score-Rate",

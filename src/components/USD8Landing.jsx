@@ -7,7 +7,7 @@ import usd8Wordmark from '../assets/usd8-wordmark.svg';
 import { useLivePoolEarnings } from '../lib/livePoolEarnings.js';
 import { useSecondClock } from '../lib/secondClock.js';
 import { liveAvailableScore } from '../lib/scoreRules.js';
-import { formatWad, groupDecimalString, rateDecimals, wadUnits } from '../lib/units.js';
+import { formatWad, groupDecimalString, rateDecimals, UNKNOWN_VALUE, wadUnits } from '../lib/units.js';
 import { visibleDecimals } from '../lib/displayAvailableBalance.js';
 import { docsUrl } from '../lib/docsLinks.js';
 import { durationPhrase } from '../lib/durations.js';
@@ -189,6 +189,22 @@ function SiteFooter({ updatedAt }) {
   );
 }
 
+/// The score rate in the language's own word order, with only the number large:
+/// "3<small> per USD8 per day</small>" (zh puts the number mid-sentence).
+function ScoreRateValue({ rate, unit }) {
+  const { t } = useTranslation();
+  if (!rate) return <span translate="no">{UNKNOWN_VALUE}</span>;
+  const MARK = '\u0000';
+  const [before, after = ''] = t('landing.asset.scoreRateValue', { rate: MARK, unit }).split(MARK);
+  return (
+    <span translate="no">
+      {before ? <small>{before}</small> : null}
+      {rate}
+      {after ? <small>{after}</small> : null}
+    </span>
+  );
+}
+
 function AssetCard({
   title,
   iconSrc = usd8Logo,
@@ -209,6 +225,17 @@ function AssetCard({
   children,
 }) {
   const { t } = useTranslation();
+  const insured = (
+    <div>
+      <span className="metric-label-with-help">
+        {t('landing.asset.insured')}
+        <InfoTooltip ariaLabel={t('landing.asset.coverageHelpLabel')}>
+          {t('landing.asset.coverageHelp')}
+        </InfoTooltip>
+      </span>
+      <strong>{t('landing.asset.insuredYes')}</strong>
+    </div>
+  );
   return (
     <article className="insurance-asset-card">
       <header>
@@ -216,33 +243,24 @@ function AssetCard({
         <h2>{title}</h2>
       </header>
 
-      <dl className="insurance-asset-terms">
-        <div>
-          <dt>{t('landing.asset.insured')}</dt>
-          <dd className="metric-label-with-help">
-            {t('landing.asset.insuredValue')}
-            <InfoTooltip ariaLabel={t('landing.asset.coverageHelpLabel')}>
-              {t('landing.asset.coverageHelp')}
-            </InfoTooltip>
-          </dd>
+      <div className="insurance-asset-rate">
+        <span className="metric-label-with-help">
+          {t('landing.asset.scoreEarningRate')}
+          <InfoTooltip ariaLabel={t('landing.asset.scoreRateHelpLabel')}>
+            {scoreRatePerDay
+              ? t('landing.asset.scoreRateHelp', { rate: formatScoreRate(scoreRatePerDay), unit: scoreRateUnit })
+              : t('landing.asset.scoreRateHelpPending', { unit: scoreRateUnit })}
+          </InfoTooltip>
+        </span>
+        <div className="insurance-asset-rate-value">
+          <strong>
+            {scoreRateLoading && !scoreRatePerDay
+              ? <LoadingSpinner label={t('landing.asset.scoreRateLoading')} />
+              : <ScoreRateValue rate={scoreRatePerDay ? formatScoreRate(scoreRatePerDay) : null} unit={scoreRateUnit} />}
+          </strong>
+          {flag ? <span className="insurance-asset-flag">{flag}</span> : null}
         </div>
-        <div>
-          <dt>{t('landing.asset.scoreRate')}</dt>
-          <dd className="metric-label-with-help">
-            <MetricValue
-              loading={scoreRateLoading}
-              value={scoreRatePerDay ? t('landing.asset.scoreRateValue', { rate: formatScoreRate(scoreRatePerDay), unit: scoreRateUnit }) : null}
-              label={t('landing.asset.scoreRateLoading')}
-            />
-            <InfoTooltip ariaLabel={t('landing.asset.scoreRateHelpLabel')}>
-              {scoreRatePerDay
-                ? t('landing.asset.scoreRateHelp', { rate: formatScoreRate(scoreRatePerDay), unit: scoreRateUnit })
-                : t('landing.asset.scoreRateHelpPending', { unit: scoreRateUnit })}
-            </InfoTooltip>
-            {flag ? <span className="insurance-asset-flag">{flag}</span> : null}
-          </dd>
-        </div>
-      </dl>
+      </div>
 
       <div className="insurance-asset-values">
         <div>
@@ -262,11 +280,16 @@ function AssetCard({
             <strong><MetricValue value={apy} label={t('landing.asset.apyLoading')} /></strong>
           </div>
         ) : null}
+        {apy === undefined ? insured : null}
       </div>
 
-      <div className="insurance-asset-score">
-        <span>{t('landing.asset.scoreEarned')}</span>
-        <strong><LiveScoreValue loading={scoreLoading} score={score} valueKey={scoreKey} rateKey={scoreRateKey} /></strong>
+      <div className="insurance-asset-score-row">
+        <div className="insurance-asset-score">
+          <span>{t('landing.asset.scoreEarned')}</span>
+          <strong><LiveScoreValue loading={scoreLoading} score={score} valueKey={scoreKey} rateKey={scoreRateKey} /></strong>
+        </div>
+        {/* A card with APY has a full first row, so Insured shares the Score Earned row. */}
+        {apy !== undefined ? insured : null}
       </div>
 
       <div className="insurance-asset-actions">{children}</div>

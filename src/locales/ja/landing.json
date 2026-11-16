@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "保険対象",
-    "insuredValue": "対象（上限あり）",
+    "insuredYes": "対象",
     "coverageHelpLabel": "補償上限について",
     "coverageHelp": "補償額は、カバープールで利用可能な資金の範囲内に限られます。",
-    "scoreRate": "スコア獲得レート",
+    "scoreEarningRate": "保険スコアレート",
     "scoreRateValue": "1 {unit}あたり{rate}/日",
     "scoreRateLoading": "スコア獲得レートを読み込み中",
     "scoreRateHelpLabel": "スコア獲得レートについて",

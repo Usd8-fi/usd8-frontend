@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "مؤمَّن",
-    "insuredValue": "نعم، ضمن حدود",
+    "insuredYes": "نعم",
     "coverageHelpLabel": "عن حدود التغطية",
     "coverageHelp": "تخضع التغطية للمبالغ المتوفرة في مجمعات التغطية.",
-    "scoreRate": "معدل النقاط",
+    "scoreEarningRate": "معدل نقاط التأمين",
     "scoreRateValue": "{rate} لكل {unit} يوميًا",
     "scoreRateLoading": "جارٍ تحميل معدل النقاط",
     "scoreRateHelpLabel": "عن معدل النقاط",

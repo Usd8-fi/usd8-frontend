@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Застраховано",
-    "insuredValue": "ТАК, з обмеженнями",
+    "insuredYes": "Так",
     "coverageHelpLabel": "Про ліміти покриття",
     "coverageHelp": "Покриття обмежене коштами, доступними в пулах покриття.",
-    "scoreRate": "Нарахування балів",
+    "scoreEarningRate": "Нарахування страхових балів",
     "scoreRateValue": "{rate} за {unit} на день",
     "scoreRateLoading": "Завантажуємо швидкість нарахування балів",
     "scoreRateHelpLabel": "Про нарахування балів",

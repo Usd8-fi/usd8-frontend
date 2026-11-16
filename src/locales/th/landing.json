@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "มีประกัน",
-    "insuredValue": "ใช่ (มีวงเงินจำกัด)",
+    "insuredYes": "ใช่",
     "coverageHelpLabel": "เกี่ยวกับวงเงินคุ้มครอง",
     "coverageHelp": "ความคุ้มครองขึ้นอยู่กับยอดเงินที่มีอยู่ในพูลคุ้มครอง",
-    "scoreRate": "อัตราคะแนน",
+    "scoreEarningRate": "อัตราคะแนนประกัน",
     "scoreRateValue": "{rate} ต่อ {unit} ต่อวัน",
     "scoreRateLoading": "กำลังโหลดอัตราคะแนน",
     "scoreRateHelpLabel": "เกี่ยวกับอัตราคะแนน",

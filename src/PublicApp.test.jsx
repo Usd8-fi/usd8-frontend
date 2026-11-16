@@ -47,7 +47,8 @@ describe('public score rates', () => {
   it('shows the on-chain score rate before a wallet connects instead of spinning forever', async () => {
     mocks.read.mockResolvedValue({ ...snapshot({}), scoreRatesPerTokenPerDay: { usd8: '3', savings: '0' } });
     render(<PublicApp />);
-    expect(await screen.findByText('3 per USD8 per day')).toBeInTheDocument();
+    expect(await screen.findByText((_, element) => element?.matches?.('.insurance-asset-rate-value strong')
+      && element.textContent === '3 per USD8 per day')).toBeInTheDocument();
     expect(screen.queryByRole('status', { name: 'Loading score rate' })).not.toBeInTheDocument();
   });
 

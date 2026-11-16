@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "Insured",
-    "insuredValue": "YES with limits",
+    "insuredYes": "Yes",
     "coverageHelpLabel": "About coverage limits",
     "coverageHelp": "Coverage is subject to the amount available in the cover pools.",
-    "scoreRate": "Score Rate",
+    "scoreEarningRate": "Insurance Score Rate",
     "scoreRateValue": "{rate} per {unit} per day",
     "scoreRateLoading": "Loading score rate",
     "scoreRateHelpLabel": "About score rate",

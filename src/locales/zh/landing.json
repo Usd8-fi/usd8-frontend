@@ -40,10 +40,10 @@
   },
   "asset": {
     "insured": "受保",
-    "insuredValue": "是（有上限）",
+    "insuredYes": "是",
     "coverageHelpLabel": "关于保障上限",
     "coverageHelp": "保障额度受承保池可用资金限制。",
-    "scoreRate": "积分速率",
+    "scoreEarningRate": "保险积分速率",
     "scoreRateValue": "每天{rate}积分/{unit}",
     "scoreRateLoading": "正在加载积分速率",
     "scoreRateHelpLabel": "关于积分速率",

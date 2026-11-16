@@ -537,14 +537,36 @@ describe('USD8 landing navigation', () => {
     expect(screen.queryByText(/seven days/i)).toBeNull();
   });
 
+  it('leads each card with the earning rate (large number, small unit) and shows Insured beside the balance', () => {
+    render(<USD8Landing wallet={wallet} pools={POOLS} scoreRatesPerTokenPerDay={{ usd8: '3', savings: '0.1' }} savingsVault={{ apy: '4.1%' }} />);
+    const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
+    const rate = usd8Card.querySelector('.insurance-asset-rate');
+    expect(rate.previousElementSibling.tagName).toBe('HEADER');
+    expect(rate).toHaveTextContent(/^Insurance Score Rate\?/);
+    const value = rate.querySelector('.insurance-asset-rate-value strong');
+    expect(value).toHaveTextContent('3 per USD8 per day');
+    expect(value.querySelector('small')).toHaveTextContent('per USD8 per day');
+    const values = [...usd8Card.querySelectorAll('.insurance-asset-values > div')].map((item) => item.textContent);
+    expect(values[0]).toMatch(/^Your Balance/);
+    expect(values[1]).toMatch(/^Insured\?Yes$/);
+    expect(within(usd8Card).getByRole('button', { name: 'About coverage limits' }).closest('.insurance-asset-values')).not.toBeNull();
+    // sUSD8 has APY in its first row, so Insured sits beside Score Earned instead.
+    const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
+    const scoreRow = [...savingsCard.querySelectorAll('.insurance-asset-score-row > div')].map((item) => item.textContent);
+    expect(scoreRow[0]).toMatch(/^Score Earned/);
+    expect(scoreRow[1]).toMatch(/^Insured\?Yes$/);
+    expect(savingsCard.querySelector('.insurance-asset-values')).not.toHaveTextContent('Insured');
+  });
+
   it('flags the USD8 card, and only the USD8 card, with the private beta boost', () => {
     render(<USD8Landing wallet={wallet} pools={POOLS} />);
     const usd8Card = screen.getByRole('heading', { name: 'USD8' }).closest('article');
     const savingsCard = screen.getByRole('heading', { name: 'sUSD8 Savings USD8 (Morpho)' }).closest('article');
     const flag = within(usd8Card).getByText('3x for private beta');
     expect(flag).toHaveClass('insurance-asset-flag');
-    // Sits beside the USD8 score rate, inside the Score Rate value.
-    expect(flag.closest('dd')).toBe(within(usd8Card).getByRole('button', { name: 'About score rate' }).closest('dd'));
+    // Sits beside the USD8 earning rate value, in the earning-rate block.
+    expect(flag.closest('.insurance-asset-rate-value')).not.toBeNull();
+    expect(flag.closest('.insurance-asset-rate')).toBe(within(usd8Card).getByRole('button', { name: 'About score rate' }).closest('.insurance-asset-rate'));
     expect(within(savingsCard).queryByText('3x for private beta')).toBeNull();
   });
 
@@ -562,9 +584,9 @@ describe('USD8 landing navigation', () => {
 
     rerender(<USD8Landing wallet={wallet} pools={POOLS} scoreRatesPerTokenPerDay={{ usd8: '3', savings: '0.25' }} />);
     const rates = screen.getAllByRole('button', { name: 'About score rate' });
-    expect(rates[0].closest('dd')).toHaveTextContent('3 per USD8 per day');
+    expect(rates[0].closest('.insurance-asset-rate')).toHaveTextContent('3 per USD8 per day');
     // sUSD8 vault not deployed yet: the card shows the planned 0.1, not the chain value.
-    expect(rates[1].closest('dd')).toHaveTextContent('0.1 per sUSD8 per day');
+    expect(rates[1].closest('.insurance-asset-rate')).toHaveTextContent('0.1 per sUSD8 per day');
     expect(screen.getByRole('tooltip', {
       name: 'You get 3 score per day for every USD8 you hold. Rewarded every block.',
     })).toBeInTheDocument();
@@ -577,8 +599,8 @@ describe('USD8 landing navigation', () => {
     expect(screen.getByRole('button', { name: 'About total insurance score' })).toHaveTextContent('?');
     const scoreRateHelp = screen.getAllByRole('button', { name: 'About score rate' });
     expect(scoreRateHelp).toHaveLength(2);
-    expect(scoreRateHelp[0].closest('dd')).toHaveTextContent('1 per USD8 per day');
-    expect(scoreRateHelp[1].closest('dd')).toHaveTextContent('0.1 per sUSD8 per day');
+    expect(scoreRateHelp[0].closest('.insurance-asset-rate')).toHaveTextContent('1 per USD8 per day');
+    expect(scoreRateHelp[1].closest('.insurance-asset-rate')).toHaveTextContent('0.1 per sUSD8 per day');
     expect(screen.getByRole('tooltip', {
       name: 'You get 1 score per day for every USD8 you hold. Rewarded every block.',
     })).toBeInTheDocument();
