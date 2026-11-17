@@ -28,12 +28,12 @@ describe('max coverage ring', () => {
 
 describe('insured token site link', () => {
   it('links the token name to its own protocol page and shows no Etherscan icon', () => {
-    render(<CoveredProtocolsTable insuredTokenStates={{ 'morpho-steakusdc': { enabled: true, maxCoverageBps: '7000' } }} />);
-    const link = screen.getByRole('link', { name: 'Open Morpho Steakhouse USDC steakUSDC on its own site' });
-    expect(link).toHaveAttribute('href', 'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB');
+    render(<CoveredProtocolsTable insuredTokenStates={{ 'frax-sfrxusd': { enabled: true, maxCoverageBps: '8000' } }} />);
+    const link = screen.getByRole('link', { name: 'Open Frax Staked frxUSD sfrxUSD on its own site' });
+    expect(link).toHaveAttribute('href', 'https://frax.com/earn');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noreferrer');
-    expect(link).toHaveTextContent(/^steakUSDC$/);
+    expect(link).toHaveTextContent(/^sfrxUSD$/);
     expect(screen.queryByTitle('View on Etherscan')).toBeNull();
   });
 
@@ -88,29 +88,29 @@ describe('insured token site link', () => {
 describe('row order', () => {
   it('lists the highest max coverage first and keeps listing order on ties', () => {
     const { container } = render(<CoveredProtocolsTable insuredTokenStates={{
-      'morpho-steakusdc': { enabled: true, maxCoverageBps: '7000' },
+      'frax-sfrxusd': { enabled: true, maxCoverageBps: '7000' },
       usd8: { enabled: true, maxCoverageBps: '8000' },
       'flyingtulip-ssftusd': { enabled: true, maxCoverageBps: '8000' },
       'sky-susds': { enabled: true, maxCoverageBps: '9000' },
     }} />);
     const symbols = [...container.querySelectorAll('tbody tr')].map((row) => row.textContent);
-    expect(symbols.map((text) => ['sUSDS', 'ssftUSD', 'steakUSDC', 'USD8'].find((symbol) => text.includes(symbol))))
-      .toEqual(['sUSDS', 'USD8', 'ssftUSD', 'steakUSDC']);
+    expect(symbols.map((text) => ['sUSDS', 'ssftUSD', 'sfrxUSD', 'USD8'].find((symbol) => text.includes(symbol))))
+      .toEqual(['sUSDS', 'USD8', 'ssftUSD', 'sfrxUSD']);
   });
 });
 
 describe('mainnet insured tokens', () => {
-  it('lists USD8, sGHO (not legacy stkGHO), sUSDS, steakUSDC, ssftUSD, wstETH, rETH and sfrxUSD', () => {
+  it('lists USD8, sGHO (not legacy stkGHO), sUSDS, ssftUSD, wstETH, rETH and sfrxUSD; steakUSDC is delisted', () => {
     expect(NETWORKS[1].contracts.insuredTokens).toMatchObject({
       usd8: '0x2fe01f5e235eeab9045066f873f531de20f31947',
       'aave-sgho': '0xe1753f2e00940cc31213dd92013cf019dfe4ca1d',
       'sky-susds': '0xa3931d71877c0e7a3148cb7eb4463524fec27fbd',
-      'morpho-steakusdc': '0xbeef01735c132ada46aa9aa4c54623caa92a64cb',
       'flyingtulip-ssftusd': '0x232128844e5af56fd4b3f8bf97e08ab477282ab5',
       'lido-wsteth': '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
       'rocketpool-reth': '0xae78736cd615f374d3085123a210448e74fc6393',
       'frax-sfrxusd': '0xcf62f905562626cfcdd2261162a51fd02fc9c5b6',
     });
     expect(Object.values(NETWORKS[1].contracts.insuredTokens)).not.toContain('0x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d');
+    expect(Object.values(NETWORKS[1].contracts.insuredTokens)).not.toContain('0xbeef01735c132ada46aa9aa4c54623caa92a64cb');
   });
 });

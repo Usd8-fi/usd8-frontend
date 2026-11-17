@@ -7,7 +7,6 @@ import sGhoIcon from '../assets/token-sgho.svg';
 import scrvUsdIcon from '../assets/token-scrvusd.webp?no-inline';
 import msLossLogo from '../assets/msloss-test.svg';
 import sUsdsIcon from '../assets/token-susds.webp?no-inline';
-import steakUsdcIcon from '../assets/token-steakusdc.webp?no-inline';
 import ssftUsdIcon from '../assets/token-ssftusd.svg';
 import wstEthIcon from '../assets/token-wsteth.webp?no-inline';
 import rEthIcon from '../assets/token-reth.webp?no-inline';
@@ -68,15 +67,6 @@ export const COVERED_PROTOCOL_ROWS = [
     name: 'Sky Savings USDS',
     url: 'https://app.sky.money/',
     address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
-  },
-  {
-    id: 'morpho-steakusdc',
-    symbol: 'steakUSDC',
-    underlying: 'USDC',
-    iconSrc: steakUsdcIcon,
-    name: 'Morpho Steakhouse USDC',
-    address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
-    url: 'https://app.morpho.org/ethereum/vault/0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
   },
   {
     id: 'flyingtulip-ssftusd',

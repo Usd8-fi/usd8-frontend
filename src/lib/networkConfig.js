@@ -106,10 +106,8 @@ const MAINNET_CONTRACTS = Object.freeze({
     'aave-sgho': '0xe1753f2e00940cc31213dd92013cf019dfe4ca1d',
     // Sky Savings USDS.
     'sky-susds': '0xa3931d71877c0e7a3148cb7eb4463524fec27fbd',
-    // Steakhouse USDC (Morpho vault), listed by plan 27 (usd8-core
-    // deployments/mainnet/27-list-steakusdc-plan.json, nonce 75): 70% coverage,
-    // Chainlink USDC/USD oracle, conversion = convertToAssets(1e30) (18-dec shares over 6-dec USDC).
-    'morpho-steakusdc': '0xbeef01735c132ada46aa9aa4c54623caa92a64cb',
+    // Steakhouse USDC (0xbeef…64cb) was listed by plan 27 and delisted by plan 33
+    // (usd8-core deployments/mainnet/33-delist-steakusdc-plan.json, nonce 95).
     // Flying Tulip Stable Staked ftUSD, listed by plan 30 (usd8-core
     // deployments/mainnet/30-list-ssftusd-plan.json, nonces 88-89): 80% coverage,
     // FtUSDPriceOracle 0x7b714d47248776244cf25c794985d0444bd7a3c6 (min of issuer feed, NAV,

@@ -577,13 +577,6 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
       .then(() => client.readContract({ address: msloss2Address, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber }))
       .catch(() => null)
     : 0n;
-  // Steakhouse USDC (mainnet only): same out-of-multicall read so FIXED_READS stays stable.
-  const steakAddress = contracts.insuredTokens['morpho-steakusdc'];
-  const steak = steakAddress && hasAccount
-    ? await Promise.resolve()
-      .then(() => client.readContract({ address: steakAddress, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber }))
-      .catch(() => null)
-    : 0n;
   // Later mainnet listings (ssftUSD, wstETH, rETH): out-of-multicall reads so FIXED_READS stays
   // stable. A failed read shows as unknown for that token only.
   const extraInsuredBalances = Object.fromEntries(await Promise.all(EXTRA_INSURED_TOKEN_IDS
@@ -799,7 +792,6 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
         'aave-sgho': formatted(sGho),
         'sky-susds': formatted(sUsds),
         [testTokenId]: formatted(msloss),
-        ...(steakAddress ? { 'morpho-steakusdc': steak === null ? UNKNOWN_VALUE : formatted(steak) } : {}),
         ...Object.fromEntries(Object.entries(extraInsuredBalances)
           .map(([id, balance]) => [id, balance === null ? UNKNOWN_VALUE : formatted(balance)])),
         ...(msloss2Address ? { 'test-msloss2': msloss2 === null ? UNKNOWN_VALUE : formatted(msloss2) } : {}),
