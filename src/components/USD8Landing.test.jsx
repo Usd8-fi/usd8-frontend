@@ -100,14 +100,14 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('href', './docs/anti-scam-check.html');
     expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', './docs/');
-    const videoLink = within(footerNav).getByRole('link', { name: '1-Minute Video Explainer' });
+    const videoLink = within(footerNav).getByRole('link', { name: '1-Min Video Explainer' });
     expect(videoLink).toHaveAttribute('href', 'https://x.com/usd8_fi/status/2123476354700079544');
     expect(footerNav.children[0].firstElementChild).toBe(videoLink);
     fireEvent.click(videoLink);
-    const videoDialog = screen.getByRole('dialog', { name: '1-Minute Video Explainer' });
+    const videoDialog = screen.getByRole('dialog', { name: '1-Min Video Explainer' });
     expect(videoDialog.querySelector('video')).toHaveAttribute('src', './assets/video/usd8-explainer.mp4');
     fireEvent.click(within(videoDialog).getByRole('button', { name: 'Close video' }));
-    expect(screen.queryByRole('dialog', { name: '1-Minute Video Explainer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '1-Min Video Explainer' })).not.toBeInTheDocument();
     expect(within(footerNav).getByRole('link', { name: 'Github' })).toHaveAttribute('href', 'https://github.com/Usd8-fi/usd8-core');
     expect(within(footerNav).getByRole('link', { name: 'Telegram' })).toHaveAttribute('href', 'https://t.me/+e84i2oYk1ao1MTk1');
     expect(within(footerNav).getByRole('link', { name: 'X.com' })).toHaveAttribute('href', 'https://x.com/usd8_fi');
