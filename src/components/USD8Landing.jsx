@@ -20,6 +20,7 @@ import PercentRing from './PercentRing.jsx';
 import LoadingSpinner, { MetricValue } from './LoadingSpinner.jsx';
 import LanguagePicker from './LanguagePicker.jsx';
 import SiteNotice from './SiteNotice.jsx';
+import { useDialogFocus } from './useDialogFocus.js';
 import { getLanguage, poolDisplayName, useTranslation } from '../lib/i18n.js';
 
 
@@ -147,8 +148,34 @@ function WalletButton({ wallet }) {
 }
 
 
+export const EXPLAINER_VIDEO_URL = './assets/video/usd8-explainer.mp4';
+export const EXPLAINER_VIDEO_POSTER = './assets/video/usd8-explainer-poster.jpg';
+export const EXPLAINER_VIDEO_POST = 'https://x.com/usd8_fi/status/2123476354700079544';
+
+// Plays the 1-minute explainer in place, so the footer link needs no second click.
+function ExplainerVideoDialog({ onClose }) {
+  const { t } = useTranslation();
+  const dialogRef = useDialogFocus(onClose);
+  const videoRef = useRef(null);
+  useEffect(() => {
+    const play = videoRef.current?.play?.();
+    if (play?.catch) play.catch(() => {});
+  }, []);
+  return (
+    <div className="usd8-dialog-backdrop video-dialog-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section className="usd8-dialog video-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t('landing.footer.videoExplainer')}>
+        <button className="app-dialog-close" type="button" aria-label={t('landing.footer.closeVideo')} onClick={onClose}>×</button>
+        <video ref={videoRef} src={EXPLAINER_VIDEO_URL} poster={EXPLAINER_VIDEO_POSTER} controls autoPlay playsInline />
+      </section>
+    </div>
+  );
+}
+
 function SiteFooter({ updatedAt }) {
   const { t } = useTranslation();
+  const [videoOpen, setVideoOpen] = useState(false);
   return (
     <footer className="landing-footer">
       <a className="landing-footer-logo" href="./" aria-label={t('landing.footer.homeLabel')}>
@@ -157,6 +184,11 @@ function SiteFooter({ updatedAt }) {
       </a>
       <nav className="landing-footer-links" aria-label={t('landing.footer.navLabel')}>
         <div>
+          <a className="site-nav-link" href={EXPLAINER_VIDEO_POST} target="_blank" rel="noreferrer" onClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+            event.preventDefault();
+            setVideoOpen(true);
+          }}>{t('landing.footer.videoExplainer')}</a>
           <a className="site-nav-link" href={docsUrl()} target="_blank" rel="noreferrer">{t('landing.footer.docs')}</a>
           <a className="site-nav-link" href="https://github.com/Usd8-fi/usd8-core" target="_blank" rel="noreferrer">Github</a>
           <a className="site-nav-link" href="https://t.me/+e84i2oYk1ao1MTk1" target="_blank" rel="noreferrer">Telegram</a>
@@ -185,6 +217,7 @@ function SiteFooter({ updatedAt }) {
           ? t('landing.footer.openSourceWithDataTime', { time: new Date(updatedAt).toLocaleTimeString(getLanguage() === 'en' ? [] : document.documentElement.lang, { hour: '2-digit', minute: '2-digit' }) })
           : t('landing.footer.openSource')}
       </small>
+      {videoOpen ? <ExplainerVideoDialog onClose={() => setVideoOpen(false)} /> : null}
     </footer>
   );
 }

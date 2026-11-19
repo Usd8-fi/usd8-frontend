@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "Início do USD8 (rodapé)",
     "navLabel": "Rodapé",
+    "videoExplainer": "Vídeo explicativo de 1 minuto",
+    "closeVideo": "Fechar vídeo",
     "docs": "Documentação",
     "auditReport": "Relatório de auditoria",
     "addresses": "Endereços",

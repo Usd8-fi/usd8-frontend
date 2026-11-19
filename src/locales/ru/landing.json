@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8 — на главную (подвал)",
     "navLabel": "Ссылки в подвале",
+    "videoExplainer": "Видео за 1 минуту",
+    "closeVideo": "Закрыть видео",
     "docs": "Документация",
     "auditReport": "Отчёт об аудите",
     "addresses": "Адреса",

@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8ホーム（フッター）",
     "navLabel": "フッター",
+    "videoExplainer": "1分でわかる解説動画",
+    "closeVideo": "動画を閉じる",
     "docs": "ドキュメント",
     "auditReport": "監査レポート",
     "addresses": "アドレス一覧",

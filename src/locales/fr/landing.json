@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "Accueil USD8 (pied de page)",
     "navLabel": "Pied de page",
+    "videoExplainer": "Vidéo explicative d’1 minute",
+    "closeVideo": "Fermer la vidéo",
     "docs": "Documentation",
     "auditReport": "Rapport d’audit",
     "addresses": "Adresses",

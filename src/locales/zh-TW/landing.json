@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8首頁（頁尾）",
     "navLabel": "頁尾導覽",
+    "videoExplainer": "1 分鐘影片講解",
+    "closeVideo": "關閉影片",
     "docs": "文件",
     "auditReport": "稽核報告",
     "addresses": "合約地址",

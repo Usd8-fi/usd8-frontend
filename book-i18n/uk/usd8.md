@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="Логотип USD8"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8 — стейблкоїн, забезпечений USDC у співвідношенні 1:1.
 
 Його мета — виправити хибно вибудувані стимули в сучасному DeFi. Для цього USD8 має дві ключові функції: [безкоштовне DeFi-страхування](./defi-insurance.md) та [економіку білих хакерів](./white-hat-economy.md). Чому ми обрали саме такий шлях, пояснює розділ про наше [філософське підґрунтя](./philosophy.md).

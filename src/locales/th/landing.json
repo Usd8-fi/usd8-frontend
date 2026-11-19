@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "หน้าแรก USD8 (ส่วนท้าย)",
     "navLabel": "ส่วนท้าย",
+    "videoExplainer": "วิดีโออธิบาย 1 นาที",
+    "closeVideo": "ปิดวิดีโอ",
     "docs": "เอกสาร",
     "auditReport": "รายงานการตรวจสอบ",
     "addresses": "ที่อยู่สัญญา",

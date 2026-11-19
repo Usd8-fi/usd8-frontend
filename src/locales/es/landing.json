@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "Inicio de USD8 (pie de página)",
     "navLabel": "Pie de página",
+    "videoExplainer": "Vídeo explicativo de 1 minuto",
+    "closeVideo": "Cerrar vídeo",
     "docs": "Documentación",
     "auditReport": "Informe de auditoría",
     "addresses": "Direcciones",

@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8 홈 (하단)",
     "navLabel": "하단 메뉴",
+    "videoExplainer": "1분 설명 영상",
+    "closeVideo": "영상 닫기",
     "docs": "문서",
     "auditReport": "감사 보고서",
     "addresses": "컨트랙트 주소",

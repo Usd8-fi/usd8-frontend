@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 logo"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8 is a stable coin backed 1:1 by USDC. 
 
 It is designed to correct the mis-aligned incentive design in current Defi landscape with 2 major functions - [Free Defi Insurance](./defi-insurance.md) and [White Hat Economy](./white-hat-economy.md), you can read more about our [philosophical roots](./philosophy.md)

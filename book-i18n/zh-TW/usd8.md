@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8標誌"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8是一種以USDC 1:1支撐的穩定幣。
 
 目前DeFi生態的激勵設計存在錯位，USD8正是為了修正這個問題而生，主要提供兩大功能：[免費DeFi保險](./defi-insurance.md)與[白帽經濟](./white-hat-economy.md)。想了解背後的想法，可以參考我們的[理念溯源](./philosophy.md)。

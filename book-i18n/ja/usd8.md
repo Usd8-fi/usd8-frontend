@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8のロゴ"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8は、USDCに1:1で裏付けられたステーブルコインです。
 
 USD8の目的は、現在のDeFiにおけるインセンティブ設計のゆがみを正すことです。そのための2つの主要な機能として、[無料のDeFi保険](./defi-insurance.md)と[ホワイトハット・エコノミー](./white-hat-economy.md)を備えています。背景にある考え方は[思想的ルーツ](./philosophy.md)をご覧ください。

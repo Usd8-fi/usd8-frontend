@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="USD8 로고"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8은 USDC로 1:1 뒷받침되는 스테이블코인입니다.
 
 USD8은 지금의 DeFi 생태계에 자리 잡은 어긋난 인센티브 구조를 바로잡기 위해 설계되었으며, 이를 위한 두 가지 핵심 기능으로 [무료 DeFi 보험](./defi-insurance.md)과 [화이트햇 경제](./white-hat-economy.md)를 제공합니다. 그 배경은 [철학적 뿌리](./philosophy.md)에서 자세히 읽어 볼 수 있습니다.

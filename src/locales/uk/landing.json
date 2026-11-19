@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8 — на головну (футер)",
     "navLabel": "Навігація у футері",
+    "videoExplainer": "Відео за 1 хвилину",
+    "closeVideo": "Закрити відео",
     "docs": "Документація",
     "auditReport": "Звіт про аудит",
     "addresses": "Адреси",

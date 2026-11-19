@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="شعار USD8"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8 عملة مستقرة مدعومة بنسبة 1:1 بعملة USDC.
 
 صُمّمت لتصحيح الحوافز المختلّة في منظومة DeFi الحالية عبر وظيفتين رئيسيتين: [تأمين DeFi مجاني](./defi-insurance.md) و[اقتصاد القبعات البيضاء](./white-hat-economy.md). ويمكنك قراءة المزيد عن [جذورنا الفلسفية](./philosophy.md).

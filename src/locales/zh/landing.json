@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8首页（页脚）",
     "navLabel": "页脚导航",
+    "videoExplainer": "1 分钟视频讲解",
+    "closeVideo": "关闭视频",
     "docs": "文档",
     "auditReport": "审计报告",
     "addresses": "合约地址",

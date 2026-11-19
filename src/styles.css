@@ -1017,7 +1017,7 @@ small a,
 
 .landing-footer-links {
   display: grid;
-  grid-template-columns: 130px 240px max-content minmax(0, 1fr);
+  grid-template-columns: minmax(130px, max-content) 240px max-content minmax(0, 1fr);
   column-gap: 43px;
   margin-top: 36px;
 }
@@ -1056,6 +1056,25 @@ small a,
   border: 1px solid var(--gold);
   background: #191919;
   color: var(--text);
+}
+
+/* Above the cookie banner (z-index 3000) so the video is never covered; the banner returns on close. */
+.video-dialog-backdrop {
+  z-index: 3100;
+}
+
+.usd8-dialog.video-dialog {
+  width: min(1180px, 100%);
+  padding: 58px 0 0;
+  background: #000;
+}
+
+.video-dialog video {
+  display: block;
+  width: 100%;
+  max-height: calc(100vh - 152px);
+  aspect-ratio: 16 / 9;
+  background: #000;
 }
 
 .usd8-dialog-title {

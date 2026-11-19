@@ -740,6 +740,20 @@ body {
     .docs-hero-brand img.docs-hero-wordmark { height: 32px; }
 }
 
+/* First docs page: 1-minute explainer video right under the hero logo. */
+.docs-video {
+    margin: 28px 0 8px;
+    border: 1px solid #333;
+    background: #000;
+    aspect-ratio: 16 / 9;
+}
+
+.docs-video video {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 /* USD8 App is an external destination, not a docs chapter: set it apart. */
 #mdbook-sidebar .chapter > li.sidebar-app-link {
     margin-top: 28px;

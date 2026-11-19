@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "Beranda USD8 (footer)",
     "navLabel": "Footer",
+    "videoExplainer": "Video penjelasan 1 menit",
+    "closeVideo": "Tutup video",
     "docs": "Dokumentasi",
     "auditReport": "Laporan Audit",
     "addresses": "Alamat",

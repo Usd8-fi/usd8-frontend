@@ -13,6 +13,8 @@
   "footer": {
     "homeLabel": "USD8-Startseite (Fußzeile)",
     "navLabel": "Fußzeile",
+    "videoExplainer": "1-Minuten-Erklärvideo",
+    "closeVideo": "Video schließen",
     "docs": "Dokumentation",
     "auditReport": "Audit-Bericht",
     "addresses": "Adressen",

@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="โลโก้ USD8"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8 คือสเตเบิลคอยน์ที่หนุนหลังด้วย USDC แบบ 1:1
 
 USD8 ถูกออกแบบมาเพื่อแก้แรงจูงใจที่บิดเบี้ยวในโลก DeFi ทุกวันนี้ ผ่านสองฟังก์ชันหลัก ได้แก่ [ประกัน DeFi ฟรี](./defi-insurance.md) และ[เศรษฐกิจหมวกขาว](./white-hat-economy.md) อ่านแนวคิดเบื้องหลังเพิ่มเติมได้ที่[รากฐานทางปรัชญา](./philosophy.md)

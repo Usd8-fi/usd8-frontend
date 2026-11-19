@@ -1,5 +1,7 @@
 <span class="docs-hero-brand"><img src="../assets/usd8Logo.svg" width="100" height="100" alt="Logotipo de USD8"><img class="docs-hero-wordmark" src="../assets/usd8-wordmark.svg" height="44" alt="USD8.fi"></span>
 
+<div class="docs-video" id="video-explainer"><video controls playsinline preload="metadata" poster="../assets/video/usd8-explainer-poster.jpg" aria-label="USD8 explained in one minute"><source src="../assets/video/usd8-explainer.mp4" type="video/mp4"></video></div>
+
 USD8 es una stablecoin respaldada 1:1 por USDC. 
 
 Nace para corregir los incentivos desalineados del DeFi actual con dos funciones principales: el [seguro DeFi gratuito](./defi-insurance.md) y la [Economía White Hat](./white-hat-economy.md). Si quieres saber más, lee sobre nuestras [raíces filosóficas](./philosophy.md).
