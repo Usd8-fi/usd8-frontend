@@ -25,10 +25,10 @@ describe('Anti-Scam Check docs page', () => {
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex');
   });
 
-  it('stores the official handles only as SHA-256 digests (1 Telegram, 2 X)', () => {
+  it('stores the official handles only as SHA-256 digests (1 Telegram, 3 X)', () => {
     const { official } = window.usd8AntiScam;
     expect(official.telegram).toHaveLength(1);
-    expect(official.x).toHaveLength(2);
+    expect(official.x).toHaveLength(3);
     for (const digest of [...official.telegram, ...official.x]) expect(digest).toMatch(/^[0-9a-f]{64}$/);
     // Test-only handles below; the real ones never appear in source.
     official.telegram.push(createHash('sha256').update('telegram:usd8_test_tg').digest('hex'));

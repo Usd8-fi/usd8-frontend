@@ -9,7 +9,8 @@
         ],
         x: [
             "df5550b7e35c99dad1bc7f6ae0c129b375b34ab1424acb16dfc61f5259d7b23f",
-            "a1c0e4e17097642771a06c87fc6618e711cd3b30b0c1edac15bc1b1b2deafac7"
+            "a1c0e4e17097642771a06c87fc6618e711cd3b30b0c1edac15bc1b1b2deafac7",
+            "f3131199e0fec17e1a5005484b190b9bb7d12726331dd5098bd11f5fba7e5556"
         ]
     };
     var NAMES = { telegram: "Telegram", x: "X" };
