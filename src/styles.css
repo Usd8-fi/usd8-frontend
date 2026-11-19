@@ -1065,14 +1065,23 @@ small a,
 
 .usd8-dialog.video-dialog {
   width: min(1180px, 100%);
-  padding: 58px 0 0;
+  padding: 0;
   background: #000;
+}
+
+/* The × sits on the video's top-right corner (no bar above the video). */
+.video-dialog .app-dialog-close {
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
 }
 
 .video-dialog video {
   display: block;
   width: 100%;
-  max-height: calc(100vh - 152px);
+  max-height: calc(100vh - 94px);
   aspect-ratio: 16 / 9;
   background: #000;
 }
