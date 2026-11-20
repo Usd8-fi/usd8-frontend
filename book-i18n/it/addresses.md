@@ -21,4 +21,6 @@
 
 Le modifiche al protocollo vengono programmate tramite il Timelock e si possono eseguire solo dopo il ritardo previsto. Dalla più recente.
 
+Durante la beta privata stiamo perfezionando il sistema, quindi il Timelock verrà attivato dopo la beta privata.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

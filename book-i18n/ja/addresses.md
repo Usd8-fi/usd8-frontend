@@ -21,4 +21,6 @@
 
 プロトコルの変更はタイムロックを通じて予約され、所定の待機期間が過ぎてからでないと実行できません。新しいものから順に表示しています。
 
+プライベートベータ期間中はシステムの微調整を行っているため、タイムロックはプライベートベータ終了後に有効になります。
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

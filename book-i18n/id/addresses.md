@@ -21,4 +21,6 @@
 
 Perubahan protokol dijadwalkan melalui Timelock dan baru dapat dijalankan setelah masa jedanya berakhir. Yang terbaru ditampilkan paling atas.
 
+Selama beta privat kami masih menyempurnakan sistem, jadi Timelock akan diaktifkan setelah beta privat.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

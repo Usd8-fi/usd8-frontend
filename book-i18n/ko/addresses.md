@@ -21,4 +21,6 @@
 
 프로토콜 변경 사항은 타임락을 통해 예약되며, 지연 기간이 지난 후에만 실행할 수 있습니다. 최신 항목이 먼저 표시됩니다.
 
+비공개 베타 기간에는 시스템을 세부 조정하고 있어, 타임락은 비공개 베타 이후에 활성화됩니다.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

@@ -21,4 +21,6 @@
 
 تغییرات پروتکل از طریق قفل زمانی (Timelock) زمان‌بندی می‌شوند و فقط پس از سپری شدن تأخیر آن قابل اجرا هستند. جدیدترین موارد در بالا قرار دارند.
 
+در طول بتای خصوصی در حال تنظیم دقیق سیستم هستیم، بنابراین قفل زمانی پس از پایان بتای خصوصی فعال می‌شود.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

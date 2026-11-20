@@ -21,4 +21,6 @@
 
 Protokolländerungen werden über den Timelock eingeplant und lassen sich erst ausführen, wenn seine Wartezeit abgelaufen ist. Die neuesten stehen oben.
 
+Während der Private Beta stimmen wir das System noch fein ab, daher wird der Timelock erst nach der Private Beta aktiviert.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

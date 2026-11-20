@@ -21,4 +21,6 @@
 
 协议变更须先通过时间锁排期，等待延迟期结束后才能执行。以下按时间倒序排列。
 
+私有Beta期间我们仍在微调系统，因此时间锁将在私有Beta结束后启用。
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

@@ -21,4 +21,6 @@
 
 協議變更須先透過時間鎖排程，等延遲期結束後才能執行。以下依時間由新到舊排列。
 
+私有Beta期間我們仍在微調系統，因此時間鎖將在私有Beta結束後啟用。
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

@@ -21,4 +21,6 @@
 
 การเปลี่ยนแปลงโปรโตคอลต้องตั้งเวลาผ่าน Timelock และจะดำเนินการได้ก็ต่อเมื่อพ้นระยะหน่วงเวลาที่กำหนดแล้วเท่านั้น รายการล่าสุดแสดงก่อน
 
+ระหว่างช่วงเบต้าส่วนตัวเรากำลังปรับแต่งระบบอยู่ ดังนั้น Timelock จะเปิดใช้งานหลังช่วงเบต้าส่วนตัว
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

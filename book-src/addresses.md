@@ -21,4 +21,6 @@
 
 Protocol changes are scheduled through the Timelock and can only be executed once its delay has passed. Newest first.
 
+During the private beta we're fine-tuning the system, so the Timelock will be activated after the private beta.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

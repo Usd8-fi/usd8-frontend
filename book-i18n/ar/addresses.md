@@ -21,4 +21,6 @@
 
 تُجدوَل تغييرات البروتوكول عبر القفل الزمني (Timelock)، ولا يمكن تنفيذها إلا بعد انقضاء مهلته. تظهر الأحدث أولًا.
 
+خلال النسخة التجريبية الخاصة نعمل على ضبط النظام بدقة، لذلك سيُفعَّل القفل الزمني بعد انتهاء النسخة التجريبية الخاصة.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>

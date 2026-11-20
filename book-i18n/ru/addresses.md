@@ -21,4 +21,6 @@
 
 Изменения протокола ставятся в очередь через таймлок, и выполнить их можно только после того, как истечёт его задержка. Сверху — самые новые.
 
+Во время закрытой беты мы донастраиваем систему, поэтому таймлок заработает после её завершения.
+
 <div id="timelock-queue" class="timelock-queue" data-timelock="0x0fbcC6ba689e4696Dd501F2E750f43729F851517" data-explorer="https://etherscan.io" data-index="https://eth.blockscout.com"></div>
