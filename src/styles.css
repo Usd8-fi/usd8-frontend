@@ -1969,10 +1969,10 @@ small a,
 }
 
 /* Claim simulator */
-.covered-protocols-footer {
+.covered-protocols-toolbar {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
+  justify-content: flex-start;
+  margin-bottom: 10px;
 }
 
 .covered-protocols-simulate-link {

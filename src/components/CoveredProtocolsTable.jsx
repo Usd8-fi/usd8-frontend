@@ -211,6 +211,13 @@ export default function CoveredProtocolsTable({
 
   return (
     <Fragment>
+      {onSimulate ? (
+        <div className="covered-protocols-toolbar">
+          <button className="covered-protocols-simulate-link" type="button" onClick={onSimulate}>
+            {t('coveredProtocols.simulateClaim')}
+          </button>
+        </div>
+      ) : null}
       <div className="landing-table-shell">
         <table
           className="cover-table covered-protocols-table covered-protocols-table--claims"
@@ -286,13 +293,6 @@ export default function CoveredProtocolsTable({
       </tbody>
         </table>
       </div>
-      {onSimulate ? (
-        <div className="covered-protocols-footer">
-          <button className="covered-protocols-simulate-link" type="button" onClick={onSimulate}>
-            {t('coveredProtocols.simulateClaim')}
-          </button>
-        </div>
-      ) : null}
     </Fragment>
   );
 }
