@@ -657,7 +657,9 @@ function CoverPoolCard({ pool, poolLoading, walletUnavailableReason, onPoolActio
           <span className="metric-label-with-help">
             {t('landing.pool.earnings')}
             <InfoTooltip ariaLabel={t('landing.pool.earningsHelpLabel', { pool: poolName })} className="dashboard-help--align-right">
-              {t('landing.pool.earningsHelp', { asset: pool.assetSymbol })}
+              {pool.assetSymbol === 'USD8'
+                ? t('landing.pool.earningsHelpUsd8')
+                : t('landing.pool.earningsHelp', { asset: pool.assetSymbol })}
             </InfoTooltip>
           </span>
           <strong><LivePoolEarnings pool={pool} /></strong>

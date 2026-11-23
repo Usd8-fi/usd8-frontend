@@ -102,6 +102,7 @@
     "earnings": "Tus ganancias",
     "earningsHelpLabel": "Acerca de tus ganancias en el {pool}",
     "earningsHelp": "Las ganancias se pagan en USD8, no en {asset}. No están expuestas a las reclamaciones de seguro y puedes retirarlas en cualquier momento.",
+    "earningsHelpUsd8": "Las ganancias se pagan en USD8. No están expuestas a las reclamaciones de seguro y puedes retirarlas en cualquier momento.",
     "actions": {
       "deposit": "Depositar",
       "withdraw": "Retirar",

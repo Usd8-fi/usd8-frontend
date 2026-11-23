@@ -102,6 +102,7 @@
     "earnings": "Vos gains",
     "earningsHelpLabel": "À propos de vos gains ({pool})",
     "earningsHelp": "Les gains sont versés en USD8, et non en {asset}. Ils ne sont pas exposés aux demandes d’indemnisation et peuvent être retirés à tout moment.",
+    "earningsHelpUsd8": "Les gains sont versés en USD8. Ils ne sont pas exposés aux demandes d’indemnisation et peuvent être retirés à tout moment.",
     "actions": {
       "deposit": "Déposer",
       "withdraw": "Retirer",

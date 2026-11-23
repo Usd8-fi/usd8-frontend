@@ -102,6 +102,7 @@
     "earnings": "Seus rendimentos",
     "earningsHelpLabel": "Sobre seus rendimentos no {pool}",
     "earningsHelp": "Os rendimentos são pagos em USD8, não em {asset}. Eles não ficam expostos a pedidos de indenização e podem ser sacados a qualquer momento.",
+    "earningsHelpUsd8": "Os rendimentos são pagos em USD8. Eles não ficam expostos a pedidos de indenização e podem ser sacados a qualquer momento.",
     "actions": {
       "deposit": "Depositar",
       "withdraw": "Sacar",

@@ -102,6 +102,7 @@
     "earnings": "Lợi nhuận của bạn",
     "earningsHelpLabel": "Về lợi nhuận của bạn trong {pool}",
     "earningsHelp": "Lợi nhuận được trả bằng USD8, không phải {asset}. Lợi nhuận không bị dùng để chi trả bồi thường và bạn có thể rút bất cứ lúc nào.",
+    "earningsHelpUsd8": "Lợi nhuận được trả bằng USD8. Lợi nhuận không bị dùng để chi trả bồi thường và bạn có thể rút bất cứ lúc nào.",
     "actions": {
       "deposit": "Nạp",
       "withdraw": "Rút",

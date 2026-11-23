@@ -102,6 +102,7 @@
     "earnings": "你的收益",
     "earningsHelpLabel": "關於你在{pool}的收益",
     "earningsHelp": "收益以USD8發放，而不是{asset}。收益不承擔保險理賠，可隨時提領。",
+    "earningsHelpUsd8": "收益以USD8發放。收益不承擔保險理賠，可隨時提領。",
     "actions": {
       "deposit": "存入",
       "withdraw": "提領",

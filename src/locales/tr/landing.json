@@ -102,6 +102,7 @@
     "earnings": "Kazancınız",
     "earningsHelpLabel": "Kazancınız hakkında: {pool}",
     "earningsHelp": "Kazançlar {asset} olarak değil, USD8 olarak ödenir. Kazançlar sigorta taleplerinden etkilenmez ve istediğiniz zaman çekilebilir.",
+    "earningsHelpUsd8": "Kazançlar USD8 olarak ödenir. Kazançlar sigorta taleplerinden etkilenmez ve istediğiniz zaman çekilebilir.",
     "actions": {
       "deposit": "Yatır",
       "withdraw": "Çek",

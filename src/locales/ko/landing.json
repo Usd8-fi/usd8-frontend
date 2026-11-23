@@ -102,6 +102,7 @@
     "earnings": "내 수익",
     "earningsHelpLabel": "{pool} 내 수익 안내",
     "earningsHelp": "수익은 {asset} 대신 USD8로 지급됩니다. 수익은 보험 보상금 지급에 사용되지 않으며 언제든지 출금할 수 있습니다.",
+    "earningsHelpUsd8": "수익은 USD8로 지급됩니다. 수익은 보험 보상금 지급에 사용되지 않으며 언제든지 출금할 수 있습니다.",
     "actions": {
       "deposit": "예치",
       "withdraw": "출금",

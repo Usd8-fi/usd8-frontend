@@ -102,6 +102,7 @@
     "earnings": "Pendapatan Anda",
     "earningsHelpLabel": "Tentang pendapatan Anda di {pool}",
     "earningsHelp": "Pendapatan dibayar dalam USD8, bukan {asset}. Pendapatan tidak ikut menanggung klaim asuransi dan dapat ditarik kapan saja.",
+    "earningsHelpUsd8": "Pendapatan dibayar dalam USD8. Pendapatan tidak ikut menanggung klaim asuransi dan dapat ditarik kapan saja.",
     "actions": {
       "deposit": "Setor",
       "withdraw": "Tarik",

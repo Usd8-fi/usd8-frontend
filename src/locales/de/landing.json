@@ -102,6 +102,7 @@
     "earnings": "Ihre Erträge",
     "earningsHelpLabel": "Info zu Ihren Erträgen im {pool}",
     "earningsHelp": "Erträge werden in USD8 ausgezahlt, nicht in {asset}. Sie haften nicht für Versicherungsfälle und können jederzeit abgehoben werden.",
+    "earningsHelpUsd8": "Erträge werden in USD8 ausgezahlt. Sie haften nicht für Versicherungsfälle und können jederzeit abgehoben werden.",
     "actions": {
       "deposit": "Einzahlen",
       "withdraw": "Abheben",

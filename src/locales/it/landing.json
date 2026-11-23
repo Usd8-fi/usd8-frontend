@@ -102,6 +102,7 @@
     "earnings": "I tuoi guadagni",
     "earningsHelpLabel": "Informazioni sui tuoi guadagni nel {pool}",
     "earningsHelp": "I guadagni sono pagati in USD8, non in {asset}. Non sono esposti alle richieste di risarcimento e puoi prelevarli in qualsiasi momento.",
+    "earningsHelpUsd8": "I guadagni sono pagati in USD8. Non sono esposti alle richieste di risarcimento e puoi prelevarli in qualsiasi momento.",
     "actions": {
       "deposit": "Deposita",
       "withdraw": "Preleva",

@@ -1066,7 +1066,19 @@ small a,
 .usd8-dialog.video-dialog {
   width: min(1180px, 100%);
   padding: 0;
+  border: 0;
   background: #000;
+}
+
+/* Gold frame drawn ABOVE the video: the video's own layer snaps to whole pixels
+   and covered the bottom border line at fractional dialog positions. */
+.usd8-dialog.video-dialog::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 1px solid var(--gold);
+  pointer-events: none;
 }
 
 /* The × sits on the video's top-right corner (no bar above the video). */

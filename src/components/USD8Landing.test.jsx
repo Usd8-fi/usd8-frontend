@@ -623,6 +623,17 @@ describe('USD8 landing navigation', () => {
     })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'About how full wstEth Cover Pool is' })).toHaveTextContent('?');
   });
+
+  it('does not say paid in USD8, not USD8 on the USD8 cover pool', () => {
+    render(<USD8Landing wallet={wallet} pools={[...POOLS, USD8_POOL]} />);
+    expect(screen.getByRole('tooltip', {
+      name: 'Earnings are paid in USD8. Earnings are not exposed to insurance claims and can be withdrawn at any time.',
+    })).toBeInTheDocument();
+    expect(screen.getByRole('tooltip', {
+      name: 'Earnings are paid in USD8, not wstETH. Earnings are not exposed to insurance claims and can be withdrawn at any time.',
+    })).toBeInTheDocument();
+    expect(screen.queryByText(/not USD8/)).toBeNull();
+  });
 });
 
 describe('Free insurance table', () => {

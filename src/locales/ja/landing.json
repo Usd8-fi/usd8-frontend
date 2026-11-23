@@ -102,6 +102,7 @@
     "earnings": "あなたの収益",
     "earningsHelpLabel": "{pool}での収益について",
     "earningsHelp": "収益は{asset}ではなくUSD8で支払われます。保険の請求に充てられることはなく、いつでも引き出せます。",
+    "earningsHelpUsd8": "収益はUSD8で支払われます。保険の請求に充てられることはなく、いつでも引き出せます。",
     "actions": {
       "deposit": "預け入れ",
       "withdraw": "引き出し",

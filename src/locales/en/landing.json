@@ -102,6 +102,7 @@
     "earnings": "Your Earnings",
     "earningsHelpLabel": "About your earnings in {pool}",
     "earningsHelp": "Earnings are paid in USD8, not {asset}. Earnings are not exposed to insurance claims and can be withdrawn at any time.",
+    "earningsHelpUsd8": "Earnings are paid in USD8. Earnings are not exposed to insurance claims and can be withdrawn at any time.",
     "actions": {
       "deposit": "Deposit",
       "withdraw": "Withdraw",
