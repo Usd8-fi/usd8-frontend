@@ -1850,6 +1850,10 @@ describe('App', () => {
     let submit = within(dialog).getByRole('button', { name: 'Mint' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
+    expect(availabilityTooltip(submit)).toHaveTextContent('Use at most 6 decimal places.');
+
+    fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '10.000001' } });
+    fireEvent.click(submit);
     expect(availabilityTooltip(submit)).toHaveTextContent('The USDC amount exceeds your available balance.');
 
     fireEvent.change(within(dialog).getByLabelText('USDC amount'), { target: { value: '10' } });

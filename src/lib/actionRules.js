@@ -60,10 +60,16 @@ function amountReason(reason, token, action) {
   return id ? t(`lib.amount.${reason}.${id}`, { token }) : t(`lib.amount.${reason}.generic`, { token, action });
 }
 
-export function tokenAmountValidationReason(raw, available, token, action) {
+/// `decimals` (optional) is the token's onchain precision. Checking it here
+/// shows the inline warning while typing, instead of {parseTokenAmount}
+/// throwing only after Submit.
+export function tokenAmountValidationReason(raw, available, token, action, decimals) {
   const normalized = String(raw ?? '').trim();
   if (!defaultTokenAmount(available)) return amountReason('noBalance', token, action);
   if (!DECIMAL.test(normalized)) return amountReason('invalid', token, action);
+  if (Number.isInteger(decimals) && (normalized.split('.')[1] || '').length > decimals) {
+    return t('lib.amount.tooManyDecimals', { decimals });
+  }
   if (!/[1-9]/.test(normalized)) return amountReason('zero', token, action);
   return tokenAmountExceedsBalance(normalized, available)
     ? t('lib.amount.exceedsBalance', { token })
@@ -111,6 +117,9 @@ export function poolActionState({
   remainingDepositCapacity,
   hasEarnings,
   submitUnavailableReason = '',
+  // Must match what App.jsx parses: deposits at 18, cooldown shares at shareDecimals.
+  assetDecimals = 18,
+  shareDecimals = 21,
 }) {
   const depositing = mode === 'deposit';
   const withdrawing = mode === 'withdraw';
@@ -141,7 +150,8 @@ export function poolActionState({
     : '';
   const tokenValidationReason = withdrawingEarnings
     ? ''
-    : tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown');
+    : tokenAmountValidationReason(amount, available, inputToken, depositing ? 'deposit' : 'start cooldown',
+      depositing ? assetDecimals : shareDecimals);
   const capacityDepositReason = depositing
     && !capacityUncapped
     && !tokenValidationReason

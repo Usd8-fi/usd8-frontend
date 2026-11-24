@@ -31,7 +31,7 @@ export function Usd8ActionDialog({ quoteRate, mode, usdcBalance, usd8Balance, on
   const availableBalance = minting ? usdcBalance : usd8Balance;
   const [amount, setAmount] = useState(() => defaultTokenAmount(availableBalance));
   const amountUnavailableReason = submitUnavailableReason
-    || tokenAmountValidationReason(amount, availableBalance, inputToken, minting ? 'mint USD8' : 'redeem USD8')
+    || tokenAmountValidationReason(amount, availableBalance, inputToken, minting ? 'mint USD8' : 'redeem USD8', minting ? 6 : 18)
     || (!minting && redemptionQuote(amount, quoteRate) === null ? t('transactions.usd8.waitingForQuote') : '');
 
   const dialogRef = useDialogFocus(onClose);
@@ -223,6 +223,7 @@ export function PoolActionDialog({
     remainingDepositCapacity,
     hasEarnings,
     submitUnavailableReason,
+    shareDecimals,
   });
   const displayedWithdrawAvailable = (cooldownCompleteWaitingForClaims ? inCooldownAssets : availableForWithdrawAssets) ?? UNKNOWN_VALUE;
   const displayedCooldownBalance = cooldownCompleteWaitingForClaims ? '0' : inCooldownAssets ?? UNKNOWN_VALUE;

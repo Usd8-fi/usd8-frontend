@@ -48,6 +48,17 @@ describe('amount helpers', () => {
     expect(tokenAmountValidationReason('5', '5', 'USDC', 'mint USD8')).toBe('');
   });
 
+  it('flags too many decimal places while typing, not after Submit', () => {
+    expect(tokenAmountValidationReason('1.1234567', '5', 'USDC', 'mint USD8', 6)).toBe('Use at most 6 decimal places.');
+    expect(tokenAmountValidationReason('1.123456', '5', 'USDC', 'mint USD8', 6)).toBe('');
+    expect(tokenAmountValidationReason(`0.${'1'.repeat(19)}`, '5', 'USD8', 'redeem USD8', 18)).toBe('Use at most 18 decimal places.');
+    expect(tokenAmountValidationReason(`0.${'1'.repeat(18)}`, '5', 'USD8', 'redeem USD8', 18)).toBe('');
+    // A 19-decimal zero is still a precision error, not "greater than zero".
+    expect(tokenAmountValidationReason(`0.${'0'.repeat(19)}`, '5', 'USD8', 'redeem USD8', 18)).toBe('Use at most 18 decimal places.');
+    // Without a decimals argument the old behaviour is unchanged.
+    expect(tokenAmountValidationReason(`1.${'1'.repeat(30)}`, '5', 'USD8', 'redeem USD8')).toBe('');
+  });
+
   it('counts down cooldown readiness through minutes, hours and days', () => {
     expect(cooldownReadyLabel(0, NOW)).toBe('');
     expect(cooldownReadyLabel(NOW - 1, NOW)).toBe('ready now');
@@ -66,6 +77,16 @@ describe('amount helpers', () => {
 describe('poolActionState', () => {
   it('lets a valid deposit through', () => {
     expect(poolActionState(base).amountUnavailableReason).toBe('');
+  });
+
+  it('blocks deposits past 18 decimals and cooldowns past the share decimals inline', () => {
+    expect(poolActionState({ ...base, amount: `1.${'1'.repeat(19)}` }).amountUnavailableReason)
+      .toBe('Use at most 18 decimal places.');
+    expect(poolActionState({ ...base, amount: `1.${'1'.repeat(18)}` }).amountUnavailableReason).toBe('');
+    const cooldown = { ...base, mode: 'withdraw', estimatedAssets: '1', availableForCooldownAssets: '10' };
+    expect(poolActionState({ ...cooldown, amount: `1.${'1'.repeat(21)}` }).amountUnavailableReason).toBe('');
+    expect(poolActionState({ ...cooldown, amount: `1.${'1'.repeat(22)}` }).amountUnavailableReason)
+      .toBe('Use at most 21 decimal places.');
   });
 
   it('puts the external blocker ahead of every local rule', () => {
