@@ -20,4 +20,13 @@
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">ایمیل</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">بررسی</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 کلاهبرداران اغلب نام و عکس واقعی را کپی می‌کنند و نام کاربری‌شان فقط در یک حرف، عدد یا خط زیرین فرق دارد؛ پس خودِ نام کاربری را دقیق بررسی کنید، نه نام نمایشی را. USD8 هرگز عبارت بازیابی (seed phrase) یا کلید خصوصی شما را نمی‌خواهد و از شما نمی‌خواهد به آدرسی پول بفرستید.

@@ -25,14 +25,17 @@ describe('Anti-Scam Check docs page', () => {
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex');
   });
 
-  it('stores the official handles only as SHA-256 digests (1 Telegram, 3 X)', () => {
+  it('stores the official handles only as SHA-256 digests (1 Telegram, 3 X, 1 email)', () => {
     const { official } = window.usd8AntiScam;
     expect(official.telegram).toHaveLength(1);
     expect(official.x).toHaveLength(3);
-    for (const digest of [...official.telegram, ...official.x]) expect(digest).toMatch(/^[0-9a-f]{64}$/);
+    expect(official.email).toHaveLength(1);
+    for (const digest of [...official.telegram, ...official.x, ...official.email]) expect(digest).toMatch(/^[0-9a-f]{64}$/);
+    expect(script).not.toMatch(/@usd8\.fi/);
     // Test-only handles below; the real ones never appear in source.
     official.telegram.push(createHash('sha256').update('telegram:usd8_test_tg').digest('hex'));
     official.x.push(createHash('sha256').update('x:usd8_test_x').digest('hex'));
+    official.email.push(createHash('sha256').update('email:test@usd8.example').digest('hex'));
   });
 
   it.each([
@@ -49,6 +52,14 @@ describe('Anti-Scam Check docs page', () => {
     ['x', 'usd8testx', 'unknown'],
     ['x', 'usd8_test_tg', 'unknown'],
     ['x', 'bad handle!', 'invalid'],
+    ['email', 'test@usd8.example', 'official'],
+    ['email', ' Test@USD8.example ', 'official'],
+    ['email', 'mailto:test@usd8.example', 'official'],
+    ['email', 'Rick <test@usd8.example>', 'official'],
+    ['email', 'test@usd8-example.com', 'unknown'],
+    ['email', 'tests@usd8.example', 'unknown'],
+    ['email', 'usd8_test_x', 'invalid'],
+    ['email', 'test@usd8', 'invalid'],
   ])('%s %s -> %s', async (platform, value, state) => {
     expect((await window.usd8AntiScam.verify(platform, value)).state).toBe(state);
   });
@@ -71,5 +82,16 @@ describe('Anti-Scam Check docs page', () => {
 
     x.querySelector('input').dispatchEvent(new Event('input'));
     expect(x.querySelector('.anti-scam-result').textContent).toBe('');
+
+    const email = document.querySelector('[data-platform="email"]');
+    expect(email.querySelector('.anti-scam-prefix')).toBeNull();
+    email.querySelector('input').value = 'test@usd8.example';
+    email.querySelector('button').click();
+    await flush();
+    expect(email.querySelector('.anti-scam-result').textContent).toBe('test@usd8.example is an official USD8 email address.');
+    email.querySelector('input').value = 'rick@usd8-fi.com';
+    email.querySelector('button').click();
+    await flush();
+    expect(email.querySelector('.anti-scam-result').textContent).toMatch(/^rick@usd8-fi\.com is not an official USD8 email address\./);
   });
 });

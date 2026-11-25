@@ -891,6 +891,8 @@ a.mobile-nav-chapters[href$="anti-scam-check.html"],
     font: inherit;
     outline: none;
 }
+/* Email field has no "@" prefix, so pad the input itself. */
+.anti-scam-field input:first-child { padding-left: 14px; }
 .anti-scam-check button {
     min-height: 44px;
     padding: 0 20px;

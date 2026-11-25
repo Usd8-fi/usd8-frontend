@@ -20,4 +20,13 @@ Alguém entrou em contato dizendo ser do USD8? Digite o nome de usuário abaixo 
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">E-mail</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Verificar</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 Golpistas costumam copiar um nome e uma foto reais com um nome de usuário que difere em apenas uma letra, um número ou um sublinhado, então confira o nome de usuário exato, não o nome de exibição. O USD8 nunca vai pedir sua frase de recuperação (seed phrase) ou chave privada, nem pedir que você envie fundos para um endereço.

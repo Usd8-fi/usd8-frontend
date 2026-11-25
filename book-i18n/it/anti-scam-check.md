@@ -20,4 +20,13 @@ Qualcuno ti ha contattato dicendo di essere di USD8? Inserisci qui sotto il suo 
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">Email</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Verifica</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 I truffatori copiano spesso nome e foto reali usando un nome utente che differisce per una sola lettera, cifra o trattino basso: controlla quindi il nome utente esatto, non il nome visualizzato. USD8 non ti chiederà mai la tua seed phrase o la tua chiave privata, né di inviare fondi a un indirizzo.

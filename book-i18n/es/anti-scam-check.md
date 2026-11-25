@@ -20,4 +20,13 @@
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">Correo electrónico</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Comprobar</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 Los estafadores suelen copiar un nombre y una foto reales con un nombre de usuario que se diferencia solo en una letra, un número o un guion bajo, así que comprueba el nombre de usuario exacto, no el nombre visible. USD8 nunca te pedirá tu frase semilla ni tu clave privada, ni que envíes fondos a una dirección.

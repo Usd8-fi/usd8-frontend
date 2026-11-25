@@ -20,4 +20,13 @@
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">البريد الإلكتروني</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">تحقّق</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 كثيرًا ما ينسخ المحتالون اسمًا وصورة حقيقيين مع اسم مستخدم يختلف بحرف أو رقم أو شرطة سفلية واحدة فقط، لذا تحقّق من اسم المستخدم بدقة وليس من الاسم المعروض. لن تطلب منك USD8 أبدًا عبارة الاسترداد (seed phrase) أو مفتاحك الخاص، ولن تطلب منك إرسال أموال إلى أي عنوان.

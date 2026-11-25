@@ -20,4 +20,13 @@
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">อีเมล</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">ตรวจสอบ</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 มิจฉาชีพมักลอกชื่อและรูปโปรไฟล์จริง แล้วใช้ชื่อผู้ใช้ที่ต่างไปเพียงตัวอักษร ตัวเลข หรือขีดล่างตัวเดียว จึงควรตรวจสอบชื่อผู้ใช้ให้ตรงทุกตัว ไม่ใช่ดูแค่ชื่อที่แสดง USD8 จะไม่มีวันขอวลีกู้คืน (seed phrase) หรือคีย์ส่วนตัวของคุณ และจะไม่ขอให้คุณโอนเงินไปยังที่อยู่ใดๆ

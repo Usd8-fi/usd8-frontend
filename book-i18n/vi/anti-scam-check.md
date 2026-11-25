@@ -20,4 +20,13 @@ Có người liên hệ và tự nhận là người của USD8? Hãy nhập tê
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">Email</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Kiểm tra</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 Kẻ lừa đảo thường sao chép tên và ảnh đại diện thật nhưng dùng tên người dùng chỉ khác một chữ cái, chữ số hoặc dấu gạch dưới. Vì vậy, hãy kiểm tra chính xác tên người dùng, không phải tên hiển thị. USD8 sẽ không bao giờ yêu cầu bạn cung cấp cụm từ khôi phục (seed phrase) hay khóa riêng tư, cũng không yêu cầu bạn gửi tiền đến bất kỳ địa chỉ nào.

@@ -20,4 +20,13 @@ Biri sizinle USD8'den olduğunu söyleyerek mi iletişime geçti? Resmî bir USD
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">E-posta</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Kontrol Et</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 Dolandırıcılar çoğu zaman gerçek bir adı ve fotoğrafı kopyalar; kullanıcı adında ise yalnızca bir harf, rakam ya da alt çizgi farklıdır. Bu yüzden görünen adı değil, kullanıcı adını harfi harfine kontrol edin. USD8 sizden asla kurtarma ifadenizi (seed phrase) veya özel anahtarınızı istemez, herhangi bir adrese para göndermenizi de istemez.

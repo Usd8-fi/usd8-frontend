@@ -20,4 +20,13 @@
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">Електронна пошта</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Перевірити</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 Шахраї часто копіюють справжнє ім’я та фото, а ім’я користувача відрізняється лише однією літерою, цифрою чи підкресленням, тож звіряйте саме ім’я користувача, а не відображуване ім’я. USD8 ніколи не проситиме вашу сід-фразу чи приватний ключ і не проситиме надіслати кошти на будь-яку адресу.

@@ -20,4 +20,13 @@ USD8を名乗る人物から連絡がありましたか？相手のユーザー�
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">メールアドレス</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">確認</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 詐欺師は本物の名前やアイコンをそのまま使い、ユーザー名だけを英字・数字・アンダースコア1文字分変えていることがよくあります。表示名ではなく、ユーザー名を正確に確認してください。USD8がシードフレーズや秘密鍵を尋ねたり、特定のアドレスへの送金を求めたりすることは決してありません。

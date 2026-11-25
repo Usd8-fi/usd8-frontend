@@ -45,7 +45,7 @@ describe('translated docs', () => {
       .map(([, lang, body]) => [lang, body]));
     expect(Object.keys(rows).sort()).toEqual(['en', ...languages].sort());
     const keys = widgetKeys(rows.en).filter((key) => key.startsWith('antiScam'));
-    expect(keys).toEqual(['antiScamInvalid', 'antiScamOfficial', 'antiScamUnknown', 'antiScamUnavailable']);
+    expect(keys).toEqual(['antiScamInvalid', 'antiScamOfficial', 'antiScamUnknown', 'antiScamUnavailable', 'antiScamEmailInvalid', 'antiScamEmailOfficial', 'antiScamEmailUnknown']);
     for (const [lang, body] of Object.entries(rows)) {
       for (const key of keys) {
         const value = body.match(new RegExp(`${key}: "((?:[^"\\\\]|\\\\.)*)"`))?.[1];

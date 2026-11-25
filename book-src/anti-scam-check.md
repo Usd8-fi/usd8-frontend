@@ -20,4 +20,13 @@ Someone contacted you claiming to be from USD8? Enter their username below to ch
 <div class="anti-scam-result" role="status" aria-live="polite"></div>
 </div>
 
+<div class="anti-scam-check" data-platform="email">
+<label for="anti-scam-email">Email</label>
+<div class="anti-scam-row">
+<span class="anti-scam-field" dir="ltr"><input id="anti-scam-email" type="text" inputmode="email" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="254"></span>
+<button type="button">Check</button>
+</div>
+<div class="anti-scam-result" role="status" aria-live="polite"></div>
+</div>
+
 Scammers often copy a real name and picture with a username that differs by one letter, digit or underscore, so check the exact username, not the display name. USD8 will never ask for your seed phrase or private key, or ask you to send funds to an address.
