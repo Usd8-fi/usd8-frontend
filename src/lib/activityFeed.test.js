@@ -82,6 +82,9 @@ describe('fetchActivity', () => {
       transfer(6, pool.address, user, '4000000000000000000', 'token_transfer', 'wstETH'),
       transfer(3, user, pool.address, '9000000000000000000', 'token_transfer', 'wstETH'),
       transfer(4, other, pool.address, '10000000000000000000'),
+      // requestRedeem: the user's pool shares (21 decimals) move into the pool.
+      { ...transfer(7, user, pool.address, '14555071000000000000000', 'token_transfer', 'USD8-cp-wstETH'),
+        total: { value: '14555071000000000000000', decimals: '21' }, token: { symbol: 'USD8-cp-wstETH', decimals: '21', address_hash: pool.address } },
     ],
   });
 
@@ -97,7 +100,23 @@ describe('fetchActivity', () => {
     expect(line(feed.find(item => item.hash === hash(4)))).toBe('rewards added: 10 USD8 to the wstETH cover pool');
     expect(line(feed.find(item => item.hash === hash(5)))).toBe('incident settled');
     expect(line(feed.find(item => item.hash === hash(6)))).toBe('0x8ca7…83a7 received a claim payout 4 wstETH');
-    expect(line(feed.find(item => item.hash === hash(7)))).toBe('0x8ca7…83a7 queued an exit from the wstETH cover pool');
+    expect(line(feed.find(item => item.hash === hash(7)))).toBe('0x8ca7…83a7 queued an exit of 14.555 USD8-cp-wstETH from the wstETH cover pool');
+  });
+
+  it('keeps the old wording when the queued exit size is not indexed yet', async () => {
+    const r = routes();
+    r[`/addresses/${pool.address}/token-transfers`] = r[`/addresses/${pool.address}/token-transfers`].filter(item => item.transaction_hash !== hash(7));
+    mockIndex(r);
+    const item = (await fetchActivity(network)).find(entry => entry.hash === hash(7));
+    expect([item.action, item.amount, item.target]).toEqual(['queued an exit from', null, 'the wstETH cover pool']);
+  });
+
+  it('does not read a queued exit size from another token moving into the pool', async () => {
+    const r = routes();
+    r[`/addresses/${pool.address}/token-transfers`] = [transfer(7, user, pool.address, '5000000000000000000', 'token_transfer', 'wstETH')];
+    mockIndex(r);
+    const item = (await fetchActivity(network)).find(entry => entry.hash === hash(7));
+    expect(item.amount).toBeNull();
   });
 
   it('skips failed, unknown and foreign transactions', async () => {

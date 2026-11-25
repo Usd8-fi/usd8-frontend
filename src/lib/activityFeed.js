@@ -65,7 +65,10 @@ function describe(kind, { pool, amount, symbol }) {
     case 'mint': return { action: 'minted', amount: quantity || null, target: amount ? null : 'USD8' };
     case 'redeem': return { action: 'redeemed', amount: quantity, target: amount ? null : 'USD8' };
     case 'deposit': return { action: 'deposited', amount: quantity, target: `into ${coverPool}` };
-    case 'exitQueued': return { action: 'queued an exit from', amount: null, target: coverPool };
+    // The size is the pool shares escrowed by requestRedeem; their asset value is fixed only at exit.
+    case 'exitQueued': return amount
+      ? { action: 'queued an exit of', amount: quantity, target: `from ${coverPool}` }
+      : { action: 'queued an exit from', amount: null, target: coverPool };
     case 'exitCompleted': return { action: 'completed an exit', amount: quantity, target: `from ${coverPool}` };
     case 'rewardClaimed': return { action: 'claimed', amount: quantity, target: `rewards from ${coverPool}` };
     // Admin profit distribution: shown on the admin dashboard, not the public ticker.
@@ -87,6 +90,8 @@ function transferAmount(kind, transfers, pool, { actor, pools = [] } = {}) {
     mint: item => item.type === 'token_minting',
     redeem: item => item.type === 'token_burning',
     deposit: item => lower(item.to) === poolAddress && lower(item.from) !== ZERO,
+    // requestRedeem moves the requester's pool shares (the pool's own token) into the pool.
+    exitQueued: item => lower(item.to) === poolAddress && lower(item.from) === lower(actor) && item.token === poolAddress,
     exitCompleted: item => lower(item.from) === poolAddress && item.type === 'token_transfer',
     rewardClaimed: item => lower(item.from) === poolAddress && item.type === 'token_transfer',
     rewardsAdded: item => lower(item.to) === poolAddress && lower(item.from) !== ZERO,
@@ -109,6 +114,7 @@ function parseTransfers(payload) {
     const entry = {
       type: item.type, from: item.from?.hash, to: item.to?.hash,
       value: item.total?.value, decimals, symbol: item.token?.symbol,
+      token: lower(item.token?.address_hash || item.token?.address),
     };
     byHash.set(hash, [...(byHash.get(hash) || []), entry]);
   }
