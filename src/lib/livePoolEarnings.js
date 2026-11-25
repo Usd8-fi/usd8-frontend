@@ -33,7 +33,7 @@ export function useLivePoolEarnings(pool) {
   const elapsedMilliseconds = Math.max(0, Math.min(now, periodFinish) - snapshot);
   const earningsUnits = wadUnits(pool.earningsExact ?? pool.earnings)
     + rateUnits * BigInt(elapsedMilliseconds) / 1_000n;
-  const earningsDecimals = earningsDisplayDecimals(pool.earningsPerSecond, formatWad(earningsUnits, 18));
+  const earningsDecimals = earningsDisplayDecimals(pool.earningsPerSecond);
 
   return {
     ...pool,

@@ -695,7 +695,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     const activeEarningsRate = Number(read.periodFinish) * 1_000 > Date.now()
       ? formatUnits(earningsPerSecond, 18)
       : '0';
-    const earningsDecimals = earningsDisplayDecimals(activeEarningsRate, formatUnits(read.earned, 18));
+    const earningsDecimals = earningsDisplayDecimals(activeEarningsRate);
     const shareDecimals = Number(read.shareDecimals);
     return {
       id: read.config.id,

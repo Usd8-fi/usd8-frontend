@@ -15,16 +15,17 @@ describe('display formatting', () => {
 });
 
 describe('earningsDisplayDecimals', () => {
-  it('keeps a stopped earnings balance visible instead of rounding it to 0', async () => {
-    const { earningsDisplayDecimals } = await import('./units.js');
+  it('keeps a stopped earnings balance visible at 2 decimals instead of rounding it to 0', async () => {
+    const { earningsDisplayDecimals, formatWad, wadUnits } = await import('./units.js');
     // All shares queued for exit: no accrual, 0.038 USD8 still withdrawable.
-    expect(earningsDisplayDecimals('0', '0.03798994321906804')).toBe(2);
-    expect(earningsDisplayDecimals('0', '0.000123')).toBe(5);
-    expect(earningsDisplayDecimals('0', '0')).toBe(2);
+    expect(earningsDisplayDecimals('0')).toBe(2);
+    expect(formatWad(wadUnits('0.03798994321906804'), earningsDisplayDecimals('0'))).toBe('0.03');
+    // Sub-cent dust is ignored.
+    expect(formatWad(wadUnits('0.000123'), earningsDisplayDecimals('0'))).toBe('0.00');
   });
 
   it('still uses the ticking precision while earnings accrue', async () => {
     const { earningsDisplayDecimals } = await import('./units.js');
-    expect(earningsDisplayDecimals('0.000020257885361205', '1.5')).toBe(5);
+    expect(earningsDisplayDecimals('0.000020257885361205')).toBe(5);
   });
 });
