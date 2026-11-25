@@ -1,5 +1,5 @@
 import { useSecondClock } from './secondClock.js';
-import { formatWad, liveEarningsDecimals, wadUnits } from './units.js';
+import { earningsDisplayDecimals, formatWad, wadUnits } from './units.js';
 
 /// The pool with `earnings` advanced to the current second. Subscribes to the
 /// shared clock only while the pool is accruing, so call it in the component
@@ -33,7 +33,7 @@ export function useLivePoolEarnings(pool) {
   const elapsedMilliseconds = Math.max(0, Math.min(now, periodFinish) - snapshot);
   const earningsUnits = wadUnits(pool.earningsExact ?? pool.earnings)
     + rateUnits * BigInt(elapsedMilliseconds) / 1_000n;
-  const earningsDecimals = liveEarningsDecimals(pool.earningsPerSecond);
+  const earningsDecimals = earningsDisplayDecimals(pool.earningsPerSecond, formatWad(earningsUnits, 18));
 
   return {
     ...pool,

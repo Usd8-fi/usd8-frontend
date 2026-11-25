@@ -11,7 +11,7 @@ import { createReadClient } from './readClient.js';
 import { getNetwork, getProtocolNetwork, SEPOLIA_CONTRACTS } from './networkConfig.js';
 import { t } from './i18n.js';
 import { erc1155Abi, erc20Abi, registryBoosterAbi } from './abis.js';
-import { boostedScore, liveEarningsDecimals, UNKNOWN_VALUE, WAD } from './units.js';
+import { boostedScore, earningsDisplayDecimals, UNKNOWN_VALUE, WAD } from './units.js';
 
 /// Insured tokens read outside the fixed landing multicall (18-decimal ERC-20s).
 const EXTRA_INSURED_TOKEN_IDS = Object.freeze(['flyingtulip-ssftusd', 'lido-wsteth', 'rocketpool-reth', 'frax-sfrxusd', 'pendle-spendle']);
@@ -695,7 +695,7 @@ export async function fetchLandingChainData(account, chainId, { signal, onPartia
     const activeEarningsRate = Number(read.periodFinish) * 1_000 > Date.now()
       ? formatUnits(earningsPerSecond, 18)
       : '0';
-    const earningsDecimals = liveEarningsDecimals(activeEarningsRate);
+    const earningsDecimals = earningsDisplayDecimals(activeEarningsRate, formatUnits(read.earned, 18));
     const shareDecimals = Number(read.shareDecimals);
     return {
       id: read.config.id,

@@ -1,3 +1,4 @@
+import { visibleDecimals } from './displayAvailableBalance.js';
 /// Shown when a value is known to be unavailable; `MetricValue` renders it as a
 /// spinner while data is still loading.
 export const UNKNOWN_VALUE = '—';
@@ -44,6 +45,15 @@ export function liveEarningsDecimals(rate, max = 10) {
     if (units * 10n ** BigInt(decimals) >= WAD) return decimals;
   }
   return 0;
+}
+
+/// Decimals for a Cover Pool earnings balance: the ticking precision while it
+/// accrues; otherwise what the balance itself needs (2, or more for a sub-cent
+/// amount). Without that fallback, a balance that stopped accruing (shares all
+/// queued for exit, or the reward period over) rounds to a whole "0" even though
+/// Withdraw Earnings pays it out.
+export function earningsDisplayDecimals(rate, earnings) {
+  return liveEarningsDecimals(rate) || visibleDecimals(earnings);
 }
 
 /// Mirrors DefiInsurance.finalizeClaim's expectedBoostedScore.
