@@ -11,6 +11,7 @@ import ssftUsdIcon from '../assets/token-ssftusd.svg';
 import wstEthIcon from '../assets/token-wsteth.webp?no-inline';
 import rEthIcon from '../assets/token-reth.webp?no-inline';
 import sfrxUsdIcon from '../assets/token-sfrxusd.webp?no-inline';
+import sPendleIcon from '../assets/token-spendle.webp?no-inline';
 import sUsd8Logo from '../assets/sUSD8.svg';
 import usd8Logo from '../assets/usd8Logo.svg';
 import { remainingTimeParts } from '../lib/claimLifecycle.js';
@@ -103,6 +104,15 @@ export const COVERED_PROTOCOL_ROWS = [
     name: 'Frax Staked frxUSD',
     address: '0xcf62F905562626CfcDD2261162a51fd02Fc9c5b6',
     url: 'https://frax.com/earn',
+  },
+  {
+    id: 'pendle-spendle',
+    symbol: 'sPENDLE',
+    underlying: 'PENDLE',
+    iconSrc: sPendleIcon,
+    name: 'Pendle Staked PENDLE',
+    address: '0x999999999991E178D52Cd95AFd4b00d066664144',
+    url: 'https://app.pendle.finance/spendle',
   },
   {
     id: 'test-msloss',

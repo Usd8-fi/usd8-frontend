@@ -71,6 +71,14 @@ describe('insured token site link', () => {
     expect(screen.getByText('80%')).toBeInTheDocument();
   });
 
+  it('links sPENDLE to the Pendle staking page', () => {
+    render(<CoveredProtocolsTable insuredTokenStates={{ 'pendle-spendle': { enabled: true, maxCoverageBps: '8000' } }} />);
+    const link = screen.getByRole('link', { name: 'Open Pendle Staked PENDLE sPENDLE on its own site' });
+    expect(link).toHaveAttribute('href', 'https://app.pendle.finance/spendle');
+    expect(link).toHaveTextContent(/^sPENDLE$/);
+    expect(screen.getByText('80%')).toBeInTheDocument();
+  });
+
   it('links sfrxUSD to the Frax earn page', () => {
     render(<CoveredProtocolsTable insuredTokenStates={{ 'frax-sfrxusd': { enabled: true, maxCoverageBps: '8000' } }} />);
     const link = screen.getByRole('link', { name: 'Open Frax Staked frxUSD sfrxUSD on its own site' });
@@ -109,6 +117,7 @@ describe('mainnet insured tokens', () => {
       'lido-wsteth': '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
       'rocketpool-reth': '0xae78736cd615f374d3085123a210448e74fc6393',
       'frax-sfrxusd': '0xcf62f905562626cfcdd2261162a51fd02fc9c5b6',
+      'pendle-spendle': '0x999999999991e178d52cd95afd4b00d066664144',
     });
     expect(Object.values(NETWORKS[1].contracts.insuredTokens)).not.toContain('0x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d');
     expect(Object.values(NETWORKS[1].contracts.insuredTokens)).not.toContain('0xbeef01735c132ada46aa9aa4c54623caa92a64cb');

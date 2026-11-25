@@ -124,6 +124,10 @@ const MAINNET_CONTRACTS = Object.freeze({
     // nonce 92): 80% coverage, Chainlink frxUSD/USD 0x9b4a96210bc8d9d55b1908b465d8b0de68b7ff83,
     // conversion = convertToAssets(1e18) (18-dec shares over 18-dec frxUSD).
     'frax-sfrxusd': '0xcf62f905562626cfcdd2261162a51fd02fc9c5b6',
+    // Pendle Staked PENDLE, listed by plan 48 (usd8-core deployments/mainnet/48-list-spendle-plan.json,
+    // nonce 116): 80% coverage. SPendleOracle 0xa9a6398d499d1cbef3b3bf37e66bf5b8db127a74 serves both the
+    // PENDLE/USD price (Uniswap V3 TWAP x Chainlink ETH/USD) and the conversion rate() (PENDLE per sPENDLE, capped at 1).
+    'pendle-spendle': '0x999999999991e178d52cd95afd4b00d066664144',
     // Mainnet E2E test token, local dev server only (see LOCAL_E2E_TEST_TOKEN).
     ...(import.meta.env.DEV && LOCAL_E2E_TEST_TOKEN ? { 'test-test': '0x116e4336047c97703f84619de03b6bf893667de1' } : {}),
   }),
