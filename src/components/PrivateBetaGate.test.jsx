@@ -13,11 +13,65 @@ function submitCode(code) {
 const TEST_CODE = '1357';
 const TEST_CODE_SHA256 = 'f3e055913a0b1eb0f07317896f9a1bc466b9a50db85a7f882f3ffde9ffb23aca';
 
+// Test-only partner-link token (sha256 of 'testlink9'); the real one lives only in .env.local as a hash.
+const TEST_LINK = 'testlink9';
+const TEST_LINK_SHA256 = '0f1eeb80e9633e3c955afb9f9c1c79913bf4596272f692506f18307b3d0aea0e';
+
 beforeEach(() => {
   localStorage.clear();
   vi.stubEnv('VITE_PRIVATE_BETA_CODE_SHA256', TEST_CODE_SHA256);
+  vi.stubEnv('VITE_PRIVATE_BETA_LINK_SHA256', TEST_LINK_SHA256);
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  window.history.replaceState(null, '', '/');
+});
+
+describe('PrivateBetaGate partner link', () => {
+  it('opens the app from the partner link and keeps the link shareable', async () => {
+    window.history.replaceState(null, '', `/?access=${TEST_LINK}#cover-pools`);
+    render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
+
+    expect(screen.queryByLabelText('Private Beta Invitation Code')).not.toBeInTheDocument();
+    expect(await screen.findByText('Protected USD8 app')).toBeInTheDocument();
+    expect(localStorage.getItem(PRIVATE_BETA_STORAGE_KEY)).toBe('granted');
+    expect(window.location.search).toBe(`?access=${TEST_LINK}`);
+    expect(window.location.hash).toBe('#cover-pools');
+  });
+
+  it('works alongside other query parameters', async () => {
+    window.history.replaceState(null, '', `/?utm_source=partner&access=${TEST_LINK}`);
+    render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
+
+    expect(await screen.findByText('Protected USD8 app')).toBeInTheDocument();
+    expect(window.location.search).toBe(`?utm_source=partner&access=${TEST_LINK}`);
+  });
+
+  it('shows the code screen for a wrong token', async () => {
+    window.history.replaceState(null, '', '/?access=wrongtoken');
+    render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
+
+    expect(await screen.findByLabelText('Private Beta Invitation Code')).toBeInTheDocument();
+    expect(screen.queryByText('Protected USD8 app')).not.toBeInTheDocument();
+    expect(localStorage.getItem(PRIVATE_BETA_STORAGE_KEY)).toBeNull();
+  });
+
+  it('accepts no partner link when no link hash is configured', async () => {
+    vi.stubEnv('VITE_PRIVATE_BETA_LINK_SHA256', '');
+    window.history.replaceState(null, '', `/?access=${TEST_LINK}`);
+    render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
+
+    expect(await screen.findByLabelText('Private Beta Invitation Code')).toBeInTheDocument();
+    expect(localStorage.getItem(PRIVATE_BETA_STORAGE_KEY)).toBeNull();
+  });
+
+  it('does not accept the invitation code itself as a partner link', async () => {
+    window.history.replaceState(null, '', `/?access=${TEST_CODE}`);
+    render(<PrivateBetaGate>{protectedPage}</PrivateBetaGate>);
+
+    expect(await screen.findByLabelText('Private Beta Invitation Code')).toBeInTheDocument();
+  });
+});
 
 describe('PrivateBetaGate', () => {
   it('shows the invitation code form directly before the app', () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import usd8Logo from '../assets/usd8Logo.svg';
 import usd8Wordmark from '../assets/usd8-wordmark.svg';
 import { useTranslation } from '../lib/i18n.js';
@@ -28,6 +28,38 @@ async function matchesInvitationCode(code) {
   }
 }
 
+// Partner link: usd8.fi/?access=<token> opens the app without the code screen.
+// Only the token's SHA-256 is in the build (VITE_PRIVATE_BETA_LINK_SHA256 in the
+// untracked .env.local). The parameter stays in the address bar so visitors can
+// copy and share the link (Rick's choice: the gate is soft anyway).
+export const ACCESS_LINK_PARAM = 'access';
+
+function accessLinkToken() {
+  try {
+    return new URLSearchParams(window.location.search).get(ACCESS_LINK_PARAM) || '';
+  } catch {
+    return '';
+  }
+}
+
+async function matchesAccessLink(token) {
+  const expected = String(import.meta.env.VITE_PRIVATE_BETA_LINK_SHA256 || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expected) || !token || token.length > 64) return false;
+  try {
+    return (await sha256Hex(token)) === expected;
+  } catch {
+    return false;
+  }
+}
+
+function storeAccess() {
+  try {
+    localStorage.setItem(PRIVATE_BETA_STORAGE_KEY, 'granted');
+  } catch {
+    // Storage can be unavailable; access still lasts for this page view.
+  }
+}
+
 function hasStoredAccess() {
   try {
     return localStorage.getItem(PRIVATE_BETA_STORAGE_KEY) === 'granted';
@@ -39,11 +71,30 @@ function hasStoredAccess() {
 export default function PrivateBetaGate({ children }) {
   const { t, tRich } = useTranslation();
   const [granted, setGranted] = useState(hasStoredAccess);
+  // While a partner-link token is being checked, show nothing instead of flashing the code screen.
+  const [checkingLink, setCheckingLink] = useState(() => !hasStoredAccess() && accessLinkToken() !== '');
   const [code, setCode] = useState('');
   // Stores a message key, translated at render so a language switch updates it.
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    const token = accessLinkToken();
+    if (!token) return undefined;
+    let cancelled = false;
+    (async () => {
+      const valid = !hasStoredAccess() && await matchesAccessLink(token);
+      if (cancelled) return;
+      if (valid) {
+        storeAccess();
+        setGranted(true);
+      }
+      setCheckingLink(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   if (granted) return children;
+  if (checkingLink) return null;
 
   async function submit(event) {
     event.preventDefault();
@@ -51,11 +102,7 @@ export default function PrivateBetaGate({ children }) {
       setError('betaGate.invalidCode');
       return;
     }
-    try {
-      localStorage.setItem(PRIVATE_BETA_STORAGE_KEY, 'granted');
-    } catch {
-      // Storage can be unavailable; access still lasts for this page view.
-    }
+    storeAccess();
     setGranted(true);
   }
 
