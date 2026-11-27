@@ -5,24 +5,27 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 const root = process.cwd();
 const script = readFileSync(resolve(root, 'anti-scam-check.js'), 'utf8');
-const page = readFileSync(resolve(root, 'book-src/anti-scam-check.md'), 'utf8');
+const branding = readFileSync(resolve(root, 'book-src/branding.md'), 'utf8');
+const page = branding.slice(branding.indexOf('## Anti-Scam Check'));
 const css = readFileSync(resolve(root, 'theme/css/usd8-docs.css'), 'utf8');
 const bookToml = readFileSync(resolve(root, 'book.toml'), 'utf8');
 
 const flush = () => new Promise((done) => setTimeout(done, 20));
 
-describe('Anti-Scam Check docs page', () => {
+describe('Anti-Scam Check section on the Branding and Assets page', () => {
   beforeAll(() => {
     document.body.innerHTML = page;
     window.eval(script);
   });
 
-  it('is loaded by mdBook and hidden from the sidebar, page arrows and search', () => {
+  it('sits at the bottom of Branding and Assets, which stays indexable, and the old page redirects there', () => {
     expect(bookToml).toContain('"anti-scam-check.js"');
-    expect(css).toContain('#mdbook-sidebar li:has(> .chapter-link-wrapper > a[href$="anti-scam-check.html"])');
-    expect(css).toContain('a.nav-chapters[href$="anti-scam-check.html"]');
-    expect(css).toContain('#mdbook-searchresults li:has(a[href*="anti-scam-check.html"])');
-    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex');
+    expect(branding.startsWith('# Branding and Assets\n')).toBe(true);
+    expect(page.startsWith('## Anti-Scam Check\n')).toBe(true);
+    expect(page.slice(3)).not.toMatch(/^## /m);
+    expect(bookToml).toContain('"/anti-scam-check.html" = "branding.html#anti-scam-check"');
+    expect(css).not.toContain('anti-scam-check.html');
+    expect(document.querySelector('meta[name="robots"]')).toBeNull();
   });
 
   it('stores the official handles only as SHA-256 digests (1 Telegram, 3 X, 1 email)', () => {

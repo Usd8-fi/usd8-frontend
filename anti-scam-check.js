@@ -1,4 +1,5 @@
-// Anti-Scam Check page (docs/anti-scam-check.html, hidden from the sidebar).
+// Anti-Scam Check section at the bottom of the Branding and Assets page
+// (docs/branding.html#anti-scam-check; the old anti-scam-check.html redirects there).
 // The official handles are stored only as SHA-256("<platform>:<lowercase handle>")
 // so the page source does not list them. To add one:
 //   printf '%s' 'telegram:somehandle' | shasum -a 256
@@ -78,12 +79,6 @@
     }
 
     function setup() {
-        if (document.querySelector(".anti-scam-check") && !document.querySelector('meta[name="robots"]')) {
-            var robots = document.createElement("meta");
-            robots.name = "robots";
-            robots.content = "noindex";
-            document.head.appendChild(robots);
-        }
         document.querySelectorAll(".anti-scam-check[data-platform]").forEach(function (box) {
             var platform = box.dataset.platform;
             var input = box.querySelector("input");

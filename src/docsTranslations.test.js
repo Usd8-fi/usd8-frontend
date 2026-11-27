@@ -30,11 +30,14 @@ describe('translated docs', () => {
     }
   });
 
-  it.each(languages)('%s keeps the anti-scam widget hooks and the English anchor', (lang) => {
-    const page = read(`book-i18n/${lang}/anti-scam-check.md`);
-    expect(hooks(page)).toEqual(hooks(read('book-src/anti-scam-check.md')));
-    expect(page).toMatch(/^# .+ \{#anti-scam-check\}\n/);
-    expect(read(`book-i18n/${lang}/SUMMARY.md`)).toContain('<!-- Hidden:');
+  it.each(languages)('%s keeps the anti-scam widget hooks and the English anchor at the bottom of Branding and Assets', (lang) => {
+    const page = read(`book-i18n/${lang}/branding.md`);
+    const section = page.slice(page.indexOf('{#anti-scam-check}'));
+    expect(page).toMatch(/\n## .+ \{#anti-scam-check\}\n/);
+    expect(section.slice(3)).not.toMatch(/^## /m);
+    const english = read('book-src/branding.md');
+    expect(hooks(section)).toEqual(hooks(english.slice(english.indexOf('## Anti-Scam Check'))));
+    expect(existsSync(resolve(root, `book-i18n/${lang}/anti-scam-check.md`))).toBe(false);
   });
 
   it('gives every docs language every anti-scam widget string with the same placeholders', () => {

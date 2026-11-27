@@ -15,7 +15,7 @@ const deploy = source('deploy.sh');
 
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
 // Hidden chapters are reachable by direct link only: not in the sitemap or llms.txt.
-const HIDDEN_CHAPTERS = ['anti-scam-check'];
+const HIDDEN_CHAPTERS = [];
 const chapterUrls = [...summary.matchAll(/\[[^\]]+\]\(([^)]+)\.md\)/g)]
   .filter(([, chapter]) => !HIDDEN_CHAPTERS.includes(chapter))
   .map(([, chapter]) => `https://usd8.fi/docs/${chapter === 'usd8' ? '' : `${chapter}.html`}`);

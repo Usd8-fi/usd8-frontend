@@ -857,15 +857,7 @@ html[lang="th"] :not(code, kbd, pre, code *, pre *, .sidebar-telegram > span, .s
     letter-spacing: 0 !important;
 }
 
-/* Anti-Scam Check: a hidden page (direct link only). Keep it out of the
-   sidebar, the previous/next arrows and the search results. */
-#mdbook-sidebar li:has(> .chapter-link-wrapper > a[href$="anti-scam-check.html"]),
-#mdbook-sidebar li:has(> a[href$="anti-scam-check.html"]),
-a.nav-chapters[href$="anti-scam-check.html"],
-a.mobile-nav-chapters[href$="anti-scam-check.html"],
-#mdbook-searchresults li:has(a[href*="anti-scam-check.html"]),
-#searchresults li:has(a[href*="anti-scam-check.html"]) { display: none !important; }
-
+/* Anti-Scam Check: the section at the bottom of Branding and Assets. */
 .anti-scam-check { margin: 1.6rem 0; }
 .anti-scam-check label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
 .anti-scam-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: stretch; }

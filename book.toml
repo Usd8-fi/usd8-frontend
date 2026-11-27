@@ -18,6 +18,10 @@ site-url = "/docs/"
 additional-css = ["theme/css/link-theme.css", "theme/css/usd8-docs.css"]
 additional-js = ["analytics.js", "docs-theme.js", "booster-check.js", "timelock-selectors.js", "timelock-queue.js", "anti-scam-check.js"]
 
+[output.html.redirect]
+# The Anti-Scam Check moved to the bottom of Branding and Assets.
+"/anti-scam-check.html" = "branding.html#anti-scam-check"
+
 [output.html.search]
 enable = true
 

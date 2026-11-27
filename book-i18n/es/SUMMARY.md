@@ -11,5 +11,3 @@
 - [Marca y recursos](branding.md)
 - [Legal](legal.md)
 
-<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
-- [Verificación antiestafas](anti-scam-check.md)

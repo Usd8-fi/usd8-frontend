@@ -11,5 +11,3 @@
 - [Бренд и материалы](branding.md)
 - [Правовая информация](legal.md)
 
-<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
-- [Проверка на мошенничество](anti-scam-check.md)

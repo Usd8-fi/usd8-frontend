@@ -11,5 +11,3 @@
 - [แบรนด์และโลโก้](branding.md)
 - [ข้อกฎหมาย](legal.md)
 
-<!-- Hidden: reachable only by direct link; anti-scam-check CSS hides it from the sidebar, page arrows and search. -->
-- [ตรวจสอบบัญชีมิจฉาชีพ](anti-scam-check.md)

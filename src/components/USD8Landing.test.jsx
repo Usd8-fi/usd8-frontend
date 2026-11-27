@@ -97,7 +97,7 @@ describe('USD8 landing navigation', () => {
     expect(within(footerNav).queryByRole('link', { name: 'Risk disclaimer' })).not.toBeInTheDocument();
     expect(within(footerNav).getByRole('button', { name: 'Cookie Settings' })).toHaveAttribute('data-analytics-settings');
     expect(footerNav.children[2]).toHaveTextContent(/^TransparencyContactsLegalCookie SettingsAnti-Scam Check$/);
-    expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('href', './docs/anti-scam-check.html');
+    expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('href', './docs/branding.html#anti-scam-check');
     expect(within(footerNav).getByRole('link', { name: 'Anti-Scam Check' })).toHaveAttribute('target', '_blank');
     expect(within(footerNav).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', './docs/');
     const videoLink = within(footerNav).getByRole('link', { name: '1-Min Video Explainer' });
